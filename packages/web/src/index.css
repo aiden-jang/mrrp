@@ -1,0 +1,15 @@
+:root {
+  --air:#f7ecdc; --air-warm:#fdf6ea; --panel:#fffaf0;
+  --ink:#3f2f1f; --soft:#8a7256; --line:#e6d5bb;
+  --honey:#e0a03f; --ginger:#e8963f; --ginger-dk:#c9752a;
+  --sans: ui-rounded,"SF Pro Rounded","Hiragino Maru Gothic ProN",Quicksand,
+          ui-sans-serif,-apple-system,system-ui,sans-serif;
+}
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0; color: var(--ink); font-family: var(--sans);
+  background: radial-gradient(120% 90% at 78% 6%, var(--air-warm) 0%, var(--air) 60%);
+  -webkit-font-smoothing: antialiased;
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
