@@ -1,0 +1,13 @@
+{
+  "name": "sunspot",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "dev:worker": "pnpm --filter @sunspot/worker dev",
+    "dev:web": "pnpm --filter @sunspot/web dev",
+    "deploy": "pnpm --filter @sunspot/worker deploy"
+  },
+  "devDependencies": { "typescript": "^5.7.2" }
+}
