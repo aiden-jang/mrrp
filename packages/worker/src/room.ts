@@ -6,8 +6,10 @@ import type { Env } from "./env.js";
 const LOG_KEEP = 40;
 /** How recently they must have been seen to count as being here now, rather than having been here. */
 const HERE_NOW_MS = 3 * 60_000;
+// A placeholder, not the app's name. She is meant to be renamed to a cat somebody actually knows,
+// via /dress, and until then she needs a name that reads well in every line of copy.
 const DEFAULT_CAT: Cat = {
-  name: "Sunspot",
+  name: "Bean",
   fur: "#e8963f",
   furDk: "#c9752a",
   belly: "#fbf0dd",

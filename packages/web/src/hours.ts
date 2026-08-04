@@ -23,6 +23,11 @@ export interface Scene {
   floorNear: string;
   floorFar: string;
   beamWarm: string;
+  /** Wall and floor inside the shaft of light, and the bright patch on the floor. Solid colours,
+   *  so the beam can be filled rather than glazed over what's underneath. */
+  litWall: string;
+  litFloor: string;
+  patch: string;
   /** Where she is, 0-1 across the room. Follows the sun, except when she's waiting. */
   catX: number;
   /** 0 wide awake, 1 fast asleep. */
@@ -56,7 +61,7 @@ export function hourIn(tz: string, at = Date.now()): number {
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-function mixHex(a: string, b: string, t: number): string {
+export function mixHex(a: string, b: string, t: number): string {
   const n = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
   const [ar, ag, ab] = n(a), [br, bg, bb] = n(b);
   const c = (x: number, y: number) => Math.round(lerp(x, y, t)).toString(16).padStart(2, "0");
@@ -130,9 +135,15 @@ export function sceneFor(clock: Clock, at = Date.now(), mood: Mood | null = null
     floorFar: mixHex(a.floor, b.floor, t),
     floorNear: mixHex(a.floor2, b.floor2, t),
     beamWarm: mixHex(a.warm, b.warm, t),
+    litWall: mixHex(mixHex(a.wall, b.wall, t), mixHex(a.warm, b.warm, t), 0.22 + sun * 0.5),
+    litFloor: mixHex(mixHex(a.floor2, b.floor2, t), mixHex(a.warm, b.warm, t), 0.2 + sun * 0.45),
+    patch: mixHex(mixHex(a.floor2, b.floor2, t), mixHex(a.warm, b.warm, t), 0.3 + sun * 0.6),
     // She follows the light, except when she's waiting for you, which beats the light, except when
     // you've told her something, which beats both.
-    catX: r?.catX ?? (atDoor ? 0.19 : sun > 0.15 ? beam : 0.42),
+    // Once she has been told something, that outranks the clock. Otherwise "bored" could still put
+    // her at the door because it happens to be nearly home time, and the copy would be describing a
+    // cat that isn't there.
+    catX: r?.catX ?? (r ? (sun > 0.15 ? beam : 0.42) : atDoor ? 0.19 : sun > 0.15 ? beam : 0.42),
     sleepy: r?.sleepy ?? sleepy,
     atDoor: r ? r.catX === 0.19 : atDoor,
     // What she's doing about what you said outranks the time of day. It's the more specific fact.
