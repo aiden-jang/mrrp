@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Cat as CatLook, Clock, Mood } from "./types.js";
 import { sceneFor } from "./hours.js";
-import { DOOR, FRAME, PLANT, POSES, RUG, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
+import { BED, DOOR, FRAME, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
  * The room, drawn as pixel art at her local time of day.
@@ -173,9 +173,9 @@ export function Cat({
       blit(WINDOW, winX, 4, { w: INK, h: sc.sun > 0.2 ? sc.beamWarm : sc.wallTop });
       blit(SHELF, 68, FLOOR - 26, { w: INK, d: "#8a6a48" });
       blit(DOOR, 6, FLOOR - 16, { w: INK, f: sc.wallBottom, d: "#8a6a48", h: "#ffe9a8" });
-      blit(FRAME, 22, 12, { w: INK, f: "#c69a63", g: "#9aa9a2" });
+      blit(FRAME, 20, 11, { w: INK, f: "#c69a63", h: "#cfe0e4", g: "#e2926f" });
       blit(PLANT, 87, FLOOR - 13, { g: LEAF, w: INK, d: "#b07a4e" });
-      blit(RUG, 24, FLOOR + 24, { d: "#9c7f86", f: "#bda0a4" });
+      blit(BED, 24, FLOOR + 22, { d: "#8d7f96", f: "#b3a4bd", b: "#9b8ca6" });
 
       if (!reduce) {
         for (const m of motes) {
@@ -233,13 +233,14 @@ export function Cat({
       };
 
       // Shadow first, so she sits on the floor instead of hovering over it.
-      dither(kx - (sp.w >> 1) + 2, ky + 1, sp.w - 4, 2, "rgba(120,84,44,.32)");
+      rect(kx - (sp.w >> 1) + 3, ky + 1, sp.w - 6, 1, "rgba(120,84,44,.26)");
+      rect(kx - (sp.w >> 1) + 5, ky + 2, sp.w - 10, 1, "rgba(120,84,44,.18)");
 
       const wag = reduce ? 0 : Math.round(Math.sin(t / (620 - sc.play * 380)) * (1 + sc.play * 2 + n));
       // Tucked against her flank. A one-pixel gap here reads as a detached tail, which is worse
       // than no tail at all.
       const tailX = pose === "loaf" ? kx + 8 : kx + 5;
-      const tailY = pose === "loaf" ? y - 4 : y - 6;
+      const tailY = pose === "loaf" ? y - 4 : pose === "perk" ? y - 9 : y - 6;
       blit(TAIL, pose === "stand" ? kx - 12 : tailX, tailY + wag, pal, pose === "stand");
       blit(sp, kx, y, pal);
 
