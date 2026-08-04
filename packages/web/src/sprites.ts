@@ -57,11 +57,12 @@ export const LOAF = sprite(
     ".wffffdffffffffffdffffw.",
     ".wfbbbbbbbbbbbbbbbbbbfw.",
     ".wffbbbbbbbbbbbbbbbbffw.",
-    ".wffffffffffffffffffffw.",
+    ".wfdffffffffffffffffdfw.",
+    ".wddddddddddddddddddddw.",
     "..wwwwwwwwwwwwwwwwwwww..",
   ],
   -12,
-  -17,
+  -18,
 );
 
 /** Upright. Used when she's paying attention to you. */
@@ -84,10 +85,11 @@ export const SIT = sprite(
     "..wffbbbbbbbbffw..",
     "..wfdffffffffdfw..",
     ".wwbbwwffffwwbbww.",
+    "..wwddddddddddww..",
     "..wwwwwwwwwwwwww..",
   ],
   -9,
-  -18,
+  -19,
 );
 
 /** On her feet, at the door. Slimmer, tail up. */
@@ -240,6 +242,22 @@ export const PLANT = sprite(
     ".wwdddww..",
     ".wdddddw..",
     "..wwwww...",
+  ],
+  0,
+  0,
+);
+
+/** A picture on the wall. `g` is what's in it, and it is deliberately not identifiable. */
+export const FRAME = sprite(
+  [
+    "wwwwwwwwwww",
+    "wfffffffffw",
+    "wfwwwwwwwfw",
+    "wfwggggggfw",
+    "wfwgggggwfw",
+    "wfwwwwwwwfw",
+    "wfffffffffw",
+    "wwwwwwwwwww",
   ],
   0,
   0,
