@@ -1,4 +1,5 @@
 import type { Mood } from "./types.js";
+import type { Pose } from "./sprites.js";
 
 /**
  * What the cat does about it.
@@ -12,6 +13,8 @@ import type { Mood } from "./types.js";
  *  be moved. The room gets warmer and closer for a low mood, never darker.
  *
  *  `snug` is that closeness. `play` is liveliness. Nothing here has a downside.
+ *
+ *  `doing` completes "<name> is ___", so every line has to be a participle.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 export interface Response {
@@ -32,10 +35,16 @@ export interface Response {
   eyes: number;
   /** She purrs without being touched. Only for the moods where that's the point. */
   purring: boolean;
+  /** Which pose. Named per mood rather than derived, so "good" isn't the same as "bored". */
+  pose: Pose;
+  /** Little sparks around her. Reserved for good, so it stays special. */
+  sparkle?: boolean;
 }
 
 export const RESPONSES: Record<Mood, Response> = {
   good: {
+    pose: "sit",
+    sparkle: true,
     eyes: 0.85,
     doing: "batting at the dust in the sunbeam, badly",
     snug: 0.1,
@@ -44,6 +53,7 @@ export const RESPONSES: Record<Mood, Response> = {
     purring: false,
   },
   tired: {
+    pose: "loaf",
     eyes: 0.2,
     // Not asleep. Next to you, doing the same nothing you are.
     doing: "loafing right next to you, doing exactly as little as you are",
@@ -53,9 +63,10 @@ export const RESPONSES: Record<Mood, Response> = {
     purring: true,
   },
   stressed: {
+    pose: "sit",
     eyes: 0.55,
     // The weighted-blanket answer. She is not worried; she is heavy.
-    doing: "sitting on you. She has no plans to move and she isn't worried about any of it",
+    doing: "sitting on you, with no plans to move and no worries about any of it",
     snug: 1,
     play: 0,
     catX: 0.5,
@@ -63,9 +74,10 @@ export const RESPONSES: Record<Mood, Response> = {
     purring: true,
   },
   sad: {
+    pose: "sit",
     eyes: 1,
     // She comes over and stays. Eyes open, because being looked at is the point.
-    doing: "come over to sit with you, and she isn't going anywhere",
+    doing: "sitting with you, and she isn't going anywhere",
     snug: 1,
     play: 0,
     catX: 0.5,
@@ -73,6 +85,7 @@ export const RESPONSES: Record<Mood, Response> = {
     purring: true,
   },
   lonely: {
+    pose: "stand",
     eyes: 0.9,
     doing: "already at the door, and she was there before you said anything",
     snug: 0.85,
@@ -82,8 +95,9 @@ export const RESPONSES: Record<Mood, Response> = {
     purring: true,
   },
   bored: {
+    pose: "play",
     eyes: 0.95,
-    doing: "knocked exactly one thing off a shelf and is waiting to see what you do",
+    doing: "sitting next to the one thing she knocked off the shelf, waiting to see what you do",
     snug: 0.2,
     play: 0.8,
     // By the shelf, because that is where the copy says the crime happened.

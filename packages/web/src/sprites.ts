@@ -15,6 +15,7 @@
  *  . transparent      f fur            d fur, shaded      b belly / muzzle
  *  w outline          e eye, open      n nose              m mouth
  *  p inner ear        h highlight (one pixel, always white)
+ *  c blush (two pixels per cheek, and worth more than any other pair)
  */
 
 export type Pose = "loaf" | "sit" | "stand" | "play";
@@ -47,7 +48,8 @@ export const LOAF = sprite(
     "..wffffwwwwwwwwwwffffw..",
     "..wfdffffdffffdffffdfw..",
     "..wfbbbbbbbbbbbbbbbbfw..",
-    "..wfbbeebbbbbbbbeebbfw..",
+    "..wfbceeebbbbbbeeecbfw..",
+    "..wfbceeebbbbbbeeecbfw..",
     "wwwfbbbbbbbnnbbbbbbbfwww",
     "..wffbbbbbbmmbbbbbbffw..",
     "...wdffffffffffffffdw...",
@@ -59,7 +61,7 @@ export const LOAF = sprite(
     "..wwwwwwwwwwwwwwwwwwww..",
   ],
   -12,
-  -16,
+  -17,
 );
 
 /** Upright. Used when she's paying attention to you. */
@@ -71,16 +73,16 @@ export const SIT = sprite(
     ".wffffwwwwwwffffw.",
     ".wfdffdffffdffdfw.",
     ".wfbbbbbbbbbbbbfw.",
-    ".wfbbeebbbbeebbfw.",
-    "wwfbbbbbnnbbbbbfww",
+    ".wfbceeebbeeecbfw.",
+    ".wfbceeebbeeecbfw.",
+    ".wfbbbbbnnbbbbbfw.",
     ".wffbbbbmmbbbbffw.",
     "..wfdffffffffdfw..",
-    "...wfbbbbbbbfw....",
-    "...wfbbbbbbbfw....",
-    "..wfdbbbbbbbdfw...",
-    "..wffbbbbbbbffw...",
+    "..wfbbbbbbbbbbfw..",
+    "..wfbbbbbbbbbbfw..",
+    "..wfdbbbbbbbbdfw..",
+    "..wffbbbbbbbbffw..",
     "..wfdffffffffdfw..",
-    "..wffffffffffffw..",
     ".wwbbwwffffwwbbww.",
     "..wwwwwwwwwwwwww..",
   ],
@@ -181,15 +183,17 @@ export const DOOR = sprite(
 /** The window the beam comes from. Drawn on the wall so the light has a source. */
 export const WINDOW = sprite(
   [
-    "wwwwwwwwwwwww",
-    "whhhhhwhhhhhw",
-    "whhhhhwhhhhhw",
-    "whhhhhwhhhhhw",
-    "wwwwwwwwwwwww",
-    "whhhhhwhhhhhw",
-    "whhhhhwhhhhhw",
-    "whhhhhwhhhhhw",
-    "wwwwwwwwwwwww",
+    "wwwwwwwwwwwwwwwww",
+    "whhhhhhhwhhhhhhhw",
+    "whhhhhhhwhhhhhhhw",
+    "whhhhhhhwhhhhhhhw",
+    "whhhhhhhwhhhhhhhw",
+    "wwwwwwwwwwwwwwwww",
+    "whhhhhhhwhhhhhhhw",
+    "whhhhhhhwhhhhhhhw",
+    "whhhhhhhwhhhhhhhw",
+    "whhhhhhhwhhhhhhhw",
+    "wwwwwwwwwwwwwwwww",
   ],
   0,
   0,
@@ -198,15 +202,13 @@ export const WINDOW = sprite(
 /** A rug. Rooms with nothing on the floor read as backdrops. */
 export const RUG = sprite(
   [
-    "...dddddddddddddddddddd...",
-    ".ddffffffffffffffffffffdd.",
-    "dffffdffffdffffdffffdffffd",
-    "dffffffffffffffffffffffffd",
-    "dffffdffffdffffdffffdffffd",
-    ".ddffffffffffffffffffffdd.",
-    "...dddddddddddddddddddd...",
+    "....dddddddddddddddddddddddddd....",
+    "..ddffffffffffffffffffffffffffdd..",
+    ".dffffdffffffdffffffdffffffdffffd.",
+    "..ddffffffffffffffffffffffffffdd..",
+    "....dddddddddddddddddddddddddd....",
   ],
-  -13,
+  -17,
   0,
 );
 
@@ -217,6 +219,27 @@ export const SHELF = sprite(
     "wddddddddddddddw",
     "wwwwwwwwwwwwwwww",
     "...ww......ww...",
+  ],
+  0,
+  0,
+);
+
+/** A plant for the empty corner. `g` is leaf, `d` is pot. */
+export const PLANT = sprite(
+  [
+    "....gg....",
+    "..ggggg.g.",
+    ".gggwgggg.",
+    "gggwgwggg.",
+    ".ggwgwgg..",
+    "..gwgwg...",
+    "...wgw....",
+    "...wgw....",
+    "..wdddw...",
+    "..wdddw...",
+    ".wwdddww..",
+    ".wdddddw..",
+    "..wwwww...",
   ],
   0,
   0,

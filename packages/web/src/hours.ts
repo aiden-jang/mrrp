@@ -1,5 +1,6 @@
 import type { Clock, Mood } from "./types.js";
 import { RESPONSES } from "./moods.js";
+import type { Pose } from "./sprites.js";
 
 /**
  * What the room looks like at a given moment of HER day.
@@ -44,6 +45,9 @@ export interface Scene {
   purring: boolean;
   /** Floor on how open her eyes are, regardless of the cursor. 0 leaves it to proximity. */
   eyes: number;
+  /** Which pose to draw her in, if what she was told calls for a specific one. */
+  pose: Pose | null;
+  sparkle: boolean;
 }
 
 /** Local fractional hour in an IANA zone, without pulling in a date library. */
@@ -152,5 +156,7 @@ export function sceneFor(clock: Clock, at = Date.now(), mood: Mood | null = null
     play: r?.play ?? 0,
     purring: r?.purring ?? false,
     eyes: r?.eyes ?? 0,
+    pose: r?.pose ?? null,
+    sparkle: r?.sparkle ?? false,
   };
 }
