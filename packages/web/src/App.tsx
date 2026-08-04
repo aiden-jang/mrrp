@@ -3,6 +3,7 @@ import type { Action, RoomView } from "./types.js";
 import { ACTIONS } from "./types.js";
 import { doAct, fetchRoom, myName, newRoomId, roomFromPath } from "./api.js";
 import { Cat } from "./Cat.js";
+import { sceneFor } from "./hours.js";
 
 /** "this morning", "yesterday evening" — warmer and vaguer than a timestamp, which is the point. */
 function whenish(at: number): string {
@@ -77,6 +78,16 @@ function RoomPage({ id }: { id: string }) {
 
   useEffect(() => { if (!asking) void load(); }, [asking, load]);
 
+  // No socket: the room is asynchronous by design. A quiet poll is enough to turn "was here" into
+  // "is here" while she has the tab open, and to roll the note over at her midnight.
+  useEffect(() => {
+    if (asking) return;
+    const id = setInterval(() => void load(), 45_000);
+    const onShow = () => { if (!document.hidden) void load(); };
+    document.addEventListener("visibilitychange", onShow);
+    return () => { clearInterval(id); document.removeEventListener("visibilitychange", onShow); };
+  }, [asking, load]);
+
   const act = async (a: Action) => {
     setNudge((v) => v + 1);
     try { setView(await doAct(id, a)); } catch { /* she'll survive */ }
@@ -109,12 +120,13 @@ function RoomPage({ id }: { id: string }) {
   if (!view) return <main style={S.page}><p style={S.small}>opening the door quietly…</p></main>;
 
   const last = view.theirRecent[0];
+  const scene = sceneFor(view.clock);
 
   return (
     <main style={S.page}>
       <div style={S.card}>
         <div style={S.stage}>
-          <Cat look={view.cat} petting={petting} nudge={nudge} />
+          <Cat look={view.cat} clock={view.clock} petting={petting} nudge={nudge} />
           {/* holding on her is petting; it is the one gesture that isn't a button */}
           <div
             style={S.petLayer}
@@ -124,12 +136,38 @@ function RoomPage({ id }: { id: string }) {
           />
         </div>
 
+        {/* What she's doing, in her time, not the server's. */}
+        <p style={S.doing}>{view.cat.name} is {scene.doing}.</p>
+
+        {/* The note. Tomorrow's does not exist in this payload; the Worker only ever sends today's. */}
+        {view.note && (
+          <div style={S.note}>
+            <p style={S.noteFrom}>
+              {view.note.final
+                ? `${view.cat.name} left this out for you`
+                : `${view.cat.name} brought you something`}
+            </p>
+            <p style={S.noteText}>{view.note.text}</p>
+            {!view.note.final && (
+              <p style={S.noteDay}>day {view.note.day} of {view.note.total}</p>
+            )}
+          </div>
+        )}
+
         {/* THE moment. Everything else on this page exists to frame this line. */}
         <div style={S.news}>
           {view.waitingForThem ? (
             <>
               <p style={S.newsMain}>{view.cat.name} is asleep. It's just you two so far.</p>
               <p style={S.small}>Send the link below to the person you want in here.</p>
+            </>
+          ) : view.themHereNow ? (
+            <>
+              <p style={S.newsMain}>
+                <b>{view.them}</b> is in here right now.
+                {last ? ` They just ${pastTense(last.action)}.` : ""}
+              </p>
+              <p style={S.small}>Pet her at the same time. She won't know the difference. You will.</p>
             </>
           ) : last ? (
             <>
@@ -189,7 +227,18 @@ const S: Record<string, React.CSSProperties> = {
     background: "#efdcc2", boxShadow: "0 18px 44px -22px rgba(120,84,44,.45)",
   },
   petLayer: { position: "absolute", inset: 0, cursor: "grab", touchAction: "none" },
-  news: { margin: "18px 2px 16px", textAlign: "center" },
+  doing: { fontSize: 13.5, color: "var(--soft)", textAlign: "center", margin: "14px 0 0", fontStyle: "italic" },
+  note: {
+    margin: "14px 0 2px", padding: "15px 17px", borderRadius: 18,
+    background: "var(--panel)", border: "1px solid var(--line)",
+  },
+  noteFrom: {
+    fontSize: 11.5, letterSpacing: ".07em", textTransform: "uppercase",
+    color: "var(--soft)", margin: "0 0 7px", fontWeight: 600,
+  },
+  noteText: { fontSize: 16.5, lineHeight: 1.55, margin: 0 },
+  noteDay: { fontSize: 12, color: "var(--soft)", margin: "9px 0 0", textAlign: "right" },
+  news: { margin: "16px 2px 16px", textAlign: "center" },
   newsMain: { fontSize: 17.5, margin: "0 0 5px", lineHeight: 1.45 },
   row: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 },
   btn: {

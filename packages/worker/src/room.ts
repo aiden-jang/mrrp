@@ -1,8 +1,11 @@
 import { DurableObject } from "cloudflare:workers";
-import type { Action, Cat, RoomView, Visit } from "./types.js";
+import type { Action, Cat, Clock, Note, RoomView, Visit } from "./types.js";
+import { NOTES } from "./notes.js";
 import type { Env } from "./env.js";
 
 const LOG_KEEP = 40;
+/** How recently they must have been seen to count as being here now, rather than having been here. */
+const HERE_NOW_MS = 3 * 60_000;
 const DEFAULT_CAT: Cat = {
   name: "Sunspot",
   fur: "#e8963f",
@@ -11,6 +14,21 @@ const DEFAULT_CAT: Cat = {
   eyes: "#7cb342",
   tabby: true,
 };
+const DEFAULT_CLOCK: Clock = { tz: "America/New_York", homeHour: 18 };
+
+/**
+ * Her calendar date in her own timezone, as days-since-epoch. Comparing these gives a day count
+ * that flips over at her midnight rather than UTC's, which is the only midnight she'd notice.
+ */
+function localDayNumber(at: number, tz: string): number {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(at));
+  return Math.floor(Date.parse(`${parts}T00:00:00Z`) / 86_400_000);
+}
 
 interface Person {
   name: string;
@@ -68,20 +86,56 @@ export class Room extends DurableObject<Env> {
     await this.ctx.storage.put("cat", { ...current, ...cat });
   }
 
+  /** Set whose day the room runs on. Her timezone, and roughly when she gets home. */
+  async setClock(clock: Partial<Clock>): Promise<void> {
+    const current = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
+    await this.ctx.storage.put("clock", { ...current, ...clock });
+  }
+
+  /**
+   * Today's note, and nothing else.
+   *
+   * The day count starts when the second person first arrives, not when the room was made, so
+   * whatever you spend fiddling with colours beforehand doesn't eat into day one. The index is
+   * resolved here and only one string is returned: the browser is never sent a note she hasn't
+   * earned yet, because a gift you can read ahead in isn't one.
+   */
+  private async noteToday(clock: Clock, bothHere: boolean): Promise<Note | null> {
+    if (!bothHere || NOTES.length === 0) return null;
+
+    let startAt = await this.ctx.storage.get<number>("startAt");
+    if (startAt === undefined) {
+      startAt = Date.now();
+      await this.ctx.storage.put("startAt", startAt);
+    }
+
+    // Store the raw instant, not a precomputed day number. Both ends of this subtraction are then
+    // converted in the same zone, so editing her timezone later shifts the day count by at most one
+    // instead of skewing it permanently. Clamped below in case the clock is moved backwards.
+    const elapsed = Math.max(0, localDayNumber(Date.now(), clock.tz) - localDayNumber(startAt, clock.tz));
+    const i = Math.min(elapsed, NOTES.length - 1);
+    return { day: i + 1, total: NOTES.length, text: NOTES[i]!, final: elapsed >= NOTES.length - 1 };
+  }
+
   private async build(me: string, people: Record<string, Person>): Promise<RoomView> {
     const cat = (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT;
+    const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
     const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
     const otherId = Object.keys(people).find((id) => id !== me) ?? null;
     const them = otherId ? people[otherId]! : null;
+    const waitingForThem = Object.keys(people).length < 2;
 
     return {
       cat,
+      clock,
+      note: await this.noteToday(clock, !waitingForThem),
       you: people[me]?.name ?? null,
       them: them?.name ?? null,
       themLastAt: them?.lastSeen ?? null,
+      themHereNow: !!them && Date.now() - them.lastSeen < HERE_NOW_MS,
       // Only ever surface what THEY did. Replaying your own actions back at you is just a log.
       theirRecent: otherId ? log.filter((v) => v.who === otherId).slice(0, 4) : [],
-      waitingForThem: Object.keys(people).length < 2,
+      waitingForThem,
     };
   }
 }
