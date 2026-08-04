@@ -1,5 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
-import type { Action, Cat, Clock, Note, RoomView, Visit } from "./types.js";
+import type { Action, Cat, Clock, Mood, Note, RoomView, Told, Visit } from "./types.js";
 import { NOTES } from "./notes.js";
 import type { Env } from "./env.js";
 
@@ -86,6 +86,26 @@ export class Room extends DurableObject<Env> {
     await this.ctx.storage.put("cat", { ...current, ...cat });
   }
 
+  /**
+   * Tell the cat how you are.
+   *
+   * Stored per person and overwritten, never appended. There is no history and no streak on purpose:
+   * the moment this keeps a record, it stops being a way to say something and becomes a diary you can
+   * fall behind on. One value, replaceable, no consequence for changing your mind.
+   */
+  async tell(me: string, mood: Mood): Promise<RoomView> {
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (!people[me]) return this.build(me, people); // spectators can look, not speak
+
+    const moods = (await this.ctx.storage.get<Record<string, Told>>("moods")) ?? {};
+    moods[me] = { mood, at: Date.now() };
+    await this.ctx.storage.put("moods", moods);
+
+    people[me].lastSeen = Date.now();
+    await this.ctx.storage.put("people", people);
+    return this.build(me, people);
+  }
+
   /** Set whose day the room runs on. Her timezone, and roughly when she gets home. */
   async setClock(clock: Partial<Clock>): Promise<void> {
     const current = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
@@ -121,13 +141,20 @@ export class Room extends DurableObject<Env> {
     const cat = (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT;
     const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
     const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
+    const moods = (await this.ctx.storage.get<Record<string, Told>>("moods")) ?? {};
     const otherId = Object.keys(people).find((id) => id !== me) ?? null;
     const them = otherId ? people[otherId]! : null;
     const waitingForThem = Object.keys(people).length < 2;
+    const mine = moods[me] ?? null;
 
     return {
       cat,
       clock,
+      myMood: mine?.mood ?? null,
+      theirMood: otherId ? moods[otherId] ?? null : null,
+      // Their visit has to be AFTER you spoke for it to mean anything. Comparing against lastSeen
+      // rather than an explicit ack keeps this from becoming a read receipt.
+      theyCameAfter: !!mine && !!them && them.lastSeen > mine.at,
       note: await this.noteToday(clock, !waitingForThem),
       you: people[me]?.name ?? null,
       them: them?.name ?? null,

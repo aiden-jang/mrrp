@@ -1,10 +1,10 @@
-import type { Action, RoomView } from "./types.js";
+import type { Action, Mood, RoomView } from "./types.js";
 
 /**
  * Identity is a random token in localStorage, nothing more. No accounts, no email, no password:
  * the room link plus this token is the whole notion of "who am I", which keeps a gift frictionless.
  */
-const TOKEN_KEY = "sunspot:me";
+const TOKEN_KEY = "mrrp:me";
 
 export function myToken(): string {
   let t = localStorage.getItem(TOKEN_KEY);
@@ -16,8 +16,8 @@ export function myToken(): string {
 }
 
 export const myName = {
-  get: () => localStorage.getItem("sunspot:name"),
-  set: (n: string) => localStorage.setItem("sunspot:name", n),
+  get: () => localStorage.getItem("mrrp:name"),
+  set: (n: string) => localStorage.setItem("mrrp:name", n),
 };
 
 /** Room ids live in the path (/r/<id>) so the link is the only thing you have to send. */
@@ -55,4 +55,15 @@ export async function dress(id: string, cat: Record<string, unknown>): Promise<v
     headers: { "content-type": "application/json" },
     body: JSON.stringify(cat),
   });
+}
+
+/** Tell the cat how you are. Returns the room as it now looks to you. */
+export async function doTell(id: string, mood: Mood): Promise<RoomView> {
+  const r = await fetch(`/api/room/${id}/tell`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ me: myToken(), mood }),
+  });
+  if (!r.ok) throw new Error("Couldn't reach her just now.");
+  return r.json() as Promise<RoomView>;
 }

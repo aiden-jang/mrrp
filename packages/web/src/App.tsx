@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Action, RoomView } from "./types.js";
-import { ACTIONS } from "./types.js";
-import { doAct, fetchRoom, myName, newRoomId, roomFromPath } from "./api.js";
+import type { Action, Mood, RoomView } from "./types.js";
+import { ACTIONS, MOODS } from "./types.js";
+import { doAct, doTell, fetchRoom, myName, newRoomId, roomFromPath } from "./api.js";
 import { Cat } from "./Cat.js";
 import { sceneFor } from "./hours.js";
 
@@ -37,7 +37,7 @@ function Landing() {
   return (
     <main style={S.page}>
       <div style={{ ...S.card, textAlign: "center" }}>
-        <h1 style={S.h1}>Sunspot</h1>
+        <h1 style={S.h1}>mrrp</h1>
         <p style={{ ...S.lede, margin: "0 auto 22px" }}>
           A cat that belongs to the two of you. She is always asleep in the sun, she never needs
           anything, and she mentions when the other one of you came by.
@@ -93,11 +93,16 @@ function RoomPage({ id }: { id: string }) {
     try { setView(await doAct(id, a)); } catch { /* she'll survive */ }
   };
 
+  const tell = async (m: Mood) => {
+    setNudge((v) => v + 1);
+    try { setView(await doTell(id, m)); } catch { /* she'll survive */ }
+  };
+
   if (asking) {
     return (
       <main style={S.page}>
         <div style={{ ...S.card, textAlign: "center" }}>
-          <h1 style={S.h1}>Sunspot</h1>
+          <h1 style={S.h1}>mrrp</h1>
           <p style={{ ...S.lede, margin: "0 auto 20px" }}>Someone wants you to meet their cat.</p>
           <input
             style={S.input} value={name} maxLength={24} placeholder="your name"
@@ -120,13 +125,13 @@ function RoomPage({ id }: { id: string }) {
   if (!view) return <main style={S.page}><p style={S.small}>opening the door quietly…</p></main>;
 
   const last = view.theirRecent[0];
-  const scene = sceneFor(view.clock);
+  const scene = sceneFor(view.clock, Date.now(), view.myMood);
 
   return (
     <main style={S.page}>
       <div style={S.card}>
         <div style={S.stage}>
-          <Cat look={view.cat} clock={view.clock} petting={petting} nudge={nudge} />
+          <Cat look={view.cat} clock={view.clock} mood={view.myMood} petting={petting} nudge={nudge} />
           {/* holding on her is petting; it is the one gesture that isn't a button */}
           <div
             style={S.petLayer}
@@ -136,8 +141,23 @@ function RoomPage({ id }: { id: string }) {
           />
         </div>
 
-        {/* What she's doing, in her time, not the server's. */}
-        <p style={S.doing}>{view.cat.name} is {scene.doing}.</p>
+        {/* What she's doing about what you told her, in her time, not the server's. */}
+        <p style={S.doing}>
+          {view.myMood ? `${view.cat.name} has ` : `${view.cat.name} is `}{scene.doing}.
+        </p>
+
+        {/* Their mood, first, above everything. It is the reason the other one opens this. */}
+        {view.theirMood && (
+          <div style={S.theirs}>
+            <p style={S.theirsMain}>
+              <b>{view.them}</b> told {view.cat.name} they're{" "}
+              {MOODS.find((m) => m.id === view.theirMood!.mood)?.said}, {whenish(view.theirMood.at)}.
+            </p>
+            <p style={{ ...S.small, color: "rgba(255,255,255,.82)", marginTop: 4 }}>
+              Go and be in there. That's all it takes.
+            </p>
+          </div>
+        )}
 
         {/* The note. Tomorrow's does not exist in this payload; the Worker only ever sends today's. */}
         {view.note && (
@@ -152,6 +172,13 @@ function RoomPage({ id }: { id: string }) {
               <p style={S.noteDay}>day {view.note.day} of {view.note.total}</p>
             )}
           </div>
+        )}
+
+        {/* The other half of the loop. Never "they saw it": only ever that they turned up. */}
+        {view.theyCameAfter && !view.themHereNow && (
+          <p style={S.came}>
+            <b>{view.them}</b> came in after you told {view.cat.name} that.
+          </p>
         )}
 
         {/* THE moment. Everything else on this page exists to frame this line. */}
@@ -189,6 +216,23 @@ function RoomPage({ id }: { id: string }) {
           )}
         </div>
 
+        <p style={S.tellLabel}>
+          {view.myMood
+            ? `still ${MOODS.find((m) => m.id === view.myMood)?.label}?`
+            : `tell ${view.cat.name} how you are`}
+        </p>
+        <div style={S.moodRow}>
+          {MOODS.map((m) => (
+            <button
+              key={m.id}
+              style={{ ...S.mood, ...(view.myMood === m.id ? S.moodOn : null) }}
+              onClick={() => void tell(m.id)}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+
         <div style={S.row}>
           {ACTIONS.map((a) => (
             <button key={a.id} style={S.btn} onClick={() => void act(a.id)}>{a.label}</button>
@@ -208,7 +252,8 @@ function RoomPage({ id }: { id: string }) {
         )}
 
         <p style={{ ...S.small, textAlign: "center", marginTop: 14 }}>
-          She can't get hungry, or sad, or run away. There is nothing here to keep up with.
+          Nothing in here needs keeping up with. She can't get hungry, she can't be neglected, and she
+          never minds what you tell her.
         </p>
       </div>
     </main>
@@ -228,6 +273,24 @@ const S: Record<string, React.CSSProperties> = {
   },
   petLayer: { position: "absolute", inset: 0, cursor: "grab", touchAction: "none" },
   doing: { fontSize: 13.5, color: "var(--soft)", textAlign: "center", margin: "14px 0 0", fontStyle: "italic" },
+  theirs: {
+    margin: "14px 0 2px", padding: "13px 16px", borderRadius: 18,
+    background: "var(--honey)", color: "#fff",
+  },
+  theirsMain: { fontSize: 16.5, lineHeight: 1.5, margin: 0 },
+  came: {
+    fontSize: 13.5, textAlign: "center", color: "var(--soft)", margin: "12px 0 0",
+  },
+  tellLabel: {
+    fontSize: 11.5, letterSpacing: ".07em", textTransform: "uppercase", fontWeight: 600,
+    color: "var(--soft)", textAlign: "center", margin: "18px 0 7px",
+  },
+  moodRow: { display: "flex", flexWrap: "wrap", gap: 7, justifyContent: "center", marginBottom: 14 },
+  mood: {
+    font: "inherit", fontSize: 14, color: "var(--ink)", background: "var(--panel)",
+    border: "1px solid var(--line)", borderRadius: 999, padding: "8px 15px", cursor: "pointer",
+  },
+  moodOn: { background: "var(--honey)", borderColor: "var(--honey)", color: "#fff", fontWeight: 600 },
   note: {
     margin: "14px 0 2px", padding: "15px 17px", borderRadius: 18,
     background: "var(--panel)", border: "1px solid var(--line)",

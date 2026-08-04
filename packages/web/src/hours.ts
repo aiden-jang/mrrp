@@ -1,4 +1,5 @@
-import type { Clock } from "./types.js";
+import type { Clock, Mood } from "./types.js";
+import { RESPONSES } from "./moods.js";
 
 /**
  * What the room looks like at a given moment of HER day.
@@ -30,6 +31,14 @@ export interface Scene {
   atDoor: boolean;
   /** One short line about what she's doing. Authored per part of the day, not assembled. */
   doing: string;
+  /** 0-1 closeness and warmth, raised by the moods that need holding. */
+  snug: number;
+  /** 0-1 liveliness. */
+  play: number;
+  /** She's purring unprompted, because of what you told her. */
+  purring: boolean;
+  /** Floor on how open her eyes are, regardless of the cursor. 0 leaves it to proximity. */
+  eyes: number;
 }
 
 /** Local fractional hour in an IANA zone, without pulling in a date library. */
@@ -82,7 +91,14 @@ function doingAt(hour: number, atDoor: boolean, sleepy: number, homeHour: number
   return sleepy > 0.6 ? "curled up for the night" : "doing one last lap of the room";
 }
 
-export function sceneFor(clock: Clock, at = Date.now()): Scene {
+/**
+ * The room at a moment of her day, then bent by what she told the cat.
+ *
+ * The split matters: the CLOCK owns the light, and the MOOD owns the cat. A low mood must never be
+ * able to make the room dark, only closer and warmer, so mood is deliberately not allowed to touch
+ * `sun` or the palette keyframes.
+ */
+export function sceneFor(clock: Clock, at = Date.now(), mood: Mood | null = null): Scene {
   const hour = hourIn(clock.tz, at);
 
   let i = 0;
@@ -103,6 +119,8 @@ export function sceneFor(clock: Clock, at = Date.now()): Scene {
   const dawn = hour >= 5.5 && hour < 7.5;
   const sleepy = atDoor || dawn ? 0.1 : napping ? 1 : Math.max(0, 1 - sun * 1.15);
 
+  const r = mood ? RESPONSES[mood] : null;
+
   return {
     hour,
     sun,
@@ -112,10 +130,16 @@ export function sceneFor(clock: Clock, at = Date.now()): Scene {
     floorFar: mixHex(a.floor, b.floor, t),
     floorNear: mixHex(a.floor2, b.floor2, t),
     beamWarm: mixHex(a.warm, b.warm, t),
-    // She follows the light, except when she's waiting for you, which beats the light.
-    catX: atDoor ? 0.19 : sun > 0.15 ? beam : 0.42,
-    sleepy,
-    atDoor,
-    doing: doingAt(hour, atDoor, sleepy, clock.homeHour),
+    // She follows the light, except when she's waiting for you, which beats the light, except when
+    // you've told her something, which beats both.
+    catX: r?.catX ?? (atDoor ? 0.19 : sun > 0.15 ? beam : 0.42),
+    sleepy: r?.sleepy ?? sleepy,
+    atDoor: r ? r.catX === 0.19 : atDoor,
+    // What she's doing about what you said outranks the time of day. It's the more specific fact.
+    doing: r?.doing ?? doingAt(hour, atDoor, sleepy, clock.homeHour),
+    snug: r?.snug ?? 0,
+    play: r?.play ?? 0,
+    purring: r?.purring ?? false,
+    eyes: r?.eyes ?? 0,
   };
 }
