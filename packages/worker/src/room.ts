@@ -140,28 +140,40 @@ export class Room extends DurableObject<Env> {
   }
 
   /**
-   * Today's note, and nothing else.
+   * Today's note, and only today's.
    *
-   * The day count starts when the second person first arrives, not when the room was made, so
-   * whatever you spend fiddling with colours beforehand doesn't eat into day one. The index is
-   * resolved here and only one string is returned: the browser is never sent a note she hasn't
-   * earned yet, because a gift you can read ahead in isn't one.
+   * The index advances when SHE reads one, not by calendar date. That difference is the whole point:
+   * indexing by date means a day she doesn't open the app is a note she never sees, which quietly
+   * punishes exactly the behaviour the app promises not to care about. Advancing on read means she
+   * gets note 2 on her second visit whether that's tomorrow or next month, and never more than one
+   * a day, so she can't binge them either.
+   *
+   * This writes from inside build(), which makes reading the room a mutation for her seat only. Worth
+   * it: the alternative is a separate "mark read" round trip that could fail after she'd seen it.
    */
-  private async noteToday(clock: Clock, bothHere: boolean): Promise<Note | null> {
+  private async noteFor(clock: Clock, isHer: boolean, bothHere: boolean): Promise<Note | null> {
     if (!bothHere || NOTES.length === 0) return null;
 
-    let startAt = await this.ctx.storage.get<number>("startAt");
-    if (startAt === undefined) {
-      startAt = Date.now();
-      await this.ctx.storage.put("startAt", startAt);
+    let idx = (await this.ctx.storage.get<number>("noteIdx")) ?? 0;
+
+    if (isHer) {
+      const today = localDayNumber(Date.now(), clock.tz);
+      const lastRead = await this.ctx.storage.get<number>("noteReadDay");
+      if (lastRead === undefined) {
+        await this.ctx.storage.put("noteReadDay", today);
+      } else if (today > lastRead) {
+        idx = Math.min(idx + 1, NOTES.length - 1);
+        await this.ctx.storage.put("noteIdx", idx);
+        await this.ctx.storage.put("noteReadDay", today);
+      }
     }
 
-    // Store the raw instant, not a precomputed day number. Both ends of this subtraction are then
-    // converted in the same zone, so editing her timezone later shifts the day count by at most one
-    // instead of skewing it permanently. Clamped below in case the clock is moved backwards.
-    const elapsed = Math.max(0, localDayNumber(Date.now(), clock.tz) - localDayNumber(startAt, clock.tz));
-    const i = Math.min(elapsed, NOTES.length - 1);
-    return { day: i + 1, total: NOTES.length, text: NOTES[i]!, final: elapsed >= NOTES.length - 1 };
+    return {
+      day: idx + 1,
+      total: NOTES.length,
+      text: NOTES[idx]!,
+      final: idx >= NOTES.length - 1,
+    };
   }
 
   private async build(me: string, people: Record<string, Person>): Promise<RoomView> {
@@ -177,7 +189,7 @@ export class Room extends DurableObject<Env> {
 
     // Her mood, whoever is looking, because the cat is her.
     const catTold = her ? moods[her] ?? null : null;
-    const note = await this.noteToday(clock, !waitingForThem);
+    const note = await this.noteFor(clock, youAreHer, !waitingForThem);
 
     return {
       cat,
