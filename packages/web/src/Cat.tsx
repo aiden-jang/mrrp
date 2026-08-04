@@ -1,15 +1,25 @@
 import { useEffect, useRef } from "react";
 import type { Cat as CatLook, Clock, Mood } from "./types.js";
 import { sceneFor } from "./hours.js";
+import { DOOR, POSES, RUG, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
- * The room, drawn on canvas, at whatever time of day it is where SHE is.
+ * The room, drawn as pixel art at her local time of day.
  *
- * The light, the palette and where she's lying all come from her local hour: first sun by the window
- * in the morning, dead asleep in the best patch mid-afternoon, by the door around the time you're
- * usually home, curled up small at night. She wakes a little when your cursor comes near and purrs
- * while you hold on her.
+ * Everything is placed on a fixed 100x80 grid and each logical pixel is painted as one aligned
+ * rectangle. No offscreen buffer and no upscaling: resampling a small canvas upward is what leaves
+ * you with pixels of two different sizes, and that reads as a mistake rather than a style.
+ *
+ * The light and the palette come from her clock. What she's doing comes from what she told the cat.
  */
+
+const GW = 100, GH = 80, FLOOR = 48;
+
+/** Fixed colours. Everything else comes from `look`, so she stays recolourable. */
+const INK = "#4a3520";
+const PINK = "#e79ba3";
+const WHITE = "#fffdf6";
+
 export function Cat({
   look,
   clock,
@@ -50,212 +60,232 @@ export function Cat({
   useEffect(() => {
     const cv = ref.current!;
     const g = cv.getContext("2d")!;
-    const W = 500, H = 400, FLOOR = H * 0.6;
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+    /** Size of one logical pixel, in device pixels. Recomputed on resize. */
+    let s = 5;
     const fit = () => {
+      const r = cv.getBoundingClientRect();
       const d = Math.min(2, devicePixelRatio || 1);
-      cv.width = W * d; cv.height = H * d; g.setTransform(d, 0, 0, d, 0, 0);
+      cv.width = Math.max(GW, Math.round(r.width * d));
+      cv.height = Math.max(GH, Math.round(r.height * d));
+      s = cv.width / GW;
     };
     fit();
-    const ro = new ResizeObserver(fit); ro.observe(cv);
+    const ro = new ResizeObserver(fit);
+    ro.observe(cv);
 
-    const ptr = { x: W / 2, y: FLOOR + 40, in: false };
+    const ptr = { x: GW / 2, y: FLOOR + 10, in: false };
     const onMove = (e: PointerEvent) => {
       const r = cv.getBoundingClientRect();
-      ptr.x = ((e.clientX - r.left) / r.width) * W;
-      ptr.y = ((e.clientY - r.top) / r.height) * H;
+      ptr.x = ((e.clientX - r.left) / r.width) * GW;
+      ptr.y = ((e.clientY - r.top) / r.height) * GH;
       ptr.in = true;
     };
     const onLeave = () => { ptr.in = false; };
     cv.addEventListener("pointermove", onMove);
     cv.addEventListener("pointerleave", onLeave);
 
-    const motes = Array.from({ length: 24 }, () => ({
-      x: 150 + Math.random() * 320, y: Math.random() * H,
-      r: 0.7 + Math.random() * 1.4, s: 0.05 + Math.random() * 0.12, w: Math.random() * 6.28,
+    // Dust lives in the beam. Integer positions, because half a pixel of dust is a grey smudge.
+    // Offsets are relative to the shaft's centre at that height, so dust can never drift outside
+    // the light. Loose dust reads as stray pixels, which looks like a rendering fault.
+    const motes = Array.from({ length: 12 }, () => ({
+      dx: Math.floor(Math.random() * 15) - 7,
+      y: Math.random() * FLOOR,
+      sp: 0.04 + Math.random() * 0.06,
     }));
 
-    const ell = (x: number, y: number, rx: number, ry: number, c: string, rot = 0) => {
-      g.save(); g.translate(x, y); g.rotate(rot);
-      g.beginPath(); g.ellipse(0, 0, rx, ry, 0, 0, 6.2832); g.fillStyle = c; g.fill(); g.restore();
+    /** One logical pixel. Edges are rounded so neighbours share a boundary exactly. */
+    const px = (x: number, y: number, c: string) => {
+      if (!c || x < 0 || y < 0 || x >= GW || y >= GH) return;
+      const X = Math.round(x * s), Y = Math.round(y * s);
+      g.fillStyle = c;
+      g.fillRect(X, Y, Math.round((x + 1) * s) - X, Math.round((y + 1) * s) - Y);
+    };
+
+    const rect = (x: number, y: number, w: number, h: number, c: string) => {
+      for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) px(x + i, y + j, c);
+    };
+
+    /** 50% checkerboard: the pixel-art way to get a colour between two colours. */
+    const dither = (x: number, y: number, w: number, h: number, c: string, phase = 0) => {
+      for (let j = 0; j < h; j++) {
+        for (let i = 0; i < w; i++) {
+          if ((x + i + y + j + phase) % 2 === 0) px(x + i, y + j, c);
+        }
+      }
+    };
+
+    const blit = (sp: Sprite, x: number, y: number, pal: Record<string, string>, flip = false) => {
+      for (let j = 0; j < sp.h; j++) {
+        const row = sp.rows[j]!;
+        for (let i = 0; i < sp.w; i++) {
+          const ch = row[flip ? sp.w - 1 - i : i]!;
+          px(x + sp.ox + i, y + sp.oy + j, pal[ch] ?? "");
+        }
+      }
     };
 
     let raf = 0;
     const frame = (t: number) => {
       const L = lookRef.current;
       const sc = sceneFor(clockRef.current, Date.now(), moodRef.current);
-      const bx = W * sc.beam;
+      const beamX = Math.round(sc.beam * GW);
 
-      // room, coloured for her time of day
-      const wall = g.createLinearGradient(0, 0, 0, FLOOR);
-      wall.addColorStop(0, sc.wallTop); wall.addColorStop(1, sc.wallBottom);
-      g.fillStyle = wall; g.fillRect(0, 0, W, FLOOR);
-      const fl = g.createLinearGradient(0, FLOOR, 0, H);
-      fl.addColorStop(0, sc.floorFar); fl.addColorStop(1, sc.floorNear);
-      g.fillStyle = fl; g.fillRect(0, FLOOR, W, H - FLOOR);
-      g.fillStyle = `rgba(255,255,255,${.1 + sc.sun * .26})`; g.fillRect(0, FLOOR - 7, W, 7);
+      // ── room ──────────────────────────────────────────────────────────────
+      // Flat bands with a dithered seam, not a gradient. Bands are what make a room read as pixel
+      // art; a smooth ramp just reads as a photograph with large pixels.
+      rect(0, 0, GW, FLOOR - 10, sc.wallTop);
+      dither(0, FLOOR - 10, GW, 2, sc.wallBottom);
+      rect(0, FLOOR - 8, GW, 8, sc.wallBottom);
+      rect(0, FLOOR, GW, 9, sc.floorFar);
+      dither(0, FLOOR + 9, GW, 2, sc.floorNear);
+      rect(0, FLOOR + 11, GW, GH - FLOOR - 11, sc.floorNear);
+      rect(0, FLOOR - 1, GW, 1, WHITE); // skirting: one bright line reads as depth
 
-      // the door she waits at, on the near wall
-      g.fillStyle = "rgba(112,78,48,.22)"; g.fillRect(W * .04, FLOOR - 132, 74, 132);
-      g.fillStyle = "rgba(92,62,38,.3)"; g.fillRect(W * .04, FLOOR - 132, 74, 5);
-      g.beginPath(); g.arc(W * .04 + 62, FLOOR - 66, 3.4, 0, 6.28);
-      g.fillStyle = "rgba(255,236,186,.55)"; g.fill();
 
-      // light from an unseen window, tracking across the room over the day
-      g.save();
-      g.beginPath();
-      g.moveTo(bx - W * .12, 0); g.lineTo(bx + W * .46, 0);
-      g.lineTo(bx + W * .3, H); g.lineTo(bx - W * .42, H);
-      g.closePath(); g.clip();
-      const beam = g.createLinearGradient(bx + W * .34, 0, bx - W * .3, H);
-      beam.addColorStop(0, `rgba(255,240,201,${.28 + sc.sun * .62})`);
-      beam.addColorStop(.55, `rgba(255,236,190,${.1 + sc.sun * .3})`);
-      beam.addColorStop(1, "rgba(255,232,184,.03)");
-      g.fillStyle = beam; g.fillRect(0, 0, W, H);
-      g.fillStyle = `rgba(196,158,110,${.05 + sc.sun * .12})`;
-      g.save(); g.translate(bx + W * .06, H * .52); g.rotate(-.42);
-      g.fillRect(-260, -6, 520, 11); g.fillRect(-6, -260, 12, 520); g.restore();
-      g.restore();
+      // ── light ─────────────────────────────────────────────────────────────
+      // A leaning shaft, solid down the middle and dithered at both edges so it fades off without
+      // needing a gradient.
+      // Solid fills from the lit palette. Glazing a translucent layer over dithered bands is what
+      // produced vertical streaks: every row composited slightly differently and the seams lined up.
+      // No `phase` here. Passing y made the parity (x + 2y), which depends on x alone, so the
+      // "checkerboard" edges came out as vertical stripes down the wall.
+      for (let y = 14; y < FLOOR; y++) {
+        const cx = beamX + Math.round((y - FLOOR) * 0.22);
+        rect(cx - 8, y, 16, 1, sc.litWall);
+        dither(cx - 11, y, 3, 1, sc.litWall);
+        dither(cx + 8, y, 3, 1, sc.litWall);
+      }
+      // The shaft stops at the floor. What lands on the floor is the patch, and drawing both left a
+      // wide bright smear across the boards.
+      for (const [dy, w] of [[0, 20], [1, 26], [2, 30], [3, 30], [4, 26], [5, 18]] as const) {
+        rect(beamX - (w >> 1), FLOOR + dy, w, 1, sc.patch);
+      }
+      dither(beamX - 13, FLOOR + 1, 26, 5, sc.patch);
 
-      // the patch on the floor, which is the spot she is always trying to be in
-      ell(bx, FLOOR + 74, 200, 60, `rgba(255,238,193,${sc.sun * .7})`);
-      ell(bx, FLOOR + 74, 146, 42, `rgba(255,245,214,${sc.sun * .58})`);
+      // Props AFTER the light. Drawn before it, the beam's dither punched holes through them.
+      const winX = Math.max(2, Math.min(GW - 15, beamX - 6));
+      blit(WINDOW, winX, 5, { w: INK, h: sc.sun > 0.2 ? sc.beamWarm : sc.wallTop });
+      blit(SHELF, 66, FLOOR - 26, { w: INK, d: "#8a6a48" });
+      blit(DOOR, 8, FLOOR - 16, { w: INK, f: sc.wallBottom, d: "#8a6a48", h: "#ffe9a8" });
+      blit(RUG, 46, FLOOR + 17, { d: "#a9757f", f: "#c9909a" });
 
-      if (!reduce) for (const m of motes) {
-        m.y -= m.s; m.w += .012;
-        if (m.y < -4) { m.y = H + 4; m.x = 150 + Math.random() * 320; }
-        g.beginPath(); g.arc(m.x + Math.sin(m.w) * 9, m.y, m.r, 0, 6.28);
-        // Dust is only visible in the beam, so it has to fade with the light. Left bright after dark
-        // it reads as a starfield, which is a lovely effect in the wrong room.
-        g.fillStyle = `rgba(255,251,232,${.06 + sc.sun * .34})`; g.fill();
+      if (!reduce) {
+        for (const m of motes) {
+          m.y -= m.sp;
+          if (m.y < 14) { m.y = FLOOR - 1; m.dx = Math.floor(Math.random() * 15) - 7; }
+          if (sc.sun > 0.25) {
+            const cx = beamX + Math.round((m.y - FLOOR) * 0.22);
+            px(cx + m.dx, Math.floor(m.y), sc.beamWarm);
+          }
+        }
       }
 
-      // where she is, eased so she drifts across the room rather than teleporting between hours
-      const wantX = W * sc.catX;
+      // ── her ───────────────────────────────────────────────────────────────
+      const wantX = sc.catX * GW;
       if (catX.current === null) catX.current = wantX;
-      catX.current += (wantX - catX.current) * .015;
+      catX.current += (wantX - catX.current) * 0.012;
+      const kx = Math.round(catX.current);
+      const ky = FLOOR + 13;
 
-      // how close you are, eased so she never twitches
-      const kx = catX.current, ky = FLOOR + 56;
-      const want = ptr.in ? Math.max(0, 1 - Math.hypot(ptr.x - kx, ptr.y - ky) / 210) : 0;
-      near.current += (want - near.current) * .07;
+      const want = ptr.in ? Math.max(0, 1 - Math.hypot(ptr.x - kx, ptr.y - (ky - 8)) / 44) : 0;
+      near.current += (want - near.current) * 0.07;
       const n = near.current;
       const pet = petRef.current;
-      bounce.current = Math.max(0, bounce.current - .02);
+      bounce.current = Math.max(0, bounce.current - 0.02);
 
-      const breathe = reduce ? 0 : Math.sin(t / 1000) * 1.6;
-      const purr = (pet || sc.purring) && !reduce ? Math.sin(t / 34) * (pet ? .8 : .45) : 0;
-      const lift = bounce.current * 5;
+      // Her eyes open on her own account (what you told her) or because you came close.
+      const open = pet ? 0 : Math.max(sc.eyes, n);
+      const awake = open > 0.4;
+      const pose: Pose = sc.atDoor ? "stand" : sc.play > 0.5 ? "play" : awake ? "sit" : "loaf";
+      const sp = POSES[pose]!;
 
-      g.save();
-      g.translate(kx + n * 6 + purr, ky + breathe - lift);
+      const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
+      const hop =
+        Math.round(bounce.current * 3) +
+        (reduce || sc.play <= 0.5 ? 0 : Math.round(Math.abs(Math.sin(t / 260)) * 2));
+      const y = ky + breathe - hop;
 
-      ell(4, 34, 72, 15, "rgba(176,132,84,.28)");
+      const pal: Record<string, string> = {
+        w: INK,
+        f: L.fur,
+        d: L.furDk,
+        b: L.belly,
+        p: PINK,
+        n: PINK,
+        m: INK,
+        h: WHITE,
+        // Shut eyes are a one-pixel line in the outline colour, not a smaller eye.
+        e: awake ? L.eyes : INK,
+      };
 
-      // tail curled round the front
-      g.strokeStyle = L.furDk; g.lineWidth = 15; g.lineCap = "round";
-      const wag = reduce ? 0 : Math.sin(t / (pet ? 900 : 620 - sc.play * 380)) * (4 + n * 9 + sc.play * 11);
-      g.beginPath(); g.moveTo(48, 22);
-      g.quadraticCurveTo(94, 30 + wag, 64, 52 + wag * .5); g.stroke();
+      // Shadow first, so she sits on the floor instead of hovering over it.
+      dither(kx - (sp.w >> 1) + 2, ky + 1, sp.w - 4, 2, "rgba(120,84,44,.32)");
 
-      ell(0, 12, 66, 43, L.fur);
-      ell(-6, 22, 50, 29, L.belly);
-      ell(-30, 34, 25, 11, L.belly);
-      ell(-4, 36, 23, 10, L.belly);
+      const wag = reduce ? 0 : Math.round(Math.sin(t / (620 - sc.play * 380)) * (1 + sc.play * 2 + n));
+      const tailX = pose === "loaf" ? kx + 9 : kx + 7;
+      blit(TAIL, pose === "stand" ? kx - 13 : tailX, y - 3 + wag, pal, pose === "stand");
+      blit(sp, kx, y, pal);
 
-      if (L.tabby) {
-        g.save(); g.globalAlpha = .26; g.fillStyle = L.furDk;
-        for (const sx of [-24, -6, 12]) { g.fillRect(sx, -20, 7, 21); }
-        g.restore();
+      // One white pixel per eye. This is the single pixel that makes her look alive.
+      if (awake) {
+        const ey = y + sp.oy + 6;
+        const dx = pose === "loaf" ? 5 : pose === "play" ? 3 : 4;
+        px(kx - dx, ey, WHITE);
+        px(kx + dx - 1, ey, WHITE);
       }
 
-      // head
-      g.save();
-      g.translate(-18, -30);
-      g.rotate(n * .14 + (pet ? .2 : 0));
-
-      g.fillStyle = L.fur;
-      g.beginPath(); g.moveTo(-34, -14); g.lineTo(-20, -40); g.lineTo(-4, -18); g.closePath(); g.fill();
-      g.beginPath(); g.moveTo(12, -20); g.lineTo(30, -40); g.lineTo(36, -12); g.closePath(); g.fill();
-      g.fillStyle = "#eaa1a1";
-      g.beginPath(); g.moveTo(-27, -17); g.lineTo(-20, -32); g.lineTo(-11, -19); g.closePath(); g.fill();
-      g.beginPath(); g.moveTo(16, -20); g.lineTo(27, -32); g.lineTo(30, -15); g.closePath(); g.fill();
-
-      ell(0, 0, 40, 34, L.fur);
-      ell(0, 10, 30, 22, L.belly);
-      ell(-13, 14, 12, 9, L.belly);
-      ell(13, 14, 12, 9, L.belly);
-
-      // eyes: shut while dozing or being petted, open a crack when you come near. Mid-afternoon she
-      // is not being woken by a cursor, and when she's at the door she's already wide awake.
-      const open = pet ? 0 : Math.max(n * (1 - sc.sleepy), sc.atDoor ? .85 : 0, sc.eyes);
-      g.strokeStyle = "#3f2f1f"; g.lineWidth = 3; g.lineCap = "round";
-      for (const ex of [-15, 15]) {
-        if (open < .3) {
-          g.beginPath(); g.moveTo(ex - 8, 1); g.quadraticCurveTo(ex, 7, ex + 8, 1); g.stroke();
-        } else {
-          ell(ex, 1, 6.2, 4 + open * 4.5, L.eyes);
-          ell(ex, 1, 2.6, 4 + open * 4, "#2a1f14");
-          g.beginPath(); g.arc(ex + 2.4, -1.6, 1.8, 0, 6.28);
-          g.fillStyle = "rgba(255,255,255,.9)"; g.fill();
-        }
+      // The thing she knocked off, on the floor below the shelf it fell from. Outlined, or it
+      // disappears into the lit floorboards.
+      if (sc.play > 0.5) {
+        px(73, FLOOR + 7, INK); px(74, FLOOR + 7, INK);
+        px(73, FLOOR + 8, PINK); px(74, FLOOR + 8, PINK);
+        px(73, FLOOR + 9, INK); px(74, FLOOR + 9, INK);
       }
 
-      g.fillStyle = "#eaa1a1";
-      g.beginPath(); g.moveTo(-4.5, 8); g.lineTo(4.5, 8); g.lineTo(0, 13); g.closePath(); g.fill();
-      g.strokeStyle = "#8a7256"; g.lineWidth = 2;
-      g.beginPath();
-      g.moveTo(0, 13); g.quadraticCurveTo(-5, 18, -9, 14);
-      g.moveTo(0, 13); g.quadraticCurveTo(5, 18, 9, 14); g.stroke();
-
-      g.strokeStyle = "rgba(138,114,86,.4)"; g.lineWidth = 1.4;
-      for (const s of [-1, 1]) {
-        g.beginPath();
-        g.moveTo(s * 14, 10); g.quadraticCurveTo(s * 34, 6, s * 44, 8);
-        g.moveTo(s * 14, 13); g.quadraticCurveTo(s * 34, 14, s * 45, 17); g.stroke();
-      }
-      g.restore();
-      g.restore();
-
-      // purr, shown rather than written
+      // Purring, shown rather than written: small marks rising off her.
       if (pet || sc.purring) {
-        g.strokeStyle = "rgba(224,160,63,.4)"; g.lineWidth = 2;
+        const a = pet ? 0.8 : 0.42;
         for (let i = 0; i < 2; i++) {
-          const p = ((t / 1000 + i * .5) % 1);
-          g.strokeStyle = `rgba(224,160,63,${pet ? .4 : .24})`;
-          g.beginPath(); g.arc(kx + 32, ky - 52, 6 + p * 22, -1.1, .5); g.stroke();
+          const p = (t / 1500 + i * 0.5) % 1;
+          const yy = Math.round(y + sp.oy - 2 - p * 7);
+          const c = `rgba(255,255,255,${a * (1 - p)})`;
+          px(kx + 10, yy, c);
+          px(kx + 11, yy - 1, c);
+          px(kx + 12, yy, c);
         }
       }
 
-      // Snug is the answer to a low mood: the room draws in and warms up. Deliberately additive
-      // light, never a darkening pass, so "sad" can never make her room look bleak.
-      if (sc.snug > 0) {
-        const warm = g.createRadialGradient(kx, ky - 10, 10, kx, ky - 10, H * .95);
-        warm.addColorStop(0, `rgba(255,214,150,${sc.snug * .3})`);
-        warm.addColorStop(1, "rgba(255,214,150,0)");
-        g.fillStyle = warm; g.fillRect(0, 0, W, H);
+      // ── snug ──────────────────────────────────────────────────────────────
+      // The answer to a low mood: the room draws in and warms up around her. Additive only, so
+      // "sad" can never make her room look bleak.
+      // Two rings of dither at the very edge of the frame, and nothing else. Enough to feel the room
+      // close in, small enough that it never looks like a transparency grid.
+      // A ring of warm floor around her and nothing else. The frame dither I tried first read as a
+      // transparency grid, which is the single most dated-looking thing a canvas can do.
+      if (sc.snug > 0.35) {
+        for (const [dy, w] of [[2, 30], [3, 36], [4, 38], [5, 36], [6, 28]] as const) {
+          dither(kx - (w >> 1), ky + dy, w, 1, sc.patch);
+        }
       }
-
-      const gx = bx + W * .28;
-      const glow = g.createRadialGradient(gx, H * .1, 20, gx, H * .1, W * .95);
-      glow.addColorStop(0, `rgba(255,236,186,${.08 + sc.sun * .26})`); glow.addColorStop(1, "rgba(255,236,186,0)");
-      g.fillStyle = glow; g.fillRect(0, 0, W, H);
-      const vig = g.createRadialGradient(kx, ky - 20, H * (.34 - sc.snug * .16), kx, ky - 20, H * .92);
-      vig.addColorStop(0, "rgba(120,84,44,0)");
-      vig.addColorStop(1, `rgba(120,84,44,${.12 + sc.snug * .16})`);
-      g.fillStyle = vig; g.fillRect(0, 0, W, H);
 
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
 
     return () => {
-      cancelAnimationFrame(raf); ro.disconnect();
+      cancelAnimationFrame(raf);
+      ro.disconnect();
       cv.removeEventListener("pointermove", onMove);
       cv.removeEventListener("pointerleave", onLeave);
     };
   }, []);
 
-  return <canvas ref={ref} style={{ display: "block", width: "100%", height: "100%" }} />;
+  return (
+    <canvas
+      ref={ref}
+      style={{ display: "block", width: "100%", height: "100%", imageRendering: "pixelated" }}
+    />
+  );
 }

@@ -86,6 +86,8 @@ export const RESPONSES: Record<Mood, Response> = {
     doing: "knocked exactly one thing off a shelf and is waiting to see what you do",
     snug: 0.2,
     play: 0.8,
+    // By the shelf, because that is where the copy says the crime happened.
+    catX: 0.72,
     sleepy: 0,
     purring: false,
   },
