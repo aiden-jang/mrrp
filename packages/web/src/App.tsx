@@ -142,9 +142,7 @@ function RoomPage({ id }: { id: string }) {
         </div>
 
         {/* What she's doing about what you told her, in her time, not the server's. */}
-        <p style={S.doing}>
-          {view.myMood ? `${view.cat.name} has ` : `${view.cat.name} is `}{scene.doing}.
-        </p>
+        <p style={S.doing}>{view.cat.name} is {scene.doing}.</p>
 
         {/* Their mood, first, above everything. It is the reason the other one opens this. */}
         {view.theirMood && (
