@@ -1,4 +1,4 @@
-import type { Action, Mood, RoomView } from "./types.js";
+import type { Action, Cat, Clock, Mood, RoomView } from "./types.js";
 
 /**
  * Identity is a random token in localStorage, nothing more. No accounts, no email, no password:
@@ -66,4 +66,24 @@ export async function doTell(id: string, mood: Mood): Promise<RoomView> {
   });
   if (!r.ok) throw new Error("Couldn't reach her just now.");
   return r.json() as Promise<RoomView>;
+}
+
+/** Dress the cat. His only; the Worker returns 403 from the other seat. */
+export async function doDress(id: string, cat: Partial<Cat>): Promise<void> {
+  const r = await fetch(`/api/room/${id}/dress`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ me: myToken(), ...cat }),
+  });
+  if (!r.ok) throw new Error("Couldn't save how she looks.");
+}
+
+/** Set whose day the room runs on. His only, same as dress. */
+export async function doClock(id: string, clock: Partial<Clock>): Promise<void> {
+  const r = await fetch(`/api/room/${id}/clock`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ me: myToken(), ...clock }),
+  });
+  if (!r.ok) throw new Error("Couldn't save her hours.");
 }
