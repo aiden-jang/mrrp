@@ -1,12 +1,13 @@
 /** The contract between the Worker and the web client. */
 
-export type Action = "pet" | "brush" | "feed" | "sit";
+export type Action = "pet" | "brush" | "bring" | "sit";
 
+/** `past` completes "<visitor> ___", read by her. Second person, because the cat is her. */
 export const ACTIONS: { id: Action; label: string; past: string }[] = [
-  { id: "pet", label: "Pet her", past: "petted her" },
-  { id: "brush", label: "Brush her", past: "brushed her" },
-  { id: "feed", label: "Feed her", past: "fed her" },
-  { id: "sit", label: "Sit with her", past: "sat with her a while" },
+  { id: "pet", label: "Pet her", past: "petted you" },
+  { id: "brush", label: "Brush her", past: "brushed you" },
+  { id: "bring", label: "Bring her something", past: "brought you something" },
+  { id: "sit", label: "Sit with her", past: "sat with you a while" },
 ];
 
 /**
@@ -71,30 +72,39 @@ export interface Told {
   at: number;
 }
 
+/**
+ * The room, from one seat.
+ *
+ * The cat IS her. So her mood is what the cat looks like, to both of you, and the two seats do
+ * different things: she says how she is, he turns up. That asymmetry is the gift, not a shortcoming.
+ */
 export interface RoomView {
   cat: Cat;
   clock: Clock;
-  /** What YOU told the cat. Drives what she does, because she responds to whoever is here. */
-  myMood: Mood | null;
-  /** What THEY told the cat. This is the whole reason the other person opens the app. */
-  theirMood: Told | null;
-  /**
-   * They came in after you told the cat. Not a read receipt: it only ever says somebody showed up,
-   * never that they saw and ignored you, because that is a worse thing to know than nothing.
-   */
-  theyCameAfter: boolean;
-  /** Today's note, or null before the room has a second person to read it. */
-  note: Note | null;
+  /** True if you're the one the cat is. Decides which half of the app you get. */
+  youAreHer: boolean;
+  /** Her mood. This is what the cat looks like, whoever is looking. */
+  catMood: Mood | null;
+  catMoodAt: number | null;
   /** Your own display name, once you've claimed a seat. */
   you: string | null;
-  /** The other person's name, if they've been here. */
+  /** The other person's name. */
   them: string | null;
   /** When they were last here, ms epoch. */
   themLastAt: number | null;
-  /** They are in the room right now, near enough. Turns "was here" into "is here". */
+  /** They're in the room right now, near enough. */
   themHereNow: boolean;
-  /** The last few things THEY did. Yours are not echoed back; that's not the point. */
+  /** Her note for today. Null for him: he wrote them, so reading them back is not the point. */
+  note: Note | null;
+  /** Which day she's on, for his side, without the text. */
+  noteDay: number | null;
+  /** Her side: what he did, in second person. His side: empty, because she doesn't do things here. */
   theirRecent: Visit[];
-  /** True when nobody has taken the second seat yet. */
+  /**
+   * Her side: he came in after she said something. Not a read receipt, only ever that he turned up,
+   * because "he saw it and did nothing" is worse to know than nothing.
+   */
+  theyCameAfter: boolean;
+  /** True when the second seat is still empty. */
   waitingForThem: boolean;
 }
