@@ -68,10 +68,22 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  /** Do something kind. That's the entire write surface. */
+  /**
+   * Who is who. He makes the room and claims seat one, then sends her the link, so she is the second
+   * to arrive and she is the one the cat is.
+   */
+  private roles(people: Record<string, Person>): { him: string | null; her: string | null } {
+    const ids = Object.keys(people).sort((a, b) => people[a]!.firstSeen - people[b]!.firstSeen);
+    return { him: ids[0] ?? null, her: ids[1] ?? null };
+  }
+
+  /** Do something kind, to her. Only he can: she is not here to pet herself. */
   async act(me: string, action: Action): Promise<RoomView> {
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (!people[me]) return this.build(me, people); // spectators can look, not touch
+    // Enforced here, not just hidden in the UI. The buttons aren't rendered on her side, but a
+    // request is a request and the seat check is the only thing that actually holds.
+    if (this.roles(people).him !== me) return this.build(me, people);
 
     const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
     log.unshift({ at: Date.now(), who: me, action });
@@ -98,6 +110,8 @@ export class Room extends DurableObject<Env> {
   async tell(me: string, mood: Mood): Promise<RoomView> {
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (!people[me]) return this.build(me, people); // spectators can look, not speak
+    // Her mood is what the cat looks like, so only she can set it. Server-side, same reasoning.
+    if (this.roles(people).her !== me) return this.build(me, people);
 
     const moods = (await this.ctx.storage.get<Record<string, Told>>("moods")) ?? {};
     moods[me] = { mood, at: Date.now() };
@@ -144,26 +158,32 @@ export class Room extends DurableObject<Env> {
     const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
     const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
     const moods = (await this.ctx.storage.get<Record<string, Told>>("moods")) ?? {};
-    const otherId = Object.keys(people).find((id) => id !== me) ?? null;
-    const them = otherId ? people[otherId]! : null;
-    const waitingForThem = Object.keys(people).length < 2;
-    const mine = moods[me] ?? null;
+    const { him, her } = this.roles(people);
+    const youAreHer = !!her && me === her;
+    const otherId = youAreHer ? him : her;
+    const them = otherId ? people[otherId] ?? null : null;
+    const waitingForThem = !her;
+
+    // Her mood, whoever is looking, because the cat is her.
+    const catTold = her ? moods[her] ?? null : null;
+    const note = await this.noteToday(clock, !waitingForThem);
 
     return {
       cat,
       clock,
-      myMood: mine?.mood ?? null,
-      theirMood: otherId ? moods[otherId] ?? null : null,
-      // Their visit has to be AFTER you spoke for it to mean anything. Comparing against lastSeen
-      // rather than an explicit ack keeps this from becoming a read receipt.
-      theyCameAfter: !!mine && !!them && them.lastSeen > mine.at,
-      note: await this.noteToday(clock, !waitingForThem),
+      youAreHer,
+      catMood: catTold?.mood ?? null,
+      catMoodAt: catTold?.at ?? null,
       you: people[me]?.name ?? null,
       them: them?.name ?? null,
       themLastAt: them?.lastSeen ?? null,
       themHereNow: !!them && Date.now() - them.lastSeen < HERE_NOW_MS,
-      // Only ever surface what THEY did. Replaying your own actions back at you is just a log.
-      theirRecent: otherId ? log.filter((v) => v.who === otherId).slice(0, 4) : [],
+      // He wrote the notes, so handing them back to him is pointless. He gets the day count only.
+      note: youAreHer ? note : null,
+      noteDay: youAreHer ? null : note?.day ?? null,
+      // Only she sees what was done, because only he does anything.
+      theirRecent: youAreHer && him ? log.filter((v) => v.who === him).slice(0, 4) : [],
+      theyCameAfter: !!catTold && !!them && youAreHer && them.lastSeen > catTold.at,
       waitingForThem,
     };
   }
