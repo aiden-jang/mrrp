@@ -9,6 +9,22 @@ export const ACTIONS: { id: Action; label: string; past: string }[] = [
   { id: "sit", label: "Sit with her", past: "sat with her a while" },
 ];
 
+/**
+ * What you tell the cat you are. Six, deliberately: enough to feel seen, few enough to tap without
+ * choosing. There is no "fine", because "fine" is what you say to get out of the conversation.
+ */
+export type Mood = "good" | "tired" | "stressed" | "sad" | "lonely" | "bored";
+
+/** `said` completes "told the cat they're ___", so it has to read after a plural pronoun. */
+export const MOODS: { id: Mood; label: string; said: string }[] = [
+  { id: "good", label: "good", said: "having a good one" },
+  { id: "tired", label: "tired", said: "tired" },
+  { id: "stressed", label: "stressed", said: "stressed" },
+  { id: "sad", label: "sad", said: "sad" },
+  { id: "lonely", label: "lonely", said: "a bit lonely" },
+  { id: "bored", label: "bored", said: "bored" },
+];
+
 /** How the cat looks. Set once when the room is made, so she can resemble a real cat. */
 export interface Cat {
   name: string;
@@ -49,9 +65,24 @@ export interface Visit {
   action: Action;
 }
 
+/** What one of you told the cat, and when. */
+export interface Told {
+  mood: Mood;
+  at: number;
+}
+
 export interface RoomView {
   cat: Cat;
   clock: Clock;
+  /** What YOU told the cat. Drives what she does, because she responds to whoever is here. */
+  myMood: Mood | null;
+  /** What THEY told the cat. This is the whole reason the other person opens the app. */
+  theirMood: Told | null;
+  /**
+   * They came in after you told the cat. Not a read receipt: it only ever says somebody showed up,
+   * never that they saw and ignored you, because that is a worse thing to know than nothing.
+   */
+  theyCameAfter: boolean;
   /** Today's note, or null before the room has a second person to read it. */
   note: Note | null;
   /** Your own display name, once you've claimed a seat. */

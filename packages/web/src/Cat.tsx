@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { Cat as CatLook, Clock } from "./types.js";
+import type { Cat as CatLook, Clock, Mood } from "./types.js";
 import { sceneFor } from "./hours.js";
 
 /**
@@ -13,11 +13,14 @@ import { sceneFor } from "./hours.js";
 export function Cat({
   look,
   clock,
+  mood,
   petting,
   nudge,
 }: {
   look: CatLook;
   clock: Clock;
+  /** What you told her. Changes what she does, never what the room's light does. */
+  mood: Mood | null;
   petting: boolean;
   /** Bumped whenever an action happens, so she reacts to it. */
   nudge: number;
@@ -26,9 +29,11 @@ export function Cat({
   const petRef = useRef(petting);
   const lookRef = useRef(look);
   const clockRef = useRef(clock);
+  const moodRef = useRef(mood);
   petRef.current = petting;
   lookRef.current = look;
   clockRef.current = clock;
+  moodRef.current = mood;
 
   const near = useRef(0);
   const catX = useRef<number | null>(null);
@@ -79,7 +84,7 @@ export function Cat({
     let raf = 0;
     const frame = (t: number) => {
       const L = lookRef.current;
-      const sc = sceneFor(clockRef.current);
+      const sc = sceneFor(clockRef.current, Date.now(), moodRef.current);
       const bx = W * sc.beam;
 
       // room, coloured for her time of day
@@ -140,7 +145,7 @@ export function Cat({
       bounce.current = Math.max(0, bounce.current - .02);
 
       const breathe = reduce ? 0 : Math.sin(t / 1000) * 1.6;
-      const purr = pet && !reduce ? Math.sin(t / 34) * .8 : 0;
+      const purr = (pet || sc.purring) && !reduce ? Math.sin(t / 34) * (pet ? .8 : .45) : 0;
       const lift = bounce.current * 5;
 
       g.save();
@@ -150,7 +155,7 @@ export function Cat({
 
       // tail curled round the front
       g.strokeStyle = L.furDk; g.lineWidth = 15; g.lineCap = "round";
-      const wag = reduce ? 0 : Math.sin(t / (pet ? 900 : 620)) * (4 + n * 9);
+      const wag = reduce ? 0 : Math.sin(t / (pet ? 900 : 620 - sc.play * 380)) * (4 + n * 9 + sc.play * 11);
       g.beginPath(); g.moveTo(48, 22);
       g.quadraticCurveTo(94, 30 + wag, 64, 52 + wag * .5); g.stroke();
 
@@ -184,7 +189,7 @@ export function Cat({
 
       // eyes: shut while dozing or being petted, open a crack when you come near. Mid-afternoon she
       // is not being woken by a cursor, and when she's at the door she's already wide awake.
-      const open = pet ? 0 : Math.max(n * (1 - sc.sleepy), sc.atDoor ? .85 : 0);
+      const open = pet ? 0 : Math.max(n * (1 - sc.sleepy), sc.atDoor ? .85 : 0, sc.eyes);
       g.strokeStyle = "#3f2f1f"; g.lineWidth = 3; g.lineCap = "round";
       for (const ex of [-15, 15]) {
         if (open < .3) {
@@ -214,20 +219,31 @@ export function Cat({
       g.restore();
 
       // purr, shown rather than written
-      if (pet) {
+      if (pet || sc.purring) {
         g.strokeStyle = "rgba(224,160,63,.4)"; g.lineWidth = 2;
         for (let i = 0; i < 2; i++) {
           const p = ((t / 1000 + i * .5) % 1);
+          g.strokeStyle = `rgba(224,160,63,${pet ? .4 : .24})`;
           g.beginPath(); g.arc(kx + 32, ky - 52, 6 + p * 22, -1.1, .5); g.stroke();
         }
+      }
+
+      // Snug is the answer to a low mood: the room draws in and warms up. Deliberately additive
+      // light, never a darkening pass, so "sad" can never make her room look bleak.
+      if (sc.snug > 0) {
+        const warm = g.createRadialGradient(kx, ky - 10, 10, kx, ky - 10, H * .95);
+        warm.addColorStop(0, `rgba(255,214,150,${sc.snug * .3})`);
+        warm.addColorStop(1, "rgba(255,214,150,0)");
+        g.fillStyle = warm; g.fillRect(0, 0, W, H);
       }
 
       const gx = bx + W * .28;
       const glow = g.createRadialGradient(gx, H * .1, 20, gx, H * .1, W * .95);
       glow.addColorStop(0, `rgba(255,236,186,${.08 + sc.sun * .26})`); glow.addColorStop(1, "rgba(255,236,186,0)");
       g.fillStyle = glow; g.fillRect(0, 0, W, H);
-      const vig = g.createRadialGradient(W / 2, H / 2, H * .34, W / 2, H / 2, H * .92);
-      vig.addColorStop(0, "rgba(120,84,44,0)"); vig.addColorStop(1, "rgba(120,84,44,.12)");
+      const vig = g.createRadialGradient(kx, ky - 20, H * (.34 - sc.snug * .16), kx, ky - 20, H * .92);
+      vig.addColorStop(0, "rgba(120,84,44,0)");
+      vig.addColorStop(1, `rgba(120,84,44,${.12 + sc.snug * .16})`);
       g.fillStyle = vig; g.fillRect(0, 0, W, H);
 
       raf = requestAnimationFrame(frame);

@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import type { Action } from "./types.js";
+import type { Action, Mood } from "./types.js";
 import type { Env } from "./env.js";
 
 export { Room } from "./room.js";
@@ -7,6 +7,7 @@ export { Room } from "./room.js";
 const app = new Hono<{ Bindings: Env }>();
 const ROOM_RE = /^[a-z0-9]{6,24}$/;
 const VALID: Action[] = ["pet", "brush", "feed", "sit"];
+const VALID_MOODS: Mood[] = ["good", "tired", "stressed", "sad", "lonely", "bored"];
 
 const room = (env: Env, id: string) => env.ROOM.get(env.ROOM.idFromName(id));
 
@@ -27,6 +28,16 @@ app.post("/api/room/:id/act", async (c) => {
     return c.json({ error: "bad request" }, 400);
   }
   return c.json(await room(c.env, id).act(body.me, body.action as Action));
+});
+
+/** Tell the cat how you are. Validated against the fixed set; anything else is a 400, not a new mood. */
+app.post("/api/room/:id/tell", async (c) => {
+  const id = c.req.param("id");
+  const body = (await c.req.json().catch(() => null)) as { me?: string; mood?: Mood } | null;
+  if (!ROOM_RE.test(id) || !body?.me || !VALID_MOODS.includes(body.mood as Mood)) {
+    return c.json({ error: "bad request" }, 400);
+  }
+  return c.json(await room(c.env, id).tell(body.me, body.mood as Mood));
 });
 
 /** Set her name and colours. Called once, when you first make the room. */
