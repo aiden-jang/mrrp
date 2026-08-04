@@ -63,9 +63,10 @@ export const RESPONSES: Record<Mood, Response> = {
     purring: true,
   },
   stressed: {
-    pose: "sit",
+    // The weighted-blanket answer: she is not worried, she is heavy. The loaf rather than the upright
+    // sit, so stressed and sad don't render as the same cat.
+    pose: "loaf",
     eyes: 0.55,
-    // The weighted-blanket answer. She is not worried; she is heavy.
     doing: "sitting on you, with no plans to move and no worries about any of it",
     snug: 1,
     play: 0,

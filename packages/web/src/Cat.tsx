@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Cat as CatLook, Clock, Mood } from "./types.js";
 import { sceneFor } from "./hours.js";
-import { DOOR, PLANT, POSES, RUG, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
+import { DOOR, FRAME, PLANT, POSES, RUG, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
  * The room, drawn as pixel art at her local time of day.
@@ -143,7 +143,7 @@ export function Cat({
       rect(0, FLOOR + 10, GW, GH - FLOOR - 10, sc.floorNear);
       rect(0, FLOOR - 1, GW, 1, WHITE); // skirting: one bright line reads as depth
       // Floorboards. Half the frame was empty boards, and three lines is enough to say "floor".
-      for (const by of [FLOOR + 10, FLOOR + 18, FLOOR + 26]) rect(0, by, GW, 1, sc.floorFar);
+      for (const by of [FLOOR + 9, FLOOR + 15, FLOOR + 23, FLOOR + 30]) rect(0, by, GW, 1, sc.floorFar);
 
 
       // ── light ─────────────────────────────────────────────────────────────
@@ -158,21 +158,24 @@ export function Cat({
         rect(cx - 8, y, 16, 1, sc.litWall);
         dither(cx - 11, y, 3, 1, sc.litWall);
         dither(cx + 8, y, 3, 1, sc.litWall);
+        // quarter density outside that, so the edge falls off in two steps rather than one
+        for (const ox of [-13, -12, 10, 11]) if ((ox + y) % 4 === 0) px(cx + ox, y, sc.litWall);
       }
       // The shaft stops at the floor. What lands on the floor is the patch, and drawing both left a
       // wide bright smear across the boards.
-      for (const [dy, w] of [[0, 20], [1, 26], [2, 30], [3, 30], [4, 26], [5, 18]] as const) {
+      for (const [dy, w] of [[1, 20], [2, 28], [3, 32], [4, 34], [5, 32], [6, 28], [7, 20]] as const) {
         rect(beamX - (w >> 1), FLOOR + dy, w, 1, sc.patch);
       }
-      dither(beamX - 13, FLOOR + 1, 26, 5, sc.patch);
+      dither(beamX - 15, FLOOR + 2, 30, 7, sc.patch);
 
       // Props AFTER the light. Drawn before it, the beam's dither punched holes through them.
       const winX = Math.max(2, Math.min(GW - 19, beamX - 8));
       blit(WINDOW, winX, 4, { w: INK, h: sc.sun > 0.2 ? sc.beamWarm : sc.wallTop });
       blit(SHELF, 68, FLOOR - 26, { w: INK, d: "#8a6a48" });
       blit(DOOR, 6, FLOOR - 16, { w: INK, f: sc.wallBottom, d: "#8a6a48", h: "#ffe9a8" });
+      blit(FRAME, 22, 12, { w: INK, f: "#c69a63", g: "#9aa9a2" });
       blit(PLANT, 87, FLOOR - 13, { g: LEAF, w: INK, d: "#b07a4e" });
-      blit(RUG, 44, FLOOR + 21, { d: "#9c7f86", f: "#bda0a4" });
+      blit(RUG, 24, FLOOR + 24, { d: "#9c7f86", f: "#bda0a4" });
 
       if (!reduce) {
         for (const m of motes) {
@@ -190,7 +193,7 @@ export function Cat({
       if (catX.current === null) catX.current = wantX;
       catX.current += (wantX - catX.current) * 0.012;
       const kx = Math.round(catX.current);
-      const ky = FLOOR + 13;
+      const ky = FLOOR + 19;
 
       const want = ptr.in ? Math.max(0, 1 - Math.hypot(ptr.x - kx, ptr.y - (ky - 8)) / 44) : 0;
       near.current += (want - near.current) * 0.07;
@@ -199,9 +202,14 @@ export function Cat({
       bounce.current = Math.max(0, bounce.current - 0.02);
 
       // Her eyes open on her own account (what you told her) or because you came close.
+      // Two blinks in a 5.2s cycle, offset so they aren't evenly spaced. Regular blinking reads as
+      // a machine; slightly irregular reads as alive.
+      const cyc = t % 5200;
+      const blink = !reduce && ((cyc > 3400 && cyc < 3520) || (cyc > 4100 && cyc < 4200));
       const open = pet ? 0 : Math.max(sc.eyes, n);
-      const awake = open > 0.4;
-      const pose: Pose = sc.pose ?? (sc.atDoor ? "stand" : awake ? "sit" : "loaf");
+      const awake = open > 0.4 && !blink;
+      const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
+      const pose: Pose = sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf");
       const sp = POSES[pose]!;
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
