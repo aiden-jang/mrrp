@@ -40,15 +40,17 @@ app.post("/api/room/:id/tell", async (c) => {
   return c.json(await room(c.env, id).tell(body.me, body.mood as Mood));
 });
 
-/** Set her name and colours. Called once, when you first make the room. */
+/** Set her name and colours. His to set, and the Room re-checks that. */
 app.post("/api/room/:id/dress", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
   const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  const me = typeof body.me === "string" ? body.me : "";
+  if (me.length < 8) return c.json({ error: "bad request" }, 400);
   const pick = <T>(k: string, ok: (v: unknown) => boolean): T | undefined =>
     ok(body[k]) ? (body[k] as T) : undefined;
   const hex = (v: unknown) => typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v);
-  await room(c.env, id).dress({
+  const ok = await room(c.env, id).dress(me, {
     name: pick<string>("name", (v) => typeof v === "string" && (v as string).length <= 24),
     fur: pick<string>("fur", hex),
     furDk: pick<string>("furDk", hex),
@@ -56,7 +58,7 @@ app.post("/api/room/:id/dress", async (c) => {
     eyes: pick<string>("eyes", hex),
     tabby: pick<boolean>("tabby", (v) => typeof v === "boolean"),
   });
-  return c.json({ ok: true });
+  return ok ? c.json({ ok: true }) : c.json({ error: "not yours to set" }, 403);
 });
 
 /**
@@ -66,7 +68,9 @@ app.post("/api/room/:id/dress", async (c) => {
 app.post("/api/room/:id/clock", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
-  const body = (await c.req.json().catch(() => ({}))) as { tz?: unknown; homeHour?: unknown };
+  const body = (await c.req.json().catch(() => ({}))) as { me?: unknown; tz?: unknown; homeHour?: unknown };
+  const me = typeof body.me === "string" ? body.me : "";
+  if (me.length < 8) return c.json({ error: "bad request" }, 400);
 
   let tz: string | undefined;
   if (typeof body.tz === "string") {
@@ -83,8 +87,8 @@ app.post("/api/room/:id/clock", async (c) => {
       : undefined;
 
   if (tz === undefined && homeHour === undefined) return c.json({ error: "nothing to set" }, 400);
-  await room(c.env, id).setClock({ tz, homeHour });
-  return c.json({ ok: true });
+  const ok = await room(c.env, id).setClock(me, { tz, homeHour });
+  return ok ? c.json({ ok: true }) : c.json({ error: "not yours to set" }, 403);
 });
 
 /**

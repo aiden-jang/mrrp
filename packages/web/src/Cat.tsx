@@ -14,6 +14,8 @@ import { BED, DOOR, FRAME, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sp
  */
 
 const GW = 100, GH = 80, FLOOR = 48;
+/** The window is bolted to the wall here. Only the light it throws moves. */
+const WIN_X = 60, WIN_CX = WIN_X + 8;
 
 /** Fixed colours. Everything else comes from `look`, so she stays recolourable. */
 const INK = "#4a3520";
@@ -153,8 +155,11 @@ export function Cat({
       // produced vertical streaks: every row composited slightly differently and the seams lined up.
       // No `phase` here. Passing y made the parity (x + 2y), which depends on x alone, so the
       // "checkerboard" edges came out as vertical stripes down the wall.
+      // The shaft pivots from a fixed window rather than sliding across the wall with the patch.
+      // A window that moves collides with the picture and the door, and windows do not move.
       for (let y = 14; y < FLOOR; y++) {
-        const cx = beamX + Math.round((y - FLOOR) * 0.22);
+        const k = (y - 14) / (FLOOR - 14);
+        const cx = Math.round(WIN_CX + (beamX - WIN_CX) * k);
         rect(cx - 8, y, 16, 1, sc.litWall);
         dither(cx - 11, y, 3, 1, sc.litWall);
         dither(cx + 8, y, 3, 1, sc.litWall);
@@ -169,11 +174,10 @@ export function Cat({
       dither(beamX - 15, FLOOR + 2, 30, 7, sc.patch);
 
       // Props AFTER the light. Drawn before it, the beam's dither punched holes through them.
-      const winX = Math.max(2, Math.min(GW - 19, beamX - 8));
-      blit(WINDOW, winX, 4, { w: INK, h: sc.sun > 0.2 ? sc.beamWarm : sc.wallTop });
-      blit(SHELF, 68, FLOOR - 26, { w: INK, d: "#8a6a48" });
+      blit(WINDOW, WIN_X, 4, { w: INK, h: sc.sun > 0.2 ? sc.beamWarm : sc.wallTop });
+      blit(SHELF, 80, FLOOR - 24, { w: INK, d: "#8a6a48" });
       blit(DOOR, 6, FLOOR - 16, { w: INK, f: sc.wallBottom, d: "#8a6a48", h: "#ffe9a8" });
-      blit(FRAME, 20, 11, { w: INK, f: "#c69a63", h: "#cfe0e4", g: "#e2926f" });
+      blit(FRAME, 16, 12, { w: INK, f: "#c69a63", h: "#cfe0e4", g: "#e2926f" });
       blit(PLANT, 87, FLOOR - 13, { g: LEAF, w: INK, d: "#b07a4e" });
       blit(BED, 24, FLOOR + 22, { d: "#8d7f96", f: "#b3a4bd", b: "#9b8ca6" });
 
@@ -182,7 +186,8 @@ export function Cat({
           m.y -= m.sp;
           if (m.y < 14) { m.y = FLOOR - 1; m.dx = Math.floor(Math.random() * 15) - 7; }
           if (sc.sun > 0.25) {
-            const cx = beamX + Math.round((m.y - FLOOR) * 0.22);
+            const k = Math.max(0, (m.y - 14) / (FLOOR - 14));
+            const cx = Math.round(WIN_CX + (beamX - WIN_CX) * k);
             px(cx + m.dx, Math.floor(m.y), sc.beamWarm);
           }
         }
@@ -255,9 +260,9 @@ export function Cat({
       // The thing she knocked off, on the floor below the shelf it fell from. Outlined, or it
       // disappears into the lit floorboards.
       if (sc.play > 0.5) {
-        px(73, FLOOR + 7, INK); px(74, FLOOR + 7, INK);
-        px(73, FLOOR + 8, PINK); px(74, FLOOR + 8, PINK);
-        px(73, FLOOR + 9, INK); px(74, FLOOR + 9, INK);
+        px(85, FLOOR + 7, INK); px(86, FLOOR + 7, INK);
+        px(85, FLOOR + 8, PINK); px(86, FLOOR + 8, PINK);
+        px(85, FLOOR + 9, INK); px(86, FLOOR + 9, INK);
       }
 
       if (pet) {

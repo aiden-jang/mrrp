@@ -94,10 +94,18 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  /** Set her name and colouring once, so she can look like a cat you actually know. */
-  async dress(cat: Partial<Cat>): Promise<void> {
+  /**
+   * Set her name and colouring, so the cat can look like a cat she actually knows.
+   *
+   * His to set, and it is checked here rather than by hiding the form. The room link is the only
+   * credential this app has, so anyone holding it could otherwise rename her cat.
+   */
+  async dress(me: string, cat: Partial<Cat>): Promise<boolean> {
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (this.roles(people).him !== me) return false;
     const current = (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT;
     await this.ctx.storage.put("cat", { ...current, ...cat });
+    return true;
   }
 
   /**
@@ -122,10 +130,13 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  /** Set whose day the room runs on. Her timezone, and roughly when she gets home. */
-  async setClock(clock: Partial<Clock>): Promise<void> {
+  /** Set whose day the room runs on: her timezone, and when she's usually home. His to set. */
+  async setClock(me: string, clock: Partial<Clock>): Promise<boolean> {
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (this.roles(people).him !== me) return false;
     const current = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
     await this.ctx.storage.put("clock", { ...current, ...clock });
+    return true;
   }
 
   /**

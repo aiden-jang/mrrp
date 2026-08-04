@@ -102,7 +102,7 @@ export const RESPONSES: Record<Mood, Response> = {
     snug: 0.2,
     play: 0.8,
     // By the shelf, because that is where the copy says the crime happened.
-    catX: 0.72,
+    catX: 0.84,
     sleepy: 0,
     purring: false,
   },
