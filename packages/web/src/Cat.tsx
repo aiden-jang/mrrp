@@ -1,16 +1,23 @@
 import { useEffect, useRef } from "react";
-import type { Cat as CatLook } from "./types.js";
+import type { Cat as CatLook, Clock } from "./types.js";
+import { sceneFor } from "./hours.js";
 
 /**
- * The room, drawn on canvas. Warm light from an off-screen window, dust in the beam, and her asleep
- * in the sunbeam. She wakes a little when your cursor comes near and purrs while you hold on her.
+ * The room, drawn on canvas, at whatever time of day it is where SHE is.
+ *
+ * The light, the palette and where she's lying all come from her local hour: first sun by the window
+ * in the morning, dead asleep in the best patch mid-afternoon, by the door around the time you're
+ * usually home, curled up small at night. She wakes a little when your cursor comes near and purrs
+ * while you hold on her.
  */
 export function Cat({
   look,
+  clock,
   petting,
   nudge,
 }: {
   look: CatLook;
+  clock: Clock;
   petting: boolean;
   /** Bumped whenever an action happens, so she reacts to it. */
   nudge: number;
@@ -18,10 +25,13 @@ export function Cat({
   const ref = useRef<HTMLCanvasElement>(null);
   const petRef = useRef(petting);
   const lookRef = useRef(look);
+  const clockRef = useRef(clock);
   petRef.current = petting;
   lookRef.current = look;
+  clockRef.current = clock;
 
   const near = useRef(0);
+  const catX = useRef<number | null>(null);
   const bounce = useRef(0);
   const lastNudge = useRef(nudge);
 
@@ -69,43 +79,60 @@ export function Cat({
     let raf = 0;
     const frame = (t: number) => {
       const L = lookRef.current;
+      const sc = sceneFor(clockRef.current);
+      const bx = W * sc.beam;
 
-      // room
+      // room, coloured for her time of day
       const wall = g.createLinearGradient(0, 0, 0, FLOOR);
-      wall.addColorStop(0, "#efdcc2"); wall.addColorStop(1, "#e4cdae");
+      wall.addColorStop(0, sc.wallTop); wall.addColorStop(1, sc.wallBottom);
       g.fillStyle = wall; g.fillRect(0, 0, W, FLOOR);
       const fl = g.createLinearGradient(0, FLOOR, 0, H);
-      fl.addColorStop(0, "#d3b48d"); fl.addColorStop(1, "#e3caa8");
+      fl.addColorStop(0, sc.floorFar); fl.addColorStop(1, sc.floorNear);
       g.fillStyle = fl; g.fillRect(0, FLOOR, W, H - FLOOR);
-      g.fillStyle = "rgba(255,255,255,.34)"; g.fillRect(0, FLOOR - 7, W, 7);
+      g.fillStyle = `rgba(255,255,255,${.1 + sc.sun * .26})`; g.fillRect(0, FLOOR - 7, W, 7);
 
-      // light from an unseen window
+      // the door she waits at, on the near wall
+      g.fillStyle = "rgba(112,78,48,.22)"; g.fillRect(W * .04, FLOOR - 132, 74, 132);
+      g.fillStyle = "rgba(92,62,38,.3)"; g.fillRect(W * .04, FLOOR - 132, 74, 5);
+      g.beginPath(); g.arc(W * .04 + 62, FLOOR - 66, 3.4, 0, 6.28);
+      g.fillStyle = "rgba(255,236,186,.55)"; g.fill();
+
+      // light from an unseen window, tracking across the room over the day
       g.save();
       g.beginPath();
-      g.moveTo(W * .44, 0); g.lineTo(W * 1.02, 0); g.lineTo(W * 1.02, H); g.lineTo(W * .1, H);
+      g.moveTo(bx - W * .12, 0); g.lineTo(bx + W * .46, 0);
+      g.lineTo(bx + W * .3, H); g.lineTo(bx - W * .42, H);
       g.closePath(); g.clip();
-      const beam = g.createLinearGradient(W * .9, 0, W * .2, H);
-      beam.addColorStop(0, "rgba(255,240,201,.9)");
-      beam.addColorStop(.55, "rgba(255,236,190,.4)");
-      beam.addColorStop(1, "rgba(255,232,184,.04)");
+      const beam = g.createLinearGradient(bx + W * .34, 0, bx - W * .3, H);
+      beam.addColorStop(0, `rgba(255,240,201,${.28 + sc.sun * .62})`);
+      beam.addColorStop(.55, `rgba(255,236,190,${.1 + sc.sun * .3})`);
+      beam.addColorStop(1, "rgba(255,232,184,.03)");
       g.fillStyle = beam; g.fillRect(0, 0, W, H);
-      g.fillStyle = "rgba(196,158,110,.15)";
-      g.save(); g.translate(W * .62, H * .52); g.rotate(-.42);
+      g.fillStyle = `rgba(196,158,110,${.05 + sc.sun * .12})`;
+      g.save(); g.translate(bx + W * .06, H * .52); g.rotate(-.42);
       g.fillRect(-260, -6, 520, 11); g.fillRect(-6, -260, 12, 520); g.restore();
       g.restore();
 
-      ell(W * .55, FLOOR + 74, 200, 60, "rgba(255,238,193,.7)");
-      ell(W * .55, FLOOR + 74, 146, 42, "rgba(255,245,214,.58)");
+      // the patch on the floor, which is the spot she is always trying to be in
+      ell(bx, FLOOR + 74, 200, 60, `rgba(255,238,193,${sc.sun * .7})`);
+      ell(bx, FLOOR + 74, 146, 42, `rgba(255,245,214,${sc.sun * .58})`);
 
       if (!reduce) for (const m of motes) {
         m.y -= m.s; m.w += .012;
         if (m.y < -4) { m.y = H + 4; m.x = 150 + Math.random() * 320; }
         g.beginPath(); g.arc(m.x + Math.sin(m.w) * 9, m.y, m.r, 0, 6.28);
-        g.fillStyle = "rgba(255,251,232,.4)"; g.fill();
+        // Dust is only visible in the beam, so it has to fade with the light. Left bright after dark
+        // it reads as a starfield, which is a lovely effect in the wrong room.
+        g.fillStyle = `rgba(255,251,232,${.06 + sc.sun * .34})`; g.fill();
       }
 
+      // where she is, eased so she drifts across the room rather than teleporting between hours
+      const wantX = W * sc.catX;
+      if (catX.current === null) catX.current = wantX;
+      catX.current += (wantX - catX.current) * .015;
+
       // how close you are, eased so she never twitches
-      const kx = W * .53, ky = FLOOR + 56;
+      const kx = catX.current, ky = FLOOR + 56;
       const want = ptr.in ? Math.max(0, 1 - Math.hypot(ptr.x - kx, ptr.y - ky) / 210) : 0;
       near.current += (want - near.current) * .07;
       const n = near.current;
@@ -155,8 +182,9 @@ export function Cat({
       ell(-13, 14, 12, 9, L.belly);
       ell(13, 14, 12, 9, L.belly);
 
-      // eyes: shut while dozing or being petted, open a crack when you come near
-      const open = pet ? 0 : n;
+      // eyes: shut while dozing or being petted, open a crack when you come near. Mid-afternoon she
+      // is not being woken by a cursor, and when she's at the door she's already wide awake.
+      const open = pet ? 0 : Math.max(n * (1 - sc.sleepy), sc.atDoor ? .85 : 0);
       g.strokeStyle = "#3f2f1f"; g.lineWidth = 3; g.lineCap = "round";
       for (const ex of [-15, 15]) {
         if (open < .3) {
@@ -194,8 +222,9 @@ export function Cat({
         }
       }
 
-      const glow = g.createRadialGradient(W * .82, H * .1, 20, W * .82, H * .1, W * .95);
-      glow.addColorStop(0, "rgba(255,236,186,.3)"); glow.addColorStop(1, "rgba(255,236,186,0)");
+      const gx = bx + W * .28;
+      const glow = g.createRadialGradient(gx, H * .1, 20, gx, H * .1, W * .95);
+      glow.addColorStop(0, `rgba(255,236,186,${.08 + sc.sun * .26})`); glow.addColorStop(1, "rgba(255,236,186,0)");
       g.fillStyle = glow; g.fillRect(0, 0, W, H);
       const vig = g.createRadialGradient(W / 2, H / 2, H * .34, W / 2, H / 2, H * .92);
       vig.addColorStop(0, "rgba(120,84,44,0)"); vig.addColorStop(1, "rgba(120,84,44,.12)");
