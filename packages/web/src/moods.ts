@@ -43,7 +43,7 @@ export interface Response {
 
 export const RESPONSES: Record<Mood, Response> = {
   good: {
-    pose: "sit",
+    pose: "perk",
     sparkle: true,
     eyes: 0.85,
     doing: "batting at the dust in the sunbeam, badly",

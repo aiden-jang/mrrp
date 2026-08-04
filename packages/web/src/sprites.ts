@@ -18,7 +18,7 @@
  *  c blush (two pixels per cheek, and worth more than any other pair)
  */
 
-export type Pose = "loaf" | "sit" | "stand" | "play";
+export type Pose = "loaf" | "sit" | "stand" | "play" | "perk";
 
 /** Parsed sprite: rows of characters, guaranteed rectangular. */
 export interface Sprite {
@@ -156,7 +156,42 @@ export const PLAY = sprite(
   -18,
 );
 
-export const POSES: Record<Pose, Sprite> = { loaf: LOAF, sit: SIT, stand: STAND, play: PLAY };
+/** Sitting tall, ears up. What a good day looks like from the outside. */
+export const PERK = sprite(
+  [
+    "..ww..........ww..",
+    ".wffw........wffw.",
+    ".wfpfw......wfpfw.",
+    ".wfpfw......wfpfw.",
+    ".wffffwwwwwwffffw.",
+    ".wfdffdffffdffdfw.",
+    ".wfbbbbbbbbbbbbfw.",
+    ".wfbceeebbeeecbfw.",
+    ".wfbceeebbeeecbfw.",
+    ".wfbbbbbnnbbbbbfw.",
+    ".wffbbbmmmmbbbffw.",
+    "..wfdffffffffdfw..",
+    "..wfbbbbbbbbbbfw..",
+    "..wfbbbbbbbbbbfw..",
+    "..wfbbbbbbbbbbfw..",
+    "..wfdbbbbbbbbdfw..",
+    "..wffbbbbbbbbffw..",
+    "..wfdffffffffdfw..",
+    ".wwbbwwffffwwbbww.",
+    "..wwddddddddddww..",
+    "..wwwwwwwwwwwwww..",
+  ],
+  -9,
+  -21,
+);
+
+export const POSES: Record<Pose, Sprite> = {
+  loaf: LOAF,
+  sit: SIT,
+  stand: STAND,
+  play: PLAY,
+  perk: PERK,
+};
 
 /** The door she waits at. */
 export const DOOR = sprite(
@@ -201,16 +236,19 @@ export const WINDOW = sprite(
   0,
 );
 
-/** A rug. Rooms with nothing on the floor read as backdrops. */
-export const RUG = sprite(
+/** Her bed, which she is usually not in. `d` is the rim, `f` the cushion, `b` the dent she leaves. */
+export const BED = sprite(
   [
-    "....dddddddddddddddddddddddddd....",
-    "..ddffffffffffffffffffffffffffdd..",
-    ".dffffdffffffdffffffdffffffdffffd.",
-    "..ddffffffffffffffffffffffffffdd..",
-    "....dddddddddddddddddddddddddd....",
+    "....dddddddddddd....",
+    "..ddffffffffffffdd..",
+    ".dfffbbbbbbbbbbfffd.",
+    "dffbbbbbbbbbbbbbbffd",
+    "dffbbbbbbbbbbbbbbffd",
+    ".dfffbbbbbbbbbbfffd.",
+    "..ddffffffffffffdd..",
+    "....dddddddddddd....",
   ],
-  -17,
+  -11,
   0,
 );
 
@@ -247,17 +285,20 @@ export const PLANT = sprite(
   0,
 );
 
-/** A picture on the wall. `g` is what's in it, and it is deliberately not identifiable. */
+/** A picture on the wall. It is a fish, which is the only art she would have chosen. */
 export const FRAME = sprite(
   [
-    "wwwwwwwwwww",
-    "wfffffffffw",
-    "wfwwwwwwwfw",
-    "wfwggggggfw",
-    "wfwgggggwfw",
-    "wfwwwwwwwfw",
-    "wfffffffffw",
-    "wwwwwwwwwww",
+    "wwwwwwwwwwwww",
+    "wfffffffffffw",
+    "wfwwwwwwwwwfw",
+    "wfwhhhhhhhwfw",
+    "wfwhhgggwhwfw",
+    "wfwhggggggwfw",
+    "wfwhhgggwhwfw",
+    "wfwhhhhhhhwfw",
+    "wfwwwwwwwwwfw",
+    "wfffffffffffw",
+    "wwwwwwwwwwwww",
   ],
   0,
   0,
