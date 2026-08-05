@@ -203,6 +203,8 @@ export class Room extends DurableObject<Env> {
     const moods = (await this.ctx.storage.get<Record<string, Told>>("moods")) ?? {};
     const { him, her } = this.roles(people);
     const youAreHer = !!her && me === her;
+    /** Whether the viewer holds one of the two seats at all, as opposed to just holding the link. */
+    const seated = me === him || me === her;
     const otherId = youAreHer ? him : her;
     const them = otherId ? people[otherId] ?? null : null;
     const waitingForThem = !her;
@@ -232,10 +234,16 @@ export class Room extends DurableObject<Env> {
         (me === him || me === her) &&
         Date.now() - people[him]!.lastSeen < HERE_NOW_MS &&
         Date.now() - people[her]!.lastSeen < HERE_NOW_MS,
-      herLine: (await this.ctx.storage.get<Told2>("herLine")) ?? null,
-      // He wrote the notes, so handing them back to him is pointless. He gets the day count only.
+      // Seated people only. This used to go to anybody holding the link, which meant a third person
+      // who opened it could read the sentence she left him. The note text was gated from the start and
+      // this was not, and "one private link between two people" has to mean both directions of it.
+      // She needs it too, to see and edit what she left, so the gate is the seat and not the seat's
+      // identity.
+      herLine: seated ? (await this.ctx.storage.get<Told2>("herLine")) ?? null : null,
+      // He wrote the notes, so handing them back to him is pointless. He gets the day count only,
+      // and a spectator gets nothing: how far into her notes she is is between the two of them.
       note: youAreHer ? note : null,
-      noteDay: youAreHer ? null : note?.day ?? null,
+      noteDay: seated && !youAreHer ? note?.day ?? null : null,
       // Only she sees what was done, because only he does anything.
       theirRecent: youAreHer && him ? log.filter((v) => v.who === him).slice(0, 4) : [],
       theyCameAfter: !!catTold && !!them && youAreHer && them.lastSeen > catTold.at,

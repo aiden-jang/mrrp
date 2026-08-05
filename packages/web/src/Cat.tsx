@@ -221,7 +221,10 @@ export function Cat({
       // ── her ───────────────────────────────────────────────────────────────
       const wantX = sc.catX * GW;
       if (catX.current === null) catX.current = wantX;
-      catX.current += (wantX - catX.current) * 0.012;
+      // 0.012 took about 190 frames to cover a move, so more than three seconds of a cat inching across
+      // the boards after a mood tap. It read as lag rather than as walking. 0.05 lands in well under a
+      // second and still moves like a cat crossing a room rather than teleporting.
+      catX.current += (wantX - catX.current) * 0.05;
       const kx = Math.round(catX.current);
       const ky = FLOOR + 19;
 

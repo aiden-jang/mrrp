@@ -288,6 +288,31 @@ describe("her line back", () => {
     expect((await view(HER)).herLine).toBeNull();
   });
 
+  it("does not show it to somebody who only has the link", async () => {
+    // The room is one private link between two people. Her line used to go to anybody who opened it,
+    // while the note text was gated from the start, so privacy held in one direction only.
+    await seat();
+    await post("say", { me: HER, text: "come sit with me for a bit" });
+    const v = await view(STRANGER);
+    expect(v.herLine).toBeNull();
+    // and not merely hidden by the UI: it must not be in the payload at all
+    const body = await (await SELF.fetch(`https://x/api/room/${id}?me=${STRANGER}`)).text();
+    expect(body).not.toContain("come sit with me");
+  });
+
+  it("still reaches both of the people it is for", async () => {
+    await seat();
+    await post("say", { me: HER, text: "mine to edit, his to read" });
+    expect((await view(HIM)).herLine?.text).toBe("mine to edit, his to read");
+    expect((await view(HER)).herLine?.text).toBe("mine to edit, his to read");
+  });
+
+  it("does not tell a spectator how far into her notes she is", async () => {
+    await seat();
+    expect((await view(STRANGER)).noteDay).toBeNull();
+    expect((await view(HIM)).noteDay).toBe(1); // he still gets the count
+  });
+
   it("caps the length instead of rejecting it", async () => {
     // Rejecting a too-long note would lose what she typed. Truncating keeps it.
     await seat();

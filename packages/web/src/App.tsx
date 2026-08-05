@@ -95,6 +95,7 @@ function Landing() {
         <p style={{ ...S.small, marginTop: 14 }}>
           You'll get a link. Send it to one person. That's the whole thing.
         </p>
+        <p style={S.credit}>made by aiden jang</p>
       </div>
     </main>
   );
@@ -114,6 +115,8 @@ function RoomPage({ id }: { id: string }) {
   const [lineOpen, setLineOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [setup, setSetup] = useState(false);
+  const [savingSetup, setSavingSetup] = useState(false);
+  const [setupErr, setSetupErr] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ name: string; look: string; eyes: string; tz: string; homeHour: number } | null>(null);
 
   const load = useCallback(async (n?: string | null) => {
@@ -167,14 +170,17 @@ function RoomPage({ id }: { id: string }) {
     if (!draft) return;
     const look = LOOKS.find((l) => l.id === draft.look)!;
     const eyes = EYES.find((e) => e.id === draft.eyes)!;
+    setSavingSetup(true);
+    setSetupErr(null);
     try {
       await doDress(id, { name: draft.name.trim() || "Bean", ...look.cat, eyes: eyes.hex });
       await doClock(id, { tz: draft.tz, homeHour: draft.homeHour });
       setSetup(false);
       await load();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Couldn't save that.");
+      setSetupErr(e instanceof Error ? e.message : "Couldn't save that.");
     }
+    setSavingSetup(false);
   };
 
   const say = async () => {
@@ -186,9 +192,20 @@ function RoomPage({ id }: { id: string }) {
     setSaving(false);
   };
 
+  /**
+   * Optimistic on purpose. The chip used to stay unlit until the round trip came back, so on anything
+   * slower than a desk connection tapping a mood felt like it had not registered: no highlight, no
+   * label change, and a cat that only started moving once the response landed. The mood is hers and
+   * the server never rejects a valid one, so showing it immediately is honest.
+   */
   const tell = async (m: Mood) => {
     setNudge((v) => v + 1);
-    try { setView(await doTell(id, m)); } catch { /* she'll survive */ }
+    setView((v) => (v ? { ...v, catMood: m, catMoodAt: Date.now() } : v));
+    try {
+      setView(await doTell(id, m));
+    } catch {
+      void load(); // put the real state back if it never landed
+    }
   };
 
   if (asking) {
@@ -227,6 +244,17 @@ function RoomPage({ id }: { id: string }) {
   const last = view.theirRecent[0];
   const scene = sceneFor(view.clock, Date.now(), view.catMood);
 
+  /**
+   * Whether the viewer actually holds his seat, rather than merely not being her.
+   *
+   * `!view.youAreHer` is true for a third person with the link, so gating on it handed spectators his
+   * entire control surface: the four action buttons, and a setup panel that previewed a recoloured cat
+   * live and then failed on Save with a 403 reported in small text at the bottom of a long panel. It
+   * looked exactly like "changing the colour does nothing". The Worker was right to refuse; the UI was
+   * wrong to offer.
+   */
+  const iAmHim = view.you !== null && !view.youAreHer;
+
   // While the panel is open the canvas shows the draft, so choosing a cat is a thing you watch
   // happen rather than a form you submit and hope about.
   const previewLook = setup && draft
@@ -259,7 +287,7 @@ function RoomPage({ id }: { id: string }) {
         {/* What she's doing about what you told her, in her time, not the server's. */}
         <p style={S.doing}>{view.cat.name} is {scene.doing}.</p>
 
-        {!view.youAreHer && setup && draft && (
+        {iAmHim && setup && draft && (
           <div style={S.panel}>
             <p style={S.panelTitle}>her cat</p>
 
@@ -334,9 +362,15 @@ function RoomPage({ id }: { id: string }) {
               ))}
             </select>
 
+            {/* Errors belong next to the button that failed. This used to surface at the very bottom of
+                the card, below everything, which on a panel this tall is off screen. */}
+            {setupErr && <p style={{ ...S.small, color: "#a4563d", marginTop: 12 }}>{setupErr}</p>}
+
             <div style={{ ...S.row, marginTop: 12 }}>
               <button style={S.btn} onClick={() => setSetup(false)}>Cancel</button>
-              <button style={{ ...S.btn, ...S.btnGo }} onClick={() => void saveSetup()}>Save her</button>
+              <button style={{ ...S.btn, ...S.btnGo }} disabled={savingSetup} onClick={() => void saveSetup()}>
+                {savingSetup ? "Saving..." : "Save her"}
+              </button>
             </div>
           </div>
         )}
@@ -388,7 +422,10 @@ function RoomPage({ id }: { id: string }) {
                   {view.note.final ? `${view.them} left this out for you` : `${view.them} left you something`}
                 </p>
                 <p style={S.noteText}>{view.note.text}</p>
-                {!view.note.final && <p style={S.noteDay}>day {view.note.day} of {view.note.total}</p>}
+                {/* Just the day, not "day 1 of 30". The total is however many notes are in notes.ts,
+                    which is an implementation detail, and printing it turned a gift into a countdown
+                    she could watch run out. */}
+                {!view.note.final && <p style={S.noteDay}>day {view.note.day}</p>}
               </div>
             )}
 
@@ -522,6 +559,7 @@ function RoomPage({ id }: { id: string }) {
           Nothing in here needs keeping up with. No streaks, no history, and nothing kept except how
           you are right now.
         </p>
+        <p style={S.credit}>made by aiden jang</p>
       </div>
     </main>
   );
@@ -534,6 +572,7 @@ const S: Record<string, React.CSSProperties> = {
   h1: { fontSize: 40, margin: "0 0 8px", letterSpacing: "-0.02em", textAlign: "center" },
   lede: { fontSize: 15.5, color: "var(--soft)", maxWidth: "38ch", lineHeight: 1.55 },
   small: { fontSize: 13, color: "var(--soft)", margin: 0, lineHeight: 1.5 },
+  credit: { fontSize: 11.5, color: "var(--soft)", opacity: 0.65, textAlign: "center", margin: "22px 0 0" },
   stage: {
     position: "relative", width: "100%", aspectRatio: "5 / 4", borderRadius: 26, overflow: "hidden",
     background: "#efdcc2", boxShadow: "0 18px 44px -22px rgba(120,84,44,.45)",
@@ -591,6 +630,7 @@ const S: Record<string, React.CSSProperties> = {
   panel: {
     margin: "16px 0 4px", padding: "15px 16px", borderRadius: 18,
     background: "var(--panel)", border: "1px solid var(--line)",
+    boxShadow: "0 6px 18px -12px rgba(120,84,44,.35)",
   },
   panelTitle: {
     fontSize: 13.5, fontWeight: 500, color: "var(--soft)", margin: "0 0 9px",
@@ -608,6 +648,7 @@ const S: Record<string, React.CSSProperties> = {
   note: {
     margin: "14px 0 2px", padding: "15px 17px", borderRadius: 18,
     background: "var(--panel)", border: "1px solid var(--line)",
+    boxShadow: "0 8px 22px -14px rgba(120,84,44,.4)",
   },
   noteFrom: {
     fontSize: 13.5, color: "var(--soft)", margin: "0 0 8px", fontWeight: 500,

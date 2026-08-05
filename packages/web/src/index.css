@@ -12,4 +12,22 @@ body {
   background: radial-gradient(120% 90% at 78% 6%, var(--air-warm) 0%, var(--air) 60%);
   -webkit-font-smoothing: antialiased;
 }
-@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+/*
+ * Everything answers a touch.
+ *
+ * The whole app was cream panels on a cream page with hairline borders and no depth, so it read as
+ * flat and a bit washed out no matter how warm the palette was. Two cheap fixes do most of the work:
+ * a real shadow under the panels so they sit above the page rather than dissolve into it, and a press
+ * state, because on a phone an element that does not move when you touch it feels dead.
+ */
+button, select, [role="button"] {
+  transition: transform .12s cubic-bezier(.34, 1.56, .64, 1), filter .12s ease;
+  touch-action: manipulation;
+}
+button:active:not(:disabled), select:active { transform: scale(.965); }
+button:disabled { opacity: .55; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+  button:active:not(:disabled) { transform: none; }
+}
