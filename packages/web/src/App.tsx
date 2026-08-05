@@ -74,7 +74,7 @@ function Landing() {
     <main style={S.page}>
       <div style={{ ...S.card, textAlign: "center" }}>
         <div style={{ ...S.stage, marginBottom: 18 }}>
-          <Cat label="A pixel cat asleep in a sunlit room." look={DOOR_CAT} clock={DOOR_CLOCK} mood={null} petting={false} nudge={0} />
+          <Cat label="A pixel cat asleep in a sunlit room." look={DOOR_CAT} clock={DOOR_CLOCK} mood={null} nudge={0} />
         </div>
         <h1 style={S.h1}>mrrp</h1>
         <p style={{ ...S.lede, margin: "0 auto 22px" }}>
@@ -105,7 +105,6 @@ function Landing() {
 function RoomPage({ id }: { id: string }) {
   const [view, setView] = useState<RoomView | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [petting, setPetting] = useState(false);
   const [nudge, setNudge] = useState(0);
   const [asking, setAsking] = useState(!myName.get());
   const [name, setName] = useState("");
@@ -273,23 +272,20 @@ function RoomPage({ id }: { id: string }) {
         <div style={S.stage}>
           <Cat
             label={`${previewLook.name} is ${scene.doing}.`}
-            look={previewLook} clock={setup && draft ? { ...view.clock, tz: draft.tz, homeHour: draft.homeHour } : view.clock} mood={view.catMood} petting={petting} nudge={nudge} eyesOpen={setup} />
-          {/* holding on her is petting; it is the one gesture that isn't a button */}
-          {iAmHim && (
-            <div
-              style={S.petLayer}
-              onPointerDown={() => { setPetting(true); void act("pet"); }}
-              onPointerUp={() => setPetting(false)}
-              onPointerLeave={() => setPetting(false)}
-            />
-          )}
-          {/* Her side was the only one you couldn't touch. She is the cat, so petting herself would be
-              nonsense and telling him she did it would be worse, but a poke that gets a mrrp back costs
-              nothing and it was the one screen with no reason to touch anything. Local only: no request,
-              nothing stored, nobody told. */}
-          {view.youAreHer && (
-            <div style={S.petLayer} onPointerDown={() => setNudge((v) => v + 1)} />
-          )}
+            look={previewLook}
+            clock={setup && draft ? { ...view.clock, tz: draft.tz, homeHour: draft.homeHour } : view.clock}
+            mood={view.catMood}
+            nudge={nudge}
+            eyesOpen={setup}
+            /* Holding on her is petting, the one gesture that isn't a button. She gets a poke instead:
+               she IS the cat, so petting herself would be nonsense and telling him she did it would be
+               worse, but a tap that gets a mrrp back costs nothing. Local only, nobody told. A spectator
+               gets neither, though the furniture is tappable for everyone. */
+            role={iAmHim ? "him" : view.youAreHer ? "her" : null}
+            onPet={() => void act("pet")}
+            onPoke={() => setNudge((v) => v + 1)}
+          />
+
         </div>
 
         {/* What she's doing about what you told her, in her time, not the server's. During setup she is
@@ -647,7 +643,6 @@ const S: Record<string, React.CSSProperties> = {
     position: "relative", width: "100%", aspectRatio: "5 / 4", borderRadius: 26, overflow: "hidden",
     background: "#efdcc2", boxShadow: "0 18px 44px -22px rgba(120,84,44,.45)",
   },
-  petLayer: { position: "absolute", inset: 0, cursor: "grab", touchAction: "none" },
   doing: { fontSize: 13.5, color: "var(--soft)", textAlign: "center", margin: "14px 0 0", fontStyle: "italic" },
   // A quiet panel, not a gold block. How she is appears on his side every single day, whereas the
   // two of you being in the room at the same moment happens rarely — and when it did, two identical

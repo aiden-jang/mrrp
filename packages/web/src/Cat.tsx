@@ -18,6 +18,21 @@ const GW = 100, GH = 80, FLOOR = 48;
 /** The window is bolted to the wall here. Only the light it throws moves. */
 const WIN_X = 60, WIN_CX = WIN_X + 8;
 
+/**
+ * The furniture, with its boxes.
+ *
+ * One table so that drawing and hit-testing cannot disagree. Every sprite here has a zero offset
+ * except BED, whose ox is -11, which is why its box starts left of its draw x.
+ */
+const PROPS = [
+  { key: "window", sp: WINDOW, x: WIN_X, y: 4 },
+  { key: "frame", sp: FRAME, x: 16, y: 12 },
+  { key: "shelf", sp: SHELF, x: 80, y: FLOOR - 24 },
+  { key: "door", sp: DOOR, x: 6, y: FLOOR - 16 },
+  { key: "plant", sp: PLANT, x: 87, y: FLOOR - 13 },
+  { key: "bed", sp: BED, x: 24 - 11, y: FLOOR + 22 },
+] as const;
+
 /** Fixed colours. Everything else comes from `look`, so she stays recolourable. */
 const INK = "#4a3520";
 const PINK = "#e79ba3";
@@ -30,9 +45,11 @@ export function Cat({
   look,
   clock,
   mood,
-  petting,
   nudge,
   eyesOpen = false,
+  role = null,
+  onPet,
+  onPoke,
 }: {
   /** What the room says in words. The canvas is otherwise silent to a screen reader. */
   label: string;
@@ -40,7 +57,6 @@ export function Cat({
   clock: Clock;
   /** What you told her. Changes what she does, never what the room's light does. */
   mood: Mood | null;
-  petting: boolean;
   /** Bumped whenever an action happens, so she reacts to it. */
   nudge: number;
   /**
@@ -52,18 +68,42 @@ export function Cat({
    * cannot choose a colour you cannot see.
    */
   eyesOpen?: boolean;
+  /**
+   * Who is looking, which decides what touching the cat does. Petting is his; she gets a poke that is
+   * purely local; a spectator and the landing page get neither. The furniture is tappable for everyone,
+   * because nothing about it touches the server.
+   */
+  role?: "him" | "her" | null;
+  /** He held on the cat. Fires once per press. */
+  onPet?: () => void;
+  /** She tapped her own cat. Local only, no request. */
+  onPoke?: () => void;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
-  const petRef = useRef(petting);
   const lookRef = useRef(look);
   const clockRef = useRef(clock);
   const moodRef = useRef(mood);
   const eyesRef = useRef(eyesOpen);
   eyesRef.current = eyesOpen;
-  petRef.current = petting;
   lookRef.current = look;
   clockRef.current = clock;
   moodRef.current = mood;
+
+  const roleRef = useRef(role);
+  const onPetRef = useRef(onPet);
+  const onPokeRef = useRef(onPoke);
+  roleRef.current = role;
+  onPetRef.current = onPet;
+  onPokeRef.current = onPoke;
+
+  /** True while he is holding on her. Owned here rather than by the caller, see the pointer setup. */
+  const petting = useRef(false);
+  /** Her box in grid space, refreshed every frame, so a tap can be tested against where she actually is. */
+  const catBox = useRef<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
+  /** The last bit of furniture somebody touched, and when. */
+  const poked = useRef<{ key: string; at: number } | null>(null);
+  /** Something worth looking at, and until when. */
+  const lookAt = useRef<{ x: number; until: number } | null>(null);
 
   const near = useRef(0);
   const catX = useRef<number | null>(null);
@@ -106,9 +146,45 @@ export function Cat({
       ptr.y = ((e.clientY - r.top) / r.height) * GH;
       ptr.in = true;
     };
-    const onLeave = () => { ptr.in = false; };
+    const onLeave = () => { ptr.in = false; petting.current = false; };
+
+    /*
+     * Taps are hit-tested here, against the same coordinates the draw code uses.
+     *
+     * This used to be a bare div stretched over the whole stage in App, which meant a tap could only
+     * ever mean one thing, and the room's furniture could not respond to being touched at all: the
+     * positions it would need to test against live in this file. Owning the geometry and owning the
+     * pointer belong together.
+     */
+    const gridAt = (e: PointerEvent) => {
+      const r = cv.getBoundingClientRect();
+      return { x: ((e.clientX - r.left) / r.width) * GW, y: ((e.clientY - r.top) / r.height) * GH };
+    };
+    const onDown = (e: PointerEvent) => {
+      const { x, y } = gridAt(e);
+      ptr.x = x; ptr.y = y; ptr.in = true;
+      // Her first, and with a couple of pixels of slack, because a finger is much bigger than a cat
+      // drawn 24 pixels wide.
+      const b = catBox.current;
+      if (b && x >= b.x0 - 2 && x <= b.x1 + 2 && y >= b.y0 - 2 && y <= b.y1 + 3) {
+        if (roleRef.current === "him") { petting.current = true; onPetRef.current?.(); }
+        else if (roleRef.current === "her") onPokeRef.current?.();
+        return;
+      }
+      const hit = PROPS.find((q) => x >= q.x && x < q.x + q.sp.w && y >= q.y && y < q.y + q.sp.h);
+      if (hit) {
+        poked.current = { key: hit.key, at: performance.now() };
+        // And she notices. Looking at the thing you touched is most of what makes the room feel lived
+        // in, and it costs one number: the eye highlight already knows how to aim at an x.
+        lookAt.current = { x: hit.x + hit.sp.w / 2, until: performance.now() + 2400 };
+      }
+    };
+    const onUp = () => { petting.current = false; };
     cv.addEventListener("pointermove", onMove);
     cv.addEventListener("pointerleave", onLeave);
+    cv.addEventListener("pointerdown", onDown);
+    cv.addEventListener("pointerup", onUp);
+    cv.addEventListener("pointercancel", onUp);
 
     // Dust lives in the beam. Integer positions, because half a pixel of dust is a grey smudge.
     // Offsets are relative to the shaft's centre at that height, so dust can never drift outside
@@ -211,16 +287,27 @@ export function Cat({
       // be looking at just reads as noise.
       dither(beamX - 15, FLOOR + 5, 30, 9, sc.patch);
 
+      // A poked thing wobbles for half a second and settles. One decaying sine, shared by everything,
+      // because six bespoke animations would be six things to get subtly wrong and this reads as
+      // "it noticed you" either way.
+      const pk = poked.current;
+      const shake = (key: string): number => {
+        if (!pk || pk.key !== key) return 0;
+        const age = t - pk.at;
+        if (age < 0 || age > 620) return 0;
+        return Math.round(Math.sin(age / 30) * (1 - age / 620) * 2);
+      };
+
       // Props AFTER the light. Drawn before it, the beam's dither punched holes through them.
-      blit(WINDOW, WIN_X, 4, { w: INK, h: sc.sun > 0.2 ? sc.beamWarm : sc.wallTop });
-      blit(SHELF, 80, FLOOR - 24, { w: INK, d: "#8a6a48" });
-      blit(DOOR, 6, FLOOR - 16, { w: INK, f: sc.wallBottom, d: "#8a6a48", h: "#ffe9a8" });
-      blit(FRAME, 16, 12, { w: INK, f: "#c69a63", h: "#cfe0e4", g: "#e2926f" });
-      blit(PLANT, 87, FLOOR - 13, { g: LEAF, w: INK, d: "#b07a4e" });
+      blit(WINDOW, WIN_X + shake("window"), 4, { w: INK, h: sc.sun > 0.2 ? sc.beamWarm : sc.wallTop });
+      blit(SHELF, 80 + shake("shelf"), FLOOR - 24, { w: INK, d: "#8a6a48" });
+      blit(DOOR, 6 + shake("door"), FLOOR - 16, { w: INK, f: sc.wallBottom, d: "#8a6a48", h: "#ffe9a8" });
+      blit(FRAME, 16 + shake("frame"), 12, { w: INK, f: "#c69a63", h: "#cfe0e4", g: "#e2926f" });
+      blit(PLANT, 87 + shake("plant"), FLOOR - 13, { g: LEAF, w: INK, d: "#b07a4e" });
       // Dusty rose, not the lavender it started as. Lavender was the only cool colour in a room of
       // creams and browns, and at this size it stopped reading as a cat bed and started reading as
       // a stray UI element that had landed on the floor.
-      blit(BED, 24, FLOOR + 22, { d: "#b07f76", f: "#d8a79c", b: "#c4918a" });
+      blit(BED, 24 + shake("bed"), FLOOR + 22, { d: "#b07f76", f: "#d8a79c", b: "#c4918a" });
 
       if (!reduce) {
         for (const m of motes) {
@@ -247,7 +334,7 @@ export function Cat({
       const want = ptr.in ? Math.max(0, 1 - Math.hypot(ptr.x - kx, ptr.y - (ky - 8)) / 44) : 0;
       near.current += (want - near.current) * 0.07;
       const n = near.current;
-      const pet = petRef.current;
+      const pet = petting.current;
       bounce.current = Math.max(0, bounce.current - 0.02);
 
       // Her eyes open on her own account (what you told her) or because you came close.
@@ -257,7 +344,11 @@ export function Cat({
       const blink = !reduce && ((cyc > 3400 && cyc < 3520) || (cyc > 4100 && cyc < 4200));
       // While the picker is open she stays awake and does not blink, so the colour you are choosing is
       // continuously visible rather than appearing for 120ms between blinks, or never.
-      const forced = eyesRef.current;
+      const la = lookAt.current;
+      const looking = !!la && t < la.until;
+      // Touching the furniture wakes her just long enough to look at it. A cat that sleeps through you
+      // knocking its shelf is furniture itself.
+      const forced = eyesRef.current || (looking && !reduce);
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = forced || (open > 0.4 && !blink);
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
@@ -269,6 +360,7 @@ export function Cat({
         Math.round(bounce.current * 3) +
         (reduce || sc.play <= 0.5 ? 0 : Math.round(Math.abs(Math.sin(t / 260)) * 2));
       const y = ky + breathe - hop;
+      catBox.current = { x0: kx + sp.ox, y0: y + sp.oy, x1: kx + sp.ox + sp.w, y1: y + sp.oy + sp.h };
 
       const pal: Record<string, string> = {
         w: INK,
@@ -329,7 +421,8 @@ export function Cat({
           stand: { l: -5, r: 1, wide: false },
         };
         const e = EYES[pose];
-        const at = m && sc.sun > 0.15 ? m.x : ptr.in ? ptr.x : null;
+        // What you just touched wins, then the moth, then your cursor.
+        const at = looking ? la!.x : m && sc.sun > 0.15 ? m.x : ptr.in ? ptr.x : null;
         // Only 3px-wide eyes have room to shift; a 2px eye would spill onto the fur.
         const look = !e.wide || at === null ? 0 : Math.sign(at - kx) * (Math.abs(at - kx) > 4 ? 1 : 0);
         px(kx + e.l + look, ey, WHITE);
@@ -470,6 +563,9 @@ export function Cat({
       ro.disconnect();
       cv.removeEventListener("pointermove", onMove);
       cv.removeEventListener("pointerleave", onLeave);
+      cv.removeEventListener("pointerdown", onDown);
+      cv.removeEventListener("pointerup", onUp);
+      cv.removeEventListener("pointercancel", onUp);
     };
   }, []);
 
@@ -478,7 +574,13 @@ export function Cat({
       ref={ref}
       role="img"
       aria-label={label}
-      style={{ display: "block", width: "100%", height: "100%", imageRendering: "pixelated" }}
+      style={{
+        display: "block", width: "100%", height: "100%", imageRendering: "pixelated",
+        // Holding to pet needs the browser to stop treating the drag as a scroll. Only his side holds,
+        // so everyone else keeps normal scrolling over the canvas.
+        touchAction: role === "him" ? "none" : "manipulation",
+        cursor: role ? "grab" : "default",
+      }}
     />
   );
 }
