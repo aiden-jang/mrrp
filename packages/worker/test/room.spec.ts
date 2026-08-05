@@ -14,6 +14,12 @@ import type { Mood, RoomView } from "../src/types.js";
  * The order the two people arrive in decides who they are, so every test claims seats explicitly.
  */
 
+// UTC-12 and UTC+14: 26 hours apart, so their local dates ALWAYS differ. New York to Tokyo is only
+// +13 and crosses a date boundary just some of the time, which made this pass in the evening and fail
+// in the morning.
+const BEHIND = "Etc/GMT+12";
+const AHEAD = "Pacific/Kiritimati";
+
 const HIM = "himhimhimhim";
 const HER = "herherherher";
 const STRANGER = "strangerstranger";
@@ -194,8 +200,6 @@ describe("notes", () => {
   // used New York to Tokyo (+13h), which crosses a date boundary only some of the time, so the test
   // passed in the evening and failed in the morning. A test that depends on when you run it is worse
   // than no test.
-  const BEHIND = "Etc/GMT+12"; // UTC-12
-  const AHEAD = "Pacific/Kiritimati"; // UTC+14
 
   it("advances by exactly one when her day rolls over", async () => {
     await seat();
@@ -216,6 +220,112 @@ describe("notes", () => {
 
     await post("clock", { me: HIM, tz: BEHIND });
     expect((await view(HER)).note!.day).toBe(2);
+  });
+});
+
+/**
+ * His own notes.
+ *
+ * Every room used to share one hardcoded array, so anybody who was not the author opened a gift full
+ * of somebody else's specifics. Defaults still exist as a floor, but they are a floor.
+ */
+describe("writing his own notes", () => {
+  it("is his to do, and nobody else's", async () => {
+    await seat();
+    expect((await post("notes", { me: HER, notes: ["nope"] })).status).toBe(403);
+    await view(STRANGER);
+    expect((await post("notes", { me: STRANGER, notes: ["nope"] })).status).toBe(403);
+    expect((await post("notes", { me: HIM, notes: ["mine"] })).status).toBe(200);
+  });
+
+  it("replaces the defaults entirely, and she reads his instead", async () => {
+    await seat();
+    await post("notes", { me: HIM, notes: ["the first thing I want to say", "the second"] });
+    const n = (await view(HER)).note!;
+    expect(n.text).toBe("the first thing I want to say");
+    expect(n.total).toBe(2);
+    expect(n.final).toBe(false);
+  });
+
+  it("falls back to the defaults for a room nobody has edited", async () => {
+    await seat();
+    expect((await view(HER)).note!.text).toBe(NOTES[0]);
+  });
+
+  it("treats an empty list as going back to the defaults, not as no notes", async () => {
+    await seat();
+    await post("notes", { me: HIM, notes: ["mine"] });
+    expect((await view(HER)).note!.text).toBe("mine");
+    await post("notes", { me: HIM, notes: [] });
+    expect((await view(HER)).note!.text).toBe(NOTES[0]);
+  });
+
+  it("drops blank entries rather than showing her an empty note", async () => {
+    await seat();
+    await post("notes", { me: HIM, notes: ["  ", "real", "", "   also real  "] });
+    const n = (await view(HER)).note!;
+    expect(n.total).toBe(2);
+    expect(n.text).toBe("real");
+  });
+
+  it("keeps her place when he edits, and clamps rather than resetting when he trims", async () => {
+    // Losing three weeks of her progress because he fixed a typo would be indefensible.
+    await seat();
+    await post("notes", { me: HIM, notes: ["one", "two", "three", "four"] });
+    await post("clock", { me: HIM, tz: BEHIND });
+    await view(HER);
+    await post("clock", { me: HIM, tz: AHEAD });
+    expect((await view(HER)).note!.day).toBe(2);
+
+    await post("notes", { me: HIM, notes: ["one", "two edited", "three", "four"] });
+    expect((await view(HER)).note!.text).toBe("two edited"); // same day, new words
+
+    await post("notes", { me: HIM, notes: ["only one left"] });
+    const n = (await view(HER)).note!;
+    expect(n.day).toBe(1);
+    expect(n.text).toBe("only one left");
+    expect(n.final).toBe(true);
+  });
+
+  it("caps how many and how long, instead of storing whatever it is sent", async () => {
+    await seat();
+    await post("notes", { me: HIM, notes: Array.from({ length: 200 }, (_, i) => `n${i}`) });
+    expect((await view(HER)).note!.total).toBe(120);
+    await post("notes", { me: HIM, notes: ["x".repeat(500)] });
+    expect((await view(HER)).note!.text).toHaveLength(280);
+  });
+
+  it("rejects a body that is not a list of strings", async () => {
+    await seat();
+    expect((await post("notes", { me: HIM, notes: "not a list" })).status).toBe(400);
+    expect((await post("notes", { me: HIM, notes: [1, 2] })).status).toBe(400);
+    expect((await post("notes", { me: HIM })).status).toBe(400);
+  });
+
+  it("gives them back to him to edit, and to nobody else", async () => {
+    // He needs them to edit them. She must not have them: that is the read-ahead leak with extra steps.
+    await seat();
+    await post("notes", { me: HIM, notes: ["one", "two", "three"] });
+    expect((await view(HIM)).yourNotes).toEqual(["one", "two", "three"]);
+    expect((await view(HER)).yourNotes).toBeNull();
+    await view(STRANGER);
+    expect((await view(STRANGER)).yourNotes).toBeNull();
+  });
+
+  it("does not put the unread ones in her payload at all", async () => {
+    await seat();
+    await post("notes", { me: HIM, notes: ["day one", "UNREAD SECOND", "UNREAD THIRD"] });
+    const body = await (await SELF.fetch(`https://x/api/room/${id}?me=${HER}`)).text();
+    expect(body).not.toContain("UNREAD SECOND");
+    expect(body).not.toContain("UNREAD THIRD");
+  });
+
+  it("still never sends her tomorrow's words", async () => {
+    await seat();
+    await post("notes", { me: HIM, notes: ["today only", "SECRET FUTURE NOTE"] });
+    const body = await (await SELF.fetch(`https://x/api/room/${id}?me=${HER}`)).text();
+    expect(body).toContain("today only");
+    expect(body).not.toContain("SECRET FUTURE NOTE");
   });
 });
 

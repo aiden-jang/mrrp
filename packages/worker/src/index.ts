@@ -72,6 +72,24 @@ app.post("/api/room/:id/dress", async (c) => {
 });
 
 /**
+ * Replace this room's notes. His only.
+ *
+ * One per entry, trimmed and capped in the Durable Object. An empty list means "use the defaults".
+ */
+app.post("/api/room/:id/notes", async (c) => {
+  const id = c.req.param("id");
+  if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
+  const body = (await c.req.json().catch(() => ({}))) as { me?: unknown; notes?: unknown };
+  const me = typeof body.me === "string" ? body.me : "";
+  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!Array.isArray(body.notes) || body.notes.some((n) => typeof n !== "string")) {
+    return c.json({ error: "bad request" }, 400);
+  }
+  const ok = await room(c.env, id).setNotes(me, body.notes as string[]);
+  return ok ? c.json({ ok: true }) : c.json({ error: "not yours to set" }, 403);
+});
+
+/**
  * Free her seat, so a new phone can be her.
  *
  * The only recovery this app has. A seat is a random token in localStorage, so clearing browser data

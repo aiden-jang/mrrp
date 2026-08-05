@@ -1,66 +1,48 @@
 /**
  * One note a day.
  *
- * ─────────────────────────────────────────────────────────────────────────────
- *  These are written to be sent as they are. They're deliberately about small
- *  ordinary things, because that's what lands: "you fell asleep before the film
- *  ended again" beats "you're wonderful" every time.
+ * These are the DEFAULTS, used by any room whose owner has not written their own. They are
+ * deliberately generic: they mention no names, no places, and nothing that only one couple could have
+ * lived through, because every room that has not been edited gets exactly these. The previous set was
+ * written for one specific person, which meant anybody else who made a room was handed somebody else's
+ * love letters, and that is worse than a blank page.
  *
- *  Six of them are marked SWAP with the detail to replace. Those six will do more
- *  work than the other twenty-four combined, because they're the ones only you
- *  could have written. You don't have to touch the rest.
+ * They still try to be about small ordinary things rather than compliments, because that is what
+ * lands: "you fell asleep before the film ended again" beats "you're wonderful" every time. The point
+ * is to be a decent floor, not a ceiling. Anything written in the app replaces this entirely.
  *
- *  Order matters. Index 0 is day one, and the last one keeps showing after the
- *  list runs out, so it has to be one that can sit there for a while.
- * ─────────────────────────────────────────────────────────────────────────────
+ * Order matters. Index 0 is day one, and the last one keeps showing after the list runs out, so it has
+ * to be something that can sit there for a while without going stale.
  */
 export const NOTES: string[] = [
-  "Hi. I made you a cat. She lives here now and so, in a small way, do I.",
-  "She's asleep in the sun. I checked twice, which tells you more about me than about her.",
-  "I spent an embarrassing amount of time on the exact orange of her fur. This is the orange.",
-  "You don't have to come here every day. She'll be here on the days you don't.",
-  "She sat on my keyboard while I was building this, so some of it is genuinely her fault.",
-
-  // SWAP: the thing she actually does that you find funny.
-  'You say "one more episode" like it\'s a fact and not a hope. I love that about you.',
-
-  "Nothing in here can go wrong. That was the first thing I decided and the only rule I never broke.",
-  "I hope you found this before I asked whether you'd found it. I'm going to ask anyway.",
-  "She stretched today. It took nine full seconds. I watched all of it.",
-  "The best part of my day is usually something small you said and forgot immediately.",
-
-  // SWAP: where you actually were, and what you were thinking.
-  "I thought about you in a queue at the shop today, which is not romantic and is completely true.",
-
-  "If you're reading this in bed, put the phone down in a minute. She isn't going anywhere.",
-  "You're allowed to have a bad day in here. She won't mind and neither will I.",
-  "Halfway. She has no idea there's a number. Honestly, neither should you.",
-  "She has knocked exactly one thing off exactly one shelf, and I've decided not to tell you what.",
-
-  // SWAP: the actual disagreement, and who turned out to be right.
-  "You were right about that thing and I took four days to say so. Saying so now.",
-
-  "I like that you don't perform being happy. When you're happy it's just true.",
-  "There's a version of this where I bought you something instead. This one took longer.",
-  "She's warm. That's the one part of her I can't send you.",
-  "Whatever you were worried about last week, you handled it. You always do and you never notice.",
-
-  // SWAP: a specific ordinary morning. A real Tuesday beats any nice sentence.
-  "I keep thinking about that morning we didn't do anything at all. Best day in ages.",
-
-  "I came in here earlier just to see whether you'd been. You had.",
-  "You're the easiest person I've ever had absolutely nothing to do with.",
-  "I ran out of clever somewhere around note eleven and kept going anyway. Here we are.",
-  "She's fine. She's always fine. That's the whole feature.",
-
-  // SWAP: one inside joke. Worth more than ten good sentences.
-  "You know the thing we say. I'm saying it.",
-
-  "If you ever stop opening this, that's allowed too. It was never a streak.",
-  "You've made my life bigger and quieter at the same time, which I didn't think was possible.",
-
-  // SWAP: how long it's actually been, or where you were when it started.
-  "Tomorrow's the last one. She stays after, and so do I.",
-
-  "That's all of them. She's asleep in the sun and the door's open. Come back whenever.",
+  "Somebody made you a cat. She lives here now, and she is not going anywhere.",
+  "She is asleep in the sun. She is almost always asleep in the sun.",
+  "You do not have to come here every day. She will be here on the days you don't.",
+  "There is nothing to keep up with in here. No streak to break, nothing that dies if you forget.",
+  "She has decided the warmest square of floor belongs to her. She is not wrong.",
+  "If you tell her you are tired, she will not ask you to explain it.",
+  "She knocked something off the shelf earlier. No remorse whatsoever.",
+  "You are allowed to just sit here and not do anything. That is the entire feature list.",
+  "She noticed you were here before you did.",
+  "Whatever kind of day it was, she is going to react the same way: by coming closer.",
+  "She sat in the doorway for a while, waiting. She does that around the time you usually get back.",
+  "Bad days are allowed in here. She gets softer on those, not further away.",
+  "Somebody set the colour of her fur on purpose. That took longer than you would think.",
+  "She stretched, thought about moving, and then did not.",
+  "You do not have to be in a good mood to be welcome here.",
+  "She has been in the sunbeam so long she has probably gone slightly crispy.",
+  "Nothing in here is keeping score. Not the cat, not the notes, not the person who made it.",
+  "She looked directly at you. Briefly. She will deny it.",
+  "If today was a lot, put your thumb on her and leave it there a second.",
+  "There was a moth. It went badly for nobody, which is the best possible outcome.",
+  "She does not need anything from you today. That is the point of her.",
+  "Somebody thought about you enough to build a room and put a cat in it.",
+  "She is doing the thing where she is asleep but her ear still tracks the door.",
+  "You can close this and come back in a week and nothing will have gone wrong.",
+  "She is warm. That is her whole contribution and it is a good one.",
+  "Whatever you tapped today, somebody on the other end saw it and thought about you.",
+  "She has not moved in an hour. Committed.",
+  "This is not an app that wants anything from you.",
+  "She will still be in the sun tomorrow. So will this.",
+  "Whenever you open this, somebody meant for you to feel better afterwards. That has not expired.",
 ];

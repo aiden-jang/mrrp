@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Action, Mood, RoomView } from "./types.js";
 import { ACTIONS, MOODS } from "./types.js";
-import { doAct, doClock, doDress, doRelease, doSay, doTell, fetchRoom, myName, newRoomId, roomFromPath } from "./api.js";
+import { doAct, doClock, doDress, doNotes, doRelease, doSay, doTell, fetchRoom, myName, newRoomId, roomFromPath } from "./api.js";
 import { Cat } from "./Cat.js";
 import { sceneFor } from "./hours.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
@@ -117,7 +117,7 @@ function RoomPage({ id }: { id: string }) {
   const [releasing, setReleasing] = useState(false);
   const [savingSetup, setSavingSetup] = useState(false);
   const [setupErr, setSetupErr] = useState<string | null>(null);
-  const [draft, setDraft] = useState<{ name: string; look: string; eyes: string; tz: string; homeHour: number } | null>(null);
+  const [draft, setDraft] = useState<{ name: string; look: string; eyes: string; tz: string; homeHour: number; notes: string } | null>(null);
 
   const load = useCallback(async (n?: string | null) => {
     try {
@@ -162,7 +162,12 @@ function RoomPage({ id }: { id: string }) {
     if (!view) return;
     const look = LOOKS.find((l) => l.cat.fur.toLowerCase() === view.cat.fur.toLowerCase())?.id ?? LOOKS[0]!.id;
     const eyes = EYES.find((e) => e.hex.toLowerCase() === view.cat.eyes.toLowerCase())?.id ?? EYES[0]!.id;
-    setDraft({ name: view.cat.name, look, eyes, tz: view.clock.tz, homeHour: view.clock.homeHour });
+    setDraft({
+      name: view.cat.name, look, eyes, tz: view.clock.tz, homeHour: view.clock.homeHour,
+      // Seeded from whatever the room runs on, which for an untouched room is the defaults. Editing
+      // from a real starting point is far easier than facing an empty box.
+      notes: (view.yourNotes ?? []).join("\n"),
+    });
     setSetup(true);
   };
 
@@ -175,6 +180,7 @@ function RoomPage({ id }: { id: string }) {
     try {
       await doDress(id, { name: draft.name.trim() || "Bean", ...look.cat, eyes: eyes.hex });
       await doClock(id, { tz: draft.tz, homeHour: draft.homeHour });
+      await doNotes(id, draft.notes.split("\n"));
       setSetup(false);
       await load();
     } catch (e) {
@@ -378,6 +384,26 @@ function RoomPage({ id }: { id: string }) {
                 </option>
               ))}
             </select>
+
+            {/*
+              * Her notes, one per line.
+              *
+              * A textarea rather than a list of fields with add and remove buttons: this gets written
+              * once, probably pasted in from somewhere else, and thirty separate inputs would be thirty
+              * things to tab through. Blank lines are dropped server-side, so pasting messy text is fine.
+              */}
+            <p style={S.fieldLabel}>her notes, one per line</p>
+            <textarea
+              style={{ ...S.sayInput, minHeight: 150, fontSize: 14 }}
+              value={draft.notes}
+              rows={8}
+              placeholder="One a day, in your own words."
+              onChange={(e) => setDraft((d) => ({ ...d!, notes: e.target.value }))}
+            />
+            <p style={{ ...S.small, marginTop: 6 }}>
+              {draft.notes.split("\n").filter((l) => l.trim()).length} notes. She gets one a day and
+              the last one stays. Leave this empty to use the ones it came with.
+            </p>
 
             {/* Errors belong next to the button that failed. This used to surface at the very bottom of
                 the card, below everything, which on a panel this tall is off screen. */}
