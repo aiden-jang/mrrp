@@ -70,14 +70,6 @@ export async function doAct(id: string, action: Action): Promise<RoomView> {
   return r.json() as Promise<RoomView>;
 }
 
-export async function dress(id: string, cat: Record<string, unknown>): Promise<void> {
-  await fetch(`/api/room/${id}/dress`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(cat),
-  });
-}
-
 /** Tell the cat how you are. Returns the room as it now looks to you. */
 export async function doTell(id: string, mood: Mood): Promise<RoomView> {
   const r = await fetch(`/api/room/${id}/tell`, {
