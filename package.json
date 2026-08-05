@@ -7,7 +7,11 @@
     "typecheck": "pnpm -r typecheck",
     "dev:worker": "pnpm --filter @mrrp/worker dev",
     "dev:web": "pnpm --filter @mrrp/web dev",
-    "deploy": "pnpm --filter @mrrp/worker deploy"
+    "deploy": "pnpm --filter @mrrp/worker deploy",
+    "test": "pnpm -r test",
+    "check": "pnpm -r typecheck && pnpm -r test"
   },
-  "devDependencies": { "typescript": "^5.7.2" }
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
 }
