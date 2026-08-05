@@ -15,6 +15,19 @@ export function myToken(): string {
   return t;
 }
 
+/**
+ * The last room this device was in.
+ *
+ * A static manifest cannot have a per-room start_url, so the home screen icon resolves to "/", which
+ * is the make-a-room page. Adding the app to her home screen from her room and then being shown a name
+ * box and a "Make her a room" button the next day is the worst possible outcome for the one flow this
+ * app exists for. This is how the front door knows where she was.
+ */
+export const lastRoom = {
+  get: () => localStorage.getItem("mrrp:room"),
+  set: (id: string) => localStorage.setItem("mrrp:room", id),
+};
+
 export const myName = {
   get: () => localStorage.getItem("mrrp:name"),
   set: (n: string) => localStorage.setItem("mrrp:name", n),
