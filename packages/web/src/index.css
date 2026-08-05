@@ -13,6 +13,25 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 /*
+ * Things arrive.
+ *
+ * The note is the emotional payload of the whole app and it used to simply exist in a static card the
+ * moment the page loaded. A note that appears is information; a note that arrives is a moment, and the
+ * difference is about 400ms of easing. The overshoot in the curve is what makes it read as a small
+ * physical object settling rather than a div fading in.
+ *
+ * The reduced-motion block at the bottom of this file turns all of it off.
+ */
+@keyframes arrive {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/*
  * Everything answers a touch.
  *
  * The whole app was cream panels on a cream page with hairline borders and no depth, so it read as
@@ -28,6 +47,6 @@ button:active:not(:disabled), select:active { transform: scale(.965); }
 button:disabled { opacity: .55; }
 
 @media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; transition: none !important; }
+  * { animation: none !important; transition: none !important; opacity: 1 !important; transform: none !important; }
   button:active:not(:disabled) { transform: none; }
 }
