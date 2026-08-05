@@ -47,7 +47,15 @@ export const newRoomId = () =>
 export async function fetchRoom(id: string, name?: string | null): Promise<RoomView> {
   const q = new URLSearchParams({ me: myToken() });
   if (name) q.set("name", name);
-  const r = await fetch(`/api/room/${id}?${q}`);
+  let r: Response;
+  try {
+    r = await fetch(`/api/room/${id}?${q}`);
+  } catch {
+    // A dead connection throws a TypeError whose message is "Failed to fetch", and that string was
+    // going straight to the screen. The service worker means the app itself still opens on a bad
+    // connection, so this line is what she actually reads when it does.
+    throw new Error("Can't reach the room. Still trying.");
+  }
   if (!r.ok) throw new Error("Could not find her.");
   return r.json() as Promise<RoomView>;
 }
