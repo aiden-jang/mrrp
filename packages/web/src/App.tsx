@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Action, Mood, RoomView } from "./types.js";
 import { ACTIONS, MOODS } from "./types.js";
-import { doAct, doClock, doDress, doSay, doTell, fetchRoom, myName, newRoomId, roomFromPath } from "./api.js";
+import { doAct, doClock, doDress, doRelease, doSay, doTell, fetchRoom, myName, newRoomId, roomFromPath } from "./api.js";
 import { Cat } from "./Cat.js";
 import { sceneFor } from "./hours.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
@@ -115,6 +115,7 @@ function RoomPage({ id }: { id: string }) {
   const [lineOpen, setLineOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [setup, setSetup] = useState(false);
+  const [releasing, setReleasing] = useState(false);
   const [savingSetup, setSavingSetup] = useState(false);
   const [setupErr, setSetupErr] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ name: string; look: string; eyes: string; tz: string; homeHour: number } | null>(null);
@@ -552,6 +553,40 @@ function RoomPage({ id }: { id: string }) {
               <button style={S.quiet} onClick={openSetup}>
                 Change how {view.cat.name} looks, or her hours
               </button>
+            )}
+
+            {/* The only recovery this app has, so it has to be findable, and it evicts her current
+                device, so it asks first. Kept quiet and last: it matters on one day out of a year. */}
+            {!setup && !view.waitingForThem && (
+              releasing ? (
+                <div style={{ ...S.panel, marginTop: 14 }}>
+                  <p style={{ ...S.small, color: "var(--ink)" }}>
+                    This frees her seat, and whoever opens the link next becomes the cat. Send it to her
+                    again afterwards. She keeps her place in the notes and the line she left you.
+                  </p>
+                  <div style={{ ...S.row, marginTop: 12 }}>
+                    <button style={S.btn} onClick={() => setReleasing(false)}>Never mind</button>
+                    <button
+                      style={{ ...S.btn, ...S.btnGo }}
+                      onClick={async () => {
+                        try {
+                          await doRelease(id);
+                          setReleasing(false);
+                          await load();
+                        } catch (e) {
+                          setErr(e instanceof Error ? e.message : "Couldn't do that.");
+                        }
+                      }}
+                    >
+                      Free her seat
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button style={S.quiet} onClick={() => setReleasing(true)}>
+                  {view.them ?? "She"} got a new phone
+                </button>
+              )
             )}
           </>
         )}

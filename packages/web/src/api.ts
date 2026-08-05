@@ -88,6 +88,21 @@ export async function doClock(id: string, clock: Partial<Clock>): Promise<void> 
   if (!r.ok) throw new Error("Couldn't save her hours.");
 }
 
+/**
+ * Free her seat so a new device can claim it. His only.
+ *
+ * The one recovery path in an app with no accounts: a seat is the token below, and a cleared browser
+ * or a new phone otherwise loses it for good.
+ */
+export async function doRelease(id: string): Promise<void> {
+  const r = await fetch(`/api/room/${id}/release`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ me: myToken() }),
+  });
+  if (!r.ok) throw new Error("Couldn't free her seat.");
+}
+
 /** Leave him a line. Hers only; empty text clears it. */
 export async function doSay(id: string, text: string): Promise<RoomView> {
   const r = await fetch(`/api/room/${id}/say`, {

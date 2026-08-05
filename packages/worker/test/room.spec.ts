@@ -321,6 +321,88 @@ describe("her line back", () => {
   });
 });
 
+/**
+ * Losing a phone.
+ *
+ * A seat is a random localStorage token, so clearing browser data or changing device loses it. With
+ * exactly two seats and no way to free one, the room would be dead forever with nobody able to be the
+ * cat. This is the only recovery the app has, so it needs to work and it needs to not cost her
+ * anything she has already been given.
+ */
+describe("freeing her seat", () => {
+  const NEWPHONE = "newphonenewphone";
+
+  it("is his to do, and nobody else's", async () => {
+    await seat();
+    expect((await post("release", { me: HER })).status).toBe(403);
+    await view(STRANGER);
+    expect((await post("release", { me: STRANGER })).status).toBe(403);
+    expect((await post("release", { me: HIM })).status).toBe(200);
+  });
+
+  it("does nothing when there is no second seat to free", async () => {
+    await view(HIM, "Aiden");
+    expect((await post("release", { me: HIM })).status).toBe(403);
+  });
+
+  it("lets a new device become her, and leaves his seat alone", async () => {
+    await seat();
+    await post("release", { me: HIM });
+    expect((await view(HIM)).waitingForThem).toBe(true);
+
+    const fresh = await view(NEWPHONE, "Sofia again");
+    expect(fresh.youAreHer).toBe(true);
+    expect((await view(HIM)).youAreHer).toBe(false); // he is still him
+    expect((await view(HIM)).them).toBe("Sofia again");
+  });
+
+  it("keeps her place in the notes, because a lost phone should not cost her three weeks", async () => {
+    await seat();
+    await post("clock", { me: HIM, tz: "Etc/GMT+12" });
+    await view(HER);
+    await post("clock", { me: HIM, tz: "Pacific/Kiritimati" });
+    expect((await view(HER)).note!.day).toBe(2);
+
+    await post("release", { me: HIM });
+    expect((await view(NEWPHONE, "Sofia again")).note!.day).toBe(2);
+  });
+
+  it("keeps the line she left him", async () => {
+    await seat();
+    await post("say", { me: HER, text: "still true" });
+    await post("release", { me: HIM });
+    await view(NEWPHONE, "Sofia again");
+    expect((await view(HIM)).herLine?.text).toBe("still true");
+  });
+
+  it("clears her mood, because a mood is how you are now", async () => {
+    await seat();
+    await post("tell", { me: HER, mood: "sad" });
+    await post("release", { me: HIM });
+    await view(NEWPHONE, "Sofia again");
+    expect((await view(HIM)).catMood).toBeNull();
+  });
+
+  it("does not leave her old visits showing as somebody else's", async () => {
+    await seat();
+    await post("act", { me: HIM, action: "pet" });
+    await post("release", { me: HIM });
+    const fresh = await view(NEWPHONE, "Sofia again");
+    // His actions survive: he never lost his seat. Hers would be entries by a person with no seat.
+    expect(fresh.theirRecent.map((v) => v.action)).toEqual(["pet"]);
+  });
+
+  it("frees exactly one seat, so the room cannot end up with three people", async () => {
+    await seat();
+    await post("release", { me: HIM });
+    await view(NEWPHONE, "Sofia again");
+    // A fourth token arriving after the seat is retaken is a spectator, same as always.
+    const late = await view("latecomerlatecomer");
+    expect(late.you).toBeNull();
+    expect(late.youAreHer).toBe(false);
+  });
+});
+
 describe("both of you at once", () => {
   it("is false when only one of you has been in", async () => {
     await view(HIM, "Aiden");

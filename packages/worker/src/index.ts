@@ -72,6 +72,25 @@ app.post("/api/room/:id/dress", async (c) => {
 });
 
 /**
+ * Free her seat, so a new phone can be her.
+ *
+ * The only recovery this app has. A seat is a random token in localStorage, so clearing browser data
+ * or changing device otherwise loses it forever, and with two seats and no way to release one the room
+ * would be permanently stuck with nobody able to be the cat.
+ *
+ * His to call, checked in the Durable Object rather than here.
+ */
+app.post("/api/room/:id/release", async (c) => {
+  const id = c.req.param("id");
+  if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
+  const body = (await c.req.json().catch(() => ({}))) as { me?: unknown };
+  const me = typeof body.me === "string" ? body.me : "";
+  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+  const ok = await room(c.env, id).releaseHerSeat(me);
+  return ok ? c.json({ ok: true }) : c.json({ error: "not yours to release" }, 403);
+});
+
+/**
  * Whose day the room runs on. Validated here rather than trusted: an unchecked timezone string
  * reaches Intl.DateTimeFormat inside the DO, where it throws and takes the whole room down.
  */

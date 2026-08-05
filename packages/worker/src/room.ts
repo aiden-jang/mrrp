@@ -109,6 +109,39 @@ export class Room extends DurableObject<Env> {
   }
 
   /**
+   * Free her seat so a new device can claim it.
+   *
+   * A seat belongs to a random token in localStorage, which is what keeps this frictionless: no
+   * account, no password, no email. The cost is that clearing Safari's data or moving to a new phone
+   * loses the seat forever, and with only two seats and no way to release one, the room would be dead
+   * with nobody able to be the cat again. For something meant to sit on a home screen for months,
+   * that is not an edge case, it is a matter of time.
+   *
+   * His to call, for the same reason dressing the cat is: the link is the only credential, so anybody
+   * holding it could otherwise evict her.
+   *
+   * What survives on purpose: how far into the notes she has read, and the line she left him. Losing a
+   * phone should not cost her three weeks of notes or wipe what she said. Her mood is keyed by person
+   * and so it resets, which is right — a mood is how you are now, and the new device will be asked.
+   */
+  async releaseHerSeat(me: string): Promise<boolean> {
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    const { him, her } = this.roles(people);
+    if (him !== me || !her) return false;
+
+    const moods = (await this.ctx.storage.get<Record<string, Told>>("moods")) ?? {};
+    delete moods[her];
+    delete people[her];
+    await this.ctx.storage.put("people", people);
+    await this.ctx.storage.put("moods", moods);
+    // The visit log is keyed by person too, and entries for a seat nobody holds would show up as
+    // things done by a stranger.
+    const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
+    await this.ctx.storage.put("log", log.filter((v) => v.who !== her));
+    return true;
+  }
+
+  /**
    * Tell the cat how you are.
    *
    * Stored per person and overwritten, never appended. There is no history and no streak on purpose:
