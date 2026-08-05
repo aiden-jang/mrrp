@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { MOODS, type Mood } from "../src/types.js";
 import { RESPONSES } from "../src/moods.js";
 import { LOOKS, EYES, timezones } from "../src/looks.js";
-import { POSES, BED, DOOR, FRAME, PLANT, SHELF, TAIL, WINDOW, type Sprite } from "../src/sprites.js";
+import { POSES, BED, DOOR, FRAME, MRRP, PLANT, SHELF, TAIL, WINDOW, type Sprite } from "../src/sprites.js";
 import { sceneFor, hourIn } from "../src/hours.js";
 
 /**
@@ -17,7 +17,51 @@ const ALL_SPRITES: [string, Sprite][] = [
   ...Object.entries(POSES),
   ["tail", TAIL], ["bed", BED], ["door", DOOR],
   ["frame", FRAME], ["plant", PLANT], ["shelf", SHELF], ["window", WINDOW],
+  ["mrrp", MRRP],
 ];
+
+/**
+ * The word in the speech bubble, checked letter by letter.
+ *
+ * Rectangularity was never the problem here: my first cut was a perfectly rectangular 15x4 sprite
+ * that spelled "nrrp", because I gave the m three columns and an m needs three stems. It rendered
+ * happily and read as a capital pi. Nothing but eyes on the actual pixels catches that, so these
+ * assert the stems rather than the shape.
+ */
+describe("the word she says", () => {
+  /** Columns of the given row that have ink in them. */
+  const inked = (row: number): number[] =>
+    [...MRRP.rows[row]!].flatMap((c, i) => (c === "w" ? [i] : []));
+
+  it("gives the m a five-column box, which is what three stems needs", () => {
+    // Written the obvious way first, as `inked(1).filter(x => x < 5)`, this passed on the broken
+    // sprite: with a 3-wide m the column-4 ink it was reading belonged to the next glyph's stem, so
+    // the assertion held and the name lied. Mutation testing is the only reason I know that. Pin the
+    // glyph's box instead, which a narrower m cannot satisfy.
+    expect(MRRP.rows[0]!.slice(0, 6)).toBe("wwwww.");
+    expect(MRRP.rows[1]!.slice(0, 6)).toBe("w.w.w.");
+    expect(MRRP.rows[2]!.slice(0, 6)).toBe("w.w.w.");
+  });
+
+  it("spaces four glyphs with a clear column between each", () => {
+    // Glyph starts: m at 0 (5 wide), then r, r, p at 6, 10, 14 (3 wide each).
+    for (const gap of [5, 9, 13]) {
+      for (let r = 0; r < MRRP.h; r++) expect(MRRP.rows[r]![gap], `row ${r} col ${gap}`).toBe(".");
+    }
+  });
+
+  it("gives the p a descender and nothing else one", () => {
+    // The fourth row exists only for the p's tail. Ink anywhere else on it is a stray pixel.
+    expect(inked(3)).toEqual([14]);
+  });
+
+  it("fits in a bubble that fits in the room", () => {
+    // The bubble is the word plus two columns of padding either side, and it is clamped inside a
+    // 100-wide grid. If the word ever grows past this, the clamp starts cropping letters.
+    expect(MRRP.w + 4).toBeLessThanOrEqual(30);
+    expect(MRRP.h).toBe(4);
+  });
+});
 
 describe("sprites", () => {
   it.each(ALL_SPRITES)("%s is rectangular", (_name, sp) => {

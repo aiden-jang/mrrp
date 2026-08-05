@@ -274,13 +274,20 @@ function RoomPage({ id }: { id: string }) {
             label={`${previewLook.name} is ${scene.doing}.`}
             look={previewLook} clock={setup && draft ? { ...view.clock, tz: draft.tz, homeHour: draft.homeHour } : view.clock} mood={view.catMood} petting={petting} nudge={nudge} />
           {/* holding on her is petting; it is the one gesture that isn't a button */}
-          {!view.youAreHer && (
+          {iAmHim && (
             <div
               style={S.petLayer}
               onPointerDown={() => { setPetting(true); void act("pet"); }}
               onPointerUp={() => setPetting(false)}
               onPointerLeave={() => setPetting(false)}
             />
+          )}
+          {/* Her side was the only one you couldn't touch. She is the cat, so petting herself would be
+              nonsense and telling him she did it would be worse, but a poke that gets a mrrp back costs
+              nothing and it was the one screen with no reason to touch anything. Local only: no request,
+              nothing stored, nobody told. */}
+          {view.youAreHer && (
+            <div style={S.petLayer} onPointerDown={() => setNudge((v) => v + 1)} />
           )}
         </div>
 
