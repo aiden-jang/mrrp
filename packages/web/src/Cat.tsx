@@ -178,15 +178,22 @@ export function Cat({
       // out either side of her head, which reads as a halo or a rendering fault rather than as
       // sunlight. A cat asleep in a pool of light is the entire picture, so the pool has to be
       // big enough to be one.
+      // Small solid core, generous soft edge. Getting this wrong in both directions is instructive:
+      // too short (stopping at FLOOR+7) and it sat at her head height, so all you saw of it was two
+      // pale wings either side of her ears. Too big (38 wide, 13 rows) and it read as light right up
+      // until a mood moved her to the door, at which point a large bright lens with nothing lying in
+      // it dominated the room and looked like a rendering fault.
+      //
+      // The fix is not a size, it's a shape: mostly dither, so it reads as light on boards whether or
+      // not there is a cat in it, and it still reaches far enough down the floor to pool around her.
       const POOL = [
-        [1, 20], [2, 26], [3, 30], [4, 34], [5, 36], [6, 38], [7, 38],
-        [8, 36], [9, 34], [10, 30], [11, 26], [12, 20], [13, 14],
+        [1, 16], [2, 20], [3, 24], [4, 26], [5, 26], [6, 24], [7, 22], [8, 18], [9, 14],
       ] as const;
       for (const [dy, w] of POOL) rect(beamX - (w >> 1), FLOOR + dy, w, 1, sc.patch);
-      // The soft edge starts below her ear line (she tops out at FLOOR+1) and stays narrower than
-      // the pool. Dither running across the rows her ears occupy put a checkerboard fan either side
-      // of her face, and speckle next to the one thing you're meant to look at just reads as noise.
-      dither(beamX - 17, FLOOR + 7, 34, 7, sc.patch);
+      // The soft edge starts below her ear line. Dither running across the rows her ears occupy put a
+      // checkerboard fan either side of her face, and speckle next to the one thing you are meant to
+      // be looking at just reads as noise.
+      dither(beamX - 15, FLOOR + 5, 30, 9, sc.patch);
 
       // Props AFTER the light. Drawn before it, the beam's dither punched holes through them.
       blit(WINDOW, WIN_X, 4, { w: INK, h: sc.sun > 0.2 ? sc.beamWarm : sc.wallTop });
@@ -379,13 +386,18 @@ export function Cat({
       // Purring, shown rather than written: small marks rising off her.
       if (pet || sc.purring) {
         const a = pet ? 0.8 : 0.42;
+        // Clamped inside her silhouette rather than a flat +10. The poses are different widths, and on
+        // the narrow standing pose (the one a low mood puts at the door) a fixed offset put the marks
+        // out in mid-air beside her, where they read as three stray pixels on the wall rather than as
+        // anything coming off the cat.
+        const purrX = kx + Math.min(10, Math.max(2, (sp.w >> 1) - 3));
         for (let i = 0; i < 2; i++) {
           const p = (t / 1500 + i * 0.5) % 1;
           const yy = Math.round(y + sp.oy - 2 - p * 7);
           const c = `rgba(255,255,255,${a * (1 - p)})`;
-          px(kx + 10, yy, c);
-          px(kx + 11, yy - 1, c);
-          px(kx + 12, yy, c);
+          px(purrX, yy, c);
+          px(purrX + 1, yy - 1, c);
+          px(purrX + 2, yy, c);
         }
       }
 

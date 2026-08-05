@@ -45,6 +45,23 @@ export function App() {
   return id ? <RoomPage id={id} /> : <Landing />;
 }
 
+/**
+ * The cat the front door shows, before anybody has made a room.
+ *
+ * She is the entire product, and the landing page used to be a heading, an input and a button: the
+ * one thing that explains this app in less time than a sentence was the one thing not on the page.
+ * Ginger tabby because that is what a new room ships with, so the door is not advertising a cat you
+ * then have to go and build.
+ *
+ * The viewer's own timezone, so she is doing whatever fits the hour where they actually are. Reading
+ * "asleep in the best spot" at 2am is a better introduction than any tagline.
+ */
+const DOOR_CAT = { name: "Bean", ...LOOKS[0]!.cat, eyes: EYES[0]!.hex };
+const DOOR_CLOCK = {
+  tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York",
+  homeHour: 19,
+};
+
 /* ─────────────── landing: make a room, send the link ─────────────── */
 function Landing() {
   const [name, setName] = useState(myName.get() ?? "");
@@ -56,6 +73,9 @@ function Landing() {
   return (
     <main style={S.page}>
       <div style={{ ...S.card, textAlign: "center" }}>
+        <div style={{ ...S.stage, marginBottom: 18 }}>
+          <Cat label="A pixel cat asleep in a sunlit room." look={DOOR_CAT} clock={DOOR_CLOCK} mood={null} petting={false} nudge={0} />
+        </div>
         <h1 style={S.h1}>mrrp</h1>
         <p style={{ ...S.lede, margin: "0 auto 22px" }}>
           A cat that is her. She tells it how she's doing, and that's how it is. You get the link,
@@ -337,7 +357,9 @@ function RoomPage({ id }: { id: string }) {
 
         {view.waitingForThem ? (
           <>
-            <p style={S.newsMain}>{view.cat.name} is asleep. Nobody else is here yet.</p>
+            {/* The italic caption above already says she's asleep, in the room's own voice. Saying it
+                again immediately underneath read as a layout fault, because the two lines collided. */}
+            <p style={S.newsMain}>Nobody else is here yet.</p>
             <p style={{ ...S.small, textAlign: "center" }}>
               Send this link to the one person it's for. Whoever opens it second is the one the cat is.
             </p>
@@ -453,17 +475,12 @@ function RoomPage({ id }: { id: string }) {
                   <><b>{view.them}</b> hasn't said how she is yet today.</>
                 )}
               </p>
-              <p style={{ ...S.small, color: "rgba(255,255,255,.82)", marginTop: 4 }}>
-                Go and be in there. That's all it takes.
-              </p>
+              <p style={{ ...S.small, marginTop: 4 }}>Go and be in there. That's all it takes.</p>
             </div>
 
-            <div style={S.row}>
-              {ACTIONS.map((a) => (
-                <button key={a.id} style={S.btn} onClick={() => void act(a.id)}>{a.label}</button>
-              ))}
-            </div>
-
+            {/* Above the buttons, deliberately. She wrote him a sentence; the buttons are things he
+                can do any time. Having her words sit underneath four controls got the priority exactly
+                backwards on the one screen where she has actually said something. */}
             {view.herLine && (
               <div style={S.note}>
                 <p style={S.noteFrom}>{view.them} left you this</p>
@@ -471,6 +488,12 @@ function RoomPage({ id }: { id: string }) {
                 <p style={S.noteDay}>{whenish(view.herLine.at)}</p>
               </div>
             )}
+
+            <div style={{ ...S.row, marginTop: 14 }}>
+              {ACTIONS.map((a) => (
+                <button key={a.id} style={S.btn} onClick={() => void act(a.id)}>{a.label}</button>
+              ))}
+            </div>
 
             <p style={{ ...S.did, opacity: did ? 1 : 0 }} aria-live="polite">
               {did ? `She'll see that you ${did}.` : "\u00a0"}
@@ -517,9 +540,12 @@ const S: Record<string, React.CSSProperties> = {
   },
   petLayer: { position: "absolute", inset: 0, cursor: "grab", touchAction: "none" },
   doing: { fontSize: 13.5, color: "var(--soft)", textAlign: "center", margin: "14px 0 0", fontStyle: "italic" },
+  // A quiet panel, not a gold block. How she is appears on his side every single day, whereas the
+  // two of you being in the room at the same moment happens rarely — and when it did, two identical
+  // gold cards stacked on top of each other and the rare one lost. Only one of these should shout.
   theirs: {
     margin: "14px 0 2px", padding: "13px 16px", borderRadius: 18,
-    background: "var(--honey)", color: "#fff",
+    background: "var(--panel)", border: "1px solid var(--line)", color: "var(--ink)",
   },
   theirsMain: { fontSize: 16.5, lineHeight: 1.5, margin: 0 },
   did: {
@@ -589,7 +615,7 @@ const S: Record<string, React.CSSProperties> = {
   noteText: { fontSize: 16.5, lineHeight: 1.55, margin: 0 },
   noteDay: { fontSize: 12, color: "var(--soft)", margin: "9px 0 0", textAlign: "right" },
   news: { margin: "16px 2px 16px", textAlign: "center" },
-  newsMain: { fontSize: 17.5, margin: "0 0 5px", lineHeight: 1.45 },
+  newsMain: { fontSize: 17.5, margin: "12px 0 5px", lineHeight: 1.45, textAlign: "center" },
   row: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 },
   btn: {
     font: "inherit", fontSize: 14, fontWeight: 600, color: "var(--ink)", background: "var(--panel)",
