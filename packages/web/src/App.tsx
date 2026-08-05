@@ -177,6 +177,20 @@ function RoomPage({ id }: { id: string }) {
 
   useEffect(() => { if (!asking) void load(); }, [asking, load]);
 
+  /*
+   * Retry quickly while there is nothing on screen.
+   *
+   * A failed first load used to leave "Something went wrong" sitting there until the 45 second poll came
+   * round, which on a phone waking up on a weak connection is the normal case, not the rare one. Once the
+   * room has loaded once this stops: from then on a dropped request is a quiet line at the bottom and the
+   * slow poll is the right cadence.
+   */
+  useEffect(() => {
+    if (asking || view || !err) return;
+    const t = setTimeout(() => void load(), 2500);
+    return () => clearTimeout(t);
+  }, [asking, view, err, load]);
+
   // No socket: the room is asynchronous by design, so a quiet poll is enough to turn "was here" into
   // "is here" while the tab is open.
   //
@@ -289,7 +303,15 @@ function RoomPage({ id }: { id: string }) {
   if (!view) {
     return (
       <main style={S.page}>
-        <p style={S.small}>{err ?? "opening the door quietly…"}</p>
+        <div style={{ ...S.card, textAlign: "center" }}>
+          {/* The cat, even here. The app opens from cache on a bad connection, so this screen is what
+              she sees standing on a train with no signal, and an empty page with an error on it is a
+              worse thing to be handed than a sleeping cat and a promise to keep trying. */}
+          <div style={S.stage}>
+            <Cat label="A pixel cat asleep in a sunlit room." look={DOOR_CAT} clock={DOOR_CLOCK} mood={null} nudge={0} />
+          </div>
+          <p style={{ ...S.small, marginTop: 16 }}>{err ?? "opening the door quietly…"}</p>
+        </div>
       </main>
     );
   }
