@@ -32,6 +32,7 @@ export function Cat({
   mood,
   petting,
   nudge,
+  eyesOpen = false,
 }: {
   /** What the room says in words. The canvas is otherwise silent to a screen reader. */
   label: string;
@@ -42,12 +43,23 @@ export function Cat({
   petting: boolean;
   /** Bumped whenever an action happens, so she reacts to it. */
   nudge: number;
+  /**
+   * Hold her eyes open regardless of the hour. Set while the setup panel is open.
+   *
+   * Shut eyes are drawn as a line in the outline colour, not as a smaller eye, so when she is asleep
+   * her eye colour is not on screen at all. That made every swatch in the picker look identical and
+   * the whole control read as broken, when in fact it was saving correctly the entire time. You
+   * cannot choose a colour you cannot see.
+   */
+  eyesOpen?: boolean;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const petRef = useRef(petting);
   const lookRef = useRef(look);
   const clockRef = useRef(clock);
   const moodRef = useRef(mood);
+  const eyesRef = useRef(eyesOpen);
+  eyesRef.current = eyesOpen;
   petRef.current = petting;
   lookRef.current = look;
   clockRef.current = clock;
@@ -243,8 +255,11 @@ export function Cat({
       // a machine; slightly irregular reads as alive.
       const cyc = t % 5200;
       const blink = !reduce && ((cyc > 3400 && cyc < 3520) || (cyc > 4100 && cyc < 4200));
-      const open = pet ? 0 : Math.max(sc.eyes, n);
-      const awake = open > 0.4 && !blink;
+      // While the picker is open she stays awake and does not blink, so the colour you are choosing is
+      // continuously visible rather than appearing for 120ms between blinks, or never.
+      const forced = eyesRef.current;
+      const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
+      const awake = forced || (open > 0.4 && !blink);
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
       const pose: Pose = sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf");
       const sp = POSES[pose]!;

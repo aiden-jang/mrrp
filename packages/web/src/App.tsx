@@ -273,7 +273,7 @@ function RoomPage({ id }: { id: string }) {
         <div style={S.stage}>
           <Cat
             label={`${previewLook.name} is ${scene.doing}.`}
-            look={previewLook} clock={setup && draft ? { ...view.clock, tz: draft.tz, homeHour: draft.homeHour } : view.clock} mood={view.catMood} petting={petting} nudge={nudge} />
+            look={previewLook} clock={setup && draft ? { ...view.clock, tz: draft.tz, homeHour: draft.homeHour } : view.clock} mood={view.catMood} petting={petting} nudge={nudge} eyesOpen={setup} />
           {/* holding on her is petting; it is the one gesture that isn't a button */}
           {iAmHim && (
             <div
@@ -292,8 +292,21 @@ function RoomPage({ id }: { id: string }) {
           )}
         </div>
 
-        {/* What she's doing about what you told her, in her time, not the server's. */}
-        <p style={S.doing}>{view.cat.name} is {scene.doing}.</p>
+        {/* What she's doing about what you told her, in her time, not the server's. During setup she is
+            held awake so her eye colour is visible, which makes "deeply asleep" a lie, so it says what
+            is actually happening instead. */}
+        <p style={S.doing}>
+          {setup ? `Picking out ${view.cat.name}.` : `${view.cat.name} is ${scene.doing}.`}
+        </p>
+
+        {/* The one gesture that isn't a button was also the one nobody could find. It disappears after
+            the first touch rather than nagging, and it is never shown to a spectator, who has nothing
+            to touch. */}
+        {!setup && nudge === 0 && (iAmHim || view.youAreHer) && (
+          <p style={S.hint}>
+            {iAmHim ? `Hold on ${view.cat.name} to pet her` : `Tap ${view.cat.name}`}
+          </p>
+        )}
 
         {iAmHim && setup && draft && (
           <div style={S.panel}>
@@ -597,11 +610,13 @@ function RoomPage({ id }: { id: string }) {
           </p>
         )}
 
-        <p style={{ ...S.small, textAlign: "center", marginTop: 14 }}>
-          Nothing in here needs keeping up with. No streaks, no history, and nothing kept except how
-          you are right now.
-        </p>
-        <p style={S.credit}>made by aiden jang</p>
+        <div style={S.footer}>
+          <p style={{ ...S.small, textAlign: "center" }}>
+            Nothing in here needs keeping up with. No streaks, no history, and nothing kept except how
+            you are right now.
+          </p>
+          <p style={S.credit}>made by aiden jang</p>
+        </div>
       </div>
     </main>
   );
@@ -614,7 +629,20 @@ const S: Record<string, React.CSSProperties> = {
   h1: { fontSize: 40, margin: "0 0 8px", letterSpacing: "-0.02em", textAlign: "center" },
   lede: { fontSize: 15.5, color: "var(--soft)", maxWidth: "38ch", lineHeight: 1.55 },
   small: { fontSize: 13, color: "var(--soft)", margin: 0, lineHeight: 1.5 },
-  credit: { fontSize: 11.5, color: "var(--soft)", opacity: 0.65, textAlign: "center", margin: "22px 0 0" },
+  /**
+   * The footer, as one block instead of two grey paragraphs and a floating byline.
+   *
+   * No rule above it. What read as awkward was the credit sitting 22px below a three-line grey
+   * paragraph at almost the same weight: two separate quiet things competing to be last, so neither
+   * looked deliberate. Grouped, with the space outside the group rather than inside it, and the credit
+   * pulled right up under the line it belongs to.
+   */
+  footer: { marginTop: 28 },
+  credit: { fontSize: 11, color: "var(--soft)", opacity: 0.55, textAlign: "center", margin: "8px 0 0" },
+  /** Shown once, until the first touch. Small, centred, and never in the way. */
+  hint: {
+    fontSize: 12.5, color: "var(--soft)", opacity: 0.8, textAlign: "center", margin: "6px 0 0",
+  },
   stage: {
     position: "relative", width: "100%", aspectRatio: "5 / 4", borderRadius: 26, overflow: "hidden",
     background: "#efdcc2", boxShadow: "0 18px 44px -22px rgba(120,84,44,.45)",
