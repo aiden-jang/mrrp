@@ -2,12 +2,17 @@
 
 export type Action = "pet" | "brush" | "bring" | "sit";
 
-/** `past` completes "<visitor> ___", read by her. Second person, because the cat is her. */
-export const ACTIONS: { id: Action; label: string; past: string }[] = [
-  { id: "pet", label: "Pet her", past: "petted you" },
-  { id: "brush", label: "Brush her", past: "brushed you" },
-  { id: "bring", label: "Bring her something", past: "brought you something" },
-  { id: "sit", label: "Sit with her", past: "sat with you a while" },
+/**
+ * Two phrasings, because the two seats read different sentences about the same act.
+ *   `past` completes "<visitor> ___", which SHE reads: second person, since the cat is her.
+ *   `mine` completes "She'll see that you ___", which HE reads about her.
+ * Sharing one string produced "you brushed you".
+ */
+export const ACTIONS: { id: Action; label: string; past: string; mine: string }[] = [
+  { id: "pet", label: "Pet her", past: "petted you", mine: "petted her" },
+  { id: "brush", label: "Brush her", past: "brushed you", mine: "brushed her" },
+  { id: "bring", label: "Bring her something", past: "brought you something", mine: "brought her something" },
+  { id: "sit", label: "Sit with her", past: "sat with you a while", mine: "sat with her" },
 ];
 
 /**
