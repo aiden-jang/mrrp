@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Cat as CatLook, Clock, Mood } from "./types.js";
 import { sceneFor } from "./hours.js";
+import { mothAt } from "./critters.js";
 import { BED, DOOR, FRAME, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
@@ -252,12 +253,44 @@ export function Cat({
       blit(TAIL, pose === "stand" ? kx - 12 : tailX, tailY + wag, pal, pose === "stand");
       blit(sp, kx, y, pal);
 
-      // One white pixel per eye. This is the single pixel that makes her look alive.
+      // The moth, drawn before her so she can be in front of it, and so its position is known when
+      // her eyes are drawn.
+      const m = reduce ? null : mothAt(t, beamX);
+      if (m && sc.sun > 0.15) {
+        const mx = Math.round(m.x), my = Math.round(m.y);
+        // One-pixel wings that alternate, which at this scale is all a flap needs to be.
+        const flap = Math.sin(t / 90) > 0 ? 1 : 0;
+        const a2 = 0.35 + m.presence * 0.65;
+        px(mx, my, `rgba(246,234,208,${a2})`);
+        px(mx - 1, my - flap, `rgba(232,214,180,${a2})`);
+        px(mx + 1, my - flap, `rgba(232,214,180,${a2})`);
+      }
+
+      /*
+       * One white pixel per eye, and WHICH pixel is the whole trick.
+       *
+       * Shifting the highlight by a single pixel is the difference between a cat staring through you and
+       * a cat looking at something. She prefers the moth, falls back to your cursor, and otherwise looks
+       * straight ahead.
+       */
       if (awake) {
         const ey = y + sp.oy + 6;
-        const dx = pose === "loaf" ? 5 : pose === "play" ? 3 : 4;
-        px(kx - dx, ey, WHITE);
-        px(kx + dx - 1, ey, WHITE);
+        // Centres measured off the sprite grids, not guessed. My first pass used one offset for four
+        // poses, which put the highlight on an eye's outer edge — and then shifting it a pixel to
+        // "look" landed pure white on the blush.
+        const EYES: Record<Pose, { l: number; r: number; wide: boolean }> = {
+          loaf: { l: -5, r: 4, wide: true },
+          sit: { l: -3, r: 2, wide: true },
+          perk: { l: -3, r: 2, wide: true },
+          play: { l: -4, r: 3, wide: true },
+          stand: { l: -5, r: 1, wide: false },
+        };
+        const e = EYES[pose];
+        const at = m && sc.sun > 0.15 ? m.x : ptr.in ? ptr.x : null;
+        // Only 3px-wide eyes have room to shift; a 2px eye would spill onto the fur.
+        const look = !e.wide || at === null ? 0 : Math.sign(at - kx) * (Math.abs(at - kx) > 4 ? 1 : 0);
+        px(kx + e.l + look, ey, WHITE);
+        px(kx + e.r + look, ey, WHITE);
       }
 
       // The thing she knocked off, on the floor below the shelf it fell from. Outlined, or it
@@ -287,6 +320,14 @@ export function Cat({
           const c = `rgba(255,236,150,${Math.sin(p * Math.PI)})`;
           px(sx, sy, c); px(sx - 1, sy + 1, c); px(sx + 1, sy + 1, c); px(sx, sy + 2, c);
         }
+      }
+
+      // An ear twitch. One pixel of the left ear tip erased for a few frames, every ~13s. Absurdly
+      // small, and the kind of thing you notice without noticing.
+      const twitch = !reduce && awake && t % 13_000 < 220;
+      if (twitch) {
+        px(kx + sp.ox + 4, y + sp.oy, sc.wallTop);
+        px(kx + sp.ox + 4, y + sp.oy + 1, L.fur);
       }
 
       // Zzz. She is asleep for a large part of any given day, and a sleeping cat with no sign of
