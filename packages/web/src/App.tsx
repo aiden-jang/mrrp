@@ -22,6 +22,24 @@ function whenish(at: number): string {
 
 const pastTense = (a: Action) => ACTIONS.find((x) => x.id === a)?.past ?? "was here";
 
+/**
+ * A tint per mood, because six identical grey pills was the least cute thing on the page and this
+ * is the one control she actually touches.
+ *
+ * Kept very low saturation and all in the room's family of creams, clays and roses. Six saturated
+ * chips would read as a paintbox, and a paintbox next to hand-authored pixel art looks like two
+ * different apps. Nothing here is dark or cold: what she taps on a bad day should not look like a
+ * bad day, which is the same rule the room follows in moods.ts.
+ */
+const MOOD_TINT: Record<string, string> = {
+  good: "#f8e3b8",
+  tired: "#e7ddd0",
+  stressed: "#f2dcc9",
+  sad: "#e4dfd4",
+  lonely: "#f0dcd8",
+  bored: "#e6e3d2",
+};
+
 export function App() {
   const id = roomFromPath();
   return id ? <RoomPage id={id} /> : <Landing />;
@@ -352,7 +370,9 @@ function RoomPage({ id }: { id: string }) {
               </div>
             )}
 
-            {view.themHereNow ? (
+            {/* The banner above already says you're both in here, in bigger type. Saying it twice
+                on the same screen reads as a bug rather than as warmth. */}
+            {view.bothHereNow ? null : view.themHereNow ? (
               <p style={S.came}><b>{view.them}</b> is in here right now.</p>
             ) : last ? (
               <p style={S.came}>
@@ -400,13 +420,18 @@ function RoomPage({ id }: { id: string }) {
             <p style={S.tellLabel}>
               {view.catMood
                 ? `still ${MOODS.find((m) => m.id === view.catMood)?.label}?`
-                : "how are you today?"}
+                : "How are you today?"}
             </p>
             <div style={S.moodRow}>
               {MOODS.map((m) => (
                 <button
                   key={m.id}
-                  style={{ ...S.mood, ...(view.catMood === m.id ? S.moodOn : null) }}
+                  style={{
+                    ...S.mood,
+                    ...(view.catMood === m.id
+                      ? S.moodOn
+                      : { background: MOOD_TINT[m.id] ?? "var(--panel)", borderColor: "transparent" }),
+                  }}
                   onClick={() => void tell(m.id)}
                 >
                   {m.label}
@@ -518,16 +543,18 @@ const S: Record<string, React.CSSProperties> = {
     background: "var(--panel)", border: "1px dashed var(--line)", color: "var(--ink)",
   },
   yourLineLabel: {
-    display: "block", fontSize: 11.5, letterSpacing: ".07em", textTransform: "uppercase",
-    color: "var(--soft)", fontWeight: 600, marginBottom: 5,
+    display: "block", fontSize: 13.5, color: "var(--soft)", fontWeight: 500, marginBottom: 5,
   },
   yourLineText: { display: "block", fontSize: 15.5, lineHeight: 1.5 },
   came: {
     fontSize: 13.5, textAlign: "center", color: "var(--soft)", margin: "12px 0 0",
   },
+  // Sentence case, not letterspaced caps. Caps are the house style of dashboards and settings
+  // screens: they read as a field label on a form you have to fill in. This is somebody asking how
+  // your day was, and it should sound like it.
   tellLabel: {
-    fontSize: 11.5, letterSpacing: ".07em", textTransform: "uppercase", fontWeight: 600,
-    color: "var(--soft)", textAlign: "center", margin: "18px 0 7px",
+    fontSize: 14, fontWeight: 500,
+    color: "var(--soft)", textAlign: "center", margin: "18px 0 8px",
   },
   moodRow: { display: "flex", flexWrap: "wrap", gap: 7, justifyContent: "center", marginBottom: 14 },
   mood: {
@@ -540,8 +567,7 @@ const S: Record<string, React.CSSProperties> = {
     background: "var(--panel)", border: "1px solid var(--line)",
   },
   panelTitle: {
-    fontSize: 11.5, letterSpacing: ".07em", textTransform: "uppercase", fontWeight: 600,
-    color: "var(--soft)", margin: "0 0 9px",
+    fontSize: 13.5, fontWeight: 500, color: "var(--soft)", margin: "0 0 9px",
   },
   fieldLabel: { fontSize: 12.5, color: "var(--soft)", margin: "12px 0 6px" },
   swatchRow: { display: "flex", flexWrap: "wrap", gap: 9 },
@@ -558,8 +584,7 @@ const S: Record<string, React.CSSProperties> = {
     background: "var(--panel)", border: "1px solid var(--line)",
   },
   noteFrom: {
-    fontSize: 11.5, letterSpacing: ".07em", textTransform: "uppercase",
-    color: "var(--soft)", margin: "0 0 7px", fontWeight: 600,
+    fontSize: 13.5, color: "var(--soft)", margin: "0 0 8px", fontWeight: 500,
   },
   noteText: { fontSize: 16.5, lineHeight: 1.55, margin: 0 },
   noteDay: { fontSize: 12, color: "var(--soft)", margin: "9px 0 0", textAlign: "right" },

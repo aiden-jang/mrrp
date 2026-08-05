@@ -46,16 +46,21 @@ the mechanism works. The rules are at the top of the file. A note written by som
 a gift from you, and that difference is the whole app.
 
 **Dress the cat.** She defaults to a ginger tabby called Bean. Point her at a cat somebody
-actually knows, and set whose day the room runs on:
+actually knows, and set whose day the room runs on. Do it in the app: there is a **Set up her
+cat first** button on the waiting screen, and a quieter link on his side afterwards. Both open a
+panel that previews on the canvas as you pick, so choosing a cat is something you watch happen.
+
+The same thing over HTTP, if you'd rather. `me` is required and must be the seat that made the
+room, because only he may dress the cat or set her hours. Without it you get a 403:
 
 ```bash
 curl -X POST localhost:8791/api/room/<id>/dress \
   -H 'content-type: application/json' \
-  -d '{"name":"...","fur":"#e8963f","furDk":"#c9752a","belly":"#fbf0dd","eyes":"#7cb342","tabby":true}'
+  -d '{"me":"<his-token>","name":"...","fur":"#e8963f","furDk":"#c9752a","belly":"#fbf0dd","eyes":"#7cb342","tabby":true}'
 
 curl -X POST localhost:8791/api/room/<id>/clock \
   -H 'content-type: application/json' \
-  -d '{"tz":"America/New_York","homeHour":18}'
+  -d '{"me":"<his-token>","tz":"America/New_York","homeHour":18}'
 ```
 
 `tz` is validated at the edge on purpose: an unchecked zone string reaches `Intl.DateTimeFormat`
@@ -72,3 +77,64 @@ Glazing alpha over dithered bands is what produced vertical streaks the first ti
 
 `dither()` takes an optional `phase`. Do not pass `y` to it: the parity becomes `x + 2y`, which
 depends on `x` alone, and your checkerboard silently becomes vertical stripes.
+
+## Seats
+
+A room has exactly two seats, assigned by arrival order and never reassigned. He makes the room,
+so he is first. **Whoever opens the link second is the one the cat is.** Everyone after that can
+look, but holds no seat.
+
+That last part is enforced, not assumed. A third person with the link gets no note, no "you're
+both in here", and a 403 on anything that writes. All of it lives in the Durable Object rather
+than the UI, because a rule enforced in the browser is a rule anyone can turn off.
+
+| endpoint | who | notes |
+|---|---|---|
+| `GET /api/room/:id` | anyone | seats the first two callers. Only her read advances the note |
+| `POST .../tell` | her only | her mood, one of six |
+| `POST .../say` | her only | one line back, 140 chars, empty clears it |
+| `POST .../act` | him only | pet, brush, bring, sit |
+| `POST .../dress`, `.../clock` | him only | 403 otherwise |
+
+Two things the note deliberately does not do: it never sends tomorrow's text (she could read
+ahead in devtools, and a gift you can skim is not a gift), and it advances at most once per her
+local day, so a day she doesn't visit is not a note she never sees.
+
+## Tests
+
+```bash
+pnpm test        # 86: 52 web, 34 worker
+pnpm typecheck
+```
+
+The worker suite runs in real workerd via `@cloudflare/vitest-pool-workers`, so Durable Object
+storage and the seat rules are exercised as they actually behave rather than against a mock.
+
+Anything that is only true for a fraction of the time is tested numerically, never by looking.
+The moth visits for 18 seconds out of every 100; two attempts at screenshotting it missed both
+times, so `mothAt` is a pure function of `t` with its own tests. Same reasoning for the note
+rollover, which uses zones 26 hours apart (`Etc/GMT+12` and `Pacific/Kiritimati`) so their local
+dates always differ. An earlier version used New York to Tokyo, passed in the evening, and failed
+in the morning.
+
+## Deploying
+
+Merging to `main` deploys. The workflow runs typecheck, build, and tests first, and only then
+deploys, so a red suite cannot ship. It needs a Workers-scoped `CLOUDFLARE_API_TOKEN` secret on
+the repo.
+
+```bash
+pnpm --filter @mrrp/worker deploy   # by hand, if you need to
+```
+
+That script builds `packages/web` before `wrangler deploy`, because `packages/web/dist` is
+gitignored and CI runs from a fresh checkout. A bare `wrangler deploy` there has no assets to
+upload.
+
+The Worker is served only on its custom domain, with `workers_dev = false`. The whole thing is
+one private link sent to one person, so a second guessable `*.workers.dev` address should not
+exist for it.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
