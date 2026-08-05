@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Action, Mood, RoomView } from "./types.js";
 import { ACTIONS, MOODS } from "./types.js";
-import { doAct, doClock, doDress, doTell, fetchRoom, myName, newRoomId, roomFromPath } from "./api.js";
+import { doAct, doClock, doDress, doSay, doTell, fetchRoom, myName, newRoomId, roomFromPath } from "./api.js";
 import { Cat } from "./Cat.js";
 import { sceneFor } from "./hours.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
@@ -72,6 +72,9 @@ function RoomPage({ id }: { id: string }) {
   const [name, setName] = useState("");
   const [copied, setCopied] = useState(false);
   const [did, setDid] = useState<string | null>(null);
+  const [line, setLine] = useState("");
+  const [lineOpen, setLineOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [setup, setSetup] = useState(false);
   const [draft, setDraft] = useState<{ name: string; look: string; eyes: string; tz: string; homeHour: number } | null>(null);
 
@@ -134,6 +137,15 @@ function RoomPage({ id }: { id: string }) {
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Couldn't save that.");
     }
+  };
+
+  const say = async () => {
+    setSaving(true);
+    try {
+      setView(await doSay(id, line));
+      setLineOpen(false);
+    } catch { /* she'll survive */ }
+    setSaving(false);
   };
 
   const tell = async (m: Mood) => {
@@ -291,6 +303,20 @@ function RoomPage({ id }: { id: string }) {
           </div>
         )}
 
+        {/* Both of you at once: rare in an asynchronous app, so it is worth saying. Additive, not a
+            branch — it used to replace the page, which hid her mood and her line at the exact moment
+            she was in the room. */}
+        {view.bothHereNow && (
+          <div style={S.together}>
+            <p style={S.togetherMain}>You're both in here right now.</p>
+            <p style={{ ...S.small, color: "rgba(255,255,255,.85)", marginTop: 4 }}>
+              {view.youAreHer
+                ? `Hold on ${view.cat.name} and he'll see it happen.`
+                : `Hold on ${view.cat.name}. She's right there.`}
+            </p>
+          </div>
+        )}
+
         {view.waitingForThem ? (
           <>
             <p style={S.newsMain}>{view.cat.name} is asleep. Nobody else is here yet.</p>
@@ -340,6 +366,37 @@ function RoomPage({ id }: { id: string }) {
               <p style={S.came}>He came in after you said that.</p>
             )}
 
+            {/* Her sentence. Before this the app was one-directional: he wrote thirty notes and she
+                had six words to answer with. */}
+            {lineOpen ? (
+              <div style={S.sayBox}>
+                <textarea
+                  autoFocus
+                  value={line}
+                  maxLength={140}
+                  rows={2}
+                  placeholder={`Something for ${view.them ?? "him"} to find`}
+                  onChange={(e) => setLine(e.target.value)}
+                  style={S.sayInput}
+                />
+                <div style={{ ...S.row, marginTop: 8 }}>
+                  <button style={S.btn} onClick={() => setLineOpen(false)}>Never mind</button>
+                  <button style={{ ...S.btn, ...S.btnGo }} disabled={saving} onClick={() => void say()}>
+                    {saving ? "Leaving it..." : "Leave it"}
+                  </button>
+                </div>
+              </div>
+            ) : view.herLine ? (
+              <button style={S.yourLine} onClick={() => { setLine(view.herLine!.text); setLineOpen(true); }}>
+                <span style={S.yourLineLabel}>you left him this</span>
+                <span style={S.yourLineText}>{view.herLine.text}</span>
+              </button>
+            ) : (
+              <button style={S.quiet} onClick={() => { setLine(""); setLineOpen(true); }}>
+                Leave {view.them ?? "him"} a line
+              </button>
+            )}
+
             <p style={S.tellLabel}>
               {view.catMood
                 ? `still ${MOODS.find((m) => m.id === view.catMood)?.label}?`
@@ -381,6 +438,14 @@ function RoomPage({ id }: { id: string }) {
                 <button key={a.id} style={S.btn} onClick={() => void act(a.id)}>{a.label}</button>
               ))}
             </div>
+
+            {view.herLine && (
+              <div style={S.note}>
+                <p style={S.noteFrom}>{view.them} left you this</p>
+                <p style={S.noteText}>{view.herLine.text}</p>
+                <p style={S.noteDay}>{whenish(view.herLine.at)}</p>
+              </div>
+            )}
 
             <p style={{ ...S.did, opacity: did ? 1 : 0 }} aria-live="polite">
               {did ? `She'll see that you ${did}.` : "\u00a0"}
@@ -436,6 +501,27 @@ const S: Record<string, React.CSSProperties> = {
     fontSize: 13, textAlign: "center", color: "var(--soft)", margin: "12px 0 4px",
     transition: "opacity .25s ease", minHeight: "1.2em",
   },
+  together: {
+    margin: "14px 0 6px", padding: "13px 16px", borderRadius: 18,
+    background: "var(--honey)", color: "#fff",
+  },
+  togetherMain: { fontSize: 17, fontWeight: 700, margin: 0, lineHeight: 1.45 },
+  sayBox: { margin: "16px 0 4px" },
+  sayInput: {
+    font: "inherit", fontSize: 15.5, lineHeight: 1.5, width: "100%", resize: "none",
+    padding: "11px 13px", borderRadius: 14, border: "1px solid var(--line)",
+    background: "var(--panel)", color: "var(--ink)",
+  },
+  yourLine: {
+    font: "inherit", textAlign: "left", width: "100%", cursor: "pointer",
+    margin: "16px 0 4px", padding: "12px 15px", borderRadius: 16,
+    background: "var(--panel)", border: "1px dashed var(--line)", color: "var(--ink)",
+  },
+  yourLineLabel: {
+    display: "block", fontSize: 11.5, letterSpacing: ".07em", textTransform: "uppercase",
+    color: "var(--soft)", fontWeight: 600, marginBottom: 5,
+  },
+  yourLineText: { display: "block", fontSize: 15.5, lineHeight: 1.5 },
   came: {
     fontSize: 13.5, textAlign: "center", color: "var(--soft)", margin: "12px 0 0",
   },

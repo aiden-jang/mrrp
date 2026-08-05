@@ -71,6 +71,12 @@ export interface Visit {
   action: Action;
 }
 
+/** A line she left, and when. Named apart from `Told` because it carries text, not a mood. */
+export interface Told2 {
+  text: string;
+  at: number;
+}
+
 /** What one of you told the cat, and when. */
 export interface Told {
   mood: Mood;
@@ -99,6 +105,20 @@ export interface RoomView {
   themLastAt: number | null;
   /** They're in the room right now, near enough. */
   themHereNow: boolean;
+  /**
+   * You are both in the room at the same moment. Rare, by the nature of an asynchronous app, which is
+   * exactly why it is worth saying out loud when it happens.
+   */
+  bothHereNow: boolean;
+  /**
+   * One line she left him, replaceable and never kept in history.
+   *
+   * The app was one-directional: he writes thirty notes, she taps one of six moods. Six words is a
+   * small vocabulary for the person the whole thing is about, so she gets a sentence too. Overwritten
+   * rather than appended, like the mood, so there is nothing to keep up with and nothing to scroll back
+   * through.
+   */
+  herLine: Told2 | null;
   /** Her note for today. Null for him: he wrote them, so reading them back is not the point. */
   note: Note | null;
   /** Which day she's on, for his side, without the text. */

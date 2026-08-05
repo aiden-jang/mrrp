@@ -1,5 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
-import type { Action, Cat, Clock, Mood, Note, RoomView, Told, Visit } from "./types.js";
+import type { Action, Cat, Clock, Mood, Note, RoomView, Told, Told2, Visit } from "./types.js";
 import { NOTES } from "./notes.js";
 import type { Env } from "./env.js";
 
@@ -130,6 +130,26 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
+  /**
+   * Leave him a line. Hers to write, and there is only ever one.
+   *
+   * Replaceable, never appended: the same reasoning as the mood. A log would turn this into a chat,
+   * a chat has unread counts, and unread counts are a thing to keep up with.
+   */
+  async say(me: string, text: string): Promise<RoomView> {
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (!people[me]) return this.build(me, people);
+    if (this.roles(people).her !== me) return this.build(me, people);
+
+    const trimmed = text.trim().slice(0, 140);
+    if (trimmed) await this.ctx.storage.put<Told2>("herLine", { text: trimmed, at: Date.now() });
+    else await this.ctx.storage.delete("herLine");
+
+    people[me].lastSeen = Date.now();
+    await this.ctx.storage.put("people", people);
+    return this.build(me, people);
+  }
+
   /** Set whose day the room runs on: her timezone, and when she's usually home. His to set. */
   async setClock(me: string, clock: Partial<Clock>): Promise<boolean> {
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -201,6 +221,18 @@ export class Room extends DurableObject<Env> {
       them: them?.name ?? null,
       themLastAt: them?.lastSeen ?? null,
       themHereNow: !!them && Date.now() - them.lastSeen < HERE_NOW_MS,
+      // Both of you, at once.
+      //
+      // Checks BOTH seats and that the viewer holds one of them. Checking only "the other person is
+      // recently here" was true for a spectator as well, so a stranger who opened the link was told
+      // "you're both in here right now" about two people they are not.
+      bothHereNow:
+        !!him &&
+        !!her &&
+        (me === him || me === her) &&
+        Date.now() - people[him]!.lastSeen < HERE_NOW_MS &&
+        Date.now() - people[her]!.lastSeen < HERE_NOW_MS,
+      herLine: (await this.ctx.storage.get<Told2>("herLine")) ?? null,
       // He wrote the notes, so handing them back to him is pointless. He gets the day count only.
       note: youAreHer ? note : null,
       noteDay: youAreHer ? null : note?.day ?? null,

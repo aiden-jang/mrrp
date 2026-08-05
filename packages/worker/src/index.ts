@@ -40,6 +40,16 @@ app.post("/api/room/:id/tell", async (c) => {
   return c.json(await room(c.env, id).tell(body.me, body.mood as Mood));
 });
 
+/** Leave him a line. Hers to write; the Room re-checks the seat. Empty text clears it. */
+app.post("/api/room/:id/say", async (c) => {
+  const id = c.req.param("id");
+  const body = (await c.req.json().catch(() => null)) as { me?: string; text?: unknown } | null;
+  if (!ROOM_RE.test(id) || !body?.me || typeof body.text !== "string") {
+    return c.json({ error: "bad request" }, 400);
+  }
+  return c.json(await room(c.env, id).say(body.me, body.text));
+});
+
 /** Set her name and colours. His to set, and the Room re-checks that. */
 app.post("/api/room/:id/dress", async (c) => {
   const id = c.req.param("id");
