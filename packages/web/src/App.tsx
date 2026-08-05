@@ -633,7 +633,7 @@ function RoomPage({ id }: { id: string }) {
         ) : (
           /* ── his side: he finds out how she is, and does something about it ── */
           <>
-            <div style={S.theirs}>
+            {iAmHim && <div style={S.theirs}>
               <p style={S.theirsMain}>
                 {view.catMood ? (
                   <>
@@ -645,12 +645,12 @@ function RoomPage({ id }: { id: string }) {
                 )}
               </p>
               <p style={{ ...S.small, marginTop: 4 }}>Go and be in there. That's all it takes.</p>
-            </div>
+            </div>}
 
             {/* Above the buttons, deliberately. She wrote him a sentence; the buttons are things he
                 can do any time. Having her words sit underneath four controls got the priority exactly
                 backwards on the one screen where she has actually said something. */}
-            {view.herLine && (
+            {iAmHim && view.herLine && (
               <div style={S.note}>
                 <p style={S.noteFrom}>{view.them} left you this</p>
                 <p style={S.noteText}>{view.herLine.text}</p>
@@ -658,30 +658,49 @@ function RoomPage({ id }: { id: string }) {
               </div>
             )}
 
-            <div style={{ ...S.row, marginTop: 14 }}>
-              {ACTIONS.map((a) => (
-                <button key={a.id} style={S.btn} onClick={() => void act(a.id)}>{a.label}</button>
-              ))}
-            </div>
+            {iAmHim && (
+              <div style={{ ...S.row, marginTop: 14 }}>
+                {ACTIONS.map((a) => (
+                  <button key={a.id} style={S.btn} onClick={() => void act(a.id)}>{a.label}</button>
+                ))}
+              </div>
+            )}
 
-            <p style={{ ...S.did, opacity: did ? 1 : 0 }} aria-live="polite">
-              {did ? `She'll see that you ${did}.` : "\u00a0"}
-            </p>
+            {iAmHim && (
+              <p style={{ ...S.did, opacity: did ? 1 : 0 }} aria-live="polite">
+                {did ? `She'll see that you ${did}.` : "\u00a0"}
+              </p>
+            )}
 
-            {view.noteDay && (
+            {iAmHim && view.noteDay && (
               <p style={{ ...S.small, textAlign: "center" }}>
                 She has note {view.noteDay} waiting. Hold on {view.cat.name} to pet her.
               </p>
             )}
-            {!setup && (
+            {iAmHim && !setup && (
               <button style={S.quiet} onClick={openSetup}>
                 Change how {view.cat.name} looks, or her hours
               </button>
             )}
 
+            {/*
+              * Somebody who only has the link.
+              *
+              * The whole of his side was rendering for them: her mood, four buttons that 403, and a
+              * "change how she looks" link that opened nothing once the panel itself was gated. I fixed
+              * the panel and the petting and thought that was the end of it, which it was not. Offering
+              * controls that cannot work is its own kind of broken, separate from whether the server
+              * refuses them.
+              */}
+            {!iAmHim && (
+              <p style={{ ...S.small, textAlign: "center", marginTop: 16 }}>
+                This room belongs to two people, and you are not one of them. You can watch the cat.
+              </p>
+            )}
+
             {/* The only recovery this app has, so it has to be findable, and it evicts her current
                 device, so it asks first. Kept quiet and last: it matters on one day out of a year. */}
-            {!setup && !view.waitingForThem && (
+            {iAmHim && !setup && !view.waitingForThem && (
               releasing ? (
                 <div style={{ ...S.panel, marginTop: 14 }}>
                   <p style={{ ...S.small, color: "var(--ink)" }}>

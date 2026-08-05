@@ -287,6 +287,9 @@ export function Cat({
       // be looking at just reads as noise.
       dither(beamX - 15, FLOOR + 5, 30, 9, sc.patch);
 
+      /** A y inside the window's glass, given a row offset from its top edge. */
+      const wy = (row: number) => 4 + 1 + row;
+
       // A poked thing wobbles for half a second and settles. One decaying sine, shared by everything,
       // because six bespoke animations would be six things to get subtly wrong and this reads as
       // "it noticed you" either way.
@@ -299,7 +302,30 @@ export function Cat({
       };
 
       // Props AFTER the light. Drawn before it, the beam's dither punched holes through them.
-      blit(WINDOW, WIN_X + shake("window"), 4, { w: INK, h: sc.sun > 0.2 ? sc.beamWarm : sc.wallTop });
+      /*
+       * The window at night.
+       *
+       * The glass used to be painted wall colour whenever the sun was down, so after dark the window
+       * stopped being a window and became a rectangle drawn on a wall. That is the state this app is in
+       * most of the time it is ever opened: the whole point of it is the two minutes before somebody
+       * falls asleep. The most-seen version of the room had the least in it.
+       */
+      const night = sc.sun < 0.12;
+      const wx = WIN_X + shake("window");
+      blit(WINDOW, wx, 4, { w: INK, h: sc.sun > 0.2 ? sc.beamWarm : night ? "#2b3450" : sc.wallTop });
+      if (night) {
+        // A crescent, made by drawing a full moon and biting a hole out of it with the night colour.
+        rect(wx + 3, wy(1), 3, 1, "#f4e6b8");
+        rect(wx + 2, wy(2), 4, 1, "#f4e6b8");
+        rect(wx + 2, wy(3), 4, 1, "#f4e6b8");
+        rect(wx + 3, wy(4), 3, 1, "#f4e6b8");
+        rect(wx + 4, wy(1), 2, 1, "#2b3450");
+        rect(wx + 4, wy(2), 2, 1, "#2b3450");
+        // Stars, on their own slow twinkles so they never blink together.
+        for (const [sx, sy, ph] of [[12, 2, 0], [14, 6, 0.45], [10, 7, 0.8], [7, 8, 0.25]] as const) {
+          if (Math.sin(t / 900 + ph * 7) > -0.35) px(wx + sx, wy(sy), "#fff6dc");
+        }
+      }
       blit(SHELF, 80 + shake("shelf"), FLOOR - 24, { w: INK, d: "#8a6a48" });
       blit(DOOR, 6 + shake("door"), FLOOR - 16, { w: INK, f: sc.wallBottom, d: "#8a6a48", h: "#ffe9a8" });
       blit(FRAME, 16 + shake("frame"), 12, { w: INK, f: "#c69a63", h: "#cfe0e4", g: "#e2926f" });
@@ -455,6 +481,22 @@ export function Cat({
           const sy = Math.round(y + sp.oy - 2 - p * 9);
           const c = `rgba(255,236,150,${Math.sin(p * Math.PI)})`;
           px(sx, sy, c); px(sx - 1, sy + 1, c); px(sx + 1, sy + 1, c); px(sx, sy + 2, c);
+        }
+      }
+
+      // A firefly, but only after dark, so the room is never completely still. Same tested cadence as
+      // the moth on a different phase, which means it is never on screen at the same time as one and
+      // needs no timing of its own. It drifts around the middle of the room rather than the sunbeam,
+      // because at night there is no beam to stay inside of.
+      if (!reduce && sc.sun < 0.1) {
+        const f = mothAt(t + 47_000, GW / 2);
+        if (f) {
+          const a = 0.35 + Math.abs(Math.sin(t / 420)) * 0.65 * f.presence;
+          const fx = Math.round(f.x), fy = Math.round(f.y + 14);
+          px(fx, fy, `rgba(255,236,140,${a})`);
+          px(fx - 1, fy, `rgba(255,222,110,${a * 0.35})`);
+          px(fx + 1, fy, `rgba(255,222,110,${a * 0.35})`);
+          px(fx, fy - 1, `rgba(255,222,110,${a * 0.35})`);
         }
       }
 
