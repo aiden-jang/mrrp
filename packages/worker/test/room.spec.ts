@@ -248,3 +248,69 @@ describe("requests that should not get through", () => {
     expect((await post("act", { me: HIM, action: "feed" })).status).toBe(400);
   });
 });
+
+describe("her line back", () => {
+  it("lets her leave one, and he reads it", async () => {
+    await seat();
+    await post("say", { me: HER, text: "  I liked the third one  " });
+    const his = await view(HIM);
+    // Trimmed, and stamped, so his side can say when.
+    expect(his.herLine?.text).toBe("I liked the third one");
+    expect(his.herLine?.at).toBeGreaterThan(0);
+  });
+
+  it("keeps only the latest, never a history", async () => {
+    // Same reasoning as the mood: a log becomes a chat, a chat has unread counts, and unread counts
+    // are a thing to keep up with. The app promises there is nothing to keep up with.
+    await seat();
+    await post("say", { me: HER, text: "first" });
+    await post("say", { me: HER, text: "second" });
+    expect((await view(HIM)).herLine?.text).toBe("second");
+  });
+
+  it("clears when she empties it", async () => {
+    await seat();
+    await post("say", { me: HER, text: "never mind" });
+    await post("say", { me: HER, text: "   " });
+    expect((await view(HIM)).herLine).toBeNull();
+  });
+
+  it("ignores him leaving one, because he already has thirty notes", async () => {
+    await seat();
+    await post("say", { me: HIM, text: "sneaking one in" });
+    expect((await view(HER)).herLine).toBeNull();
+  });
+
+  it("ignores a stranger", async () => {
+    await seat();
+    await view(STRANGER);
+    await post("say", { me: STRANGER, text: "hello" });
+    expect((await view(HER)).herLine).toBeNull();
+  });
+
+  it("caps the length instead of rejecting it", async () => {
+    // Rejecting a too-long note would lose what she typed. Truncating keeps it.
+    await seat();
+    await post("say", { me: HER, text: "x".repeat(400) });
+    expect((await view(HIM)).herLine?.text).toHaveLength(140);
+  });
+});
+
+describe("both of you at once", () => {
+  it("is false when only one of you has been in", async () => {
+    await view(HIM, "Aiden");
+    expect((await view(HIM)).bothHereNow).toBe(false);
+  });
+
+  it("is true for each of you when you are both recently here", async () => {
+    await seat();
+    // seat() just visited as both, so both lastSeen are fresh.
+    expect((await view(HER)).bothHereNow).toBe(true);
+    expect((await view(HIM)).bothHereNow).toBe(true);
+  });
+
+  it("is never true for a spectator, who is nobody's company", async () => {
+    await seat();
+    expect((await view(STRANGER)).bothHereNow).toBe(false);
+  });
+});

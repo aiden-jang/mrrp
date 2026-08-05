@@ -289,6 +289,35 @@ export function Cat({
         }
       }
 
+      // Zzz. She is asleep for a large part of any given day, and a sleeping cat with no sign of
+      // sleeping is just a cat sitting very still.
+      if (sc.sleepy > 0.75 && !awake && !reduce) {
+        for (let i = 0; i < 3; i++) {
+          const p = (t / 3200 + i / 3) % 1;
+          const zx = kx + 13 + Math.round(p * 7);
+          const zy = Math.round(y + sp.oy - 1 - p * 12);
+          const a2 = Math.sin(p * Math.PI) * 0.75;
+          const c = `rgba(255,255,255,${a2})`;
+          // A three-pixel z: top bar, diagonal, bottom bar.
+          px(zx, zy, c); px(zx + 1, zy, c);
+          px(zx + 1, zy + 1, c);
+          px(zx, zy + 2, c); px(zx + 1, zy + 2, c);
+        }
+      }
+
+      // A stretch, roughly every 40 seconds, and only when she is awake and not busy being something
+      // else. Rare on purpose: an idle animation you can predict stops reading as alive.
+      const stretchCycle = t % 40_000;
+      const stretching = !reduce && awake && sc.play < 0.5 && stretchCycle < 1400;
+      if (stretching) {
+        const k = Math.sin((stretchCycle / 1400) * Math.PI);
+        const reach = Math.round(k * 5);
+        // Front paws pushed forward along the floor, and a hint of arch in the back.
+        rect(kx - (sp.w >> 1) - reach, ky - 1, reach + 2, 2, L.fur);
+        px(kx - (sp.w >> 1) - reach, ky - 1, INK);
+        px(kx - (sp.w >> 1) - reach, ky, INK);
+      }
+
       // Purring, shown rather than written: small marks rising off her.
       if (pet || sc.purring) {
         const a = pet ? 0.8 : 0.42;

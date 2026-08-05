@@ -87,3 +87,14 @@ export async function doClock(id: string, clock: Partial<Clock>): Promise<void> 
   });
   if (!r.ok) throw new Error("Couldn't save her hours.");
 }
+
+/** Leave him a line. Hers only; empty text clears it. */
+export async function doSay(id: string, text: string): Promise<RoomView> {
+  const r = await fetch(`/api/room/${id}/say`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ me: myToken(), text }),
+  });
+  if (!r.ok) throw new Error("Couldn't leave that.");
+  return r.json() as Promise<RoomView>;
+}
