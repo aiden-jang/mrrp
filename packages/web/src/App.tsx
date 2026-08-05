@@ -97,9 +97,15 @@ function Landing() {
           <Cat label="A pixel cat asleep in a sunlit room." look={DOOR_CAT} clock={DOOR_CLOCK} mood={null} nudge={0} />
         </div>
         <h1 style={S.h1}>mrrp</h1>
-        <p style={{ ...S.lede, margin: "0 auto 22px" }}>
-          A cat that is her. She tells it how she's doing, and that's how it is. You get the link,
-          you turn up, and you sit with her.
+        {/* Written for somebody who has never heard of this. "A cat that is her" made sense only if you
+            already knew, which was fine while it had one user and is not any more. Says the mechanism
+            first, because the mechanism is the charming part. */}
+        <p style={{ ...S.lede, margin: "0 auto 18px" }}>
+          A cat for exactly two people. You make the room; whoever you send the link to becomes the cat.
+          They tap how their day is going and she becomes that, so you know without having to ask.
+        </p>
+        <p style={{ ...S.lede, margin: "0 auto 22px", fontSize: 14 }}>
+          Then you turn up and sit with her. No accounts, no notifications, nothing to keep up with.
         </p>
         {/* In a browser tab this is an offer rather than a redirect, so the page you asked for is the
             page you get, and making a second room stays possible. */}
@@ -111,6 +117,9 @@ function Landing() {
             Back to the room
           </button>
         )}
+        {back && (
+          <p style={{ ...S.small, marginBottom: 14 }}>Or start another one for somebody else.</p>
+        )}
         <input
           style={S.input}
           value={name}
@@ -119,8 +128,16 @@ function Landing() {
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && make()}
         />
-        <button style={{ ...S.btn, ...S.btnGo, width: "100%", marginTop: 10 }} onClick={make} disabled={!name.trim()}>
-          Make her a room
+        {/* Whichever one you actually want is the gold one. Two gold buttons stacked is the mistake I
+            already made on his side: they compete and neither reads as the answer. Somebody with a room
+            already is almost certainly coming back to it. And it is not "her" room any more, because the
+            person on the other end is no longer assumed to be a her. */}
+        <button
+          style={{ ...S.btn, ...(back ? null : S.btnGo), width: "100%", marginTop: 10 }}
+          onClick={make}
+          disabled={!name.trim()}
+        >
+          Make a room
         </button>
         <p style={{ ...S.small, marginTop: 14 }}>
           You'll get a link. Send it to one person. That's the whole thing.
@@ -435,6 +452,26 @@ function RoomPage({ id }: { id: string }) {
               the last one stays. Leave this empty to use the ones it came with.
             </p>
 
+            {/* What she will actually see, in the real card, as you type.
+              *
+              * Thirty lines went into a plain textarea with no idea how any of them would land, and that
+              * card is the whole product: the difference between a line that works and one that does not
+              * is mostly how it sits at that width, in that type, under his name. */}
+            {(() => {
+              const first = draft.notes.split("\n").map((l) => l.trim()).find(Boolean);
+              if (!first) return null;
+              return (
+                <>
+                  <p style={{ ...S.fieldLabel, marginTop: 14 }}>day one, as she'll get it</p>
+                  <div style={{ ...S.note, margin: 0 }}>
+                    <p style={S.noteFrom}>{view.you ?? "You"} left you something</p>
+                    <p style={S.noteText}>{first}</p>
+                    <p style={S.noteDay}>day 1</p>
+                  </div>
+                </>
+              );
+            })()}
+
             {/* Errors belong next to the button that failed. This used to surface at the very bottom of
                 the card, below everything, which on a panel this tall is off screen. */}
             {setupErr && <p style={{ ...S.small, color: "#a4563d", marginTop: 12 }}>{setupErr}</p>}
@@ -442,7 +479,7 @@ function RoomPage({ id }: { id: string }) {
             <div style={{ ...S.row, marginTop: 12 }}>
               <button style={S.btn} onClick={() => setSetup(false)}>Cancel</button>
               <button style={{ ...S.btn, ...S.btnGo }} disabled={savingSetup} onClick={() => void saveSetup()}>
-                {savingSetup ? "Saving..." : "Save her"}
+                {savingSetup ? "Saving..." : "Save"}
               </button>
             </div>
           </div>
