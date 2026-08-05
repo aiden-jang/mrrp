@@ -5,13 +5,18 @@
   "scripts": {
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
+    "lint": "eslint . --ext .ts,.tsx",
     "dev:worker": "pnpm --filter @mrrp/worker dev",
     "dev:web": "pnpm --filter @mrrp/web dev",
     "deploy": "pnpm --filter @mrrp/worker deploy",
     "test": "pnpm -r test",
-    "check": "pnpm -r typecheck && pnpm -r test"
+    "check": "pnpm -r typecheck && pnpm lint && pnpm -r test"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react-hooks": "^4.6.2",
     "typescript": "^5.7.2"
   }
 }

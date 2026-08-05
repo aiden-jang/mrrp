@@ -95,6 +95,23 @@ than the UI, because a rule enforced in the browser is a rule anyone can turn of
 | `POST .../say` | her only | one line back, 140 chars, empty clears it |
 | `POST .../act` | him only | pet, brush, bring, sit |
 | `POST .../dress`, `.../clock` | him only | 403 otherwise |
+| `POST .../release` | him only | frees her seat so a new device can be her |
+
+### When she loses her phone
+
+A seat is a random token in `localStorage`. That is what makes this frictionless (no account, no
+password, no email) and it is also the one thing that can go permanently wrong: clearing Safari's
+data or moving to a new phone loses the seat, and with exactly two seats and no way to free one, the
+room would be stuck forever with nobody able to be the cat.
+
+So he has one recovery action, on his side, under **"She got a new phone"**. It frees her seat, and
+whoever opens the link next becomes the cat. What deliberately survives: **how far into the notes she
+has read**, and **the line she left him**. Losing a phone should not cost her three weeks of notes.
+Her mood resets, which is correct, because a mood is how you are now and the new device will be asked.
+
+His own seat has no recovery, by the same logic that makes the rest of this safe: the link is the only
+credential, so there is nobody who could prove they are him. If he loses his device he makes a new
+room, which costs the note count and nothing else.
 
 Two things the note deliberately does not do: it never sends tomorrow's text (she could read
 ahead in devtools, and a gift you can skim is not a gift), and it advances at most once per her
@@ -103,9 +120,13 @@ local day, so a day she doesn't visit is not a note she never sees.
 ## Tests
 
 ```bash
-pnpm test        # 86: 52 web, 34 worker
-pnpm typecheck
+pnpm check       # typecheck, lint, then 103 tests: 58 web, 45 worker
 ```
+
+`lint` exists for one rule. owewell shipped a `useEffect` below a component's early returns, so the
+first render ran one fewer hook than the next one, and React error #310 took out every group page the
+instant its data arrived. Typecheck, build and the entire test suite were green throughout. Only a
+static rule sees that, so `react-hooks/rules-of-hooks` is an error here and CI runs it before deploying.
 
 The worker suite runs in real workerd via `@cloudflare/vitest-pool-workers`, so Durable Object
 storage and the seat rules are exercised as they actually behave rather than against a mock.
