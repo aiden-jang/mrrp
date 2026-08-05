@@ -6,14 +6,28 @@
     <title>mrrp</title>
     <meta name="description" content="Someone made you a cat." />
 
-    <!-- The link preview is the first thing she ever sees, before she taps anything. -->
+    <!--
+      The link preview is the first thing she ever sees, before she taps anything, and this app's only
+      distribution is one link sent in one message.
+
+      og:image and og:url are ABSOLUTE on purpose. A relative "/og.png" is resolved by some scrapers and
+      quietly dropped by others, iMessage among them, and the failure mode is a bare grey link with no
+      picture: the single worst version of "somebody made you something". Absolute URLs cost nothing and
+      cannot be misread. It hardcodes the domain, which is correct here because there is exactly one.
+    -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="mrrp" />
-    <meta property="og:description" content="Someone made you a cat." />
-    <meta property="og:image" content="/og.png" />
+    <meta property="og:site_name" content="mrrp" />
+    <meta property="og:url" content="https://mrrp.aidenjang.com/" />
+    <meta property="og:title" content="Someone made you a cat" />
+    <meta property="og:description" content="One link, two people, and a cat that is one of them." />
+    <meta property="og:image" content="https://mrrp.aidenjang.com/og.png" />
+    <meta property="og:image:secure_url" content="https://mrrp.aidenjang.com/og.png" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="A pixel cat asleep in a sunlit room." />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://mrrp.aidenjang.com/og.png" />
 
     <!-- She'll open this a lot, so it should be able to live on her home screen. -->
     <link rel="manifest" href="/manifest.webmanifest" />
