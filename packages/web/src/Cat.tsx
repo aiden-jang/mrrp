@@ -25,12 +25,15 @@ const LEAF = "#7d9e63";
 const WHITE = "#fffdf6";
 
 export function Cat({
+  label,
   look,
   clock,
   mood,
   petting,
   nudge,
 }: {
+  /** What the room says in words. The canvas is otherwise silent to a screen reader. */
+  label: string;
   look: CatLook;
   clock: Clock;
   /** What you told her. Changes what she does, never what the room's light does. */
@@ -327,6 +330,8 @@ export function Cat({
   return (
     <canvas
       ref={ref}
+      role="img"
+      aria-label={label}
       style={{ display: "block", width: "100%", height: "100%", imageRendering: "pixelated" }}
     />
   );

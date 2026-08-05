@@ -71,29 +71,46 @@ function RoomPage({ id }: { id: string }) {
   const [asking, setAsking] = useState(!myName.get());
   const [name, setName] = useState("");
   const [copied, setCopied] = useState(false);
+  const [did, setDid] = useState<string | null>(null);
   const [setup, setSetup] = useState(false);
   const [draft, setDraft] = useState<{ name: string; look: string; eyes: string; tz: string; homeHour: number } | null>(null);
 
   const load = useCallback(async (n?: string | null) => {
-    try { setView(await fetchRoom(id, n ?? myName.get())); }
-    catch (e) { setErr(e instanceof Error ? e.message : "Something went wrong."); }
+    try {
+      setView(await fetchRoom(id, n ?? myName.get()));
+      setErr(null);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Something went wrong.");
+    }
   }, [id]);
 
   useEffect(() => { if (!asking) void load(); }, [asking, load]);
 
-  // No socket: the room is asynchronous by design. A quiet poll is enough to turn "was here" into
-  // "is here" while she has the tab open, and to roll the note over at her midnight.
+  // No socket: the room is asynchronous by design, so a quiet poll is enough to turn "was here" into
+  // "is here" while the tab is open.
+  //
+  // It skips hidden tabs, which matters more than it looks: a phone left on this page overnight was
+  // ~1,900 Durable Object requests rendering a sleeping cat to a screen nobody was looking at. One
+  // fetch on becoming visible again covers everything the missed ticks would have.
   useEffect(() => {
     if (asking) return;
-    const id = setInterval(() => void load(), 45_000);
+    const tick = setInterval(() => { if (!document.hidden) void load(); }, 45_000);
     const onShow = () => { if (!document.hidden) void load(); };
     document.addEventListener("visibilitychange", onShow);
-    return () => { clearInterval(id); document.removeEventListener("visibilitychange", onShow); };
+    return () => { clearInterval(tick); document.removeEventListener("visibilitychange", onShow); };
   }, [asking, load]);
 
   const act = async (a: Action) => {
     setNudge((v) => v + 1);
-    try { setView(await doAct(id, a)); } catch { /* she'll survive */ }
+    try {
+      setView(await doAct(id, a));
+      // He gets one line back, phrased the way she'll read it, so the button does something visible.
+      const said = ACTIONS.find((x) => x.id === a)?.mine;
+      if (said) {
+        setDid(said);
+        setTimeout(() => setDid(null), 2600);
+      }
+    } catch { /* she'll survive */ }
   };
 
   /** Opening the panel seeds the draft from whatever the room already has. */
@@ -147,8 +164,15 @@ function RoomPage({ id }: { id: string }) {
     );
   }
 
-  if (err) return <main style={S.page}><p style={S.lede}>{err}</p></main>;
-  if (!view) return <main style={S.page}><p style={S.small}>opening the door quietly…</p></main>;
+  // Only a total failure with nothing to show gets the whole page. Once the room has loaded once, a
+  // dropped request is a quiet line at the bottom, not the cat vanishing.
+  if (!view) {
+    return (
+      <main style={S.page}>
+        <p style={S.small}>{err ?? "opening the door quietly…"}</p>
+      </main>
+    );
+  }
 
   const last = view.theirRecent[0];
   const scene = sceneFor(view.clock, Date.now(), view.catMood);
@@ -168,7 +192,9 @@ function RoomPage({ id }: { id: string }) {
     <main style={S.page}>
       <div style={S.card}>
         <div style={S.stage}>
-          <Cat look={previewLook} clock={setup && draft ? { ...view.clock, tz: draft.tz, homeHour: draft.homeHour } : view.clock} mood={view.catMood} petting={petting} nudge={nudge} />
+          <Cat
+            label={`${previewLook.name} is ${scene.doing}.`}
+            look={previewLook} clock={setup && draft ? { ...view.clock, tz: draft.tz, homeHour: draft.homeHour } : view.clock} mood={view.catMood} petting={petting} nudge={nudge} />
           {/* holding on her is petting; it is the one gesture that isn't a button */}
           {!view.youAreHer && (
             <div
@@ -356,8 +382,12 @@ function RoomPage({ id }: { id: string }) {
               ))}
             </div>
 
+            <p style={{ ...S.did, opacity: did ? 1 : 0 }} aria-live="polite">
+              {did ? `She'll see that you ${did}.` : "\u00a0"}
+            </p>
+
             {view.noteDay && (
-              <p style={{ ...S.small, textAlign: "center", marginTop: 12 }}>
+              <p style={{ ...S.small, textAlign: "center" }}>
                 She has note {view.noteDay} waiting. Hold on {view.cat.name} to pet her.
               </p>
             )}
@@ -367,6 +397,12 @@ function RoomPage({ id }: { id: string }) {
               </button>
             )}
           </>
+        )}
+
+        {err && (
+          <p style={{ ...S.small, textAlign: "center", marginTop: 12, color: "#a4563d" }}>
+            {err} Trying again in a moment.
+          </p>
         )}
 
         <p style={{ ...S.small, textAlign: "center", marginTop: 14 }}>
@@ -396,6 +432,10 @@ const S: Record<string, React.CSSProperties> = {
     background: "var(--honey)", color: "#fff",
   },
   theirsMain: { fontSize: 16.5, lineHeight: 1.5, margin: 0 },
+  did: {
+    fontSize: 13, textAlign: "center", color: "var(--soft)", margin: "12px 0 4px",
+    transition: "opacity .25s ease", minHeight: "1.2em",
+  },
   came: {
     fontSize: 13.5, textAlign: "center", color: "var(--soft)", margin: "12px 0 0",
   },
