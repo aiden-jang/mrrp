@@ -111,6 +111,11 @@ export interface RoomView {
    */
   bothHereNow: boolean;
   /**
+   * This room's notes, so he can edit them. His side only: she must never receive the ones she has
+   * not reached, which is the same rule that keeps `note` to a single day's text.
+   */
+  yourNotes: string[] | null;
+  /**
    * One line she left him, replaceable and never kept in history.
    *
    * The app was one-directional: he writes thirty notes, she taps one of six moods. Six words is a

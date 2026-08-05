@@ -108,6 +108,39 @@ export class Room extends DurableObject<Env> {
     return true;
   }
 
+  /** The notes this room runs on: his if he wrote any, otherwise the shipped defaults. */
+  private async notes(): Promise<string[]> {
+    const own = await this.ctx.storage.get<string[]>("notes");
+    return own && own.length > 0 ? own : NOTES;
+  }
+
+  /**
+   * Replace the notes for this room.
+   *
+   * His to set. Until this existed, every room in the app shared one hardcoded array, which meant
+   * anybody who was not me opened a gift full of somebody else's specifics. A room nobody has edited
+   * still falls back to the defaults, so a new room is never a blank page.
+   *
+   * Her place is kept. If he trims the list to fewer notes than she has already read, the index is
+   * clamped to the new last one rather than reset, because losing her progress because he fixed a typo
+   * on note 3 would be indefensible.
+   */
+  async setNotes(me: string, notes: string[]): Promise<boolean> {
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (this.roles(people).him !== me) return false;
+
+    const clean = notes.map((n) => n.trim().slice(0, 280)).filter(Boolean).slice(0, 120);
+    if (clean.length === 0) {
+      // Clearing them means "go back to the defaults", not "she gets nothing".
+      await this.ctx.storage.delete("notes");
+    } else {
+      await this.ctx.storage.put("notes", clean);
+      const idx = (await this.ctx.storage.get<number>("noteIdx")) ?? 0;
+      if (idx > clean.length - 1) await this.ctx.storage.put("noteIdx", clean.length - 1);
+    }
+    return true;
+  }
+
   /**
    * Free her seat so a new device can claim it.
    *
@@ -205,9 +238,10 @@ export class Room extends DurableObject<Env> {
    * it: the alternative is a separate "mark read" round trip that could fail after she'd seen it.
    */
   private async noteFor(clock: Clock, isHer: boolean, bothHere: boolean): Promise<Note | null> {
-    if (!bothHere || NOTES.length === 0) return null;
+    const notes = await this.notes();
+    if (!bothHere || notes.length === 0) return null;
 
-    let idx = (await this.ctx.storage.get<number>("noteIdx")) ?? 0;
+    let idx = Math.min((await this.ctx.storage.get<number>("noteIdx")) ?? 0, notes.length - 1);
 
     if (isHer) {
       const today = localDayNumber(Date.now(), clock.tz);
@@ -215,7 +249,7 @@ export class Room extends DurableObject<Env> {
       if (lastRead === undefined) {
         await this.ctx.storage.put("noteReadDay", today);
       } else if (today > lastRead) {
-        idx = Math.min(idx + 1, NOTES.length - 1);
+        idx = Math.min(idx + 1, notes.length - 1);
         await this.ctx.storage.put("noteIdx", idx);
         await this.ctx.storage.put("noteReadDay", today);
       }
@@ -223,9 +257,9 @@ export class Room extends DurableObject<Env> {
 
     return {
       day: idx + 1,
-      total: NOTES.length,
-      text: NOTES[idx]!,
-      final: idx >= NOTES.length - 1,
+      total: notes.length,
+      text: notes[idx]!,
+      final: idx >= notes.length - 1,
     };
   }
 
@@ -277,6 +311,9 @@ export class Room extends DurableObject<Env> {
       // and a spectator gets nothing: how far into her notes she is is between the two of them.
       note: youAreHer ? note : null,
       noteDay: seated && !youAreHer ? note?.day ?? null : null,
+      // He wrote them, so handing them back is how he edits them. Never to her, and never to a
+      // spectator: that would be the note leak again with extra steps.
+      yourNotes: seated && !youAreHer ? await this.notes() : null,
       // Only she sees what was done, because only he does anything.
       theirRecent: youAreHer && him ? log.filter((v) => v.who === him).slice(0, 4) : [],
       theyCameAfter: !!catTold && !!them && youAreHer && them.lastSeen > catTold.at,

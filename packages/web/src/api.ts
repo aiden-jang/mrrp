@@ -103,6 +103,16 @@ export async function doRelease(id: string): Promise<void> {
   if (!r.ok) throw new Error("Couldn't free her seat.");
 }
 
+/** Replace this room's notes, one per entry. His only; an empty list restores the defaults. */
+export async function doNotes(id: string, notes: string[]): Promise<void> {
+  const r = await fetch(`/api/room/${id}/notes`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ me: myToken(), notes }),
+  });
+  if (!r.ok) throw new Error("Couldn't save the notes.");
+}
+
 /** Leave him a line. Hers only; empty text clears it. */
 export async function doSay(id: string, text: string): Promise<RoomView> {
   const r = await fetch(`/api/room/${id}/say`, {

@@ -118,6 +118,8 @@ export interface RoomView {
    * rather than appended, like the mood, so there is nothing to keep up with and nothing to scroll back
    * through.
    */
+  /** This room's notes, so he can edit them. His side only; she never receives ones she hasn't reached. */
+  yourNotes: string[] | null;
   herLine: Told2 | null;
   /** Her note for today. Null for him: he wrote them, so reading them back is not the point. */
   note: Note | null;
