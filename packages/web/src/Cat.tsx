@@ -172,10 +172,21 @@ export function Cat({
       }
       // The shaft stops at the floor. What lands on the floor is the patch, and drawing both left a
       // wide bright smear across the boards.
-      for (const [dy, w] of [[1, 20], [2, 28], [3, 32], [4, 34], [5, 32], [6, 28], [7, 20]] as const) {
-        rect(beamX - (w >> 1), FLOOR + dy, w, 1, sc.patch);
-      }
-      dither(beamX - 15, FLOOR + 2, 30, 7, sc.patch);
+      //
+      // The patch reaches down the boards far enough to pass under her, because she lies at rows
+      // 49-66 and the first version stopped at 55. All you saw of it was two pale wings sticking
+      // out either side of her head, which reads as a halo or a rendering fault rather than as
+      // sunlight. A cat asleep in a pool of light is the entire picture, so the pool has to be
+      // big enough to be one.
+      const POOL = [
+        [1, 20], [2, 26], [3, 30], [4, 34], [5, 36], [6, 38], [7, 38],
+        [8, 36], [9, 34], [10, 30], [11, 26], [12, 20], [13, 14],
+      ] as const;
+      for (const [dy, w] of POOL) rect(beamX - (w >> 1), FLOOR + dy, w, 1, sc.patch);
+      // The soft edge starts below her ear line (she tops out at FLOOR+1) and stays narrower than
+      // the pool. Dither running across the rows her ears occupy put a checkerboard fan either side
+      // of her face, and speckle next to the one thing you're meant to look at just reads as noise.
+      dither(beamX - 17, FLOOR + 7, 34, 7, sc.patch);
 
       // Props AFTER the light. Drawn before it, the beam's dither punched holes through them.
       blit(WINDOW, WIN_X, 4, { w: INK, h: sc.sun > 0.2 ? sc.beamWarm : sc.wallTop });
@@ -183,7 +194,10 @@ export function Cat({
       blit(DOOR, 6, FLOOR - 16, { w: INK, f: sc.wallBottom, d: "#8a6a48", h: "#ffe9a8" });
       blit(FRAME, 16, 12, { w: INK, f: "#c69a63", h: "#cfe0e4", g: "#e2926f" });
       blit(PLANT, 87, FLOOR - 13, { g: LEAF, w: INK, d: "#b07a4e" });
-      blit(BED, 24, FLOOR + 22, { d: "#8d7f96", f: "#b3a4bd", b: "#9b8ca6" });
+      // Dusty rose, not the lavender it started as. Lavender was the only cool colour in a room of
+      // creams and browns, and at this size it stopped reading as a cat bed and started reading as
+      // a stray UI element that had landed on the floor.
+      blit(BED, 24, FLOOR + 22, { d: "#b07f76", f: "#d8a79c", b: "#c4918a" });
 
       if (!reduce) {
         for (const m of motes) {
@@ -338,7 +352,10 @@ export function Cat({
           const zx = kx + 13 + Math.round(p * 7);
           const zy = Math.round(y + sp.oy - 1 - p * 12);
           const a2 = Math.sin(p * Math.PI) * 0.75;
-          const c = `rgba(255,255,255,${a2})`;
+          // White on a sunlit cream wall is invisible, which is how the z's spent their whole life
+          // so far: present in every daytime frame and never once visible. Warm brown by day,
+          // white only once the room is actually dark enough for white to read.
+          const c = sc.sun > 0.3 ? `rgba(104,72,42,${a2 * 0.9})` : `rgba(255,255,255,${a2})`;
           // A three-pixel z: top bar, diagonal, bottom bar.
           px(zx, zy, c); px(zx + 1, zy, c);
           px(zx + 1, zy + 1, c);
@@ -379,8 +396,13 @@ export function Cat({
       // close in, small enough that it never looks like a transparency grid.
       // A ring of warm floor around her and nothing else. The frame dither I tried first read as a
       // transparency grid, which is the single most dated-looking thing a canvas can do.
+      //
+      // It hugs her: she is 24 wide, and a 38-wide ring stopped reading as warmth gathering around
+      // her and started reading as a dotted band lying across the floor near her. Widening the sun
+      // pool made it worse, because two checkerboards of the same colour on the same rows stack into
+      // something that just looks like the boards are damaged.
       if (sc.snug > 0.35) {
-        for (const [dy, w] of [[2, 30], [3, 36], [4, 38], [5, 36], [6, 28]] as const) {
+        for (const [dy, w] of [[1, 20], [2, 24], [3, 26], [4, 24], [5, 18]] as const) {
           dither(kx - (w >> 1), ky + dy, w, 1, sc.patch);
         }
       }
