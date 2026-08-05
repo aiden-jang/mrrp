@@ -34,37 +34,39 @@ never that they saw it, because "they saw it and did nothing" is worse to know t
 | file | what |
 |---|---|
 | `worker/src/room.ts` | the Durable Object. One per room, two seats, no alarms, no sockets |
-| `worker/src/notes.ts` | one note a day. **Rewrite these in your own words** |
+| `worker/src/notes.ts` | the default notes, used until a room writes its own |
 | `web/src/sprites.ts` | the cat, hand-authored pixel grids |
 | `web/src/hours.ts` | her clock: light, palette, where she lies, keyframed by hand |
 | `web/src/moods.ts` | what the cat does about what you told it |
 
-## Two things it needs before it's a gift
+## Before you send it
 
-**Rewrite `notes.ts`.** The thirty in there now are placeholders in roughly the right register so
-the mechanism works. The rules are at the top of the file. A note written by someone else is not
-a gift from you, and that difference is the whole app.
+**Write the notes.** In the app, not in the source. Open the setup panel and there is a box for them,
+one per line. The thirty it ships with are generic on purpose so a new room is never a blank page, but
+they are a floor: a note written by someone else is not a gift from you, and that difference is the
+whole app. Editing them no longer needs a deploy.
 
-**Dress the cat.** She defaults to a ginger tabby called Bean. Point her at a cat somebody
-actually knows, and set whose day the room runs on. Do it in the app: there is a **Set up her
-cat first** button on the waiting screen, and a quieter link on his side afterwards. Both open a
-panel that previews on the canvas as you pick, so choosing a cat is something you watch happen.
+**Dress the cat.** Same panel. She defaults to a ginger tabby called Bean; point her at a cat somebody
+actually knows and set whose day the room runs on. Her eyes are held open while the panel is up, because
+shut eyes are drawn as a line in the outline colour and you cannot pick a colour you cannot see.
 
-The same thing over HTTP, if you'd rather. `me` is required and must be the seat that made the
-room, because only he may dress the cat or set her hours. Without it you get a 403:
+Then open the link yourself first, and send it. **Whoever opens it second is the one the cat is.**
+
+The same thing over HTTP, if you'd rather. `me` must be the seat that made the room, because only he
+may dress the cat, set her hours or write the notes. Without it you get a 403:
 
 ```bash
 curl -X POST localhost:8791/api/room/<id>/dress \
   -H 'content-type: application/json' \
   -d '{"me":"<his-token>","name":"...","fur":"#e8963f","furDk":"#c9752a","belly":"#fbf0dd","eyes":"#7cb342","tabby":true}'
 
-curl -X POST localhost:8791/api/room/<id>/clock \
+curl -X POST localhost:8791/api/room/<id>/notes \
   -H 'content-type: application/json' \
-  -d '{"me":"<his-token>","tz":"America/New_York","homeHour":18}'
+  -d '{"me":"<his-token>","notes":["day one","day two"]}'
 ```
 
-`tz` is validated at the edge on purpose: an unchecked zone string reaches `Intl.DateTimeFormat`
-inside the Durable Object and takes the whole room down with it.
+`tz` on `/clock` is validated at the edge on purpose: an unchecked zone string reaches
+`Intl.DateTimeFormat` inside the Durable Object and takes the whole room down with it.
 
 ## Notes on the art
 
@@ -95,6 +97,7 @@ than the UI, because a rule enforced in the browser is a rule anyone can turn of
 | `POST .../say` | her only | one line back, 140 chars, empty clears it |
 | `POST .../act` | him only | pet, brush, bring, sit |
 | `POST .../dress`, `.../clock` | him only | 403 otherwise |
+| `POST .../notes` | him only | this room's notes, one per entry; empty restores the defaults |
 | `POST .../release` | him only | frees her seat so a new device can be her |
 
 ### When she loses her phone
@@ -120,7 +123,7 @@ local day, so a day she doesn't visit is not a note she never sees.
 ## Tests
 
 ```bash
-pnpm check       # typecheck, lint, then 103 tests: 58 web, 45 worker
+pnpm check       # typecheck, lint, then 114 tests: 58 web, 56 worker
 ```
 
 `lint` exists for one rule. owewell shipped a `useEffect` below a component's early returns, so the
@@ -140,7 +143,7 @@ in the morning.
 
 ## Deploying
 
-Merging to `main` deploys. The workflow runs typecheck, build, and tests first, and only then
+Merging to `main` deploys. The workflow runs typecheck, lint, build and tests first, and only then
 deploys, so a red suite cannot ship. It needs a Workers-scoped `CLOUDFLARE_API_TOKEN` secret on
 the repo.
 

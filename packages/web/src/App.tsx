@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Action, Mood, RoomView } from "./types.js";
 import { ACTIONS, MOODS } from "./types.js";
-import { doAct, doClock, doDress, doNotes, doRelease, doSay, doTell, fetchRoom, myName, newRoomId, roomFromPath } from "./api.js";
+import { doAct, doClock, doDress, doNotes, doRelease, doSay, doTell, fetchRoom, lastRoom, myName, newRoomId, roomFromPath } from "./api.js";
 import { Cat } from "./Cat.js";
 import { sceneFor } from "./hours.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
@@ -42,8 +42,20 @@ const MOOD_TINT: Record<string, string> = {
 
 export function App() {
   const id = roomFromPath();
+  if (id) lastRoom.set(id);
   return id ? <RoomPage id={id} /> : <Landing />;
 }
+
+/**
+ * Launched from a home screen icon rather than opened in a browser.
+ *
+ * Used to decide whether the front door should send you straight back to your room. Doing that in a
+ * normal browser tab would be hijacking: you typed the address, you should get the page. Doing it from
+ * the installed icon is the only correct behaviour, because the icon means "my cat", not "this website".
+ */
+const installed = () =>
+  matchMedia("(display-mode: standalone)").matches ||
+  (navigator as unknown as { standalone?: boolean }).standalone === true;
 
 /**
  * The cat the front door shows, before anybody has made a room.
@@ -64,6 +76,14 @@ const DOOR_CLOCK = {
 
 /* ─────────────── landing: make a room, send the link ─────────────── */
 function Landing() {
+  const back = lastRoom.get();
+  const wantsNew = new URLSearchParams(location.search).has("new");
+
+  // From the home screen icon, go where she meant to go. `?new` is the way out, for making a second room.
+  useEffect(() => {
+    if (back && installed() && !wantsNew) location.replace(`/r/${back}`);
+  }, [back, wantsNew]);
+
   const [name, setName] = useState(myName.get() ?? "");
   const make = () => {
     if (!name.trim()) return;
@@ -81,6 +101,16 @@ function Landing() {
           A cat that is her. She tells it how she's doing, and that's how it is. You get the link,
           you turn up, and you sit with her.
         </p>
+        {/* In a browser tab this is an offer rather than a redirect, so the page you asked for is the
+            page you get, and making a second room stays possible. */}
+        {back && (
+          <button
+            style={{ ...S.btn, ...S.btnGo, width: "100%", marginBottom: 14 }}
+            onClick={() => location.assign(`/r/${back}`)}
+          >
+            Back to the room
+          </button>
+        )}
         <input
           style={S.input}
           value={name}
