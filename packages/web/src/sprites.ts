@@ -303,3 +303,26 @@ export const FRAME = sprite(
   0,
   0,
 );
+
+/**
+ * The word, hand-set.
+ *
+ * The app is named after a noise the cat had never once made. She says it now, in a bubble, whenever
+ * anything happens to her. Real letters rather than canvas fillText: at this scale antialiased text
+ * next to hand-placed pixels looks like a screenshot of two different programs.
+ *
+ * The m is five columns wide and the rest are three. My first cut made every glyph 3 wide, and a
+ * three-column m has room for only two stems, so it came out as a passable capital pi and the word
+ * read "nrrp". A letter with three stems needs five columns. One column of air between glyphs, 17
+ * total, and the fourth row exists only for the descender on the p.
+ */
+export const MRRP = sprite(
+  [
+    "wwwww.ww..ww..ww.",
+    "w.w.w.w...w...w.w",
+    "w.w.w.w...w...ww.",
+    "..............w..",
+  ],
+  0,
+  0,
+);

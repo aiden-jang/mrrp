@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import type { Cat as CatLook, Clock, Mood } from "./types.js";
 import { sceneFor } from "./hours.js";
 import { mothAt } from "./critters.js";
-import { BED, DOOR, FRAME, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
+import { BED, DOOR, FRAME, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
  * The room, drawn as pixel art at her local time of day.
@@ -58,10 +58,14 @@ export function Cat({
   const bounce = useRef(0);
   const lastNudge = useRef(nudge);
 
+  /** When to stop showing the speech bubble. Same clock as the rAF timestamp, so the loop can read it. */
+  const speakUntil = useRef(0);
+
   useEffect(() => {
     if (nudge !== lastNudge.current) {
       lastNudge.current = nudge;
       bounce.current = 1;
+      speakUntil.current = performance.now() + 1700;
     }
   }, [nudge]);
 
@@ -344,6 +348,26 @@ export function Cat({
           const c = `rgba(255,236,150,${Math.sin(p * Math.PI)})`;
           px(sx, sy, c); px(sx - 1, sy + 1, c); px(sx + 1, sy + 1, c); px(sx, sy + 2, c);
         }
+      }
+
+      // ── mrrp ──────────────────────────────────────────────────────────────
+      // She says the thing the app is named after, whenever anything happens to her: a pet, a brush,
+      // a mood tapped. Drawn after her so the bubble sits in front, and clamped inside the frame so a
+      // cat standing at either wall still gets a whole bubble rather than a clipped one.
+      if (t < speakUntil.current && !reduce) {
+        const BW = 21, BH = 8;
+        const bx = Math.max(1, Math.min(GW - BW - 1, kx + 4));
+        const by = y + sp.oy - 12;
+        rect(bx + 1, by, BW - 2, BH, WHITE); // body, corners left off so it reads as rounded
+        rect(bx, by + 1, BW, BH - 2, WHITE);
+        rect(bx + 1, by, BW - 2, 1, INK);
+        rect(bx + 1, by + BH - 1, BW - 2, 1, INK);
+        rect(bx, by + 1, 1, BH - 2, INK);
+        rect(bx + BW - 1, by + 1, 1, BH - 2, INK);
+        // A two-pixel tail dropping toward her head.
+        px(bx + 4, by + BH, WHITE); px(bx + 3, by + BH, INK); px(bx + 5, by + BH, INK);
+        px(bx + 4, by + BH + 1, INK);
+        blit(MRRP, bx + 2, by + 2, { w: INK });
       }
 
       // An ear twitch. One pixel of the left ear tip erased for a few frames, every ~13s. Absurdly
