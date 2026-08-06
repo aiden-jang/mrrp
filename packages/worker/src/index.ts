@@ -6,7 +6,7 @@ export { Room } from "./room.js";
 
 const app = new Hono<{ Bindings: Env }>();
 const ROOM_RE = /^[a-z0-9]{6,24}$/;
-const VALID: Action[] = ["pet", "brush", "bring", "sit"];
+const VALID: Action[] = ["pet", "brush", "bring", "sit", "photo"];
 const VALID_MOODS: Mood[] = ["good", "tired", "stressed", "sad", "lonely", "bored", "feral", "done", "horny"];
 
 const room = (env: Env, id: string) => env.ROOM.get(env.ROOM.idFromName(id));

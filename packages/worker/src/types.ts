@@ -1,6 +1,6 @@
 /** The contract between the Worker and the web client. */
 
-export type Action = "pet" | "brush" | "bring" | "sit";
+export type Action = "pet" | "brush" | "bring" | "sit" | "photo";
 
 /**
  * Two phrasings, because the two seats read different sentences about the same act.
@@ -13,6 +13,8 @@ export const ACTIONS: { id: Action; label: string; past: string; mine: string }[
   { id: "brush", label: "Brush her", past: "brushed you", mine: "brushed her" },
   { id: "bring", label: "Bring her something", past: "brought you something", mine: "brought her something" },
   { id: "sit", label: "Sit with her", past: "sat with you a while", mine: "sat with her" },
+  // The one action that leaves something behind. See `framed` on the room view.
+  { id: "photo", label: "Take her photo", past: "took a photo of you", mine: "took her photo" },
 ];
 
 /**
@@ -118,6 +120,14 @@ export interface RoomView {
    * This room's notes, so he can edit them. His side only: she must never receive the ones she has
    * not reached, which is the same rule that keeps `note` to a single day's text.
    */
+  /**
+   * He has taken a photo of her, so the picture on the wall is her instead of the fish it ships with.
+   *
+   * The only thing in the room that accumulates. Everything else is deliberately stateless, but a frame
+   * that changes once gives the room a sense that time has passed in it without creating anything that
+   * can be neglected.
+   */
+  framed: boolean;
   yourNotes: string[] | null;
   /**
    * One line she left him, replaceable and never kept in history.
