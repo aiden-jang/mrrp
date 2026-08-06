@@ -475,6 +475,36 @@ function RoomPage({ id }: { id: string }) {
               the last one stays. Leave this empty to use the ones it came with.
             </p>
 
+            {/* The advice belongs here, next to the box, not in the notes themselves. A default that
+              * sounds specific but is not true for whoever reads it lands as a form letter, so the
+              * shipped ones stay safely general and the register gets taught in the editor instead.
+              * Collapsed, because it is needed once. */}
+            <details style={{ marginTop: 8 }}>
+              <summary style={{ ...S.small, cursor: "pointer" }}>What makes a good one</summary>
+              <div style={{ ...S.small, marginTop: 8, display: "grid", gap: 7 }}>
+                <p style={S.small}>
+                  One small ordinary thing beats one big kind thing. <i>You fell asleep before the film
+                  ended again</i> lands harder than <i>you are wonderful</i>, because only you could have
+                  written the first one.
+                </p>
+                <p style={S.small}>Shapes that work:</p>
+                <p style={{ ...S.small, paddingLeft: 12 }}>
+                  Something you noticed. <i>You hum when you are concentrating and you have no idea.</i>
+                </p>
+                <p style={{ ...S.small, paddingLeft: 12 }}>
+                  Something you have not said out loud. <i>I was nervous the whole first month.</i>
+                </p>
+                <p style={{ ...S.small, paddingLeft: 12 }}>
+                  Something with no point to it. <i>The bakery on the corner has moved. I am upset about
+                  it and I know you will be too.</i>
+                </p>
+                <p style={S.small}>
+                  Put the one you would find hardest to say near the end. She reaches it, and by then it
+                  has had a few weeks to be true.
+                </p>
+              </div>
+            </details>
+
             {/* What she will actually see, in the real card, as you type.
               *
               * Thirty lines went into a plain textarea with no idea how any of them would land, and that
