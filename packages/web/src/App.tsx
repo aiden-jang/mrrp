@@ -778,7 +778,7 @@ const S: Record<string, React.CSSProperties> = {
     fontSize: 12.5, color: "var(--soft)", opacity: 0.8, textAlign: "center", margin: "6px 0 0",
   },
   stage: {
-    position: "relative", width: "100%", aspectRatio: "5 / 4", borderRadius: 26, overflow: "hidden",
+    position: "relative", width: "100%", aspectRatio: "80 / 80" /* VW x GH: the pixels must stay square */, borderRadius: 26, overflow: "hidden",
     background: "#efdcc2", boxShadow: "0 18px 44px -22px rgba(120,84,44,.45)",
   },
   doing: { fontSize: 13.5, color: "var(--soft)", textAlign: "center", margin: "14px 0 0", fontStyle: "italic" },
