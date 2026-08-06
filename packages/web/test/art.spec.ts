@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MOODS, type Mood } from "../src/types.js";
 import { RESPONSES } from "../src/moods.js";
+import { FACE_KEYS } from "../src/faces.js";
 import { LOOKS, EYES, timezones } from "../src/looks.js";
 import { POSES, BED, DOOR, FRAME, MRRP, PLANT, SHELF, TAIL, WINDOW, type Sprite } from "../src/sprites.js";
 import { sceneFor, hourIn } from "../src/hours.js";
@@ -28,6 +29,19 @@ const ALL_SPRITES: [string, Sprite][] = [
  * happily and read as a capital pi. Nothing but eyes on the actual pixels catches that, so these
  * assert the stems rather than the shape.
  */
+describe("every mood has a face", () => {
+  // FACES is keyed by string, not by Mood, so a mood added without a face renders nothing at all and
+  // nothing complains: not the compiler, not the build. The chip just quietly loses its face.
+  it.each(MOODS.map((m) => m.id))("%s", (id) => {
+    expect(FACE_KEYS).toContain(id);
+  });
+
+  it("has no faces for moods that do not exist", () => {
+    // The other direction, so deleting a mood leaves no orphan grid behind.
+    for (const k of FACE_KEYS) expect(MOODS.map((m) => m.id)).toContain(k);
+  });
+});
+
 describe("the word she says", () => {
   /** Columns of the given row that have ink in them. */
   const inked = (row: number): number[] =>

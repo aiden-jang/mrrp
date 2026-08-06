@@ -39,6 +39,9 @@ const MOOD_TINT: Record<string, string> = {
   sad: "#e4dfd4",
   lonely: "#f0dcd8",
   bored: "#e6e3d2",
+  feral: "#f6dcc4",
+  done: "#e3dcd2",
+  horny: "#f2d4d6",
 };
 
 export function App() {
@@ -650,6 +653,8 @@ function RoomPage({ id }: { id: string }) {
                   key={m.id}
                   style={{
                     ...S.mood,
+                    justifyContent: "center",
+                    padding: "9px 8px",
                     ...(view.catMood === m.id
                       ? S.moodOn
                       : { background: MOOD_TINT[m.id] ?? "var(--panel)", borderColor: "transparent" }),
@@ -856,7 +861,12 @@ const S: Record<string, React.CSSProperties> = {
     fontSize: 14, fontWeight: 500,
     color: "var(--soft)", textAlign: "center", margin: "18px 0 8px",
   },
-  moodRow: { display: "flex", flexWrap: "wrap", gap: 7, justifyContent: "center", marginBottom: 14 },
+  // A 3x3 grid rather than a wrapping flex row. With nine chips, wrap left a single orphan on the last
+  // line, and an odd one out at the bottom of a mood picker reads as an afterthought.
+  moodRow: {
+    display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 7,
+    marginBottom: 14,
+  },
   mood: {
     font: "inherit", fontSize: 14, color: "var(--ink)", background: "var(--panel)",
     border: "1px solid var(--line)", borderRadius: 999, padding: "8px 15px", cursor: "pointer",
