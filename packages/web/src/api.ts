@@ -126,6 +126,16 @@ export async function doNotes(id: string, notes: string[]): Promise<void> {
   if (!r.ok) throw new Error("Couldn't save the notes.");
 }
 
+/** Take his seat back on a new device. The only way he can be restored. */
+export async function doRecover(id: string, code: string): Promise<void> {
+  const r = await fetch(`/api/room/${id}/recover`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ me: myToken(), code }),
+  });
+  if (!r.ok) throw new Error("That code doesn't match this room.");
+}
+
 /** Leave him a line. Hers only; empty text clears it. */
 export async function doSay(id: string, text: string): Promise<RoomView> {
   const r = await fetch(`/api/room/${id}/say`, {

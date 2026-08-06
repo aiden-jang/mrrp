@@ -90,6 +90,23 @@ app.post("/api/room/:id/notes", async (c) => {
 });
 
 /**
+ * Take his seat back on a new device, with the room's recovery code.
+ *
+ * The counterpart to /release: she can be restored because he can free her seat, and this is the only
+ * way he can be restored, since there is nobody who could vouch for him.
+ */
+app.post("/api/room/:id/recover", async (c) => {
+  const id = c.req.param("id");
+  if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
+  const body = (await c.req.json().catch(() => ({}))) as { me?: unknown; code?: unknown };
+  const me = typeof body.me === "string" ? body.me : "";
+  const code = typeof body.code === "string" ? body.code : "";
+  if (me.length < 8 || code.length < 8) return c.json({ error: "bad request" }, 400);
+  const ok = await room(c.env, id).recoverHisSeat(me, code);
+  return ok ? c.json({ ok: true }) : c.json({ error: "that code does not match" }, 403);
+});
+
+/**
  * Free her seat, so a new phone can be her.
  *
  * The only recovery this app has. A seat is a random token in localStorage, so clearing browser data

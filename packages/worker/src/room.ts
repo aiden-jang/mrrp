@@ -111,6 +111,56 @@ export class Room extends DurableObject<Env> {
     return true;
   }
 
+  /**
+   * The room's recovery code, minted on first use and kept as-is.
+   *
+   * Stored in plaintext on purpose. Hashing a secret protects you in two situations: the plaintext is
+   * reused elsewhere (a password), or the store leaks and the secret is worth more than the data beside
+   * it. Neither applies. This code's entire power is "become the first seat of THIS room", and anybody
+   * who can read this object's storage already has the room, the notes and both names. Hashing would buy
+   * nothing and cost the thing that makes it usable: he can look it up again from his own device for as
+   * long as he still has one, instead of being told he should have written it down.
+   *
+   * Ambiguous characters are left out so it survives being read aloud or copied off a screen.
+   */
+  private async recoveryCode(): Promise<string> {
+    const existing = await this.ctx.storage.get<string>("recovery");
+    if (existing) return existing;
+    const A = "abcdefghijkmnpqrstuvwxyz23456789"; // no l, o, 0, 1
+    const raw = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => A[b % A.length]).join("");
+    const code = `${raw.slice(0, 4)}-${raw.slice(4, 8)}-${raw.slice(8, 12)}`;
+    await this.ctx.storage.put("recovery", code);
+    return code;
+  }
+
+  /**
+   * Take back the first seat on a new device.
+   *
+   * The gap this closes: her seat has had a recovery path for a while, because he can free it. His had
+   * none, so losing a phone left the room permanently read-only, with notes he could no longer edit and
+   * a cat he could no longer change.
+   *
+   * The old seat's `firstSeen` is carried over rather than stamped fresh, because arrival order is what
+   * decides who is who. A new timestamp would make him the second seat, and the second seat is the cat.
+   */
+  async recoverHisSeat(me: string, code: string): Promise<boolean> {
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    const { him, her } = this.roles(people);
+    if (!him) return false;
+    // She must not be able to redeem it into holding both seats, which would leave the room with one
+    // person and no cat.
+    if (me === her) return false;
+    if (me === him) return true; // already his; nothing to do and no reason to fail
+    const stored = await this.ctx.storage.get<string>("recovery");
+    if (!stored || stored !== code.trim().toLowerCase()) return false;
+
+    const old = people[him]!;
+    delete people[him];
+    people[me] = { ...old, lastSeen: Date.now() };
+    await this.ctx.storage.put("people", people);
+    return true;
+  }
+
   /** The notes this room runs on: his if he wrote any, otherwise the shipped defaults. */
   private async notes(): Promise<string[]> {
     const own = await this.ctx.storage.get<string[]>("notes");
@@ -318,6 +368,9 @@ export class Room extends DurableObject<Env> {
       // spectator: that would be the note leak again with extra steps.
       yourNotes: seated && !youAreHer ? await this.notes() : null,
       framed: (await this.ctx.storage.get<boolean>("framed")) ?? false,
+      // His only, and readable for as long as he holds the seat. Useless to anybody else: redeeming it
+      // requires knowing it, and he is the only one it is ever sent to.
+      recoveryCode: seated && !youAreHer ? await this.recoveryCode() : null,
       // Only she sees what was done, because only he does anything.
       theirRecent: youAreHer && him ? log.filter((v) => v.who === him).slice(0, 4) : [],
       theyCameAfter: !!catTold && !!them && youAreHer && them.lastSeen > catTold.at,
