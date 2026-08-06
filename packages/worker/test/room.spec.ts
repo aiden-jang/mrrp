@@ -360,6 +360,100 @@ describe("the photo on the wall", () => {
   });
 });
 
+/**
+ * Losing HIS phone.
+ *
+ * Her seat has had a path back for a while, because he can free it. His had none, so one lost phone left
+ * the room permanently read-only: notes he could not edit, a cat he could not change, and no way to hand
+ * the seat to a new device. This is the only way he can be restored, because there is nobody who could
+ * vouch for him.
+ */
+describe("taking his seat back", () => {
+  const NEWPHONE = "hisnewphonehis";
+
+  it("gives the code to him and to nobody else", async () => {
+    await seat();
+    const code = (await view(HIM)).recoveryCode;
+    expect(code).toMatch(/^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$/);
+    expect((await view(HER)).recoveryCode).toBeNull();
+    await view(STRANGER);
+    expect((await view(STRANGER)).recoveryCode).toBeNull();
+  });
+
+  it("stays the same code every time he looks", async () => {
+    // He has to be able to find it again while he still has the device.
+    await seat();
+    const a = (await view(HIM)).recoveryCode;
+    expect((await view(HIM)).recoveryCode).toBe(a);
+  });
+
+  it("hands the seat to a new device, and he is still him", async () => {
+    await seat();
+    const code = (await view(HIM)).recoveryCode!;
+    expect((await post("recover", { me: NEWPHONE, code })).status).toBe(200);
+
+    const restored = await view(NEWPHONE);
+    expect(restored.youAreHer).toBe(false);
+    expect(restored.them).toBe("Sofia");
+    expect(restored.recoveryCode).toBe(code);
+    // And she is untouched: still the cat, still second.
+    expect((await view(HER)).youAreHer).toBe(true);
+  });
+
+  it("keeps him first, so the new device is not handed the cat", async () => {
+    // Arrival order decides who is who. Stamping a fresh firstSeen would make him the second seat.
+    await seat();
+    const code = (await view(HIM)).recoveryCode!;
+    await post("recover", { me: NEWPHONE, code });
+    expect((await view(NEWPHONE)).youAreHer).toBe(false);
+    expect((await view(HER)).youAreHer).toBe(true);
+  });
+
+  it("leaves everything in the room alone", async () => {
+    await seat();
+    await post("notes", { me: HIM, notes: ["mine to keep"] });
+    await post("say", { me: HER, text: "still here" });
+    await post("act", { me: HIM, action: "photo" });
+    const code = (await view(HIM)).recoveryCode!;
+    await post("recover", { me: NEWPHONE, code });
+
+    const v = await view(NEWPHONE);
+    expect(v.yourNotes).toEqual(["mine to keep"]);
+    expect(v.herLine?.text).toBe("still here");
+    expect(v.framed).toBe(true);
+  });
+
+  it("refuses a wrong code, and does not evict him for trying", async () => {
+    await seat();
+    expect((await post("recover", { me: NEWPHONE, code: "aaaa-bbbb-cccc" })).status).toBe(403);
+    expect((await view(HIM)).youAreHer).toBe(false);
+    expect((await view(HIM)).recoveryCode).not.toBeNull(); // still his seat
+  });
+
+  it("will not let her redeem it into holding both seats", async () => {
+    // If she could, the room would have one person in it and no cat.
+    await seat();
+    const code = (await view(HIM)).recoveryCode!;
+    expect((await post("recover", { me: HER, code })).status).toBe(403);
+    expect((await view(HER)).youAreHer).toBe(true);
+    expect((await view(HIM)).youAreHer).toBe(false);
+  });
+
+  it("is a no-op when he already holds the seat", async () => {
+    await seat();
+    const code = (await view(HIM)).recoveryCode!;
+    expect((await post("recover", { me: HIM, code })).status).toBe(200);
+    expect((await view(HIM)).youAreHer).toBe(false);
+    expect((await view(HER)).youAreHer).toBe(true);
+  });
+
+  it("accepts it however he types it", async () => {
+    await seat();
+    const code = (await view(HIM)).recoveryCode!;
+    expect((await post("recover", { me: NEWPHONE, code: `  ${code.toUpperCase()}  ` })).status).toBe(200);
+  });
+});
+
 describe("presence", () => {
   it("reports him as here now, then as having been here", async () => {
     await seat();

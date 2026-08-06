@@ -133,6 +133,8 @@ export interface RoomView {
    * can be neglected.
    */
   framed: boolean;
+  /** The code that takes his seat back on a new device. Sent to him and to nobody else. */
+  recoveryCode: string | null;
   yourNotes: string[] | null;
   herLine: Told2 | null;
   /** Her note for today. Null for him: he wrote them, so reading them back is not the point. */

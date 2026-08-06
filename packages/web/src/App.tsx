@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Action, Mood, RoomView } from "./types.js";
 import { ACTIONS, MOODS } from "./types.js";
-import { doAct, doClock, doDress, doNotes, doRelease, doSay, doTell, fetchRoom, lastRoom, myName, newRoomId, roomFromPath } from "./api.js";
+import { doAct, doClock, doDress, doNotes, doRecover, doRelease, doSay, doTell, fetchRoom, lastRoom, myName, newRoomId, roomFromPath } from "./api.js";
 import { Cat } from "./Cat.js";
 import { sceneFor } from "./hours.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
@@ -175,6 +175,9 @@ function RoomPage({ id }: { id: string }) {
   const [saving, setSaving] = useState(false);
   const [setup, setSetup] = useState(false);
   const [releasing, setReleasing] = useState(false);
+  const [claimCode, setClaimCode] = useState("");
+  const [claiming, setClaiming] = useState(false);
+  const [claimErr, setClaimErr] = useState<string | null>(null);
   const [savingSetup, setSavingSetup] = useState(false);
   const [setupErr, setSetupErr] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ name: string; look: string; eyes: string; tz: string; homeHour: number; notes: string } | null>(null);
@@ -540,6 +543,17 @@ function RoomPage({ id }: { id: string }) {
 
             {/* Errors belong next to the button that failed. This used to surface at the very bottom of
                 the card, below everything, which on a panel this tall is off screen. */}
+            {view.recoveryCode && (
+              <>
+                <p style={{ ...S.fieldLabel, marginTop: 14 }}>recovery code</p>
+                <p style={{ ...S.small, marginBottom: 6 }}>
+                  Save this somewhere that is not this phone. It is the only way to get your side of the
+                  room back if you lose it.
+                </p>
+                <p style={S.code}>{view.recoveryCode}</p>
+              </>
+            )}
+
             {setupErr && <p style={{ ...S.small, color: "#a4563d", marginTop: 12 }}>{setupErr}</p>}
 
             <div style={{ ...S.row, marginTop: 12 }}>
@@ -742,9 +756,46 @@ function RoomPage({ id }: { id: string }) {
               * refuses them.
               */}
             {!iAmHim && (
-              <p style={{ ...S.small, textAlign: "center", marginTop: 16 }}>
-                This room belongs to two people, and you are not one of them. You can watch the cat.
-              </p>
+              <>
+                <p style={{ ...S.small, textAlign: "center", marginTop: 16 }}>
+                  This room belongs to two people, and you are not one of them. You can watch the cat.
+                </p>
+                {/* A new phone lands on exactly this screen, so this is where the way back belongs.
+                    Nothing here leaks: redeeming needs the code, and the code only ever goes to him. */}
+                <div style={{ ...S.panel, marginTop: 14 }}>
+                  <p style={S.panelTitle}>is this your room?</p>
+                  <p style={{ ...S.small, marginBottom: 9 }}>
+                    If you made it and lost the device you made it on, put the recovery code in here.
+                  </p>
+                  <input
+                    style={S.input}
+                    value={claimCode}
+                    placeholder="xxxx-xxxx-xxxx"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    onChange={(e) => setClaimCode(e.target.value)}
+                  />
+                  {claimErr && <p style={{ ...S.small, color: "#a4563d", marginTop: 8 }}>{claimErr}</p>}
+                  <button
+                    style={{ ...S.btn, ...S.btnGo, width: "100%", marginTop: 10 }}
+                    disabled={claiming || claimCode.trim().length < 8}
+                    onClick={async () => {
+                      setClaiming(true);
+                      setClaimErr(null);
+                      try {
+                        await doRecover(id, claimCode);
+                        await load();
+                      } catch (e) {
+                        setClaimErr(e instanceof Error ? e.message : "That didn't work.");
+                      }
+                      setClaiming(false);
+                    }}
+                  >
+                    {claiming ? "Checking..." : "This is my room"}
+                  </button>
+                </div>
+              </>
             )}
 
             {/* The only recovery this app has, so it has to be findable, and it evicts her current
@@ -819,6 +870,11 @@ const S: Record<string, React.CSSProperties> = {
   footer: { marginTop: 28 },
   credit: { fontSize: 11, color: "var(--soft)", opacity: 0.55, textAlign: "center", margin: "8px 0 0" },
   creditLink: { color: "inherit", textDecoration: "underline", textUnderlineOffset: 2 },
+  code: {
+    font: "inherit", fontSize: 18, letterSpacing: ".08em", textAlign: "center", margin: 0,
+    padding: "11px 13px", borderRadius: 14, background: "var(--air)",
+    border: "1px dashed var(--line)", userSelect: "all",
+  },
   /** Shown once, until the first touch. Small, centred, and never in the way. */
   hint: {
     fontSize: 12.5, color: "var(--soft)", opacity: 0.8, textAlign: "center", margin: "6px 0 0",
