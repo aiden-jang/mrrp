@@ -15,6 +15,19 @@ import { BED, DOOR, FRAME, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, t
  */
 
 const GW = 100, GH = 80, FLOOR = 48;
+/**
+ * How much of the room is on screen at once.
+ *
+ * The room is authored 100 wide but only VW of it is shown, with the view following her and clamped to
+ * the walls. She is 24 pixels across, so on the full grid she was a quarter of the frame with a lot of
+ * empty wall around her, and everything built into her at that size (the irregular blink, the highlight
+ * tracking the moth, the ear twitch, the stretch) was too small to read. Cropping rather than redrawing
+ * her keeps one logical pixel to one aligned rectangle, which is the rule the whole look depends on.
+ *
+ * The side effect is a room that pans, so the door and the plant come and go. That reads as a camera
+ * rather than a mistake, which is why the view moves smoothly with her instead of jumping.
+ */
+const VW = 80;
 /** The window is bolted to the wall here. Only the light it throws moves. */
 const WIN_X = 60, WIN_CX = WIN_X + 8;
 
@@ -128,12 +141,14 @@ export function Cat({
 
     /** Size of one logical pixel, in device pixels. Recomputed on resize. */
     let s = 5;
+    /** The view's left edge, in grid columns. Recomputed once per frame from where she is. */
+    let cam = 0;
     const fit = () => {
       const r = cv.getBoundingClientRect();
       const d = Math.min(2, devicePixelRatio || 1);
-      cv.width = Math.max(GW, Math.round(r.width * d));
+      cv.width = Math.max(VW, Math.round(r.width * d));
       cv.height = Math.max(GH, Math.round(r.height * d));
-      s = cv.width / GW;
+      s = cv.width / VW;
     };
     fit();
     const ro = new ResizeObserver(fit);
@@ -142,7 +157,7 @@ export function Cat({
     const ptr = { x: GW / 2, y: FLOOR + 10, in: false };
     const onMove = (e: PointerEvent) => {
       const r = cv.getBoundingClientRect();
-      ptr.x = ((e.clientX - r.left) / r.width) * GW;
+      ptr.x = cam + ((e.clientX - r.left) / r.width) * VW;
       ptr.y = ((e.clientY - r.top) / r.height) * GH;
       ptr.in = true;
     };
@@ -158,7 +173,7 @@ export function Cat({
      */
     const gridAt = (e: PointerEvent) => {
       const r = cv.getBoundingClientRect();
-      return { x: ((e.clientX - r.left) / r.width) * GW, y: ((e.clientY - r.top) / r.height) * GH };
+      return { x: cam + ((e.clientX - r.left) / r.width) * VW, y: ((e.clientY - r.top) / r.height) * GH };
     };
     const onDown = (e: PointerEvent) => {
       const { x, y } = gridAt(e);
@@ -197,10 +212,17 @@ export function Cat({
 
     /** One logical pixel. Edges are rounded so neighbours share a boundary exactly. */
     const px = (x: number, y: number, c: string) => {
-      if (!c || x < 0 || y < 0 || x >= GW || y >= GH) return;
-      const X = Math.round(x * s), Y = Math.round(y * s);
+      if (!c || y < 0 || y >= GH) return;
+      // Clipped against the view, not the grid: anything the camera is not looking at is skipped rather
+      // than drawn off the edge of the canvas.
+      const vx = x - cam;
+      if (vx < 0 || vx >= VW) return;
+      const X = Math.round(vx * s), Y = Math.round(y * s);
       g.fillStyle = c;
-      g.fillRect(X, Y, Math.round((x + 1) * s) - X, Math.round((y + 1) * s) - Y);
+      // Both edges must come from the SAME coordinate space. Taking the left edge from the view and the
+      // right edge from the grid made every pixel (cam + 1) columns wide, which smeared the whole room
+      // sideways the moment the camera moved off zero.
+      g.fillRect(X, Y, Math.round((vx + 1) * s) - X, Math.round((y + 1) * s) - Y);
     };
 
     const rect = (x: number, y: number, w: number, h: number, c: string) => {
@@ -228,6 +250,7 @@ export function Cat({
 
     let raf = 0;
     const frame = (t: number) => {
+      cam = Math.max(0, Math.min(GW - VW, Math.round((catX.current ?? GW / 2) - VW / 2)));
       const L = lookRef.current;
       const sc = sceneFor(clockRef.current, Date.now(), moodRef.current);
       const beamX = Math.round(sc.beam * GW);
