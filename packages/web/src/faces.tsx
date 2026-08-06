@@ -18,7 +18,16 @@ const FACES: Record<string, string[]> = {
   sad:      [".x...x.", ".......", ".xxxxx.", "x.....x", "......."],
   lonely:   ["..x.x..", ".......", "...xx..", ".......", "......."],
   bored:    ["xxx.xxx", ".......", "...xxx.", ".......", "......."],
+  // wide manic eyes and a jagged grin
+  feral:    ["x.x.x.x", ".......", "x.x.x.x", ".xxxxx.", "......."],
+  // eyes gone entirely, mouth a flat line: switched off at the wall
+  done:     ["xx...xx", ".......", ".xxxxx.", ".......", "......."],
+  // one eye shut, mouth to one side. it is a wink, it is doing a lot of work
+  horny:    [".x...xx", ".......", "..xxx..", "...x...", "......."],
 };
+
+/** Which moods have a face. Exported so a test can hold this to the mood list. */
+export const FACE_KEYS = Object.keys(FACES);
 
 export function MoodFace({ mood, color, size = 21 }: { mood: string; color: string; size?: number }) {
   const rows = FACES[mood];

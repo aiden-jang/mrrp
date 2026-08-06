@@ -19,7 +19,7 @@ export const ACTIONS: { id: Action; label: string; past: string; mine: string }[
  * What you tell the cat you are. Six, deliberately: enough to feel seen, few enough to tap without
  * choosing. There is no "fine", because "fine" is what you say to get out of the conversation.
  */
-export type Mood = "good" | "tired" | "stressed" | "sad" | "lonely" | "bored";
+export type Mood = "good" | "tired" | "stressed" | "sad" | "lonely" | "bored" | "feral" | "done" | "horny";
 
 /** `said` completes "told the cat they're ___", so it has to read after a plural pronoun. */
 export const MOODS: { id: Mood; label: string; said: string }[] = [
@@ -28,7 +28,11 @@ export const MOODS: { id: Mood; label: string; said: string }[] = [
   { id: "stressed", label: "stressed", said: "stressed" },
   { id: "sad", label: "sad", said: "sad" },
   { id: "lonely", label: "lonely", said: "a bit lonely" },
-  { id: "bored", label: "bored", said: "bored" },
+    { id: "bored", label: "bored", said: "bored" },
+  // Blunter registers, because six polite words is a thin vocabulary for a whole relationship.
+  { id: "feral", label: "feral", said: "feeling feral" },
+  { id: "done", label: "done", said: "completely done with today" },
+  { id: "horny", label: "horny", said: "in a mood, and not one of the sad ones" },
 ];
 
 /** How the cat looks. Set once when the room is made, so she can resemble a real cat. */

@@ -42,6 +42,41 @@ export interface Response {
 }
 
 export const RESPONSES: Record<Mood, Response> = {
+  /*
+   * The three blunt ones.
+   *
+   * "feral" and "done" follow the rule: the room gets livelier or closer, never darker. "horny" breaks it
+   * on purpose, because it is a joke rather than a low mood, and the funniest available answer is that the
+   * cat wants no part of this and is leaving. An absent cat is a colder room; being the punchline earns it.
+   */
+  feral: {
+    pose: "play",
+    eyes: 1,
+    doing: "up on her back legs, absolutely unhinged, and everything on that shelf is in danger",
+    snug: 0.2,
+    play: 1,
+    sleepy: 0,
+    purring: false,
+  },
+  done: {
+    pose: "loaf",
+    eyes: 0.1,
+    doing: "lying flat out on the boards like she has been switched off at the wall",
+    snug: 0.9,
+    play: 0,
+    sleepy: 0.7,
+    purring: true,
+  },
+  horny: {
+    pose: "stand",
+    eyes: 0.9,
+    doing: "suddenly extremely interested in the door and leaving without further comment",
+    snug: 0.3,
+    play: 0.4,
+    catX: 0.12,
+    sleepy: 0,
+    purring: false,
+  },
   good: {
     pose: "perk",
     sparkle: true,
