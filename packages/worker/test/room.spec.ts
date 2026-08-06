@@ -329,6 +329,37 @@ describe("writing his own notes", () => {
   });
 });
 
+describe("the photo on the wall", () => {
+  // The only thing in the room that accumulates. Everything else is deliberately stateless.
+  it("starts as the fish it ships with", async () => {
+    await seat();
+    expect((await view(HER)).framed).toBe(false);
+  });
+
+  it("becomes her once he takes one, for both of them", async () => {
+    await seat();
+    await post("act", { me: HIM, action: "photo" });
+    expect((await view(HIM)).framed).toBe(true);
+    expect((await view(HER)).framed).toBe(true);
+  });
+
+  it("stays, because a photo is not a mood", async () => {
+    await seat();
+    await post("act", { me: HIM, action: "photo" });
+    await post("act", { me: HIM, action: "pet" });
+    await post("tell", { me: HER, mood: "feral" });
+    expect((await view(HER)).framed).toBe(true);
+  });
+
+  it("is not hers to take, and not a stranger's", async () => {
+    await seat();
+    await post("act", { me: HER, action: "photo" });
+    await view(STRANGER);
+    await post("act", { me: STRANGER, action: "photo" });
+    expect((await view(HER)).framed).toBe(false);
+  });
+});
+
 describe("presence", () => {
   it("reports him as here now, then as having been here", async () => {
     await seat();

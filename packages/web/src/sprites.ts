@@ -326,3 +326,28 @@ export const MRRP = sprite(
   0,
   0,
 );
+
+/**
+ * The same frame with a photo of her in it, used once he has taken one.
+ *
+ * A separate sprite rather than an overdraw, so the picture is authored rather than assembled: the inner
+ * area of FRAME is exactly 7x5, which is enough for ears, two eyes and a nose and not one pixel more.
+ * `c` is her fur so the photo is of HER cat, whatever colour that is, and not a generic one.
+ */
+export const FRAME_CAT = sprite(
+  [
+    "wwwwwwwwwwwww",
+    "wfffffffffffw",
+    "wfwwwwwwwwwfw",
+    "wfwcchhhccwfw",
+    "wfwcccccccwfw",
+    "wfwcecccecwfw",
+    "wfwcccncccwfw",
+    "wfwwwwwwwwwfw",
+    "wfwwwwwwwwwfw",
+    "wfffffffffffw",
+    "wwwwwwwwwwwww",
+  ],
+  0,
+  0,
+);

@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import type { Cat as CatLook, Clock, Mood } from "./types.js";
 import { sceneFor } from "./hours.js";
 import { mothAt } from "./critters.js";
-import { BED, DOOR, FRAME, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
+import { BED, DOOR, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
  * The room, drawn as pixel art at her local time of day.
@@ -60,6 +60,7 @@ export function Cat({
   mood,
   nudge,
   eyesOpen = false,
+  framed = false,
   role = null,
   onPet,
   onPoke,
@@ -81,6 +82,8 @@ export function Cat({
    * cannot choose a colour you cannot see.
    */
   eyesOpen?: boolean;
+  /** He has taken her photo, so the picture on the wall is her. */
+  framed?: boolean;
   /**
    * Who is looking, which decides what touching the cat does. Petting is his; she gets a poke that is
    * purely local; a spectator and the landing page get neither. The furniture is tappable for everyone,
@@ -98,6 +101,8 @@ export function Cat({
   const moodRef = useRef(mood);
   const eyesRef = useRef(eyesOpen);
   eyesRef.current = eyesOpen;
+  const framedRef = useRef(framed);
+  framedRef.current = framed;
   lookRef.current = look;
   clockRef.current = clock;
   moodRef.current = mood;
@@ -351,7 +356,11 @@ export function Cat({
       }
       blit(SHELF, 80 + shake("shelf"), FLOOR - 24, { w: INK, d: "#8a6a48" });
       blit(DOOR, 6 + shake("door"), FLOOR - 16, { w: INK, f: sc.wallBottom, d: "#8a6a48", h: "#ffe9a8" });
-      blit(FRAME, 16 + shake("frame"), 12, { w: INK, f: "#c69a63", h: "#cfe0e4", g: "#e2926f" });
+      if (framedRef.current) {
+        blit(FRAME_CAT, 16 + shake("frame"), 12, { w: INK, f: "#c69a63", h: "#cfe0e4", c: L.fur, e: INK, n: PINK });
+      } else {
+        blit(FRAME, 16 + shake("frame"), 12, { w: INK, f: "#c69a63", h: "#cfe0e4", g: "#e2926f" });
+      }
       blit(PLANT, 87 + shake("plant"), FLOOR - 13, { g: LEAF, w: INK, d: "#b07a4e" });
       // Dusty rose, not the lavender it started as. Lavender was the only cool colour in a room of
       // creams and browns, and at this size it stopped reading as a cat bed and started reading as

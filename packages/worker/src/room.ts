@@ -85,6 +85,9 @@ export class Room extends DurableObject<Env> {
     // request is a request and the seat check is the only thing that actually holds.
     if (this.roles(people).him !== me) return this.build(me, people);
 
+    // A photo is the one action with a consequence: it replaces the picture on the wall, for good.
+    if (action === "photo") await this.ctx.storage.put("framed", true);
+
     const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
     log.unshift({ at: Date.now(), who: me, action });
     await this.ctx.storage.put("log", log.slice(0, LOG_KEEP));
@@ -314,6 +317,7 @@ export class Room extends DurableObject<Env> {
       // He wrote them, so handing them back is how he edits them. Never to her, and never to a
       // spectator: that would be the note leak again with extra steps.
       yourNotes: seated && !youAreHer ? await this.notes() : null,
+      framed: (await this.ctx.storage.get<boolean>("framed")) ?? false,
       // Only she sees what was done, because only he does anything.
       theirRecent: youAreHer && him ? log.filter((v) => v.who === him).slice(0, 4) : [],
       theyCameAfter: !!catTold && !!them && youAreHer && them.lastSeen > catTold.at,
