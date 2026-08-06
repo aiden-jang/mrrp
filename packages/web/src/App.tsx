@@ -146,7 +146,16 @@ function Landing() {
         <p style={{ ...S.small, marginTop: 14 }}>
           You'll get a link. Send it to one person. That's the whole thing.
         </p>
-        <p style={S.credit}>made by aiden jang</p>
+        {/* A link here and plain text inside a room, on purpose. This page is the one strangers see, so
+            a credit that goes somewhere belongs. In the room the only two people are the two it is for,
+            and a link pointing away from a note she is reading turns a signature into a byline with a
+            call to action, which is the one thing this app has refused to be all along. */}
+        <p style={S.credit}>
+          made by{' '}
+          <a href="https://aidenjang.com" target="_blank" rel="noopener noreferrer" style={S.creditLink}>
+            aiden jang
+          </a>
+        </p>
       </div>
     </main>
   );
@@ -809,6 +818,7 @@ const S: Record<string, React.CSSProperties> = {
    */
   footer: { marginTop: 28 },
   credit: { fontSize: 11, color: "var(--soft)", opacity: 0.55, textAlign: "center", margin: "8px 0 0" },
+  creditLink: { color: "inherit", textDecoration: "underline", textUnderlineOffset: 2 },
   /** Shown once, until the first touch. Small, centred, and never in the way. */
   hint: {
     fontSize: 12.5, color: "var(--soft)", opacity: 0.8, textAlign: "center", margin: "6px 0 0",
