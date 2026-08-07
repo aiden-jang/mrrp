@@ -542,3 +542,43 @@ export const MUG_DOWN = sprite(
   0,
   0,
 );
+
+/**
+ * "ek ek ek", in the bubble, when there is a bird on the sill.
+ *
+ * The stuttering chirr a cat makes at a bird through glass. Written out rather than drawn as a
+ * mouth animation because at this size a moving jaw is two pixels flickering, which reads as a
+ * rendering fault; anyone who has lived with a cat reads the letters instantly.
+ *
+ * "ek ek", not "ek ek ek": three of them needs about 32 columns and the bubble is 17. The first
+ * attempt crammed three in anyway and rendered as blocks of noise, which is worse than saying
+ * nothing, because noise in a speech bubble reads as a broken font rather than as a cat.
+ */
+export const EK = sprite(
+  [
+    "www.w.w..www.w.w.",
+    "ww..ww...ww..ww..",
+    "www.w.w..www.w.w.",
+    ".................",
+  ],
+  0,
+  0,
+);
+
+/**
+ * A small brown bird on the sill.
+ *
+ * Side-on and tiny. The point is not the bird, it is her reaction to the bird, so it has to be
+ * unmistakable in about six pixels and then get out of the way.
+ */
+export const BIRD = sprite(
+  [
+    "..ww..",
+    ".wbbw.",
+    "wbbbbo",
+    ".wbbw.",
+    "..ww..",
+  ],
+  0,
+  0,
+);

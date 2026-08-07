@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import type { Cat as CatLook, Clock, Gift, Mood } from "./types.js";
 import { sceneFor } from "./hours.js";
 import { mothAt } from "./critters.js";
-import { BED, BOX_BACK, BOX_FRONT, DOOR, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, MUG, MUG_DOWN, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
+import { BED, BIRD, BOX_BACK, BOX_FRONT, DOOR, EK, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, MUG, MUG_DOWN, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
  * The room, drawn as pixel art at her local time of day.
@@ -34,6 +34,8 @@ const WIN_X = 60, WIN_CX = WIN_X + 8;
 const BOX_X = 44, BOX_Y = FLOOR + 9;
 /** One lap of the room. Long enough to see, short enough that it's over before you react. */
 const ZOOM_MS = 1600;
+/** How long a bird stays before it gets bored of her. */
+const BIRD_MS = 5200;
 /**
  * Where it comes to rest, having rolled.
  *
@@ -167,6 +169,14 @@ export function Cat({
    * has no trigger and no explanation, which is exactly what it is like to live with a cat.
    */
   const zoom = useRef({ next: 0, start: -1e9 });
+  /**
+   * A bird on the sill, and how long it stays.
+   *
+   * Purely local and deliberately not shared. Everything else added to this room is state both of
+   * them see, but a bird is a moment, not a fact about the room: telling the other person a bird
+   * happened four hours ago would be a notification, and this app does not have those.
+   */
+  const bird = useRef(-1e9);
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
   const doorShutFrom = useRef({ at: 0, from: 0 });
   lookRef.current = look;
@@ -273,6 +283,9 @@ export function Cat({
         return;
       }
       const hit = PROPS.find((q) => x >= q.x && x < q.x + q.sp.w && y >= q.y && y < q.y + q.sp.h);
+      // Tapping the window puts a bird on the other side of it. Anyone may: it costs nothing, tells
+      // nobody, and a spectator being allowed to make the cat do the noise is a small kindness.
+      if (hit?.key === "window") bird.current = performance.now();
       if (hit) {
         poked.current = { key: hit.key, at: performance.now() };
         // And she notices. Looking at the thing you touched is most of what makes the room feel lived
@@ -422,6 +435,13 @@ export function Cat({
       const night = sc.sun < 0.12;
       const wx = WIN_X + shake("window");
       blit(WINDOW, wx, 4, { w: INK, h: sc.sun > 0.2 ? sc.beamWarm : night ? "#2b3450" : sc.wallTop });
+      // A bird on the sill, hopping. Two positions on a slow alternation rather than a smooth
+      // slide, because a bird does not slide.
+      const birding = t - bird.current < BIRD_MS;
+      if (birding) {
+        const hop = Math.floor(t / 380) % 2;
+        blit(BIRD, wx + 4 + hop * 3, 16, { w: INK, b: "#8a6a48", o: "#e0a03f" });
+      }
       if (night) {
         // A crescent, made by drawing a full moon and biting a hole out of it with the night colour.
         rect(wx + 3, wy(1), 3, 1, "#f4e6b8");
@@ -572,14 +592,14 @@ export function Cat({
       // A door opening holds her eyes open too. Without this she stays loafed through the whole
       // swing at any drowsy hour, because the perk pose needs open eyes and the scene had already
       // decided she was sleepy. A cat sleeps through a lot, but not a door.
-      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming;
+      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming || birding;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = forced || (open > 0.4 && !blink);
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
       // A door opening beats whatever she was doing. Perk is the ears-up, head-turned pose, and it
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
       // cat that did not notice, which is the one thing this feature is for.
-      const noticing = doorRef.current !== null && posed;
+      const noticing = (doorRef.current !== null || birding) && posed;
       const pose: Pose = zooming ? "play" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
@@ -711,7 +731,9 @@ export function Cat({
       // She says the thing the app is named after, whenever anything happens to her: a pet, a brush,
       // a mood tapped. Drawn after her so the bubble sits in front, and clamped inside the frame so a
       // cat standing at either wall still gets a whole bubble rather than a clipped one.
-      if (t < speakUntil.current && !reduce) {
+      // The chatter wins the bubble while a bird is there: "mrrp" is what she says to you, and she
+      // is not talking to you right now.
+      if ((birding || t < speakUntil.current) && !reduce) {
         const BW = 21, BH = 8;
         const bx = Math.max(1, Math.min(GW - BW - 1, kx + 4));
         const by = y + sp.oy - 12;
@@ -724,7 +746,7 @@ export function Cat({
         // A two-pixel tail dropping toward her head.
         px(bx + 4, by + BH, WHITE); px(bx + 3, by + BH, INK); px(bx + 5, by + BH, INK);
         px(bx + 4, by + BH + 1, INK);
-        blit(MRRP, bx + 2, by + 2, { w: INK });
+        blit(birding ? EK : MRRP, bx + 2, by + 2, { w: INK });
       }
 
       // An ear twitch. One pixel of the left ear tip erased for a few frames, every ~13s. Absurdly
