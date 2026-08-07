@@ -436,3 +436,38 @@ const DOOR_WIDE = sprite(
 
 /** Closed → wide, in order. Index with a rounded progress. */
 export const DOOR_FRAMES: Sprite[] = [DOOR, DOOR_AJAR, DOOR_HALF, DOOR_WIDE];
+
+/**
+ * A cardboard box, in two halves so she can be inside it.
+ *
+ * The back (the far rim and the open flaps) is drawn before her, the front after, and she sits
+ * between the two. That is the whole trick: a single box sprite either covers her completely or
+ * floats in front of her, and neither reads as a cat in a box. Two halves and she is *in* it, with
+ * her ears over the rim, which is the only version of this picture worth drawing.
+ *
+ * `k` is the cardboard, `s` its shaded inner wall, `w` the outline.
+ */
+export const BOX_BACK = sprite(
+  [
+    "..wwwwwwwwwwwwwwwwwwwwwwww..",
+    ".wkkkkkkkkkkkkkkkkkkkkkkkkw.",
+    "wksssssssssssssssssssssssskw",
+    "wssssssssssssssssssssssssssw",
+  ],
+  0,
+  0,
+);
+
+/** The near wall, drawn after her, which is what makes her be inside rather than behind. */
+export const BOX_FRONT = sprite(
+  [
+    "wkkkkkkkkkkkkkkkkkkkkkkkkkkw",
+    "wkkkkkkkkkkkkkkkkkkkkkkkkkkw",
+    "wkkkkkkkkkkkkkkkkkkkkkkkkkkw",
+    "wkkkkkkkkkkkkkkkkkkkkkkkkkkw",
+    "wkkkkkkkkkkkkkkkkkkkkkkkkkkw",
+    ".wwwwwwwwwwwwwwwwwwwwwwwwww.",
+  ],
+  0,
+  0,
+);
