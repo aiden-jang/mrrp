@@ -189,6 +189,29 @@ function RoomPage({ id }: { id: string }) {
 
   const [doorOpenAt, setDoorOpenAt] = useState<number | null>(null);
   const wasHere = useRef<boolean | null>(null);
+  const youArrived = useRef(false);
+
+  /*
+   * The door also opens when *you* walk in.
+   *
+   * It originally only swung when the other person turned up, and that is so rare in an
+   * asynchronous app that the feature effectively never fired: you both have to be in the room,
+   * one of you has to arrive while the other is already watching, and it has to land inside a
+   * poll. Shipped and unseeable is the same as not shipped.
+   *
+   * Opening it on your own arrival is also the more honest version. The reason first paint was
+   * excluded was that finding the door mid-swing would claim somebody just walked in when they
+   * might have been sitting there for an hour. That argument is about *them*. You did just walk
+   * in, so the door saying so is simply true, and now it happens every single visit.
+   */
+  useEffect(() => {
+    if (!view || youArrived.current) return;
+    if (view.you === null) return; // spectators are not arrivals
+    youArrived.current = true;
+    setDoorOpenAt(Date.now());
+    const t = setTimeout(() => setDoorOpenAt(null), 4200);
+    return () => clearTimeout(t);
+  }, [view?.you]);
   useEffect(() => {
     const here = view?.themHereNow ?? false;
     const prev = wasHere.current;
@@ -888,6 +911,23 @@ function RoomPage({ id }: { id: string }) {
           </p>
         )}
 
+        {/*
+            The recovery code, on his side, outside the setup panel.
+            It was only ever rendered inside "change how she looks", so the one string that can get
+            his seat back lived behind a button labelled as a cosmetic editor. A code you cannot
+            find is not a recovery mechanism.
+          */}
+        {iAmHim && !setup && view.recoveryCode && (
+          <details style={S.recovery}>
+            <summary style={S.recoverySummary}>show my recovery code</summary>
+            <p style={{ ...S.small, marginTop: 8 }}>
+              The only way to get your side of the room back on a new phone. Keep it somewhere that
+              is not this phone.
+            </p>
+            <p style={S.code}>{view.recoveryCode}</p>
+          </details>
+        )}
+
         <div style={S.footer}>
           <p style={{ ...S.small, textAlign: "center" }}>
             Nothing in here needs keeping up with. No streaks, no history, and nothing kept except how
@@ -918,6 +958,14 @@ const S: Record<string, React.CSSProperties> = {
   footer: { marginTop: 28 },
   credit: { fontSize: 11, color: "var(--soft)", opacity: 0.55, textAlign: "center", margin: "8px 0 0" },
   creditLink: { color: "inherit", textDecoration: "underline", textUnderlineOffset: 2 },
+  /** The recovery-code disclosure, on his side. Closed by default: it is reassurance, not a task. */
+  recovery: {
+    marginTop: 18, padding: "10px 14px", borderRadius: 14,
+    background: "var(--air)", border: "1px solid var(--line)",
+  },
+  recoverySummary: {
+    cursor: "pointer", fontSize: 13.5, color: "var(--soft)",
+  },
   code: {
     font: "inherit", fontSize: 18, letterSpacing: ".08em", textAlign: "center", margin: 0,
     padding: "11px 13px", borderRadius: 14, background: "var(--air)",
