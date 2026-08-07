@@ -349,7 +349,38 @@ export function Cat({
 
     let raf = 0;
     const frame = (t: number) => {
-      cam = Math.max(0, Math.min(GW - VW, Math.round((catX.current ?? GW / 2) - VW / 2)));
+      /*
+       * How far open the door is, 0..3. Computed here rather than at the draw call because the
+       * camera needs it too.
+       *
+       * Open fast, shut slow. A door is thrown open and eases back, and the slow close is what
+       * gives her time to look at it.
+       */
+      const nowMs = Date.now();
+      const openAt = doorRef.current;
+      let doorProg: number;
+      if (openAt) {
+        doorProg = Math.min(3, ((nowMs - openAt) / 260) * 3);
+        doorShutFrom.current = { at: nowMs, from: doorProg };
+      } else {
+        const since = nowMs - doorShutFrom.current.at;
+        doorProg = Math.max(0, doorShutFrom.current.from * (1 - since / 900));
+      }
+
+      /*
+       * The camera leans toward the door while it is open.
+       *
+       * Without this the whole feature is usually invisible. The view shows 80 of the room's 100
+       * columns and follows her, so the door at column 6 is only in frame when she happens to be
+       * left of centre: on a phone, with her loafing mid-room, an arriving visitor got a door
+       * swinging open somewhere off the left edge.
+       *
+       * Blended by how far open the door is rather than clamped, so the view glides over and back
+       * with the swing instead of snapping the instant the flag flips.
+       */
+      const camBase = Math.max(0, Math.min(GW - VW, Math.round((catX.current ?? GW / 2) - VW / 2)));
+      const pull = doorProg / 3;
+      cam = Math.round(camBase * (1 - pull) + Math.min(camBase, 2) * pull);
       const L = lookRef.current;
       const sc = sceneFor(clockRef.current, Date.now(), moodRef.current);
       const beamX = Math.round(sc.beam * GW);
@@ -464,18 +495,7 @@ export function Cat({
         blit(MUG, 84 + shake("shelf"), FLOOR - 29, { w: INK, c: "#cfe0e4", d: "#a9c2c8" });
       }
       {
-        // Open fast, shut slow. A door is thrown open and eases back, and the slow close is what
-        // gives her time to look at it.
-        const now = Date.now();
-        const openAt = doorRef.current;
-        let prog: number;
-        if (openAt) {
-          prog = Math.min(3, ((now - openAt) / 260) * 3);
-          doorShutFrom.current = { at: now, from: prog };
-        } else {
-          const since = now - doorShutFrom.current.at;
-          prog = Math.max(0, doorShutFrom.current.from * (1 - since / 900));
-        }
+        const prog = doorProg;
         const dx = 6 + shake("door");
         blit(DOOR_FRAMES[Math.round(prog)] ?? DOOR, dx, FLOOR - 16, {
           w: INK,
