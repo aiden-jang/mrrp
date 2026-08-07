@@ -237,7 +237,16 @@ function RoomPage({ id }: { id: string }) {
   // fetch on becoming visible again covers everything the missed ticks would have.
   useEffect(() => {
     if (asking) return;
-    const tick = setInterval(() => { if (!document.hidden) void load(); }, 45_000);
+    /*
+     * 15s while the tab is visible, not 45.
+     *
+     * 45s was right when the room only had to notice a mood eventually. It stopped being right the
+     * moment the door started swinging on arrival: a door is a promise that something is happening
+     * *now*, and one that opens three quarters of a minute after somebody walked in reads as broken
+     * rather than late. The hidden-tab check already stops a backgrounded tab polling at all, so
+     * this costs one Durable Object read every fifteen seconds from a tab someone is looking at.
+     */
+    const tick = setInterval(() => { if (!document.hidden) void load(); }, 15_000);
     const onShow = () => { if (!document.hidden) void load(); };
     document.addEventListener("visibilitychange", onShow);
     return () => { clearInterval(tick); document.removeEventListener("visibilitychange", onShow); };
