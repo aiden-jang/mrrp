@@ -590,7 +590,15 @@ export function Cat({
       // second and still moves like a cat crossing a room rather than teleporting.
       catX.current += (wantX - catX.current) * (zooming ? 0.4 : 0.05);
       const kx = Math.round(catX.current);
-      const ky = FLOOR + 19;
+      /*
+       * In the bed she sits lower.
+       *
+       * The floor has perspective: things drawn further down are nearer the viewer. Her feet land
+       * at FLOOR+19 and the bed's cushion is at FLOOR+24, so putting her at the bed's x alone left
+       * her hovering a few pixels above it like a cat-shaped balloon. Coming forward as well as
+       * across is what makes her be in it.
+       */
+      const ky = FLOOR + 19 + (sc.inBed ? 6 : 0);
 
       const want = ptr.in ? Math.max(0, 1 - Math.hypot(ptr.x - kx, ptr.y - (ky - 8)) / 44) : 0;
       near.current += (want - near.current) * 0.07;
