@@ -47,6 +47,14 @@ export interface Scene {
   eyes: number;
   /** Which pose to draw her in, if what she was told calls for a specific one. */
   pose: Pose | null;
+  /**
+   * She's actually in her bed.
+   *
+   * The bed used to be scenery she never touched, and the copy was already lying about it: at night
+   * the room says "curled up for the night" while she loafed on bare boards in the middle of the
+   * floor. She follows the sunbeam all day, and then at night there was nowhere for her to go.
+   */
+  inBed: boolean;
   sparkle: boolean;
 }
 
@@ -88,6 +96,9 @@ const KEYS: { h: number; sun: number; beam: number; wall: string; wall2: string;
 /** Her afternoon nap, and the hour before you're home. Both hand-set, both the point. */
 const NAP_FROM = 13, NAP_TO = 16;
 
+/** Her bed's centre as a fraction of the 100-wide room. The bed spans grid 13..33. */
+const BED_X = 0.23;
+
 function doingAt(hour: number, atDoor: boolean, sleepy: number, homeHour: number): string {
   if (atDoor) return "waiting by the door";
   if (hour < 5) return "asleep, and dreaming about something";
@@ -123,6 +134,14 @@ export function sceneFor(clock: Clock, at = Date.now(), mood: Mood | null = null
   const atDoor = untilHome <= 1 && untilHome > -0.5;
 
   const napping = hour >= NAP_FROM && hour < NAP_TO;
+  /*
+   * Bed hours: properly asleep before five, and curled up once the evening has gone quiet.
+   *
+   * Not simply "the sun is down". The 5-7am window is "awake before anyone, watching the window",
+   * which is a cat that got up, and the hour before you are home is spent at the door. Both are
+   * dark and neither is bed.
+   */
+  const inBed = !atDoor && (hour < 5 || hour >= 21);
   // Cats are awake at dawn whatever the light is doing, and the copy says she's watching the window,
   // so her eyes have to agree with it.
   const dawn = hour >= 5.5 && hour < 7.5;
@@ -147,7 +166,8 @@ export function sceneFor(clock: Clock, at = Date.now(), mood: Mood | null = null
     // Once she has been told something, that outranks the clock. Otherwise "bored" could still put
     // her at the door because it happens to be nearly home time, and the copy would be describing a
     // cat that isn't there.
-    catX: r?.catX ?? (r ? (sun > 0.15 ? beam : 0.42) : atDoor ? 0.19 : sun > 0.15 ? beam : 0.42),
+    // BED_X centres her on the cushion; see BED in sprites.ts, which sits at grid 13..33.
+    catX: r?.catX ?? (inBed ? BED_X : r ? (sun > 0.15 ? beam : 0.42) : atDoor ? 0.19 : sun > 0.15 ? beam : 0.42),
     sleepy: r?.sleepy ?? sleepy,
     atDoor: r ? r.catX === 0.19 : atDoor,
     // What she's doing about what you said outranks the time of day. It's the more specific fact.
@@ -157,6 +177,8 @@ export function sceneFor(clock: Clock, at = Date.now(), mood: Mood | null = null
     purring: r?.purring ?? false,
     eyes: r?.eyes ?? 0,
     pose: r?.pose ?? null,
+    // A mood that moves her somewhere else takes her out of the bed with it.
+    inBed: inBed && !r?.catX,
     sparkle: r?.sparkle ?? false,
   };
 }
