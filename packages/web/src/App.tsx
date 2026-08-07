@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Action, Mood, RoomView } from "./types.js";
 import { ACTIONS, MOODS } from "./types.js";
 import { doAct, doClock, doDress, doNotes, doRecover, doRelease, doSay, doTell, fetchRoom, lastRoom, myName, newRoomId, roomFromPath } from "./api.js";
@@ -165,6 +165,28 @@ function Landing() {
 function RoomPage({ id }: { id: string }) {
   const [view, setView] = useState<RoomView | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  /**
+   * The door swings when the other person turns up.
+   *
+   * Watches the edge, not the value: `themHereNow` stays true for as long as they're around, and a
+   * door held open for a whole visit is a broken door. So it opens on the transition into presence
+   * and eases shut a few seconds later, whether or not they're still there.
+   *
+   * Deliberately not fired on first paint. Loading the room to find the door already swinging would
+   * claim somebody just walked in when they might have been sitting there for an hour.
+   */
+  const [doorOpenAt, setDoorOpenAt] = useState<number | null>(null);
+  const wasHere = useRef<boolean | null>(null);
+  useEffect(() => {
+    const here = view?.themHereNow ?? false;
+    const prev = wasHere.current;
+    wasHere.current = here;
+    if (prev === null || !here || prev) return;
+    setDoorOpenAt(Date.now());
+    const t = setTimeout(() => setDoorOpenAt(null), 4200);
+    return () => clearTimeout(t);
+  }, [view?.themHereNow]);
+
   const [nudge, setNudge] = useState(0);
   const [asking, setAsking] = useState(!myName.get());
   const [name, setName] = useState("");
@@ -369,6 +391,7 @@ function RoomPage({ id }: { id: string }) {
             nudge={nudge}
             eyesOpen={setup}
             framed={view.framed}
+            doorOpenAt={doorOpenAt}
             /* Holding on her is petting, the one gesture that isn't a button. She gets a poke instead:
                she IS the cat, so petting herself would be nonsense and telling him she did it would be
                worse, but a tap that gets a mrrp back costs nothing. Local only, nobody told. A spectator
