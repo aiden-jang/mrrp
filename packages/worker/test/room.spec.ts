@@ -1,5 +1,5 @@
 import { SELF } from "cloudflare:test";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NOTES } from "../src/notes.js";
 import type { Mood, RoomView } from "../src/types.js";
 
@@ -32,6 +32,11 @@ beforeEach(() => {
   id = `t${String(++room).padStart(6, "0")}`;
 });
 
+// `away()` moves the system clock, so put it back or every later test inherits the jump.
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 const view = async (me: string, name?: string): Promise<RoomView> => {
   const q = new URLSearchParams({ me });
   if (name) q.set("name", name);
@@ -48,6 +53,12 @@ const post = (path: string, body: unknown) =>
   });
 
 /** He arrives first (he makes the room), then she opens the link. */
+/** Jump the clock forward so a seat that was just used reads as long abandoned. */
+function away(hours: number): void {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  vi.setSystemTime(new Date(Date.now() + hours * 60 * 60 * 1000));
+}
+
 async function seat() {
   await view(HIM, "Aiden");
   await view(HER, "Sofia");
@@ -654,5 +665,43 @@ describe("both of you at once", () => {
   it("is never true for a spectator, who is nobody's company", async () => {
     await seat();
     expect((await view(STRANGER)).bothHereNow).toBe(false);
+  });
+});
+
+describe("what she leaves him", () => {
+  /**
+   * Only he sees it, and it is gone once he touches anything.
+   *
+   * The seat gate is the point of this test rather than a nicety. This room has already shipped one
+   * leak of exactly this shape (her line to him was readable by anyone holding the link), and a gift
+   * is the same kind of thing: something that passes between two people and nobody else.
+   */
+  it("is his to find, and never hers or a stranger's", async () => {
+    await seat();
+    // Move the clock on instead of reaching into storage: his lastSeen stays where it was and the
+    // room simply finds him long gone, which is exactly the situation being tested.
+    away(9);
+    await view(HER);
+
+    expect((await view(HIM)).gift).not.toBeNull();
+    expect((await view(HER)).gift).toBeNull();
+    expect((await view("strangerstranger")).gift).toBeNull();
+  });
+
+  it("is gone the moment he touches anything", async () => {
+    await seat();
+    away(9);
+    await view(HER);
+    expect((await view(HIM)).gift).not.toBeNull();
+
+    await post("act", { me: HIM, action: "pet" });
+    expect((await view(HIM)).gift).toBeNull();
+  });
+
+  it("does not appear when he has only just been in", async () => {
+    // The whole meaning is "you were away". A gift waiting after a five minute gap is a notification.
+    await seat();
+    await view(HER);
+    expect((await view(HIM)).gift).toBeNull();
   });
 });

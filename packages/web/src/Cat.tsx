@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
-import type { Cat as CatLook, Clock, Mood } from "./types.js";
+import type { Cat as CatLook, Clock, Gift, Mood } from "./types.js";
 import { sceneFor } from "./hours.js";
 import { mothAt } from "./critters.js";
-import { BED, BOX_BACK, BOX_FRONT, DOOR, DOOR_FRAMES, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
+import { BED, BOX_BACK, BOX_FRONT, DOOR, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
  * The room, drawn as pixel art at her local time of day.
@@ -31,7 +31,7 @@ const VW = 80;
 /** The window is bolted to the wall here. Only the light it throws moves. */
 const WIN_X = 60, WIN_CX = WIN_X + 8;
 /** Where a box sits when there is one. Right of the beam, clear of the bed. */
-const BOX_X = 44, BOX_Y = FLOOR + 10;
+const BOX_X = 44, BOX_Y = FLOOR + 9;
 
 /**
  * The furniture, with its boxes.
@@ -65,6 +65,7 @@ export function Cat({
   framed = false,
   doorOpenAt = null,
   box = false,
+  gift = null,
   role = null,
   onPet,
   onPoke,
@@ -109,6 +110,8 @@ export function Cat({
    * decision, not shared state: both people see the same box in the same place either way.
    */
   box?: boolean;
+  /** Something she left on the floor. His side only; the room just draws whatever it's handed. */
+  gift?: Gift | null;
   /**
    * Who is looking, which decides what touching the cat does. Petting is his; she gets a poke that is
    * purely local; a spectator and the landing page get neither. The furniture is tappable for everyone,
@@ -132,6 +135,8 @@ export function Cat({
   doorRef.current = doorOpenAt;
   const boxRef = useRef(box);
   boxRef.current = box;
+  const giftRef = useRef(gift);
+  giftRef.current = gift;
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
   const doorShutFrom = useRef({ at: 0, from: 0 });
   lookRef.current = look;
@@ -436,6 +441,13 @@ export function Cat({
       // creams and browns, and at this size it stopped reading as a cat bed and started reading as
       // a stray UI element that had landed on the floor.
       blit(BED, 24 + shake("bed"), FLOOR + 22, { d: "#b07f76", f: "#d8a79c", b: "#c4918a" });
+      // What she left, put down near the door rather than mid-floor: mid-floor is where she loafs, so
+      // the first version was drawn perfectly and then covered by the cat every single time.
+      const g0 = giftRef.current;
+      if (g0) {
+        const sp0 = g0 === "leaf" ? GIFT_LEAF : g0 === "cap" ? GIFT_CAP : GIFT_MOTH;
+        blit(sp0, 17, FLOOR + 16, { w: INK, g: "#7d9e63", r: "#5d7a46", m: "#b9b3a4", n: "#cbbfa6" });
+      }
       // The box, back half. Sits right of centre so it does not fight the bed or the sunbeam, and
       // low enough on the boards to read as standing on them rather than floating.
       const boxHere = boxRef.current;
