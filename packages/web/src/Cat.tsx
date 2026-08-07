@@ -32,6 +32,8 @@ const VW = 80;
 const WIN_X = 60, WIN_CX = WIN_X + 8;
 /** Where a box sits when there is one. Right of the beam, clear of the bed. */
 const BOX_X = 44, BOX_Y = FLOOR + 9;
+/** One lap of the room. Long enough to see, short enough that it's over before you react. */
+const ZOOM_MS = 1600;
 
 /**
  * The furniture, with its boxes.
@@ -137,6 +139,14 @@ export function Cat({
   boxRef.current = box;
   const giftRef = useRef(gift);
   giftRef.current = gift;
+  /**
+   * Zoomies: when the next one is due, and when the current one started.
+   *
+   * The only thing she does that nothing causes. Everything else in this room is a response, to a
+   * mood or a tap or somebody arriving, and a cat that only ever responds is a puppet. This one
+   * has no trigger and no explanation, which is exactly what it is like to live with a cat.
+   */
+  const zoom = useRef({ next: 0, start: -1e9 });
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
   const doorShutFrom = useRef({ at: 0, from: 0 });
   lookRef.current = look;
@@ -469,14 +479,34 @@ export function Cat({
       }
 
       // ── her ───────────────────────────────────────────────────────────────
+      // Zoomies. Rare and unannounced: first one somewhere in the first couple of minutes, then
+      // every two to four. Only two things stop it: a mood that has her leaving, and anyone who
+      // asked for less motion, since this is nothing but motion.
+      //
+      // Deliberately NOT gated on her being awake. That was the first version and it meant she
+      // almost never zoomed, because the scene calls her drowsy for most of the day. It is also
+      // backwards: a cat detonating out of a dead sleep is the entire phenomenon.
+      if (zoom.current.next === 0) zoom.current.next = t + 45_000 + Math.random() * 75_000;
+      const zooming = t - zoom.current.start < ZOOM_MS;
+      if (!zooming && t > zoom.current.next && !sc.atDoor && !reduce) {
+        zoom.current.start = t;
+        zoom.current.next = t + 120_000 + Math.random() * 120_000;
+      }
+
       // A box in the room outranks wherever the mood was going to put her, because that is what a
       // box does to a cat. A mood that sends her to the door still wins: leaving is leaving.
-      const wantX = inBox ? BOX_X + 2 : sc.catX * GW;
+      // A zoom outranks both, briefly, then hands her back to whatever she was doing.
+      const zp = (t - zoom.current.start) / ZOOM_MS;
+      const wantX = zooming
+        ? 10 + (Math.sin(zp * Math.PI * 2 - Math.PI / 2) * 0.5 + 0.5) * (GW - 34)
+        : inBox
+          ? BOX_X + 2
+          : sc.catX * GW;
       if (catX.current === null) catX.current = wantX;
       // 0.012 took about 190 frames to cover a move, so more than three seconds of a cat inching across
       // the boards after a mood tap. It read as lag rather than as walking. 0.05 lands in well under a
       // second and still moves like a cat crossing a room rather than teleporting.
-      catX.current += (wantX - catX.current) * 0.05;
+      catX.current += (wantX - catX.current) * (zooming ? 0.4 : 0.05);
       const kx = Math.round(catX.current);
       const ky = FLOOR + 19;
 
@@ -500,7 +530,7 @@ export function Cat({
       // A door opening holds her eyes open too. Without this she stays loafed through the whole
       // swing at any drowsy hour, because the perk pose needs open eyes and the scene had already
       // decided she was sleepy. A cat sleeps through a lot, but not a door.
-      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null;
+      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = forced || (open > 0.4 && !blink);
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
@@ -508,7 +538,7 @@ export function Cat({
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
       // cat that did not notice, which is the one thing this feature is for.
       const noticing = doorRef.current !== null && posed;
-      const pose: Pose = noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
+      const pose: Pose = zooming ? "play" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
