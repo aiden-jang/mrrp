@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import type { Cat as CatLook, Clock, Mood } from "./types.js";
 import { sceneFor } from "./hours.js";
 import { mothAt } from "./critters.js";
-import { BED, DOOR, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
+import { BED, DOOR, DOOR_FRAMES, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
  * The room, drawn as pixel art at her local time of day.
@@ -61,6 +61,7 @@ export function Cat({
   nudge,
   eyesOpen = false,
   framed = false,
+  doorOpenAt = null,
   role = null,
   onPet,
   onPoke,
@@ -85,6 +86,20 @@ export function Cat({
   /** He has taken her photo, so the picture on the wall is her. */
   framed?: boolean;
   /**
+   * When somebody walked in, as ms epoch, or null for a shut door.
+   *
+   * The room already knew when both people were present and said so in a banner. A banner is the
+   * app telling you something happened; the door is the room doing it. She looks up at it, which
+   * is the part that matters: presence you can see her notice.
+   *
+   * A timestamp rather than a boolean, because the first version accumulated progress per frame
+   * into a ref and never got past a third open: this component remounts often enough that the ref
+   * kept resetting mid-swing, leaving the door permanently ajar. Progress derived from a fixed
+   * moment is immune to that, and it also stays correct if a frame is dropped or the tab is
+   * backgrounded halfway through the swing.
+   */
+  doorOpenAt?: number | null;
+  /**
    * Who is looking, which decides what touching the cat does. Petting is his; she gets a poke that is
    * purely local; a spectator and the landing page get neither. The furniture is tappable for everyone,
    * because nothing about it touches the server.
@@ -103,6 +118,10 @@ export function Cat({
   eyesRef.current = eyesOpen;
   const framedRef = useRef(framed);
   framedRef.current = framed;
+  const doorRef = useRef(doorOpenAt);
+  doorRef.current = doorOpenAt;
+  /** Where the swing had got to when the door was told to shut, so the close eases from there. */
+  const doorShutFrom = useRef({ at: 0, from: 0 });
   lookRef.current = look;
   clockRef.current = clock;
   moodRef.current = mood;
@@ -355,7 +374,46 @@ export function Cat({
         }
       }
       blit(SHELF, 80 + shake("shelf"), FLOOR - 24, { w: INK, d: "#8a6a48" });
-      blit(DOOR, 6 + shake("door"), FLOOR - 16, { w: INK, f: sc.wallBottom, d: "#8a6a48", h: "#ffe9a8" });
+      {
+        // Open fast, shut slow. A door is thrown open and eases back, and the slow close is what
+        // gives her time to look at it.
+        const now = Date.now();
+        const openAt = doorRef.current;
+        let prog: number;
+        if (openAt) {
+          prog = Math.min(3, ((now - openAt) / 260) * 3);
+          doorShutFrom.current = { at: now, from: prog };
+        } else {
+          const since = now - doorShutFrom.current.at;
+          prog = Math.max(0, doorShutFrom.current.from * (1 - since / 900));
+        }
+        const dx = 6 + shake("door");
+        blit(DOOR_FRAMES[Math.round(prog)] ?? DOOR, dx, FLOOR - 16, {
+          w: INK,
+          f: sc.wallBottom,
+          d: "#8a6a48",
+          h: "#ffe9a8",
+          // Near-white, not merely warm. The first attempt used #ffdca6, which sits within a few
+          // percent of the daytime wall (#e6cfb2), so the opening blended into the plaster and the
+          // door read as still shut. An opening has to be the brightest thing on the wall or it is
+          // not an opening.
+          o: "#fff8e8",
+        });
+        // Light spilling across the boards, widening as it goes, keyed to how far open the door is.
+        // Dither rather than a solid wedge for the same reason the sun pool is dithered: a hard
+        // bright shape on floorboards reads as a rendering fault, not as light.
+        const ajar = prog / 3;
+        if (ajar > 0.05) {
+          const cxd = dx + 6;
+          // Solid core, dithered edge, same shape as the sun pool. All-dither read as dirt on the
+          // boards rather than as light; light needs a bright middle to be light.
+          for (let i = 0; i < 8; i++) {
+            const w = Math.round((5 + i * 1.6) * ajar);
+            if (w > 0) rect(cxd - (w >> 1), FLOOR + 1 + i, w, 1, "#fff1cf");
+          }
+          dither(cxd - 12, FLOOR + 4, 24, 7, "#fff1cf");
+        }
+      }
       if (framedRef.current) {
         blit(FRAME_CAT, 16 + shake("frame"), 12, { w: INK, f: "#c69a63", h: "#cfe0e4", c: L.fur, e: INK, n: PINK });
       } else {
@@ -406,11 +464,18 @@ export function Cat({
       const looking = !!la && t < la.until;
       // Touching the furniture wakes her just long enough to look at it. A cat that sleeps through you
       // knocking its shelf is furniture itself.
-      const forced = eyesRef.current || (looking && !reduce);
+      // A door opening holds her eyes open too. Without this she stays loafed through the whole
+      // swing at any drowsy hour, because the perk pose needs open eyes and the scene had already
+      // decided she was sleepy. A cat sleeps through a lot, but not a door.
+      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = forced || (open > 0.4 && !blink);
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
-      const pose: Pose = sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf");
+      // A door opening beats whatever she was doing. Perk is the ears-up, head-turned pose, and it
+      // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
+      // cat that did not notice, which is the one thing this feature is for.
+      const noticing = doorRef.current !== null && posed;
+      const pose: Pose = noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));

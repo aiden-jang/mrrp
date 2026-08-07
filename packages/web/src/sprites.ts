@@ -351,3 +351,88 @@ export const FRAME_CAT = sprite(
   0,
   0,
 );
+
+/**
+ * The door, opening.
+ *
+ * Hinged on the left, because the handle is on the right. As it swings toward you the leaf is
+ * foreshortened, so it narrows from the right while staying attached at the left, and the doorway
+ * behind it is revealed in the gap. The handle travels with the leaf's outer edge: that one pixel
+ * moving inward is what sells the rotation. Without it the door reads as a shutter sliding away.
+ *
+ * `o` is what's beyond the door, which is the whole point of opening it.
+ *
+ * Four frames rather than a computed transform. A rotated rectangle resampled onto this grid gives
+ * you pixels of two different sizes, which is the one thing the entire look forbids.
+ */
+const DOOR_AJAR = sprite(
+  [
+    "wwwwwwwwwwww",
+    "wffffffffffw",
+    "wfddddddoofw",
+    "wfddddddoofw",
+    "wfddddddoofw",
+    "wfdddddhoofw",
+    "wfddddddoofw",
+    "wfddddddoofw",
+    "wfddddddoofw",
+    "wfddddddoofw",
+    "wfddddddoofw",
+    "wfddddddoofw",
+    "wfddddddoofw",
+    "wfddddddoofw",
+    "wfddddddoofw",
+    "wffffffffffw",
+  ],
+  0,
+  0,
+);
+
+const DOOR_HALF = sprite(
+  [
+    "wwwwwwwwwwww",
+    "wffffffffffw",
+    "wfddddoooofw",
+    "wfddddoooofw",
+    "wfddddoooofw",
+    "wfdddhoooofw",
+    "wfddddoooofw",
+    "wfddddoooofw",
+    "wfddddoooofw",
+    "wfddddoooofw",
+    "wfddddoooofw",
+    "wfddddoooofw",
+    "wfddddoooofw",
+    "wfddddoooofw",
+    "wfddddoooofw",
+    "wffffffffffw",
+  ],
+  0,
+  0,
+);
+
+const DOOR_WIDE = sprite(
+  [
+    "wwwwwwwwwwww",
+    "wffffffffffw",
+    "wfddoooooofw",
+    "wfddoooooofw",
+    "wfddoooooofw",
+    "wfdhoooooofw",
+    "wfddoooooofw",
+    "wfddoooooofw",
+    "wfddoooooofw",
+    "wfddoooooofw",
+    "wfddoooooofw",
+    "wfddoooooofw",
+    "wfddoooooofw",
+    "wfddoooooofw",
+    "wfddoooooofw",
+    "wffffffffffw",
+  ],
+  0,
+  0,
+);
+
+/** Closed → wide, in order. Index with a rounded progress. */
+export const DOOR_FRAMES: Sprite[] = [DOOR, DOOR_AJAR, DOOR_HALF, DOOR_WIDE];
