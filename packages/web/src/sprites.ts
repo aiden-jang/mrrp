@@ -39,7 +39,19 @@ function sprite(rows: string[], ox: number, oy: number): Sprite {
   return { w, h: rows.length, rows, ox, oy };
 }
 
-/** Bread. The default, and the one she's in most of the time. */
+/**
+ * Bread. The default, and the one she's in most of the time.
+ *
+ * Her pale front runs unbroken from chin to belly. It used to be two separate cream bands, the
+ * muzzle and the belly, with a solid strip of fur between them, and at 24 pixels wide that reads
+ * as a cat's head sitting behind a cushion: pale bar, fur, pale bar, dark line under it is exactly
+ * the silhouette of a small couch. Joining them into one column makes the body read as the same
+ * animal as the head.
+ *
+ * Tapering the belly was the first attempt and made it worse, because it turned the pale band into
+ * an enclosed rounded shape, which is even more cushion-like. The problem was never the belly's
+ * width; it was that the head and the body did not visually connect.
+ */
 export const LOAF = sprite(
   [
     "...ww..............ww...",
@@ -52,9 +64,9 @@ export const LOAF = sprite(
     "..wfbceeebbbbbbeeecbfw..",
     "wwwfbbbbbbbnnbbbbbbbfwww",
     "..wffbbbbbbmmbbbbbbffw..",
-    "...wdffffffffffffffdw...",
-    "..wffdffffffffffffdffw..",
-    ".wffffdffffffffffdffffw.",
+    "...wdffffbbbbbbffffdw...",
+    "..wffdfffbbbbbbfffdffw..",
+    ".wffffdffbbbbbbffdffffw.",
     ".wfbbbbbbbbbbbbbbbbbbfw.",
     ".wffbbbbbbbbbbbbbbbbffw.",
     ".wfdffffffffffffffffdfw.",
