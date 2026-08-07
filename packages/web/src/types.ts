@@ -143,6 +143,8 @@ export interface RoomView {
    * it would be a thing on his screen.
    */
   box: boolean;
+  /** The thing she knocked off the shelf is on the floor. Either of them can put it back. */
+  shelfDown: boolean;
   /**
    * A small thing she left on the floor while he was away: a leaf, a bottle cap, a moth.
    *

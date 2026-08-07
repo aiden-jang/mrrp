@@ -512,3 +512,33 @@ export const GIFT_MOTH = sprite(
   0,
   0,
 );
+
+/**
+ * The thing on the shelf. A small stoneware mug, which is the correct object for this: it is
+ * plausibly hers, it is plausibly survivable, and everyone has watched a cat do this to one.
+ *
+ * `c` the glaze, `d` its shadow side, `w` outline.
+ */
+export const MUG = sprite(
+  [
+    ".wwww.",
+    "wccccw",
+    "wcccdw",
+    "wcccdw",
+    ".wwww.",
+  ],
+  0,
+  0,
+);
+
+/** On its side, where it landed. Same object, so it has to read as the same object. */
+export const MUG_DOWN = sprite(
+  [
+    "..wwww..",
+    ".wccccw.",
+    "wdccccdw",
+    ".wwwwww.",
+  ],
+  0,
+  0,
+);
