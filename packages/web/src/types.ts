@@ -133,6 +133,14 @@ export interface RoomView {
    * can be neglected.
    */
   framed: boolean;
+  /**
+   * There is a cardboard box in the room today.
+   *
+   * Arrives on some of the times he brings her something, never on demand, and gone when her day
+   * turns over. Shared state on purpose: a box only he could see would not be a thing in the room,
+   * it would be a thing on his screen.
+   */
+  box: boolean;
   /** The code that takes his seat back on a new device. Sent to him and to nobody else. */
   recoveryCode: string | null;
   yourNotes: string[] | null;

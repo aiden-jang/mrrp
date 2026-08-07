@@ -392,6 +392,7 @@ function RoomPage({ id }: { id: string }) {
             eyesOpen={setup}
             framed={view.framed}
             doorOpenAt={doorOpenAt}
+            box={view.box}
             /* Holding on her is petting, the one gesture that isn't a button. She gets a poke instead:
                she IS the cat, so petting herself would be nonsense and telling him she did it would be
                worse, but a tap that gets a mrrp back costs nothing. Local only, nobody told. A spectator

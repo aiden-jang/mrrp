@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import type { Cat as CatLook, Clock, Mood } from "./types.js";
 import { sceneFor } from "./hours.js";
 import { mothAt } from "./critters.js";
-import { BED, DOOR, DOOR_FRAMES, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
+import { BED, BOX_BACK, BOX_FRONT, DOOR, DOOR_FRAMES, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
  * The room, drawn as pixel art at her local time of day.
@@ -30,6 +30,8 @@ const GW = 100, GH = 80, FLOOR = 48;
 const VW = 80;
 /** The window is bolted to the wall here. Only the light it throws moves. */
 const WIN_X = 60, WIN_CX = WIN_X + 8;
+/** Where a box sits when there is one. Right of the beam, clear of the bed. */
+const BOX_X = 44, BOX_Y = FLOOR + 10;
 
 /**
  * The furniture, with its boxes.
@@ -62,6 +64,7 @@ export function Cat({
   eyesOpen = false,
   framed = false,
   doorOpenAt = null,
+  box = false,
   role = null,
   onPet,
   onPoke,
@@ -100,6 +103,13 @@ export function Cat({
    */
   doorOpenAt?: number | null;
   /**
+   * There is a box in the room today, so she is probably in it.
+   *
+   * Whether she is *in* it is decided here rather than on the server, because it is a drawing
+   * decision, not shared state: both people see the same box in the same place either way.
+   */
+  box?: boolean;
+  /**
    * Who is looking, which decides what touching the cat does. Petting is his; she gets a poke that is
    * purely local; a spectator and the landing page get neither. The furniture is tappable for everyone,
    * because nothing about it touches the server.
@@ -120,6 +130,8 @@ export function Cat({
   framedRef.current = framed;
   const doorRef = useRef(doorOpenAt);
   doorRef.current = doorOpenAt;
+  const boxRef = useRef(box);
+  boxRef.current = box;
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
   const doorShutFrom = useRef({ at: 0, from: 0 });
   lookRef.current = look;
@@ -424,6 +436,13 @@ export function Cat({
       // creams and browns, and at this size it stopped reading as a cat bed and started reading as
       // a stray UI element that had landed on the floor.
       blit(BED, 24 + shake("bed"), FLOOR + 22, { d: "#b07f76", f: "#d8a79c", b: "#c4918a" });
+      // The box, back half. Sits right of centre so it does not fight the bed or the sunbeam, and
+      // low enough on the boards to read as standing on them rather than floating.
+      const boxHere = boxRef.current;
+      const inBox = boxHere && !sc.atDoor;
+      if (boxHere) {
+        blit(BOX_BACK, BOX_X + shake("box"), BOX_Y, { w: INK, k: "#c69a63", s: "#a97f4d" });
+      }
 
       if (!reduce) {
         for (const m of motes) {
@@ -438,7 +457,9 @@ export function Cat({
       }
 
       // ── her ───────────────────────────────────────────────────────────────
-      const wantX = sc.catX * GW;
+      // A box in the room outranks wherever the mood was going to put her, because that is what a
+      // box does to a cat. A mood that sends her to the door still wins: leaving is leaving.
+      const wantX = inBox ? BOX_X + 2 : sc.catX * GW;
       if (catX.current === null) catX.current = wantX;
       // 0.012 took about 190 frames to cover a move, so more than three seconds of a cat inching across
       // the boards after a mood tap. It read as lag rather than as walking. 0.05 lands in well under a
@@ -510,6 +531,11 @@ export function Cat({
       const tailY = pose === "loaf" ? y - 4 : pose === "perk" ? y - 9 : y - 6;
       blit(TAIL, pose === "stand" ? kx - 12 : tailX, tailY + wag, pal, pose === "stand");
       blit(sp, kx, y, pal);
+      // The box, near wall. Drawn after her, which is the whole reason the box is two sprites: this
+      // is the line between a cat in a box and a cat standing behind one.
+      if (boxHere) {
+        blit(BOX_FRONT, BOX_X + shake("box"), BOX_Y + 3, { w: INK, k: "#d8ab72" });
+      }
 
       // The moth, drawn before her so she can be in front of it, and so its position is known when
       // her eyes are drawn.

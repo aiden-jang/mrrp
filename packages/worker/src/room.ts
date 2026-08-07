@@ -88,6 +88,22 @@ export class Room extends DurableObject<Env> {
     // A photo is the one action with a consequence: it replaces the picture on the wall, for good.
     if (action === "photo") await this.ctx.storage.put("framed", true);
 
+    /*
+     * Sometimes what he brings is a box, and then there is a box in the room.
+     *
+     * Not every time, because a box that arrives on demand is a button rather than a surprise, and
+     * the joke only works if he cannot make it happen. One in three.
+     *
+     * It lasts her day and no longer. A box that stayed forever would be the second thing in the
+     * room that accumulates, and the rule here is that nothing can pile up on her: a room she has
+     * to tidy is a room she can fall behind on. Keyed to *her* local day for the same reason the
+     * notes are, so it disappears when her day turns over, not his.
+     */
+    if (action === "bring" && Math.random() < 1 / 3) {
+      const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
+      await this.ctx.storage.put("boxDay", localDayNumber(Date.now(), clock.tz));
+    }
+
     const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
     log.unshift({ at: Date.now(), who: me, action });
     await this.ctx.storage.put("log", log.slice(0, LOG_KEEP));
@@ -368,6 +384,8 @@ export class Room extends DurableObject<Env> {
       // spectator: that would be the note leak again with extra steps.
       yourNotes: seated && !youAreHer ? await this.notes() : null,
       framed: (await this.ctx.storage.get<boolean>("framed")) ?? false,
+      // Only today's box. An older one is simply not reported, so it needs no cleanup pass.
+      box: ((await this.ctx.storage.get<number>("boxDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
       // His only, and readable for as long as he holds the seat. Useless to anybody else: redeeming it
       // requires knowing it, and he is the only one it is ever sent to.
       recoveryCode: seated && !youAreHer ? await this.recoveryCode() : null,
