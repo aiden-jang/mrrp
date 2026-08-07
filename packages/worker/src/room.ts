@@ -1,5 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
-import type { Action, Cat, Clock, Mood, Note, RoomView, Told, Told2, Visit } from "./types.js";
+import type { Action, Cat, Clock, Gift, Mood, Note, RoomView, Told, Told2, Visit } from "./types.js";
 import { NOTES } from "./notes.js";
 import type { Env } from "./env.js";
 
@@ -22,6 +22,14 @@ const DEFAULT_CLOCK: Clock = { tz: "America/New_York", homeHour: 18 };
  * Her calendar date in her own timezone, as days-since-epoch. Comparing these gives a day count
  * that flips over at her midnight rather than UTC's, which is the only midnight she'd notice.
  */
+/**
+ * How long he has to have been away before she leaves something. Eight hours, so it means "he has
+ * not been in since yesterday" rather than "he stepped out", and a gift stays a small event.
+ */
+const GIFT_AFTER_MS = 8 * 60 * 60 * 1000;
+/** Authored, not generated. Three things a cat would actually present you with. */
+const GIFTS = ["leaf", "cap", "moth"] as const;
+
 function localDayNumber(at: number, tz: string): number {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: tz,
@@ -65,6 +73,26 @@ export class Room extends DurableObject<Env> {
       await this.ctx.storage.put("people", people);
     }
 
+    /*
+     * She leaves him something.
+     *
+     * If she has been in the room while he has been away a good while, there is a small thing on
+     * the floor when he next opens it. A leaf, a bottle cap, a moth. He cannot do anything with it
+     * and it is worth nothing, which is the point: it is the one thing in here that goes from her
+     * to him without either of them having to write a word.
+     *
+     * The inverse of "bring her something", and deliberately not symmetrical with it. His actions
+     * are buttons he presses; this one he can only receive. Set on *her* visit rather than on his
+     * arrival, so it is genuinely something she left behind rather than something the room
+     * conjured to greet him.
+     */
+    const { him: h, her: hr } = this.roles(people);
+    if (hr && me === hr && h && now - (people[h]?.lastSeen ?? 0) > GIFT_AFTER_MS) {
+      if (!(await this.ctx.storage.get<string>("gift"))) {
+        await this.ctx.storage.put("gift", GIFTS[Math.floor(Math.random() * GIFTS.length)]!);
+      }
+    }
+
     return this.build(me, people);
   }
 
@@ -103,6 +131,10 @@ export class Room extends DurableObject<Env> {
       const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
       await this.ctx.storage.put("boxDay", localDayNumber(Date.now(), clock.tz));
     }
+
+    // Touching anything counts as picking it up. It is gone from the floor, not stored anywhere:
+    // a keepsake he could re-read would make it an inbox, and this is meant to be a moment.
+    await this.ctx.storage.delete("gift");
 
     const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
     log.unshift({ at: Date.now(), who: me, action });
@@ -384,6 +416,8 @@ export class Room extends DurableObject<Env> {
       // spectator: that would be the note leak again with extra steps.
       yourNotes: seated && !youAreHer ? await this.notes() : null,
       framed: (await this.ctx.storage.get<boolean>("framed")) ?? false,
+      // His only. Telling her what she left would turn a thing she did into a thing she performed.
+      gift: me === him ? ((await this.ctx.storage.get<Gift>("gift")) ?? null) : null,
       // Only today's box. An older one is simply not reported, so it needs no cleanup pass.
       box: ((await this.ctx.storage.get<number>("boxDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
       // His only, and readable for as long as he holds the seat. Useless to anybody else: redeeming it

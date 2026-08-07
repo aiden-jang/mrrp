@@ -95,6 +95,8 @@ export interface Told {
  * The cat IS her. So her mood is what the cat looks like, to both of you, and the two seats do
  * different things: she says how she is, he turns up. That asymmetry is the gift, not a shortcoming.
  */
+export type Gift = "leaf" | "cap" | "moth";
+
 export interface RoomView {
   cat: Cat;
   clock: Clock;
@@ -141,6 +143,12 @@ export interface RoomView {
    * it would be a thing on his screen.
    */
   box: boolean;
+  /**
+   * A small thing she left on the floor while he was away: a leaf, a bottle cap, a moth.
+   *
+   * His side only, and gone the moment he touches anything. Worth nothing on purpose.
+   */
+  gift: Gift | null;
   /** The code that takes his seat back on a new device. Sent to him and to nobody else. */
   recoveryCode: string | null;
   yourNotes: string[] | null;

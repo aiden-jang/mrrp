@@ -466,7 +466,48 @@ export const BOX_FRONT = sprite(
     "wkkkkkkkkkkkkkkkkkkkkkkkkkkw",
     "wkkkkkkkkkkkkkkkkkkkkkkkkkkw",
     "wkkkkkkkkkkkkkkkkkkkkkkkkkkw",
+    "wkkkkkkkkkkkkkkkkkkkkkkkkkkw",
+    "wkkkkkkkkkkkkkkkkkkkkkkkkkkw",
     ".wwwwwwwwwwwwwwwwwwwwwwwwww.",
+  ],
+  0,
+  0,
+);
+
+/**
+ * The things she leaves on the floor while he's away.
+ *
+ * Tiny on purpose. A cat's gift is not impressive, it is specific: the point is that she chose
+ * to carry this particular worthless object to the middle of the room and put it down. Anything
+ * bigger or prettier would read as loot, and loot is a game mechanic.
+ *
+ * `g` leaf green, `r` its rib, `m` metal, `n` moth wing, `w` outline.
+ */
+export const GIFT_LEAF = sprite(
+  [
+    ".ggg.",
+    "grrrg",
+    ".ggg.",
+  ],
+  0,
+  0,
+);
+
+export const GIFT_CAP = sprite(
+  [
+    ".www.",
+    "wmmmw",
+    ".www.",
+  ],
+  0,
+  0,
+);
+
+export const GIFT_MOTH = sprite(
+  [
+    "n.w.n",
+    "nnwnn",
+    ".n.n.",
   ],
   0,
   0,
