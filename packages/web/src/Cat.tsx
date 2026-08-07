@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import type { Cat as CatLook, Clock, Gift, Mood } from "./types.js";
 import { sceneFor } from "./hours.js";
 import { mothAt } from "./critters.js";
-import { BED, BOX_BACK, BOX_FRONT, DOOR, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
+import { BED, BOX_BACK, BOX_FRONT, DOOR, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, MUG, MUG_DOWN, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
  * The room, drawn as pixel art at her local time of day.
@@ -34,6 +34,16 @@ const WIN_X = 60, WIN_CX = WIN_X + 8;
 const BOX_X = 44, BOX_Y = FLOOR + 9;
 /** One lap of the room. Long enough to see, short enough that it's over before you react. */
 const ZOOM_MS = 1600;
+/**
+ * Where it comes to rest, having rolled.
+ *
+ * Not directly under the shelf, which is where it would land and also where nobody would ever see
+ * it: the shelf is at 80 and the camera only ever shows 80 of the room's 100 columns, so a mug at
+ * 83 is off-screen unless she happens to be standing at the right-hand wall. Out here it is in
+ * frame wherever she is. Mugs roll, so this costs nothing in plausibility and is the difference
+ * between a thing you find and a thing that is technically in the room.
+ */
+const MUG_FLOOR_X = 66, MUG_FLOOR_Y = FLOOR + 14;
 
 /**
  * The furniture, with its boxes.
@@ -68,6 +78,8 @@ export function Cat({
   doorOpenAt = null,
   box = false,
   gift = null,
+  shelfDown = false,
+  onTidy,
   role = null,
   onPet,
   onPoke,
@@ -114,6 +126,10 @@ export function Cat({
   box?: boolean;
   /** Something she left on the floor. His side only; the room just draws whatever it's handed. */
   gift?: Gift | null;
+  /** The mug is on the floor rather than the shelf. Tapping it there puts it back. */
+  shelfDown?: boolean;
+  /** Called when someone taps the fallen mug. Seat-checked on the server, not here. */
+  onTidy?: () => void;
   /**
    * Who is looking, which decides what touching the cat does. Petting is his; she gets a poke that is
    * purely local; a spectator and the landing page get neither. The furniture is tappable for everyone,
@@ -139,6 +155,10 @@ export function Cat({
   boxRef.current = box;
   const giftRef = useRef(gift);
   giftRef.current = gift;
+  const downRef = useRef(shelfDown);
+  downRef.current = shelfDown;
+  const tidyRef = useRef(onTidy);
+  tidyRef.current = onTidy;
   /**
    * Zoomies: when the next one is due, and when the current one started.
    *
@@ -235,6 +255,21 @@ export function Cat({
       if (b && x >= b.x0 - 2 && x <= b.x1 + 2 && y >= b.y0 - 2 && y <= b.y1 + 3) {
         if (roleRef.current === "him") { petting.current = true; onPetRef.current?.(); }
         else if (roleRef.current === "her") onPokeRef.current?.();
+        return;
+      }
+      // The fallen mug first: it sits on the boards under the shelf, so a tap there is much more
+      // likely to mean "put that back" than "poke the floor". Generous box, because it is eight
+      // pixels wide on a grid that is eighty across.
+      if (
+        downRef.current &&
+        x >= MUG_FLOOR_X - 3 &&
+        x < MUG_FLOOR_X + 11 &&
+        y >= MUG_FLOOR_Y - 3 &&
+        y < MUG_FLOOR_Y + 7
+      ) {
+        poked.current = { key: "shelf", at: performance.now() };
+        lookAt.current = { x: MUG_FLOOR_X + 4, until: performance.now() + 2400 };
+        tidyRef.current?.();
         return;
       }
       const hit = PROPS.find((q) => x >= q.x && x < q.x + q.sp.w && y >= q.y && y < q.y + q.sp.h);
@@ -401,6 +436,13 @@ export function Cat({
         }
       }
       blit(SHELF, 80 + shake("shelf"), FLOOR - 24, { w: INK, d: "#8a6a48" });
+      // The mug: on the shelf, or on its side on the boards under it. Same object either way, so
+      // it has to be recognisably the same drawing.
+      if (downRef.current) {
+        blit(MUG_DOWN, MUG_FLOOR_X, MUG_FLOOR_Y, { w: INK, c: "#cfe0e4", d: "#a9c2c8" });
+      } else {
+        blit(MUG, 84 + shake("shelf"), FLOOR - 29, { w: INK, c: "#cfe0e4", d: "#a9c2c8" });
+      }
       {
         // Open fast, shut slow. A door is thrown open and eases back, and the slow close is what
         // gives her time to look at it.

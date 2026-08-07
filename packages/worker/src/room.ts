@@ -87,6 +87,20 @@ export class Room extends DurableObject<Env> {
      * conjured to greet him.
      */
     const { him: h, her: hr } = this.roles(people);
+    /*
+     * Sometimes she knocks the thing off the shelf.
+     *
+     * The only object in the room with two states and no owner. Either of them can put it back,
+     * which makes it the one bit of the room they share a job on rather than trading gestures
+     * across: everything else here is his-to-do or hers-to-do.
+     *
+     * No timer and no decay. It sits on the floor until somebody picks it up, and nobody has to.
+     */
+    if (hr && me === hr && Math.random() < 0.18) {
+      if (!(await this.ctx.storage.get<boolean>("shelfDown"))) {
+        await this.ctx.storage.put("shelfDown", true);
+      }
+    }
     if (hr && me === hr && h && now - (people[h]?.lastSeen ?? 0) > GIFT_AFTER_MS) {
       if (!(await this.ctx.storage.get<string>("gift"))) {
         await this.ctx.storage.put("gift", GIFTS[Math.floor(Math.random() * GIFTS.length)]!);
@@ -143,6 +157,22 @@ export class Room extends DurableObject<Env> {
     people[me].lastSeen = Date.now();
     await this.ctx.storage.put("people", people);
     return this.build(me, people);
+  }
+
+  /**
+   * Put the thing back on the shelf.
+   *
+   * Either seat, unlike everything else in here. Tidying up after the cat is not a gesture one of
+   * them performs for the other, it is just a thing that needs doing, and letting only him do it
+   * would turn a shared room into his room that she visits. Spectators cannot, because a stranger
+   * rearranging their furniture is not charming.
+   */
+  async putBack(me: string): Promise<boolean> {
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    const { him, her } = this.roles(people);
+    if (me !== him && me !== her) return false;
+    await this.ctx.storage.put("shelfDown", false);
+    return true;
   }
 
   /**
@@ -416,6 +446,8 @@ export class Room extends DurableObject<Env> {
       // spectator: that would be the note leak again with extra steps.
       yourNotes: seated && !youAreHer ? await this.notes() : null,
       framed: (await this.ctx.storage.get<boolean>("framed")) ?? false,
+      // Not gated: it is a physical object on a floor, and both of them can see a floor.
+      shelfDown: (await this.ctx.storage.get<boolean>("shelfDown")) ?? false,
       // His only. Telling her what she left would turn a thing she did into a thing she performed.
       gift: me === him ? ((await this.ctx.storage.get<Gift>("gift")) ?? null) : null,
       // Only today's box. An older one is simply not reported, so it needs no cleanup pass.

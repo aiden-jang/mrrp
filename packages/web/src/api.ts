@@ -136,6 +136,16 @@ export async function doRecover(id: string, code: string): Promise<void> {
   if (!r.ok) throw new Error("That code doesn't match this room.");
 }
 
+/** Put the mug back on the shelf. Either seat; the Worker checks which. */
+export async function doTidy(id: string): Promise<void> {
+  const r = await fetch(`/api/room/${id}/shelf`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ me: myToken() }),
+  });
+  if (!r.ok) throw new Error("Couldn't reach the shelf.");
+}
+
 /** Leave him a line. Hers only; empty text clears it. */
 export async function doSay(id: string, text: string): Promise<RoomView> {
   const r = await fetch(`/api/room/${id}/say`, {

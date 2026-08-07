@@ -705,3 +705,33 @@ describe("what she leaves him", () => {
     expect((await view(HIM)).gift).toBeNull();
   });
 });
+
+describe("the thing she knocks off the shelf", () => {
+  /**
+   * Either seat may put it back, and nobody else may.
+   *
+   * The unusual one: every other mutation here is his alone. Tidying up after the cat is not a
+   * gesture performed for someone, it is just a job, and letting only him do it would make this
+   * his room that she visits. A stranger with the link still cannot rearrange their furniture.
+   */
+  it("can be put back by either of them, and by no one else", async () => {
+    await seat();
+    const knock = async () => {
+      // Her visit is what knocks it off, and it is a chance rather than a certainty, so keep going
+      // until it lands. Bounded so a broken implementation fails the test instead of hanging.
+      for (let i = 0; i < 200 && !(await view(HIM)).shelfDown; i++) await view(HER);
+      expect((await view(HIM)).shelfDown).toBe(true);
+    };
+
+    await knock();
+    expect((await post("shelf", { me: "strangerstranger" })).status).toBe(403);
+    expect((await view(HIM)).shelfDown).toBe(true);
+
+    expect((await post("shelf", { me: HER })).status).toBe(200);
+    expect((await view(HIM)).shelfDown).toBe(false);
+
+    await knock();
+    expect((await post("shelf", { me: HIM })).status).toBe(200);
+    expect((await view(HIM)).shelfDown).toBe(false);
+  });
+});

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Action, Mood, RoomView } from "./types.js";
 import { ACTIONS, MOODS } from "./types.js";
-import { doAct, doClock, doDress, doNotes, doRecover, doRelease, doSay, doTell, fetchRoom, lastRoom, myName, newRoomId, roomFromPath } from "./api.js";
+import { doAct, doClock, doDress, doNotes, doRecover, doRelease, doSay, doTell, doTidy, fetchRoom, lastRoom, myName, newRoomId, roomFromPath } from "./api.js";
 import { Cat } from "./Cat.js";
 import { sceneFor } from "./hours.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
@@ -175,6 +175,18 @@ function RoomPage({ id }: { id: string }) {
    * Deliberately not fired on first paint. Loading the room to find the door already swinging would
    * claim somebody just walked in when they might have been sitting there for an hour.
    */
+  /** Put the mug back. Either seat may, so this is not gated on being him. */
+  const tidy = useCallback(async () => {
+    const r = roomFromPath();
+    if (!r) return;
+    try {
+      await doTidy(r);
+      setView(await fetchRoom(r));
+    } catch {
+      // A failed tidy is not worth an error banner. The mug is still on the floor; tap it again.
+    }
+  }, []);
+
   const [doorOpenAt, setDoorOpenAt] = useState<number | null>(null);
   const wasHere = useRef<boolean | null>(null);
   useEffect(() => {
@@ -403,6 +415,8 @@ function RoomPage({ id }: { id: string }) {
             doorOpenAt={doorOpenAt}
             box={view.box}
             gift={view.gift}
+            shelfDown={view.shelfDown}
+            onTidy={() => void tidy()}
             /* Holding on her is petting, the one gesture that isn't a button. She gets a poke instead:
                she IS the cat, so petting herself would be nonsense and telling him she did it would be
                worse, but a tap that gets a mrrp back costs nothing. Local only, nobody told. A spectator

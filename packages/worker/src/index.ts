@@ -106,6 +106,17 @@ app.post("/api/room/:id/recover", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "that code does not match" }, 403);
 });
 
+/** Put the thing she knocked off back on the shelf. Either seat; the Room re-checks. */
+app.post("/api/room/:id/shelf", async (c) => {
+  const id = c.req.param("id");
+  if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
+  const body = (await c.req.json().catch(() => ({}))) as { me?: unknown };
+  const me = typeof body.me === "string" ? body.me : "";
+  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+  const ok = await room(c.env, id).putBack(me);
+  return ok ? c.json({ ok: true }) : c.json({ error: "not yours to tidy" }, 403);
+});
+
 /**
  * Free her seat, so a new phone can be her.
  *
