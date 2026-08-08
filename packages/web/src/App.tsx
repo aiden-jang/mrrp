@@ -165,16 +165,6 @@ function Landing() {
 function RoomPage({ id }: { id: string }) {
   const [view, setView] = useState<RoomView | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  /**
-   * The door swings when the other person turns up.
-   *
-   * Watches the edge, not the value: `themHereNow` stays true for as long as they're around, and a
-   * door held open for a whole visit is a broken door. So it opens on the transition into presence
-   * and eases shut a few seconds later, whether or not they're still there.
-   *
-   * Deliberately not fired on first paint. Loading the room to find the door already swinging would
-   * claim somebody just walked in when they might have been sitting there for an hour.
-   */
   /** Put the mug back. Either seat may, so this is not gated on being him. */
   const tidy = useCallback(async () => {
     const r = roomFromPath();
@@ -192,17 +182,11 @@ function RoomPage({ id }: { id: string }) {
   const youArrived = useRef(false);
 
   /*
-   * The door also opens when *you* walk in.
+   * The door swings on an arrival: yours on first paint, theirs on the edge into presence.
    *
-   * It originally only swung when the other person turned up, and that is so rare in an
-   * asynchronous app that the feature effectively never fired: you both have to be in the room,
-   * one of you has to arrive while the other is already watching, and it has to land inside a
-   * poll. Shipped and unseeable is the same as not shipped.
-   *
-   * Opening it on your own arrival is also the more honest version. The reason first paint was
-   * excluded was that finding the door mid-swing would claim somebody just walked in when they
-   * might have been sitting there for an hour. That argument is about *them*. You did just walk
-   * in, so the door saying so is simply true, and now it happens every single visit.
+   * Opening only for them meant the feature almost never fired, since both of you have to be here
+   * at once and it has to land inside a poll. Theirs watches the edge rather than the value because
+   * `themHereNow` stays true for a whole visit, and a door held open that long is a broken door.
    */
   useEffect(() => {
     if (!view || youArrived.current) return;

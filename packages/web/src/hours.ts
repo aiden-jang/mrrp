@@ -112,22 +112,11 @@ function doingAt(hour: number, atDoor: boolean, sleepy: number, homeHour: number
 }
 
 /**
- * The room at a moment of her day, then bent by what she told the cat.
+ * The room at a moment of her day.
  *
- * The split matters: the CLOCK owns the light, and the MOOD owns the cat. A low mood must never be
- * able to make the room dark, only closer and warmer, so mood is deliberately not allowed to touch
- * `sun` or the palette keyframes.
- */
-/**
- * The room at a moment of her day, then bent by what she told the cat, then bent by whether you are
- * both in it.
- *
- * `together` outranks the mood, which outranks the clock — but only over the CAT. The room already
- * knew you were both here and said so in a banner, which is the app telling you rather than the room
- * doing it, the same gap the door closed. So when it's both of you she gets up, comes to the middle,
- * and purrs, at two in the morning if that's when it is: a cat does get up when everyone's home.
- *
- * The light is untouched, same as with mood. Two people being in a room does not move the sun.
+ * Three inputs, ranked: `together` beats mood beats the clock. All three only ever move the CAT.
+ * The light belongs to the clock alone, so a low mood can make the room closer and warmer but never
+ * darker, and two people being in a room does not move the sun.
  */
 export function sceneFor(
   clock: Clock,

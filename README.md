@@ -6,14 +6,17 @@ You tell the cat how you are. It answers, and the other person finds out.
 
 ```bash
 pnpm install
-pnpm --filter @mrrp/web build     # the Worker serves these assets
-pnpm --filter @mrrp/worker dev    # http://localhost:8791
+pnpm dev:worker   # the API, on :8787
+pnpm dev:web      # Vite on :30005, proxying /api to the Worker
 ```
 
-The web app is served by the Worker itself, so **rebuild the web package after editing it**
-or you'll be looking at the last build.
+That pair is the loop you want while building: Vite gives you hot reload, and the proxy means the
+browser talks to one origin the way production does.
 
-## The three rules
+In production the Worker serves the built assets itself, so if you run the Worker alone you are
+looking at the last `pnpm --filter @mrrp/web build` rather than your working tree.
+
+## The four rules
 
 These are design constraints, not preferences. Each one is load-bearing.
 
@@ -28,6 +31,12 @@ Low moods make the room *warmer and closer*, never darker. See `packages/web/src
 **3. You only ever see what the other person did.** Your own actions are never echoed back at
 you, because that's just a log. And the room only says somebody *came in* after you spoke,
 never that they saw it, because "they saw it and did nothing" is worse to know than nothing.
+
+**4. The room does things; the app doesn't announce them.** A banner reading "you're both here"
+is the app telling you something. The door swinging as someone arrives, and the cat getting up and
+crossing to the middle to purr when both seats are live, is the room doing it. Presence you watch
+her notice beats presence you're informed of, so anything worth saying gets built into the scene
+first and written in text only if it still needs saying.
 
 ## Where things are
 
@@ -56,11 +65,11 @@ The same thing over HTTP, if you'd rather. `me` must be the seat that made the r
 may dress the cat, set her hours or write the notes. Without it you get a 403:
 
 ```bash
-curl -X POST localhost:8791/api/room/<id>/dress \
+curl -X POST localhost:8787/api/room/<id>/dress \
   -H 'content-type: application/json' \
   -d '{"me":"<his-token>","name":"...","fur":"#e8963f","furDk":"#c9752a","belly":"#fbf0dd","eyes":"#7cb342","tabby":true}'
 
-curl -X POST localhost:8791/api/room/<id>/notes \
+curl -X POST localhost:8787/api/room/<id>/notes \
   -H 'content-type: application/json' \
   -d '{"me":"<his-token>","notes":["day one","day two"]}'
 ```
@@ -95,10 +104,12 @@ than the UI, because a rule enforced in the browser is a rule anyone can turn of
 | `GET /api/room/:id` | anyone | seats the first two callers. Only her read advances the note |
 | `POST .../tell` | her only | her mood, one of six |
 | `POST .../say` | her only | one line back, 140 chars, empty clears it |
-| `POST .../act` | him only | pet, brush, bring, sit |
+| `POST .../act` | him only | pet, brush, bring, sit, photo |
+| `POST .../shelf` | either seat | puts the mug back. The one write both of them may make |
 | `POST .../dress`, `.../clock` | him only | 403 otherwise |
 | `POST .../notes` | him only | this room's notes, one per entry; empty restores the defaults |
 | `POST .../release` | him only | frees her seat so a new device can be her |
+| `POST .../recover` | his code | takes the first seat back on a new device |
 
 ### When she loses her phone
 
@@ -112,9 +123,12 @@ whoever opens the link next becomes the cat. What deliberately survives: **how f
 has read**, and **the line she left him**. Losing a phone should not cost her three weeks of notes.
 Her mood resets, which is correct, because a mood is how you are now and the new device will be asked.
 
-His own seat has no recovery, by the same logic that makes the rest of this safe: the link is the only
-credential, so there is nobody who could prove they are him. If he loses his device he makes a new
-room, which costs the note count and nothing else.
+His own seat recovers differently, because the link alone can't prove anyone is him: the room mints a
+one-off **recovery code** on first use and shows it to him and nobody else. `POST .../recover` with it
+takes the first seat back on a new device. It's stored in plaintext deliberately — its entire power is
+"become the first seat of this room", and anyone who can read that storage already has the room, the
+notes and both names, so hashing would buy nothing and cost him the ability to look it up again from
+a device he still has. Ambiguous characters are left out so it survives being read aloud.
 
 Two things the note deliberately does not do: it never sends tomorrow's text (she could read
 ahead in devtools, and a gift you can skim is not a gift), and it advances at most once per her
@@ -123,7 +137,7 @@ local day, so a day she doesn't visit is not a note she never sees.
 ## Tests
 
 ```bash
-pnpm check       # typecheck, lint, then 114 tests: 58 web, 56 worker
+pnpm check       # typecheck, lint, then 141 tests: 68 web, 73 worker
 ```
 
 `lint` exists for one rule. owewell shipped a `useEffect` below a component's early returns, so the

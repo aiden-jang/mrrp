@@ -19,10 +19,6 @@ const DEFAULT_CAT: Cat = {
 const DEFAULT_CLOCK: Clock = { tz: "America/New_York", homeHour: 18 };
 
 /**
- * Her calendar date in her own timezone, as days-since-epoch. Comparing these gives a day count
- * that flips over at her midnight rather than UTC's, which is the only midnight she'd notice.
- */
-/**
  * How long he has to have been away before she leaves something. Eight hours, so it means "he has
  * not been in since yesterday" rather than "he stepped out", and a gift stays a small event.
  */
@@ -30,6 +26,10 @@ const GIFT_AFTER_MS = 8 * 60 * 60 * 1000;
 /** Authored, not generated. Three things a cat would actually present you with. */
 const GIFTS = ["leaf", "cap", "moth"] as const;
 
+/**
+ * Her calendar date in her own timezone, as days-since-epoch. Comparing these gives a day count
+ * that flips over at her midnight rather than UTC's, which is the only midnight she'd notice.
+ */
 function localDayNumber(at: number, tz: string): number {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: tz,
@@ -275,18 +275,16 @@ export class Room extends DurableObject<Env> {
   /**
    * Free her seat so a new device can claim it.
    *
-   * A seat belongs to a random token in localStorage, which is what keeps this frictionless: no
-   * account, no password, no email. The cost is that clearing Safari's data or moving to a new phone
-   * loses the seat forever, and with only two seats and no way to release one, the room would be dead
-   * with nobody able to be the cat again. For something meant to sit on a home screen for months,
-   * that is not an edge case, it is a matter of time.
+   * A seat is a random token in localStorage, which is what makes this account-free. The cost is
+   * that clearing browser data loses the seat, and with only two seats and no way to release one the
+   * room would be permanently dead. Over months on a home screen that is a matter of time, not an
+   * edge case.
    *
    * His to call, for the same reason dressing the cat is: the link is the only credential, so anybody
    * holding it could otherwise evict her.
    *
-   * What survives on purpose: how far into the notes she has read, and the line she left him. Losing a
-   * phone should not cost her three weeks of notes or wipe what she said. Her mood is keyed by person
-   * and so it resets, which is right — a mood is how you are now, and the new device will be asked.
+   * Her notes progress and the line she left him survive; her mood is keyed by person and resets,
+   * which is right, because a mood is how you are now and the new device will be asked.
    */
   async releaseHerSeat(me: string): Promise<boolean> {
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};

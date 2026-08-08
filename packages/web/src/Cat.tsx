@@ -18,14 +18,11 @@ const GW = 100, GH = 80, FLOOR = 48;
 /**
  * How much of the room is on screen at once.
  *
- * The room is authored 100 wide but only VW of it is shown, with the view following her and clamped to
- * the walls. She is 24 pixels across, so on the full grid she was a quarter of the frame with a lot of
- * empty wall around her, and everything built into her at that size (the irregular blink, the highlight
- * tracking the moth, the ear twitch, the stretch) was too small to read. Cropping rather than redrawing
- * her keeps one logical pixel to one aligned rectangle, which is the rule the whole look depends on.
- *
- * The side effect is a room that pans, so the door and the plant come and go. That reads as a camera
- * rather than a mistake, which is why the view moves smoothly with her instead of jumping.
+ * The room is authored 100 wide and cropped to VW, following her and clamped to the walls. She is 24
+ * across, so the full grid left her a quarter of the frame and the detail built into her (the blink,
+ * the ear twitch, the stretch) too small to read. Cropping rather than scaling keeps one logical pixel
+ * to one aligned rectangle, which is the rule the whole look depends on. The view moves smoothly so
+ * the pan reads as a camera rather than a jump.
  */
 const VW = 80;
 /** The window is bolted to the wall here. Only the light it throws moves. */
@@ -109,15 +106,12 @@ export function Cat({
   /**
    * When somebody walked in, as ms epoch, or null for a shut door.
    *
-   * The room already knew when both people were present and said so in a banner. A banner is the
-   * app telling you something happened; the door is the room doing it. She looks up at it, which
-   * is the part that matters: presence you can see her notice.
+   * A banner is the app telling you someone arrived; the door is the room doing it, and her looking
+   * up at it is the part that matters.
    *
-   * A timestamp rather than a boolean, because the first version accumulated progress per frame
-   * into a ref and never got past a third open: this component remounts often enough that the ref
-   * kept resetting mid-swing, leaving the door permanently ajar. Progress derived from a fixed
-   * moment is immune to that, and it also stays correct if a frame is dropped or the tab is
-   * backgrounded halfway through the swing.
+   * A timestamp rather than a boolean: accumulating swing progress per frame into a ref left the
+   * door permanently ajar, because this component remounts often enough to reset it mid-swing.
+   * Deriving progress from a fixed moment also survives a dropped frame or a backgrounded tab.
    */
   doorOpenAt?: number | null;
   /**
@@ -381,10 +375,8 @@ export function Cat({
       /*
        * The camera leans toward the door while it is open.
        *
-       * Without this the whole feature is usually invisible. The view shows 80 of the room's 100
-       * columns and follows her, so the door at column 6 is only in frame when she happens to be
-       * left of centre: on a phone, with her loafing mid-room, an arriving visitor got a door
-       * swinging open somewhere off the left edge.
+       * Without this the feature is usually invisible: the view is 80 of 100 columns and follows
+       * her, so the door at column 6 is only in frame when she happens to be left of centre.
        *
        * Blended by how far open the door is rather than clamped, so the view glides over and back
        * with the swing instead of snapping the instant the flag flips.
@@ -435,22 +427,10 @@ export function Cat({
         // quarter density outside that, so the edge falls off in two steps rather than one
         for (const ox of [-13, -12, 10, 11]) if ((ox + y) % 4 === 0) px(cx + ox, y, sc.litWall);
       }
-      // The shaft stops at the floor. What lands on the floor is the patch, and drawing both left a
-      // wide bright smear across the boards.
-      //
-      // The patch reaches down the boards far enough to pass under her, because she lies at rows
-      // 49-66 and the first version stopped at 55. All you saw of it was two pale wings sticking
-      // out either side of her head, which reads as a halo or a rendering fault rather than as
-      // sunlight. A cat asleep in a pool of light is the entire picture, so the pool has to be
-      // big enough to be one.
-      // Small solid core, generous soft edge. Getting this wrong in both directions is instructive:
-      // too short (stopping at FLOOR+7) and it sat at her head height, so all you saw of it was two
-      // pale wings either side of her ears. Too big (38 wide, 13 rows) and it read as light right up
-      // until a mood moved her to the door, at which point a large bright lens with nothing lying in
-      // it dominated the room and looked like a rendering fault.
-      //
-      // The fix is not a size, it's a shape: mostly dither, so it reads as light on boards whether or
-      // not there is a cat in it, and it still reaches far enough down the floor to pool around her.
+      // The pool of light on the boards. Its size is a shape problem, not a number: too short and it
+      // sits at her head height as two pale wings either side of her ears; too wide and a mood that
+      // moves her to the door leaves a big bright lens with nothing lying in it. Small solid core,
+      // generous dithered edge, reaching far enough down the boards to pass under her at rows 49-66.
       const POOL = [
         [1, 16], [2, 20], [3, 24], [4, 26], [5, 26], [6, 24], [7, 22], [8, 18], [9, 14],
       ] as const;
@@ -856,17 +836,10 @@ export function Cat({
       }
 
       // ── snug ──────────────────────────────────────────────────────────────
-      // The answer to a low mood: the room draws in and warms up around her. Additive only, so
-      // "sad" can never make her room look bleak.
-      // Two rings of dither at the very edge of the frame, and nothing else. Enough to feel the room
-      // close in, small enough that it never looks like a transparency grid.
-      // A ring of warm floor around her and nothing else. The frame dither I tried first read as a
-      // transparency grid, which is the single most dated-looking thing a canvas can do.
-      //
-      // It hugs her: she is 24 wide, and a 38-wide ring stopped reading as warmth gathering around
-      // her and started reading as a dotted band lying across the floor near her. Widening the sun
-      // pool made it worse, because two checkerboards of the same colour on the same rows stack into
-      // something that just looks like the boards are damaged.
+      // A low mood draws the room in and warms it. Additive only, so "sad" can never make the room
+      // look bleak. A ring of warm floor hugging her and nothing else: dithering the frame edge
+      // instead read as a transparency grid, and widening it past her own 24px width read as a
+      // dotted band lying near her rather than warmth gathering around her.
       if (sc.snug > 0.35) {
         for (const [dy, w] of [[1, 20], [2, 24], [3, 26], [4, 24], [5, 18]] as const) {
           dither(kx - (w >> 1), ky + dy, w, 1, sc.patch);
