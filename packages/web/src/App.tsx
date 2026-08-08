@@ -223,6 +223,24 @@ function RoomPage({ id }: { id: string }) {
   }, [view?.themHereNow]);
 
   const [nudge, setNudge] = useState(0);
+
+  /*
+   * She says mrrp the moment it becomes both of you.
+   *
+   * Reusing `nudge` rather than adding a second channel: it already means "something happened, react
+   * to it", and it gives the bounce and the bubble together, which is a cat noticing rather than a
+   * cat that changed pose. Fires on the edge only, so a long visit with both of you in it does not
+   * become a cat chanting at a poll interval.
+   */
+  const wasTogether = useRef<boolean | null>(null);
+  useEffect(() => {
+    const now = view?.bothHereNow ?? false;
+    const prev = wasTogether.current;
+    wasTogether.current = now;
+    if (prev === null || !now || prev) return;
+    setNudge(v => v + 1);
+  }, [view?.bothHereNow]);
+
   const [asking, setAsking] = useState(!myName.get());
   const [name, setName] = useState("");
   const [copied, setCopied] = useState(false);
@@ -399,7 +417,9 @@ function RoomPage({ id }: { id: string }) {
   }
 
   const last = view.theirRecent[0];
-  const scene = sceneFor(view.clock, Date.now(), view.catMood);
+  // Same four inputs the canvas uses, so the caption under the room can never describe a different
+  // cat from the one being drawn.
+  const scene = sceneFor(view.clock, Date.now(), view.catMood, view.bothHereNow);
 
   /**
    * Whether the viewer actually holds his seat, rather than merely not being her.
@@ -445,6 +465,8 @@ function RoomPage({ id }: { id: string }) {
                worse, but a tap that gets a mrrp back costs nothing. Local only, nobody told. A spectator
                gets neither, though the furniture is tappable for everyone. */
             role={iAmHim ? "him" : view.youAreHer ? "her" : null}
+            /* The banner says you're both here; this is her doing something about it. */
+            together={view.bothHereNow}
             onPet={() => void act("pet")}
             onPoke={() => setNudge((v) => v + 1)}
           />
