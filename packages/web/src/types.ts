@@ -89,83 +89,48 @@ export interface Told {
   at: number;
 }
 
+export type Gift = "leaf" | "cap" | "moth";
+
 /**
  * The room, from one seat.
  *
- * The cat IS her. So her mood is what the cat looks like, to both of you, and the two seats do
- * different things: she says how she is, he turns up. That asymmetry is the gift, not a shortcoming.
+ * The cat is her, so her mood is what the cat looks like to both of you, and the two seats get
+ * different halves of the app: she says how she is, he turns up.
  */
-export type Gift = "leaf" | "cap" | "moth";
-
 export interface RoomView {
   cat: Cat;
   clock: Clock;
-  /** True if you're the one the cat is. Decides which half of the app you get. */
+  /** You are the one the cat is. Decides which half of the app you get. */
   youAreHer: boolean;
-  /** Her mood. This is what the cat looks like, whoever is looking. */
   catMood: Mood | null;
   catMoodAt: number | null;
-  /** Your own display name, once you've claimed a seat. */
   you: string | null;
-  /** The other person's name. */
   them: string | null;
-  /** When they were last here, ms epoch. */
   themLastAt: number | null;
-  /** They're in the room right now, near enough. */
   themHereNow: boolean;
-  /**
-   * You are both in the room at the same moment. Rare, by the nature of an asynchronous app, which is
-   * exactly why it is worth saying out loud when it happens.
-   */
+  /** Both seats at once. Rare in an asynchronous app, so the room says so out loud. */
   bothHereNow: boolean;
-  /**
-   * One line she left him, replaceable and never kept in history.
-   *
-   * The app was one-directional: he writes thirty notes, she taps one of six moods. Six words is a
-   * small vocabulary for the person the whole thing is about, so she gets a sentence too. Overwritten
-   * rather than appended, like the mood, so there is nothing to keep up with and nothing to scroll back
-   * through.
-   */
-  /** This room's notes, so he can edit them. His side only; she never receives ones she hasn't reached. */
-  /**
-   * He has taken a photo of her, so the picture on the wall is her instead of the fish it ships with.
-   *
-   * The only thing in the room that accumulates. Everything else is deliberately stateless, but a frame
-   * that changes once gives the room a sense that time has passed in it without creating anything that
-   * can be neglected.
-   */
+  /** He photographed her, so the picture on the wall is her. The only thing here that accumulates. */
   framed: boolean;
-  /**
-   * There is a cardboard box in the room today.
-   *
-   * Arrives on some of the times he brings her something, never on demand, and gone when her day
-   * turns over. Shared state on purpose: a box only he could see would not be a thing in the room,
-   * it would be a thing on his screen.
-   */
+  /** Shared, not per-seat: a box only he could see would be a thing on his screen, not in the room. */
   box: boolean;
-  /** The thing she knocked off the shelf is on the floor. Either of them can put it back. */
+  /** The mug is off the shelf. Either of them can put it back. */
   shelfDown: boolean;
-  /**
-   * A small thing she left on the floor while he was away: a leaf, a bottle cap, a moth.
-   *
-   * His side only, and gone the moment he touches anything. Worth nothing on purpose.
-   */
+  /** Something she left on the floor while he was away. His side only, cleared the moment he acts. */
   gift: Gift | null;
-  /** The code that takes his seat back on a new device. Sent to him and to nobody else. */
+  /** Takes his seat back on a new device. Sent to him and nobody else. */
   recoveryCode: string | null;
+  /** His side, so he can edit them. She must never receive the ones she has not reached. */
   yourNotes: string[] | null;
+  /** One line she left him. Overwritten rather than appended, so there is nothing to keep up with. */
   herLine: Told2 | null;
-  /** Her note for today. Null for him: he wrote them, so reading them back is not the point. */
+  /** Her note for today. Null for him: he wrote them. */
   note: Note | null;
-  /** Which day she's on, for his side, without the text. */
+  /** Her day number, for his side, without the text. */
   noteDay: number | null;
-  /** Her side: what he did, in second person. His side: empty, because she doesn't do things here. */
+  /** Her side: what he did, in second person. Empty for him. */
   theirRecent: Visit[];
-  /**
-   * Her side: he came in after she said something. Not a read receipt, only ever that he turned up,
-   * because "he saw it and did nothing" is worse to know than nothing.
-   */
+  /** He turned up after she said something. Not a read receipt: "saw it, did nothing" is worse to know. */
   theyCameAfter: boolean;
-  /** True when the second seat is still empty. */
   waitingForThem: boolean;
 }

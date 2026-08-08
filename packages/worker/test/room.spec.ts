@@ -52,7 +52,6 @@ const post = (path: string, body: unknown) =>
     body: JSON.stringify(body),
   });
 
-/** He arrives first (he makes the room), then she opens the link. */
 /** Jump the clock forward so a seat that was just used reads as long abandoned. */
 function away(hours: number): void {
   vi.useFakeTimers({ shouldAdvanceTime: true });
