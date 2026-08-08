@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { Cat as CatLook, Clock, Gift, Mood } from "./types.js";
-import { sceneFor } from "./hours.js";
+import { mixHex, sceneFor } from "./hours.js";
 import { mothAt } from "./critters.js";
 import { BED, BIRD, BOX_BACK, BOX_FRONT, DOOR, EK, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, MUG, MUG_DOWN, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
@@ -83,6 +83,7 @@ export function Cat({
   shelfDown = false,
   onTidy,
   role = null,
+  together = false,
   onPet,
   onPoke,
 }: {
@@ -138,6 +139,13 @@ export function Cat({
    * because nothing about it touches the server.
    */
   role?: "him" | "her" | null;
+  /**
+   * You are both in the room at this moment.
+   *
+   * She gets up, comes to the middle and purrs. Presence outranks both her mood and the hour for
+   * where she is and what she's doing, and touches nothing about the light — see sceneFor.
+   */
+  together?: boolean;
   /** He held on the cat. Fires once per press. */
   onPet?: () => void;
   /** She tapped her own cat. Local only, no request. */
@@ -182,6 +190,9 @@ export function Cat({
   lookRef.current = look;
   clockRef.current = clock;
   moodRef.current = mood;
+
+  const togetherRef = useRef(together);
+  togetherRef.current = together;
 
   const roleRef = useRef(role);
   const onPetRef = useRef(onPet);
@@ -382,7 +393,7 @@ export function Cat({
       const pull = doorProg / 3;
       cam = Math.round(camBase * (1 - pull) + Math.min(camBase, 2) * pull);
       const L = lookRef.current;
-      const sc = sceneFor(clockRef.current, Date.now(), moodRef.current);
+      const sc = sceneFor(clockRef.current, Date.now(), moodRef.current, togetherRef.current);
       const beamX = Math.round(sc.beam * GW);
 
       // ── room ──────────────────────────────────────────────────────────────
@@ -392,7 +403,16 @@ export function Cat({
       rect(0, FLOOR - 9, GW, 9, sc.wallBottom);
       rect(0, FLOOR, GW, 10, sc.floorFar);
       rect(0, FLOOR + 10, GW, GH - FLOOR - 10, sc.floorNear);
-      rect(0, FLOOR - 1, GW, 1, WHITE); // skirting: one bright line reads as depth
+      /*
+       * Skirting: one bright line where the wall meets the floor, to read as depth.
+       *
+       * Lifted out of the wall's own colour rather than painted a fixed near-white. One grid row is
+       * about eleven screen pixels once the room is scaled up, so a flat #fffdf6 was not a highlight,
+       * it was a white band lying across the room — brightest at midnight, when the rest of the room
+       * is lavender and nothing in it should be glowing. Now it brightens with the hour, the way every
+       * other surface here already does.
+       */
+      rect(0, FLOOR - 1, GW, 1, mixHex(sc.wallBottom, sc.beamWarm, 0.3 + sc.sun * 0.35));
       // Floorboards. Half the frame was empty boards, and three lines is enough to say "floor".
       for (const by of [FLOOR + 9, FLOOR + 15, FLOOR + 23, FLOOR + 30]) rect(0, by, GW, 1, sc.floorFar);
 

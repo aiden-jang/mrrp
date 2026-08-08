@@ -118,7 +118,23 @@ function doingAt(hour: number, atDoor: boolean, sleepy: number, homeHour: number
  * able to make the room dark, only closer and warmer, so mood is deliberately not allowed to touch
  * `sun` or the palette keyframes.
  */
-export function sceneFor(clock: Clock, at = Date.now(), mood: Mood | null = null): Scene {
+/**
+ * The room at a moment of her day, then bent by what she told the cat, then bent by whether you are
+ * both in it.
+ *
+ * `together` outranks the mood, which outranks the clock — but only over the CAT. The room already
+ * knew you were both here and said so in a banner, which is the app telling you rather than the room
+ * doing it, the same gap the door closed. So when it's both of you she gets up, comes to the middle,
+ * and purrs, at two in the morning if that's when it is: a cat does get up when everyone's home.
+ *
+ * The light is untouched, same as with mood. Two people being in a room does not move the sun.
+ */
+export function sceneFor(
+  clock: Clock,
+  at = Date.now(),
+  mood: Mood | null = null,
+  together = false,
+): Scene {
   const hour = hourIn(clock.tz, at);
 
   let i = 0;
@@ -149,7 +165,7 @@ export function sceneFor(clock: Clock, at = Date.now(), mood: Mood | null = null
 
   const r = mood ? RESPONSES[mood] : null;
 
-  return {
+  const scene: Scene = {
     hour,
     sun,
     beam,
@@ -180,5 +196,25 @@ export function sceneFor(clock: Clock, at = Date.now(), mood: Mood | null = null
     // A mood that moves her somewhere else takes her out of the bed with it.
     inBed: inBed && !r?.catX,
     sparkle: r?.sparkle ?? false,
+  };
+
+  if (!together) return scene;
+
+  return {
+    ...scene,
+    // Middle of the room, facing out, so she is between the two of you rather than off at one wall.
+    catX: 0.5,
+    sleepy: 0.05,
+    eyes: 1,
+    purring: true,
+    pose: "sit",
+    // Both of these are places she goes to be alone or to wait for someone who isn't here. Neither
+    // survives everyone actually being in.
+    atDoor: false,
+    inBed: false,
+    // Never below whatever the mood asked for: if she's been told something that needs holding, being
+    // together should not make the room less close.
+    snug: Math.max(scene.snug, 0.5),
+    doing: "up, in the middle of the room, purring",
   };
 }
