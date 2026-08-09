@@ -58,8 +58,21 @@ function away(hours: number): void {
   vi.setSystemTime(new Date(Date.now() + hours * 60 * 60 * 1000));
 }
 
-async function seat() {
+/**
+ * Seat both people. Pass `tz` to pin the room's clock BEFORE her first read.
+ *
+ * That ordering is the whole point for the note tests. Her day is recorded on whatever timezone is
+ * in force when she first reads, and with no `tz` that is DEFAULT_CLOCK — America/New_York, a third
+ * zone neither BEHIND nor AHEAD. For eight hours out of every day New York shares its date with
+ * AHEAD rather than BEHIND, which left the rollover tests with a baseline equal to their own target,
+ * unable to advance, failing only between 04:00 and 12:00 UTC.
+ *
+ * The zones being 26 hours apart makes them differ from *each other* always; it says nothing about
+ * the one the room starts on.
+ */
+async function seat(tz?: string) {
   await view(HIM, "Aiden");
+  if (tz) await post("clock", { me: HIM, tz });
   await view(HER, "Sofia");
 }
 
@@ -212,8 +225,7 @@ describe("notes", () => {
   // than no test.
 
   it("advances by exactly one when her day rolls over", async () => {
-    await seat();
-    await post("clock", { me: HIM, tz: BEHIND });
+    await seat(BEHIND);
     expect((await view(HER)).note!.day).toBe(1);
 
     await post("clock", { me: HIM, tz: AHEAD });
@@ -222,8 +234,7 @@ describe("notes", () => {
   });
 
   it("never goes backwards if her clock moves back", async () => {
-    await seat();
-    await post("clock", { me: HIM, tz: BEHIND });
+    await seat(BEHIND);
     await view(HER);
     await post("clock", { me: HIM, tz: AHEAD });
     expect((await view(HER)).note!.day).toBe(2);
@@ -280,9 +291,8 @@ describe("writing his own notes", () => {
 
   it("keeps her place when he edits, and clamps rather than resetting when he trims", async () => {
     // Losing three weeks of her progress because he fixed a typo would be indefensible.
-    await seat();
+    await seat(BEHIND);
     await post("notes", { me: HIM, notes: ["one", "two", "three", "four"] });
-    await post("clock", { me: HIM, tz: BEHIND });
     await view(HER);
     await post("clock", { me: HIM, tz: AHEAD });
     expect((await view(HER)).note!.day).toBe(2);
@@ -602,10 +612,9 @@ describe("freeing her seat", () => {
   });
 
   it("keeps her place in the notes, because a lost phone should not cost her three weeks", async () => {
-    await seat();
-    await post("clock", { me: HIM, tz: "Etc/GMT+12" });
+    await seat(BEHIND);
     await view(HER);
-    await post("clock", { me: HIM, tz: "Pacific/Kiritimati" });
+    await post("clock", { me: HIM, tz: AHEAD });
     expect((await view(HER)).note!.day).toBe(2);
 
     await post("release", { me: HIM });
