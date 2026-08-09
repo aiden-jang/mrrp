@@ -949,7 +949,16 @@ function RoomPage({ id }: { id: string }) {
 /* ─────────────── styles, inline to keep this one small ─────────────── */
 const S: Record<string, React.CSSProperties> = {
   page: { minHeight: "100%", display: "grid", placeItems: "center", padding: "28px 18px 48px" },
-  card: { width: "100%", maxWidth: 520 },
+  /*
+   * minWidth 0 + overflowWrap: a grid item defaults to min-width:auto, which is its min-content
+   * width, and that silently outranks both width:100% and maxWidth. One unbroken 90-character line
+   * she left him (a pasted link fits inside the 140-char limit) set that floor to ~900px, so the
+   * card ignored its own max width and the whole room scrolled sideways on a phone.
+   *
+   * `anywhere` rather than `break-word` because break-word does not lower min-content, so the floor
+   * would stay put. overflow-wrap inherits, so this covers every line of prose in the card.
+   */
+  card: { width: "100%", maxWidth: 520, minWidth: 0, overflowWrap: "anywhere" },
   h1: { fontSize: 40, margin: "0 0 8px", letterSpacing: "-0.02em", textAlign: "center" },
   lede: { fontSize: 15.5, color: "var(--soft)", maxWidth: "38ch", lineHeight: 1.55 },
   small: { fontSize: 13, color: "var(--soft)", margin: 0, lineHeight: 1.5 },
