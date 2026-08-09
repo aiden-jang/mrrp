@@ -105,7 +105,7 @@ function Landing() {
             already knew, which was fine while it had one user and is not any more. Says the mechanism
             first, because the mechanism is the charming part. */}
         <p style={{ ...S.lede, margin: "0 auto 18px" }}>
-          A cat for exactly two people. You make the room; whoever you send the link to becomes the cat.
+          One of you is the cat. You make the room; whoever you send the link to becomes her.
           They tap how their day is going and she becomes that, so you know without having to ask.
         </p>
         <p style={{ ...S.lede, margin: "0 auto 22px", fontSize: 14 }}>

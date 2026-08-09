@@ -1,6 +1,6 @@
 # mrrp
 
-A cat that belongs to exactly two people. One private link, two seats, and no accounts.
+One of you is the cat. One private link, two seats, and no accounts.
 
 You tell the cat how you are. It answers, and the other person finds out.
 
