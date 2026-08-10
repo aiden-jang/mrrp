@@ -557,8 +557,8 @@ export function Cat({
       // weather belongs outside, and a full-room overlay would turn a private discovery into UI.
       const rainRemaining = plantTaps.current.rainUntil - t;
       if (!reduce && rainRemaining > 0) {
-        const drift = Math.floor(t / 105);
-        const a = Math.min(1, rainRemaining / 500);
+        const drift = Math.floor(t / 95);
+        const a = Math.min(1, rainRemaining / 750);
         for (let i = 0; i < 6; i++) {
           const rx = wx + 2 + ((i * 5 + drift) % 12);
           const ry = wy(1) + ((i * 3 + Math.floor(t / 170)) % 8);
