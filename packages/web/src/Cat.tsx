@@ -310,6 +310,9 @@ export function Cat({
       }
       if (hit?.key === "plant") fallingLeaf.current = performance.now();
       if (hit?.key === "frame" && framedRef.current) photoGlint.current = performance.now();
+      // A tap at the door is not shared presence — it is just somebody checking whether she is
+      // listening. She is, and answers locally before going back to whatever she was doing.
+      if (hit?.key === "door") speakUntil.current = performance.now() + 900;
       if (hit) {
         poked.current = { key: hit.key, at: performance.now() };
         // And she notices. Looking at the thing you touched is most of what makes the room feel lived
