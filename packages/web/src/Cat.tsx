@@ -37,6 +37,8 @@ const BIRD_MS = 5200;
 const STAR_MS = 900;
 /** A leaf takes just long enough to fall that it reads as a small response, not an idle loop. */
 const LEAF_FALL_MS = 1200;
+/** Just enough time for a picture-frame glint to read, not enough to turn into decoration. */
+const PHOTO_GLINT_MS = 700;
 /**
  * Where it comes to rest, having rolled.
  *
@@ -187,6 +189,8 @@ export function Cat({
   const shootingStar = useRef(-1e9);
   /** The plant is allowed one local little objection when somebody pokes it. */
   const fallingLeaf = useRef(-1e9);
+  /** The framed photo is a little proud of itself, but only when it exists. */
+  const photoGlint = useRef(-1e9);
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
   const doorShutFrom = useRef({ at: 0, from: 0 });
   lookRef.current = look;
@@ -305,6 +309,7 @@ export function Cat({
         else bird.current = now;
       }
       if (hit?.key === "plant") fallingLeaf.current = performance.now();
+      if (hit?.key === "frame" && framedRef.current) photoGlint.current = performance.now();
       if (hit) {
         poked.current = { key: hit.key, at: performance.now() };
         // And she notices. Looking at the thing you touched is most of what makes the room feel lived
@@ -555,6 +560,21 @@ export function Cat({
         blit(FRAME_CAT, 16 + shake("frame"), 12, { w: INK, f: "#c69a63", h: "#cfe0e4", c: L.fur, e: INK, n: PINK });
       } else {
         blit(FRAME, 16 + shake("frame"), 12, { w: INK, f: "#c69a63", h: "#cfe0e4", g: "#e2926f" });
+      }
+      // Once her photo exists, the frame catches a little light when you tap it. There is no
+      // equivalent before the photo because a glint should reward something that actually happened
+      // in the room, not advertise a future interaction.
+      const glintAge = t - photoGlint.current;
+      if (!reduce && framedRef.current && glintAge >= 0 && glintAge < PHOTO_GLINT_MS) {
+        const p = glintAge / PHOTO_GLINT_MS;
+        const gx = Math.round(29 + p * 4);
+        const gy = Math.round(15 + p * 5);
+        const a = 1 - p;
+        px(gx, gy, `rgba(255,253,230,${a})`);
+        px(gx - 1, gy, `rgba(255,253,230,${a * 0.55})`);
+        px(gx + 1, gy, `rgba(255,253,230,${a * 0.55})`);
+        px(gx, gy - 1, `rgba(255,253,230,${a * 0.55})`);
+        px(gx, gy + 1, `rgba(255,253,230,${a * 0.55})`);
       }
       blit(PLANT, 87 + shake("plant"), FLOOR - 13, { g: LEAF, w: INK, d: "#b07a4e" });
       // A plant tap drops one leaf. It is intentionally a little easier to miss than the plant
