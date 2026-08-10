@@ -325,7 +325,10 @@ export function Cat({
           taps.count = 0;
         }
       }
-      if (hit?.key === "frame" && framedRef.current) photoGlint.current = performance.now();
+      if (hit?.key === "frame" && framedRef.current) {
+        photoGlint.current = performance.now();
+        play("shutter");
+      }
       // A tap at the door is not shared presence — it is just somebody checking whether she is
       // listening. She is, and answers locally before going back to whatever she was doing.
       if (hit?.key === "door") {
