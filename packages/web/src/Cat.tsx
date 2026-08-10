@@ -53,6 +53,8 @@ const RAIN_MS = 6800;
 const RAINBOW_MS = 2600;
 /** A small bloom hangs around after the rainbow, then leaves the room as it found it. */
 const PLANT_BLOOM_MS = 3800;
+/** A double knock at the door gets a tiny note slid into the room. */
+const DOOR_NOTE_MS = 3600;
 /**
  * Where it comes to rest, having rolled.
  *
@@ -216,6 +218,10 @@ export function Cat({
   const photoGlint = useRef(-1e9);
   /** The shelf holds a warm mug, which only needs to announce itself when somebody notices it. */
   const mugSteamedAt = useRef(-1e9);
+  /** A gift only sparkles after someone notices what she carried in. */
+  const giftGlint = useRef(-1e9);
+  /** A second knock means somebody is playing with the door, so the room plays back. */
+  const doorTaps = useRef({ count: 0, last: -1e9, noteUntil: -1e9 });
   /** A tiny keyboard secret. It is local, ephemeral, and only visible through the night window. */
   const auroraUntil = useRef(-1e9);
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
@@ -328,6 +334,16 @@ export function Cat({
         tidyRef.current?.();
         return;
       }
+      // Her little gifts sit by the door rather than under the cat. A tap is just an acknowledgement
+      // — not a claim or a state change — but the glint makes the object feel chosen instead of like
+      // a leftover sprite. It is intentionally local because the gift itself already carries meaning.
+      if (giftRef.current && x >= 14 && x < 24 && y >= FLOOR + 13 && y < FLOOR + 22) {
+        giftGlint.current = performance.now();
+        speakUntil.current = performance.now() + 800;
+        lookAt.current = { x: 19, until: performance.now() + 1900 };
+        play("mrrp");
+        return;
+      }
       const hit = PROPS.find((q) =>
         (q.key !== "box" || boxRef.current) && x >= q.x && x < q.x + q.sp.w && y >= q.y && y < q.y + q.sp.h,
       );
@@ -389,7 +405,15 @@ export function Cat({
       // A tap at the door is not shared presence — it is just somebody checking whether she is
       // listening. She is, and answers locally before going back to whatever she was doing.
       if (hit?.key === "door") {
-        speakUntil.current = performance.now() + 900;
+        const now = performance.now();
+        speakUntil.current = now + 900;
+        const taps = doorTaps.current;
+        taps.count = now - taps.last < 1250 ? taps.count + 1 : 1;
+        taps.last = now;
+        if (taps.count >= 2) {
+          taps.noteUntil = now + DOOR_NOTE_MS;
+          taps.count = 0;
+        }
         play("mrrp");
       }
       if (hit) {
@@ -735,6 +759,22 @@ export function Cat({
           dither(cxd - 12, FLOOR + 4, 24, 7, "#fff1cf");
         }
       }
+      // Two quick door taps slip a tiny note under it. The note never becomes state or copy; it is
+      // just a pixel-paper surprise that crosses the threshold and is gone before it asks to mean
+      // anything. Start partly under the door, then let it glide to a visible board.
+      const noteRemaining = doorTaps.current.noteUntil - t;
+      if (!reduce && noteRemaining > 0) {
+        const p = 1 - noteRemaining / DOOR_NOTE_MS;
+        const nx = Math.round(8 + Math.min(1, p * 2.8) * 13);
+        const ny = FLOOR + 12;
+        const a = Math.min(1, noteRemaining / 500);
+        const paper = `rgba(255,248,223,${a})`;
+        rect(nx, ny, 6, 4, paper);
+        rect(nx, ny, 6, 1, INK);
+        rect(nx, ny + 3, 6, 1, INK);
+        px(nx, ny + 1, INK); px(nx + 5, ny + 2, INK);
+        px(nx + 2, ny + 1, `rgba(198,154,99,${a})`);
+      }
       if (framedRef.current) {
         blit(FRAME_CAT, 16 + shake("frame"), 12, { w: INK, f: "#c69a63", h: "#cfe0e4", c: L.fur, e: INK, n: PINK });
       } else {
@@ -783,6 +823,14 @@ export function Cat({
       if (g0) {
         const sp0 = g0 === "leaf" ? GIFT_LEAF : g0 === "cap" ? GIFT_CAP : GIFT_MOTH;
         blit(sp0, 17, FLOOR + 16, { w: INK, g: "#7d9e63", r: "#5d7a46", m: "#b9b3a4", n: "#cbbfa6" });
+        const giftAge = t - giftGlint.current;
+        if (!reduce && giftAge >= 0 && giftAge < PHOTO_GLINT_MS) {
+          const p = giftAge / PHOTO_GLINT_MS;
+          const c = `rgba(255,242,184,${1 - p})`;
+          const gx = 20 + Math.round(p * 2);
+          const gy = FLOOR + 15 - Math.round(p * 3);
+          px(gx, gy, c); px(gx - 1, gy, c); px(gx + 1, gy, c); px(gx, gy - 1, c); px(gx, gy + 1, c);
+        }
       }
       // The box, back half. Sits right of centre so it does not fight the bed or the sunbeam, and
       // low enough on the boards to read as standing on them rather than floating.
