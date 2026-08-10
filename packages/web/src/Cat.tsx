@@ -42,6 +42,8 @@ const CONSTELLATION_MS = 6200;
 const LEAF_FALL_MS = 1200;
 /** Just enough time for a picture-frame glint to read, not enough to turn into decoration. */
 const PHOTO_GLINT_MS = 700;
+/** A second quick look at the framed photo gets a tiny warm memory burst. */
+const PHOTO_MEMORY_MS = 2200;
 /** A just-tapped cup sends up a little steam before the room goes quiet again. */
 const MUG_STEAM_MS = 2200;
 /** The room's keyboard secret only paints the night window, never the whole screen. */
@@ -219,6 +221,7 @@ export function Cat({
   const plantTaps = useRef({ count: 0, last: -1e9, rainUntil: -1e9, rainbowUntil: -1e9, bloomUntil: -1e9 });
   /** The framed photo is a little proud of itself, but only when it exists. */
   const photoGlint = useRef(-1e9);
+  const photoTaps = useRef({ count: 0, last: -1e9, memoryUntil: -1e9 });
   /** The shelf holds a warm mug, which only needs to announce itself when somebody notices it. */
   const mugSteamedAt = useRef(-1e9);
   /** A gift only sparkles after someone notices what she carried in. */
@@ -402,7 +405,15 @@ export function Cat({
         }
       }
       if (hit?.key === "frame" && framedRef.current) {
-        photoGlint.current = performance.now();
+        const now = performance.now();
+        photoGlint.current = now;
+        const taps = photoTaps.current;
+        taps.count = now - taps.last < 1200 ? taps.count + 1 : 1;
+        taps.last = now;
+        if (taps.count >= 2) {
+          taps.memoryUntil = now + PHOTO_MEMORY_MS;
+          taps.count = 0;
+        }
         play("shutter");
       }
       if (hit?.key === "box" && boxRef.current) {
@@ -808,6 +819,20 @@ export function Cat({
         px(gx + 1, gy, `rgba(255,253,230,${a * 0.55})`);
         px(gx, gy - 1, `rgba(255,253,230,${a * 0.55})`);
         px(gx, gy + 1, `rgba(255,253,230,${a * 0.55})`);
+      }
+      // The second quick tap keeps the frame's reward specific to a real shared action: a small
+      // cluster of warm pixels rises off the photo, then vanishes. It is memory-shaped, not an
+      // always-on heart effect, so the room stays calm until somebody revisits the portrait.
+      const memoryRemaining = photoTaps.current.memoryUntil - t;
+      if (!reduce && framedRef.current && memoryRemaining > 0) {
+        const p = 1 - memoryRemaining / PHOTO_MEMORY_MS;
+        const a = Math.min(1, memoryRemaining / 500);
+        for (let i = 0; i < 3; i++) {
+          const hx = 21 + i * 4 + Math.round(Math.sin(t / 260 + i) * 1);
+          const hy = 11 - Math.round(p * 9) + (i % 2);
+          const c = `rgba(240,174,180,${a * (0.8 - i * 0.12)})`;
+          px(hx, hy, c); px(hx + 2, hy, c); px(hx + 1, hy + 1, c); px(hx + 1, hy + 2, c);
+        }
       }
       blit(PLANT, 87 + shake("plant"), FLOOR - 13, { g: LEAF, w: INK, d: "#b07a4e" });
       // The weather sequence ends where it began: one fresh little flower on the plant. It fades
