@@ -304,6 +304,7 @@ export function Cat({
         return;
       }
       const hit = PROPS.find((q) => x >= q.x && x < q.x + q.sp.w && y >= q.y && y < q.y + q.sp.h);
+      let rainStarted = false;
       // The window has a daytime bird and a night-time shooting star. Neither is shared: they are
       // small things you happen to notice, not events the other person needs to be told about.
       if (hit?.key === "window") {
@@ -326,6 +327,7 @@ export function Cat({
         if (taps.count >= 3) {
           taps.rainUntil = now + RAIN_MS;
           taps.count = 0;
+          rainStarted = true;
         }
       }
       if (hit?.key === "frame" && framedRef.current) {
@@ -342,7 +344,10 @@ export function Cat({
         poked.current = { key: hit.key, at: performance.now() };
         // And she notices. Looking at the thing you touched is most of what makes the room feel lived
         // in, and it costs one number: the eye highlight already knows how to aim at an x.
-        lookAt.current = { x: hit.x + hit.sp.w / 2, until: performance.now() + 2400 };
+        lookAt.current = {
+          x: rainStarted ? WIN_CX : hit.x + hit.sp.w / 2,
+          until: performance.now() + (rainStarted ? 3000 : 2400),
+        };
       }
     };
     const onUp = () => { petting.current = false; };
