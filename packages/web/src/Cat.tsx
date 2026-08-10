@@ -39,6 +39,8 @@ const STAR_MS = 900;
 const LEAF_FALL_MS = 1200;
 /** Just enough time for a picture-frame glint to read, not enough to turn into decoration. */
 const PHOTO_GLINT_MS = 700;
+/** A small secret shower: long enough to notice through the glass, then gone. */
+const RAIN_MS = 5500;
 /**
  * Where it comes to rest, having rolled.
  *
@@ -189,6 +191,7 @@ export function Cat({
   const shootingStar = useRef(-1e9);
   /** The plant is allowed one local little objection when somebody pokes it. */
   const fallingLeaf = useRef(-1e9);
+  const plantTaps = useRef({ count: 0, last: -1e9, rainUntil: -1e9 });
   /** The framed photo is a little proud of itself, but only when it exists. */
   const photoGlint = useRef(-1e9);
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
@@ -308,7 +311,19 @@ export function Cat({
         if (scene.sun < 0.12) shootingStar.current = now;
         else bird.current = now;
       }
-      if (hit?.key === "plant") fallingLeaf.current = performance.now();
+      if (hit?.key === "plant") {
+        const now = performance.now();
+        fallingLeaf.current = now;
+        const taps = plantTaps.current;
+        taps.count = now - taps.last < 1200 ? taps.count + 1 : 1;
+        taps.last = now;
+        // Three quick taps is deliberately discoverable rather than documented. A normal plant
+        // poke is still just a leaf; somebody fiddling with the room gets a weather moment.
+        if (taps.count >= 3) {
+          taps.rainUntil = now + RAIN_MS;
+          taps.count = 0;
+        }
+      }
       if (hit?.key === "frame" && framedRef.current) photoGlint.current = performance.now();
       // A tap at the door is not shared presence — it is just somebody checking whether she is
       // listening. She is, and answers locally before going back to whatever she was doing.
@@ -520,6 +535,17 @@ export function Cat({
           px(sx + 1, sy - 1, `rgba(255,235,170,${a * 0.8})`);
           px(sx + 2, sy - 2, `rgba(255,226,150,${a * 0.45})`);
           px(sx + 3, sy - 3, `rgba(255,226,150,${a * 0.2})`);
+        }
+      }
+      // A tiny shower is the plant's hidden third-tap response. The drops stay inside the window:
+      // weather belongs outside, and a full-room overlay would turn a private discovery into UI.
+      if (!reduce && t < plantTaps.current.rainUntil) {
+        const drift = Math.floor(t / 105);
+        for (let i = 0; i < 6; i++) {
+          const rx = wx + 2 + ((i * 5 + drift) % 12);
+          const ry = wy(1) + ((i * 3 + Math.floor(t / 170)) % 8);
+          px(rx, ry, night ? "#9db2d8" : "#8db4c7");
+          px(rx - 1, ry + 1, night ? "#6f88b2" : "#6f9dad");
         }
       }
       blit(SHELF, 80 + shake("shelf"), FLOOR - 24, { w: INK, d: "#8a6a48" });
