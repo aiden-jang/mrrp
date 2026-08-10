@@ -4,9 +4,21 @@
   --honey:#e0a03f; --ginger:#e8963f; --ginger-dk:#c9752a;
   --sans: ui-rounded,"SF Pro Rounded","Hiragino Maru Gothic ProN",Quicksand,
           ui-sans-serif,-apple-system,system-ui,sans-serif;
+
+  /*
+   * Spring easing, sampled from a damped harmonic oscillator.
+   *
+   * A cubic-bezier cannot go past its endpoint, so nothing built from one can overshoot and settle
+   * back, however springy the control points look. linear() can, because it is a lookup table.
+   * --ease-spring overshoots 1.1%, --ease-bounce 12%. Both are normalized; duration stays separate.
+   */
+  --ease-spring: linear(0, 0.038, 0.13, 0.248, 0.373, 0.494, 0.604, 0.699, 0.778, 0.842, 0.893, 0.931, 0.959, 0.98, 0.993, 1.002, 1.008, 1.01, 1.011, 1.011, 1.01, 1.009, 1.007, 1.006, 1.005, 1.004, 1.003, 1.002, 1);
+  --ease-bounce: linear(0, 0.084, 0.277, 0.507, 0.724, 0.899, 1.022, 1.093, 1.122, 1.121, 1.102, 1.074, 1.046, 1.021, 1.003, 0.991, 0.986, 0.984, 0.986, 0.989, 0.993, 0.996, 0.999, 1.001, 1.002, 1.002, 1.002, 1.002, 1);
 }
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }
+h1, h2, h3 { text-wrap: balance; }
+p { text-wrap: pretty; }
 body {
   margin: 0; color: var(--ink); font-family: var(--sans);
   background: radial-gradient(120% 90% at 78% 6%, var(--air-warm) 0%, var(--air) 60%);
@@ -18,7 +30,9 @@ body {
  * The note is the emotional payload of the whole app and it used to simply exist in a static card the
  * moment the page loaded. A note that appears is information; a note that arrives is a moment, and the
  * difference is about 400ms of easing. The overshoot in the curve is what makes it read as a small
- * physical object settling rather than a div fading in.
+ * physical object settling rather than a div fading in — and it is a real overshoot now. This ran on
+ * a cubic-bezier for a long time, which this comment described as overshooting when it could not:
+ * a bezier is bounded by its endpoints. The curve is a sampled spring.
  *
  * The reduced-motion block at the bottom of this file turns all of it off.
  */
@@ -40,7 +54,7 @@ body {
  * state, because on a phone an element that does not move when you touch it feels dead.
  */
 button, select, [role="button"] {
-  transition: transform .12s cubic-bezier(.34, 1.56, .64, 1), filter .12s ease;
+  transition: transform .18s var(--ease-bounce), filter .12s ease;
   touch-action: manipulation;
 }
 button:active:not(:disabled), select:active { transform: scale(.965); }
