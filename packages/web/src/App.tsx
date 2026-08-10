@@ -1042,7 +1042,7 @@ const S: Record<string, React.CSSProperties> = {
   // two of you being in the room at the same moment happens rarely — and when it did, two identical
   // gold cards stacked on top of each other and the rare one lost. Only one of these should shout.
   theirs: {
-    animation: "rise .34s ease-out both",
+    animation: "rise .42s var(--ease-spring) both",
     margin: "14px 0 2px", padding: "13px 16px", borderRadius: 18,
     background: "var(--panel)", border: "1px solid var(--line)", color: "var(--ink)",
   },
@@ -1052,7 +1052,7 @@ const S: Record<string, React.CSSProperties> = {
     transition: "opacity .25s ease", minHeight: "1.2em",
   },
   together: {
-    animation: "arrive .42s cubic-bezier(.2,.9,.3,1) both",
+    animation: "arrive .5s var(--ease-bounce) both",
     margin: "14px 0 6px", padding: "13px 16px", borderRadius: 18,
     background: "var(--honey)", color: "#fff",
   },
@@ -1112,7 +1112,7 @@ const S: Record<string, React.CSSProperties> = {
     cursor: "pointer", display: "block", margin: "14px auto 0", textDecoration: "underline",
   },
   note: {
-    animation: "arrive .42s cubic-bezier(.2,.9,.3,1) both",
+    animation: "arrive .5s var(--ease-bounce) both",
     margin: "14px 0 2px", padding: "15px 17px", borderRadius: 18,
     background: "var(--panel)", border: "1px solid var(--line)",
     boxShadow: "0 8px 22px -14px rgba(120,84,44,.4)",
