@@ -521,6 +521,8 @@ export function Cat({
       // A bird on the sill, hopping. Two positions on a slow alternation rather than a smooth
       // slide, because a bird does not slide.
       const birding = t - bird.current < BIRD_MS;
+      const starAge = t - shootingStar.current;
+      const stargazing = !reduce && night && starAge >= 0 && starAge < STAR_MS;
       if (birding) {
         const hop = Math.floor(t / 380) % 2;
         blit(BIRD, wx + 4 + hop * 3, 16, { w: INK, b: "#8a6a48", o: "#e0a03f" });
@@ -540,8 +542,7 @@ export function Cat({
         // Tap the window at night and, if you are lucky enough to be looking, a star crosses the
         // glass. It stays inside the pane rather than streaking across the room: this is a tiny
         // discovery, not a new feature asking to be noticed.
-        const starAge = t - shootingStar.current;
-        if (!reduce && starAge >= 0 && starAge < STAR_MS) {
+        if (stargazing) {
           const p = starAge / STAR_MS;
           const sx = Math.round(wx + 14 - p * 10);
           const sy = Math.round(wy(1) + p * 7);
@@ -724,14 +725,14 @@ export function Cat({
       // A door opening holds her eyes open too. Without this she stays loafed through the whole
       // swing at any drowsy hour, because the perk pose needs open eyes and the scene had already
       // decided she was sleepy. A cat sleeps through a lot, but not a door.
-      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming || birding;
+      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming || birding || stargazing;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = forced || (open > 0.4 && !blink);
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
       // A door opening beats whatever she was doing. Perk is the ears-up, head-turned pose, and it
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
       // cat that did not notice, which is the one thing this feature is for.
-      const noticing = (doorRef.current !== null || birding) && posed;
+      const noticing = (doorRef.current !== null || birding || stargazing) && posed;
       const pose: Pose = zooming ? "play" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
