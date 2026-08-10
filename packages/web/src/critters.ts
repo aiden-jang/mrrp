@@ -24,6 +24,20 @@ export interface Moth {
   presence: number;
 }
 
+export interface Firefly {
+  x: number;
+  y: number;
+  presence: number;
+}
+
+/** A slower, wider night visitor for the window garden. */
+export function fireflyAt(t: number): Firefly | null {
+  const cycle = ((t % 76_000) + 76_000) % 76_000;
+  if (cycle >= 15_000) return null;
+  const k = cycle / 15_000;
+  return { x: 50 + Math.sin(k * Math.PI * 4) * 15, y: 37 + Math.cos(k * Math.PI * 3) * 6, presence: Math.sin(k * Math.PI) };
+}
+
 /**
  * Where the moth is at time `t`, or null when it isn't visiting.
  *

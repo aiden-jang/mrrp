@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Cat as CatLook, Clock, Gift, Mood } from "./types.js";
 import { mixHex, sceneFor } from "./hours.js";
-import { mothAt } from "./critters.js";
+import { fireflyAt, mothAt } from "./critters.js";
 import { play } from "./sound.js";
 import { BED, BIRD, BOX_BACK, BOX_FRONT, DOOR, EK, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, MUG, MUG_DOWN, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
@@ -860,7 +860,7 @@ export function Cat({
       // needs no timing of its own. It drifts around the middle of the room rather than the sunbeam,
       // because at night there is no beam to stay inside of.
       if (!reduce && sc.sun < 0.1) {
-        const f = mothAt(t + 47_000, GW / 2);
+        const f = fireflyAt(t);
         if (f) {
           const a = 0.35 + Math.abs(Math.sin(t / 420)) * 0.65 * f.presence;
           const fx = Math.round(f.x), fy = Math.round(f.y + 14);

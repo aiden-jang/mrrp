@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MOTH_CYCLE_MS, MOTH_SPREAD, MOTH_VISIT_MS, mothAt } from "./critters.js";
+import { MOTH_CYCLE_MS, MOTH_SPREAD, MOTH_VISIT_MS, fireflyAt, mothAt } from "./critters.js";
 
 /**
  * Moth timing, checked by arithmetic rather than by screenshot.
@@ -76,5 +76,18 @@ describe("the moth", () => {
   it("survives a negative clock without vanishing forever", () => {
     // performance.now() is never negative, but a caller doing arithmetic on it might be.
     expect(() => mothAt(-500, BEAM)).not.toThrow();
+  });
+});
+
+describe("the firefly", () => {
+  it("visits briefly, then leaves the night room alone", () => {
+    expect(fireflyAt(0)).not.toBeNull();
+    expect(fireflyAt(14_999)).not.toBeNull();
+    expect(fireflyAt(15_000)).toBeNull();
+  });
+
+  it("fades at the edges of its visit", () => {
+    expect(fireflyAt(0)!.presence).toBeCloseTo(0, 2);
+    expect(fireflyAt(7_500)!.presence).toBeCloseTo(1, 2);
   });
 });
