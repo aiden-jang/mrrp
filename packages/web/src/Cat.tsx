@@ -34,6 +34,8 @@ const BOX_X = 44, BOX_Y = FLOOR + 9;
 const ZOOM_MS = 1600;
 /** How long a bird stays before it gets bored of her. */
 const BIRD_MS = 5200;
+/** A second look at the daytime window scatters a small prism through the room. */
+const SUN_CATCHER_MS = 3200;
 /** A shooting star is gone before it can turn into an animation someone waits to see again. */
 const STAR_MS = 900;
 /** A double-tap at the night window leaves a tiny constellation to find for a moment. */
@@ -211,7 +213,7 @@ export function Cat({
   /** A night-only window surprise. Like the bird, it is a moment rather than shared room state. */
   const shootingStar = useRef(-1e9);
   /** Looking twice is a little different from looking once. */
-  const windowTaps = useRef({ count: 0, last: -1e9, constellationUntil: -1e9 });
+  const windowTaps = useRef({ count: 0, last: -1e9, constellationUntil: -1e9, sunCatcherUntil: -1e9 });
   /** When the box gets a tap, she rises just far enough to be caught looking. */
   const boxPeekUntil = useRef(-1e9);
   /** A tapped bed is an invitation, not a command; she only stays for a small local while. */
@@ -386,6 +388,13 @@ export function Cat({
         else {
           bird.current = now;
           play("chirp");
+          const taps = windowTaps.current;
+          taps.count = now - taps.last < 1400 ? taps.count + 1 : 1;
+          taps.last = now;
+          if (taps.count >= 2) {
+            taps.sunCatcherUntil = now + SUN_CATCHER_MS;
+            taps.count = 0;
+          }
         }
       }
       if (hit?.key === "plant") {
@@ -453,6 +462,9 @@ export function Cat({
     };
     const onUp = () => { petting.current = false; ptr.in = true; };
     const onKey = (e: KeyboardEvent) => {
+      // The room needs focus for its little code. Once it has it, arrow keys should not also scroll
+      // the page away from the window while someone is trying the sequence.
+      if (ROOM_CODE.includes(e.key)) e.preventDefault();
       const expected = ROOM_CODE[roomCodeAt];
       roomCodeAt = e.key === expected ? roomCodeAt + 1 : e.key === ROOM_CODE[0] ? 1 : 0;
       if (roomCodeAt === ROOM_CODE.length) {
@@ -635,6 +647,7 @@ export function Cat({
       const starAge = t - shootingStar.current;
       const stargazing = !reduce && night && starAge >= 0 && starAge < STAR_MS;
       const constellating = night && t < windowTaps.current.constellationUntil;
+      const sunCatching = !reduce && !night && t < windowTaps.current.sunCatcherUntil;
       const aurora = !reduce && night && t < auroraUntil.current;
       if (birding) {
         const hop = Math.floor(t / 380) % 2;
@@ -690,6 +703,24 @@ export function Cat({
               : `rgba(173,141,230,${fade * 0.55})`;
             for (let col = start; col < 15; col += 3) px(wx + col, wy(row), color);
           }
+        }
+      }
+      // A pair of quick daytime taps gets more than the bird: it catches a little coloured light
+      // on the wall and boards. It lives in the sunbeam rather than becoming a screen-wide rainbow,
+      // so it still feels like something the window made, not a reward layer on top of the room.
+      if (sunCatching) {
+        const remaining = windowTaps.current.sunCatcherUntil - t;
+        const a = Math.min(1, remaining / 550) * 0.62;
+        const colors = [
+          `rgba(232,150,144,${a})`,
+          `rgba(236,191,104,${a})`,
+          `rgba(139,187,139,${a})`,
+          `rgba(137,164,215,${a})`,
+        ];
+        for (let i = 0; i < colors.length; i++) {
+          const x = WIN_CX - 8 + i * 5 + Math.round(Math.sin(t / 480 + i) * 1);
+          rect(x, 25 + i, 3, 1, colors[i]!);
+          px(x + 1, FLOOR + 8 + i * 2, colors[i]!);
         }
       }
       // A tiny shower is the plant's hidden third-tap response. The drops stay inside the window:
@@ -958,14 +989,14 @@ export function Cat({
       // A door opening holds her eyes open too. Without this she stays loafed through the whole
       // swing at any drowsy hour, because the perk pose needs open eyes and the scene had already
       // decided she was sleepy. A cat sleeps through a lot, but not a door.
-      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming || birding || stargazing || constellating || rainbowing || plantBlooming || peeking;
+      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = forced || (open > 0.4 && !blink);
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
       // A door opening beats whatever she was doing. Perk is the ears-up, head-turned pose, and it
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
       // cat that did not notice, which is the one thing this feature is for.
-      const noticing = (doorRef.current !== null || birding || stargazing || constellating || rainbowing || plantBlooming || peeking) && posed;
+      const noticing = (doorRef.current !== null || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking) && posed;
       const pose: Pose = zooming ? "play" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
