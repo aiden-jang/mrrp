@@ -107,6 +107,7 @@ export function Cat({
   together = false,
   onPet,
   onPoke,
+  onCapture,
 }: {
   /** What the room says in words. The canvas is otherwise silent to a screen reader. */
   label: string;
@@ -168,6 +169,8 @@ export function Cat({
   onPet?: () => void;
   /** She tapped her own cat. Local only, no request. */
   onPoke?: () => void;
+  /** Exposes a PNG capture of the rendered room without leaking the canvas out of this component. */
+  onCapture?: (capture: () => Promise<Blob | null>) => void;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const lookRef = useRef(look);
@@ -253,6 +256,17 @@ export function Cat({
   const catX = useRef<number | null>(null);
   const bounce = useRef(0);
   const lastNudge = useRef(nudge);
+
+  useEffect(() => {
+    if (!onCapture) return;
+    onCapture(() =>
+      new Promise((resolve) => {
+        const canvas = ref.current;
+        if (!canvas) return resolve(null);
+        canvas.toBlob((blob) => resolve(blob), "image/png");
+      }),
+    );
+  }, [onCapture]);
 
   /** When to stop showing the speech bubble. Same clock as the rAF timestamp, so the loop can read it. */
   const speakUntil = useRef(0);

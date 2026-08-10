@@ -242,7 +242,12 @@ function Landing() {
 /* ─────────────── the room ─────────────── */
 function RoomPage({ id }: { id: string }) {
   const [view, setView] = useState<RoomView | null>(null);
+  const [captureRoom, setCaptureRoom] = useState<(() => Promise<Blob | null>) | null>(null);
+  const [imageStatus, setImageStatus] = useState<"saving" | "saved" | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const handleCaptureReady = useCallback((capture: () => Promise<Blob | null>) => {
+    setCaptureRoom(() => capture);
+  }, []);
   /** Put the mug back. Either seat may, so this is not gated on being him. */
   const tidy = useCallback(async () => {
     const r = roomFromPath();
@@ -254,6 +259,27 @@ function RoomPage({ id }: { id: string }) {
       // A failed tidy is not worth an error banner. The mug is still on the floor; tap it again.
     }
   }, []);
+
+  const saveRoomImage = async (): Promise<void> => {
+    if (!captureRoom || imageStatus) return;
+    setImageStatus("saving");
+    try {
+      const blob = await captureRoom();
+      if (!blob) throw new Error("capture unavailable");
+      const href = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = href;
+      link.download = `${view?.cat.name?.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") || "mrrp"}-room.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(href), 1000);
+      setImageStatus("saved");
+      window.setTimeout(() => setImageStatus(null), 2200);
+    } catch {
+      setImageStatus(null);
+    }
+  };
 
   const [doorOpenAt, setDoorOpenAt] = useState<number | null>(null);
   const wasHere = useRef<boolean | null>(null);
@@ -558,6 +584,7 @@ function RoomPage({ id }: { id: string }) {
             together={view.bothHereNow}
             onPet={() => void act("pet")}
             onPoke={() => { play("mrrp"); setNudge((v) => v + 1); }}
+            onCapture={handleCaptureReady}
           />
 
         </div>
@@ -568,6 +595,12 @@ function RoomPage({ id }: { id: string }) {
         <p style={S.doing}>
           {setup ? `Picking out ${view.cat.name}.` : `${view.cat.name} is ${scene.doing}.`}
         </p>
+
+        {captureRoom && !setup && (
+          <button style={S.quiet} onClick={() => void saveRoomImage()} disabled={imageStatus !== null}>
+            {imageStatus === "saving" ? "Saving room…" : imageStatus === "saved" ? "Saved this moment" : "Save this moment"}
+          </button>
+        )}
 
         {/* The one gesture that isn't a button was also the one nobody could find. It disappears after
             the first touch rather than nagging, and it is never shown to a spectator, who has nothing
