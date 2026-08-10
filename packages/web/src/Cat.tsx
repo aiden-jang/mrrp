@@ -263,7 +263,7 @@ export function Cat({
       ptr.y = ((e.clientY - r.top) / r.height) * GH;
       ptr.in = true;
     };
-    const onLeave = () => { ptr.in = false; petting.current = false; };
+    const onLeave = () => { ptr.in = false; petting.current = false; lookAt.current = null; poked.current = null; };
 
     /*
      * Taps are hit-tested here, against the same coordinates the draw code uses.
@@ -350,7 +350,7 @@ export function Cat({
         };
       }
     };
-    const onUp = () => { petting.current = false; };
+    const onUp = () => { petting.current = false; ptr.in = true; };
     cv.addEventListener("pointermove", onMove);
     cv.addEventListener("pointerleave", onLeave);
     cv.addEventListener("pointerdown", onDown);
