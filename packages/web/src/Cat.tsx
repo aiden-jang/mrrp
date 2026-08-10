@@ -565,6 +565,17 @@ export function Cat({
           px(rx, ry, night ? `rgba(157,178,216,${a})` : `rgba(141,180,199,${a})`);
           px(rx - 1, ry + 1, night ? `rgba(111,136,178,${a})` : `rgba(111,157,173,${a})`);
         }
+        // A rare two-frame flash turns the secret shower into weather without lighting the whole
+        // room like an effect layer. It stays outside, behind the glass.
+        if (Math.floor(t / 1700) % 3 === 0 && t % 1700 < 90) {
+          px(wx + 11, wy(2), `rgba(255,248,210,${a})`);
+          px(wx + 10, wy(3), `rgba(255,248,210,${a})`);
+          px(wx + 11, wy(4), `rgba(255,248,210,${a})`);
+          px(wx + 10, wy(5), `rgba(255,248,210,${a})`);
+          px(wx + 9, wy(6), `rgba(255,248,210,${a * 0.7})`);
+          px(wx + 9, wy(7), `rgba(255,248,210,${a * 0.45})`);
+          px(wx + 8, wy(8), `rgba(255,248,210,${a * 0.25})`);
+        }
       }
       blit(SHELF, 80 + shake("shelf"), FLOOR - 24, { w: INK, d: "#8a6a48" });
       // The mug: on the shelf, or on its side on the boards under it. Same object either way, so
