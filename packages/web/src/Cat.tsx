@@ -41,7 +41,7 @@ const LEAF_FALL_MS = 1200;
 /** Just enough time for a picture-frame glint to read, not enough to turn into decoration. */
 const PHOTO_GLINT_MS = 700;
 /** A small secret shower: long enough to notice through the glass, then gone. */
-const RAIN_MS = 6200;
+const RAIN_MS = 6800;
 /**
  * Where it comes to rest, having rolled.
  *
@@ -346,7 +346,7 @@ export function Cat({
         // in, and it costs one number: the eye highlight already knows how to aim at an x.
         lookAt.current = {
           x: rainStarted ? WIN_CX : hit.x + hit.sp.w / 2,
-          until: performance.now() + (rainStarted ? 3600 : 2400),
+          until: performance.now() + (rainStarted ? 4200 : 2400),
         };
       }
     };
