@@ -932,7 +932,8 @@ export function Cat({
         // Holding to pet needs the browser to stop treating the drag as a scroll. Only his side holds,
         // so everyone else keeps normal scrolling over the canvas.
         touchAction: role === "him" ? "none" : "manipulation",
-        cursor: role ? "grab" : "default",
+        // The room responds to taps/presses; a grab hand promises a drag that does not exist.
+        cursor: role ? "pointer" : "default",
       }}
     />
   );
