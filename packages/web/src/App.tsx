@@ -40,6 +40,51 @@ function SoundToggle() {
   );
 }
 
+/** Copy with the small fallback needed by older browsers and embedded web views. */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const input = document.createElement("textarea");
+      input.value = text;
+      input.style.position = "fixed";
+      input.style.opacity = "0";
+      document.body.appendChild(input);
+      input.select();
+      const copied = document.execCommand("copy");
+      input.remove();
+      return copied;
+    } catch {
+      return false;
+    }
+  }
+}
+
+/** A recovery code only helps if it can leave this phone before it is lost. */
+function RecoveryCode({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    if (await copyText(code)) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    }
+  };
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <p style={{ ...S.code, flex: 1 }}>{code}</p>
+      <button
+        type="button"
+        style={{ ...S.btn, flexShrink: 0, padding: "9px 11px", fontSize: 12.5 }}
+        onClick={() => void copy()}
+      >
+        {copied ? "Copied" : "Copy"}
+      </button>
+    </div>
+  );
+}
+
 /** "this morning", "yesterday evening" — warmer and vaguer than a timestamp, which is the point. */
 function whenish(at: number): string {
   const mins = Math.round((Date.now() - at) / 60000);
@@ -262,7 +307,7 @@ function RoomPage({ id }: { id: string }) {
 
   const [asking, setAsking] = useState(!myName.get());
   const [name, setName] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [shareResult, setShareResult] = useState<"copied" | "shared" | null>(null);
   const [did, setDid] = useState<string | null>(null);
   const [line, setLine] = useState("");
   const [lineOpen, setLineOpen] = useState(false);
@@ -393,6 +438,29 @@ function RoomPage({ id }: { id: string }) {
     } catch {
       void load(); // put the real state back if it never landed
     }
+  };
+
+  const shareRoom = async () => {
+    const resetResult = (result: "copied" | "shared") => {
+      setShareResult(result);
+      setTimeout(() => setShareResult(null), 2200);
+    };
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({
+          title: "mrrp",
+          text: `I made a room with ${view?.cat.name ?? "a cat"} for you.`,
+          url: location.href,
+        });
+        resetResult("shared");
+        return;
+      } catch (e) {
+        // Dismissing the sheet is a choice, not an error to turn into a
+        // surprise clipboard write. Other failures retain that fallback.
+        if (e instanceof Error && e.name === "AbortError") return;
+      }
+    }
+    if (await copyText(location.href)) resetResult("copied");
   };
 
   if (asking) {
@@ -664,7 +732,7 @@ function RoomPage({ id }: { id: string }) {
                   Save this somewhere that is not this phone. It is the only way to get your side of the
                   room back if you lose it.
                 </p>
-                <p style={S.code}>{view.recoveryCode}</p>
+                <RecoveryCode code={view.recoveryCode} />
               </>
             )}
 
@@ -708,13 +776,13 @@ function RoomPage({ id }: { id: string }) {
             )}
             <button
               style={{ ...S.btn, ...S.btnGo, width: "100%", marginTop: 8 }}
-              onClick={() => {
-                void navigator.clipboard.writeText(location.href);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2200);
-              }}
+              onClick={() => void shareRoom()}
             >
-              {copied ? "Copied. Go send it." : "Copy the link"}
+              {shareResult === "shared"
+                ? "Sent."
+                : shareResult === "copied"
+                  ? "Copied. Go send it."
+                  : "Send her the link"}
             </button>
           </>
         ) : view.youAreHer ? (
@@ -967,7 +1035,7 @@ function RoomPage({ id }: { id: string }) {
               The only way to get your side of the room back on a new phone. Keep it somewhere that
               is not this phone.
             </p>
-            <p style={S.code}>{view.recoveryCode}</p>
+            <RecoveryCode code={view.recoveryCode} />
           </details>
         )}
 
