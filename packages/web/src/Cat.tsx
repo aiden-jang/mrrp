@@ -42,6 +42,11 @@ const CONSTELLATION_MS = 6200;
 const LEAF_FALL_MS = 1200;
 /** Just enough time for a picture-frame glint to read, not enough to turn into decoration. */
 const PHOTO_GLINT_MS = 700;
+/** A just-tapped cup sends up a little steam before the room goes quiet again. */
+const MUG_STEAM_MS = 2200;
+/** The room's keyboard secret only paints the night window, never the whole screen. */
+const AURORA_MS = 5600;
+const ROOM_CODE = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight"];
 /** A small secret shower: long enough to notice through the glass, then gone. */
 const RAIN_MS = 6800;
 /**
@@ -205,6 +210,10 @@ export function Cat({
   const plantTaps = useRef({ count: 0, last: -1e9, rainUntil: -1e9 });
   /** The framed photo is a little proud of itself, but only when it exists. */
   const photoGlint = useRef(-1e9);
+  /** The shelf holds a warm mug, which only needs to announce itself when somebody notices it. */
+  const mugSteamedAt = useRef(-1e9);
+  /** A tiny keyboard secret. It is local, ephemeral, and only visible through the night window. */
+  const auroraUntil = useRef(-1e9);
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
   const doorShutFrom = useRef({ at: 0, from: 0 });
   lookRef.current = look;
@@ -267,6 +276,7 @@ export function Cat({
     ro.observe(cv);
 
     const ptr = { x: GW / 2, y: FLOOR + 10, in: false };
+    let roomCodeAt = 0;
     const onMove = (e: PointerEvent) => {
       const r = cv.getBoundingClientRect();
       ptr.x = cam + ((e.clientX - r.left) / r.width) * VW;
@@ -288,6 +298,7 @@ export function Cat({
       return { x: cam + ((e.clientX - r.left) / r.width) * VW, y: ((e.clientY - r.top) / r.height) * GH };
     };
     const onDown = (e: PointerEvent) => {
+      cv.focus({ preventScroll: true });
       const { x, y } = gridAt(e);
       ptr.x = x; ptr.y = y; ptr.in = true;
       // Her first, and with a couple of pixels of slack, because a finger is much bigger than a cat
@@ -366,6 +377,9 @@ export function Cat({
       if (hit?.key === "bed") {
         bedNestUntil.current = performance.now() + 8000;
       }
+      if (hit?.key === "shelf" && !downRef.current) {
+        mugSteamedAt.current = performance.now();
+      }
       // A tap at the door is not shared presence — it is just somebody checking whether she is
       // listening. She is, and answers locally before going back to whatever she was doing.
       if (hit?.key === "door") {
@@ -383,11 +397,21 @@ export function Cat({
       }
     };
     const onUp = () => { petting.current = false; ptr.in = true; };
+    const onKey = (e: KeyboardEvent) => {
+      const expected = ROOM_CODE[roomCodeAt];
+      roomCodeAt = e.key === expected ? roomCodeAt + 1 : e.key === ROOM_CODE[0] ? 1 : 0;
+      if (roomCodeAt === ROOM_CODE.length) {
+        auroraUntil.current = performance.now() + AURORA_MS;
+        speakUntil.current = performance.now() + 1000;
+        roomCodeAt = 0;
+      }
+    };
     cv.addEventListener("pointermove", onMove);
     cv.addEventListener("pointerleave", onLeave);
     cv.addEventListener("pointerdown", onDown);
     cv.addEventListener("pointerup", onUp);
     cv.addEventListener("pointercancel", onUp);
+    cv.addEventListener("keydown", onKey);
 
     // Dust lives in the beam. Integer positions, because half a pixel of dust is a grey smudge.
     // Offsets are relative to the shaft's centre at that height, so dust can never drift outside
@@ -556,6 +580,7 @@ export function Cat({
       const starAge = t - shootingStar.current;
       const stargazing = !reduce && night && starAge >= 0 && starAge < STAR_MS;
       const constellating = night && t < windowTaps.current.constellationUntil;
+      const aurora = !reduce && night && t < auroraUntil.current;
       if (birding) {
         const hop = Math.floor(t / 380) % 2;
         blit(BIRD, wx + 4 + hop * 3, 16, { w: INK, b: "#8a6a48", o: "#e0a03f" });
@@ -597,6 +622,20 @@ export function Cat({
             px(wx + sx, wy(sy), `rgba(255,226,150,${fade * 0.55})`);
           }
         }
+        // The code's reward is a soft aurora caught in the glass, rather than a loud full-screen
+        // effect. Two dithered ribbons move at different speeds so it feels like light outside,
+        // not coloured lines drawn on top of the room.
+        if (aurora) {
+          const fade = Math.min(1, (auroraUntil.current - t) / 900);
+          for (let row = 1; row < 9; row++) {
+            const drift = Math.round(Math.sin(t / 520 + row * 0.85) * 3);
+            const start = 3 + ((row + drift + 12) % 5);
+            const color = row % 2 === 0
+              ? `rgba(126,216,180,${fade * 0.7})`
+              : `rgba(173,141,230,${fade * 0.55})`;
+            for (let col = start; col < 15; col += 3) px(wx + col, wy(row), color);
+          }
+        }
       }
       // A tiny shower is the plant's hidden third-tap response. The drops stay inside the window:
       // weather belongs outside, and a full-room overlay would turn a private discovery into UI.
@@ -629,6 +668,19 @@ export function Cat({
         blit(MUG_DOWN, MUG_FLOOR_X, MUG_FLOOR_Y, { w: INK, c: "#cfe0e4", d: "#a9c2c8" });
       } else {
         blit(MUG, 84 + shake("shelf"), FLOOR - 29, { w: INK, c: "#cfe0e4", d: "#a9c2c8" });
+        // A shelf tap makes it clear the cup is still warm. The steam is a short local response,
+        // not a permanent animated accessory competing with the cat for attention.
+        const steamAge = t - mugSteamedAt.current;
+        if (!reduce && steamAge >= 0 && steamAge < MUG_STEAM_MS) {
+          const p = steamAge / MUG_STEAM_MS;
+          const a = (1 - p) * 0.55;
+          for (let i = 0; i < 2; i++) {
+            const sx = 87 + i * 3 + Math.round(Math.sin(t / 180 + i) * 1);
+            const sy = FLOOR - 31 - Math.round(p * 7) - i;
+            px(sx, sy, `rgba(255,253,235,${a})`);
+            px(sx + 1, sy - 1, `rgba(255,253,235,${a * 0.45})`);
+          }
+        }
       }
       {
         const prog = doorProg;
@@ -1029,6 +1081,7 @@ export function Cat({
       cv.removeEventListener("pointerdown", onDown);
       cv.removeEventListener("pointerup", onUp);
       cv.removeEventListener("pointercancel", onUp);
+      cv.removeEventListener("keydown", onKey);
     };
   }, []);
 
@@ -1036,6 +1089,7 @@ export function Cat({
     <canvas
       ref={ref}
       role="img"
+      tabIndex={0}
       aria-label={`${label} The room has quiet interactive details.`}
       style={{
         display: "block", width: "100%", height: "100%", imageRendering: "pixelated",
