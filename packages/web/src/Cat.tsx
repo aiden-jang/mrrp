@@ -49,6 +49,10 @@ const AURORA_MS = 5600;
 const ROOM_CODE = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight"];
 /** A small secret shower: long enough to notice through the glass, then gone. */
 const RAIN_MS = 6800;
+/** The brief bright thing that can follow the plant's hidden storm. */
+const RAINBOW_MS = 2600;
+/** A small bloom hangs around after the rainbow, then leaves the room as it found it. */
+const PLANT_BLOOM_MS = 3800;
 /**
  * Where it comes to rest, having rolled.
  *
@@ -207,7 +211,7 @@ export function Cat({
   const bedNestUntil = useRef(-1e9);
   /** The plant is allowed one local little objection when somebody pokes it. */
   const fallingLeaf = useRef(-1e9);
-  const plantTaps = useRef({ count: 0, last: -1e9, rainUntil: -1e9 });
+  const plantTaps = useRef({ count: 0, last: -1e9, rainUntil: -1e9, rainbowUntil: -1e9, bloomUntil: -1e9 });
   /** The framed photo is a little proud of itself, but only when it exists. */
   const photoGlint = useRef(-1e9);
   /** The shelf holds a warm mug, which only needs to announce itself when somebody notices it. */
@@ -361,6 +365,8 @@ export function Cat({
         // poke is still just a leaf; somebody fiddling with the room gets a weather moment.
         if (taps.count >= 3) {
           taps.rainUntil = now + RAIN_MS;
+          taps.rainbowUntil = taps.rainUntil + RAINBOW_MS;
+          taps.bloomUntil = taps.rainbowUntil + PLANT_BLOOM_MS;
           taps.count = 0;
           rainStarted = true;
         }
@@ -640,6 +646,8 @@ export function Cat({
       // A tiny shower is the plant's hidden third-tap response. The drops stay inside the window:
       // weather belongs outside, and a full-room overlay would turn a private discovery into UI.
       const rainRemaining = plantTaps.current.rainUntil - t;
+      const rainbowing = !reduce && rainRemaining <= 0 && t < plantTaps.current.rainbowUntil;
+      const plantBlooming = !reduce && t >= plantTaps.current.rainbowUntil && t < plantTaps.current.bloomUntil;
       if (!reduce && rainRemaining > 0) {
         const drift = Math.floor(t / 90);
         const a = Math.min(1, rainRemaining / 750);
@@ -659,6 +667,22 @@ export function Cat({
           px(wx + 9, wy(6), `rgba(255,248,210,${a * 0.7})`);
           px(wx + 9, wy(7), `rgba(255,248,210,${a * 0.45})`);
           px(wx + 8, wy(8), `rgba(255,248,210,${a * 0.25})`);
+        }
+      }
+      // A storm from the plant's third tap ends with a small rainbow held behind the same pane.
+      // It uses a U-shaped band rather than a smooth curve: one pixel per hue keeps it part of
+      // this room's visual language, and the short fade means the reward feels caught, not parked.
+      if (rainbowing) {
+        const a = Math.min(1, (plantTaps.current.rainbowUntil - t) / 500);
+        const colors = [
+          `rgba(232,137,122,${a})`,
+          `rgba(238,184,91,${a})`,
+          `rgba(125,181,119,${a})`,
+          `rgba(128,155,213,${a})`,
+        ];
+        for (let x = 2; x < 15; x++) {
+          const curve = Math.floor(Math.abs(x - 8) / 2);
+          colors.forEach((color, band) => px(wx + x, wy(1 + band + curve), color));
         }
       }
       blit(SHELF, 80 + shake("shelf"), FLOOR - 24, { w: INK, d: "#8a6a48" });
@@ -732,6 +756,13 @@ export function Cat({
         px(gx, gy + 1, `rgba(255,253,230,${a * 0.55})`);
       }
       blit(PLANT, 87 + shake("plant"), FLOOR - 13, { g: LEAF, w: INK, d: "#b07a4e" });
+      // The weather sequence ends where it began: one fresh little flower on the plant. It fades
+      // away after a few seconds so the room never accumulates a permanent checklist of secrets.
+      if (plantBlooming) {
+        const a = Math.min(1, (plantTaps.current.bloomUntil - t) / 700);
+        const c = `rgba(236,151,169,${a})`;
+        px(93, FLOOR - 16, c); px(92, FLOOR - 15, c); px(94, FLOOR - 15, c); px(93, FLOOR - 14, "#e7c75f");
+      }
       // A plant tap drops one leaf. It is intentionally a little easier to miss than the plant
       // itself: the pleasure is in catching it, not in being prompted to make it happen.
       const leafAge = t - fallingLeaf.current;
@@ -840,14 +871,14 @@ export function Cat({
       // A door opening holds her eyes open too. Without this she stays loafed through the whole
       // swing at any drowsy hour, because the perk pose needs open eyes and the scene had already
       // decided she was sleepy. A cat sleeps through a lot, but not a door.
-      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming || birding || stargazing || constellating || peeking;
+      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming || birding || stargazing || constellating || rainbowing || plantBlooming || peeking;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = forced || (open > 0.4 && !blink);
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
       // A door opening beats whatever she was doing. Perk is the ears-up, head-turned pose, and it
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
       // cat that did not notice, which is the one thing this feature is for.
-      const noticing = (doorRef.current !== null || birding || stargazing || constellating || peeking) && posed;
+      const noticing = (doorRef.current !== null || birding || stargazing || constellating || rainbowing || plantBlooming || peeking) && posed;
       const pose: Pose = zooming ? "play" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
