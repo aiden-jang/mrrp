@@ -320,7 +320,7 @@ export function Cat({
         const now = performance.now();
         fallingLeaf.current = now;
         const taps = plantTaps.current;
-        taps.count = now - taps.last < 1200 ? taps.count + 1 : 1;
+        taps.count = now - taps.last < 1400 ? taps.count + 1 : 1;
         taps.last = now;
         // Three quick taps is deliberately discoverable rather than documented. A normal plant
         // poke is still just a leaf; somebody fiddling with the room gets a weather moment.
