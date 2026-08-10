@@ -346,7 +346,7 @@ export function Cat({
         // in, and it costs one number: the eye highlight already knows how to aim at an x.
         lookAt.current = {
           x: rainStarted ? WIN_CX : hit.x + hit.sp.w / 2,
-          until: performance.now() + (rainStarted ? 3000 : 2400),
+          until: performance.now() + (rainStarted ? 3600 : 2400),
         };
       }
     };
