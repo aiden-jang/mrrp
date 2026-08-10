@@ -41,7 +41,7 @@ const LEAF_FALL_MS = 1200;
 /** Just enough time for a picture-frame glint to read, not enough to turn into decoration. */
 const PHOTO_GLINT_MS = 700;
 /** A small secret shower: long enough to notice through the glass, then gone. */
-const RAIN_MS = 5500;
+const RAIN_MS = 6200;
 /**
  * Where it comes to rest, having rolled.
  *
