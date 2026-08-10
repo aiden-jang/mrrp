@@ -549,13 +549,15 @@ export function Cat({
       }
       // A tiny shower is the plant's hidden third-tap response. The drops stay inside the window:
       // weather belongs outside, and a full-room overlay would turn a private discovery into UI.
-      if (!reduce && t < plantTaps.current.rainUntil) {
+      const rainRemaining = plantTaps.current.rainUntil - t;
+      if (!reduce && rainRemaining > 0) {
         const drift = Math.floor(t / 105);
+        const a = Math.min(1, rainRemaining / 500);
         for (let i = 0; i < 6; i++) {
           const rx = wx + 2 + ((i * 5 + drift) % 12);
           const ry = wy(1) + ((i * 3 + Math.floor(t / 170)) % 8);
-          px(rx, ry, night ? "#9db2d8" : "#8db4c7");
-          px(rx - 1, ry + 1, night ? "#6f88b2" : "#6f9dad");
+          px(rx, ry, night ? `rgba(157,178,216,${a})` : `rgba(141,180,199,${a})`);
+          px(rx - 1, ry + 1, night ? `rgba(111,136,178,${a})` : `rgba(111,157,173,${a})`);
         }
       }
       blit(SHELF, 80 + shake("shelf"), FLOOR - 24, { w: INK, d: "#8a6a48" });
