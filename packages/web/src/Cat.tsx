@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import type { Cat as CatLook, Clock, Gift, Mood } from "./types.js";
 import { mixHex, sceneFor } from "./hours.js";
 import { mothAt } from "./critters.js";
+import { play } from "./sound.js";
 import { BED, BIRD, BOX_BACK, BOX_FRONT, DOOR, EK, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, MUG, MUG_DOWN, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
@@ -327,7 +328,10 @@ export function Cat({
       if (hit?.key === "frame" && framedRef.current) photoGlint.current = performance.now();
       // A tap at the door is not shared presence — it is just somebody checking whether she is
       // listening. She is, and answers locally before going back to whatever she was doing.
-      if (hit?.key === "door") speakUntil.current = performance.now() + 900;
+      if (hit?.key === "door") {
+        speakUntil.current = performance.now() + 900;
+        play("mrrp");
+      }
       if (hit) {
         poked.current = { key: hit.key, at: performance.now() };
         // And she notices. Looking at the thing you touched is most of what makes the room feel lived
