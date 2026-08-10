@@ -970,7 +970,7 @@ export function Cat({
     <canvas
       ref={ref}
       role="img"
-      aria-label={label}
+      aria-label={`${label} The room has quiet interactive details.`}
       style={{
         display: "block", width: "100%", height: "100%", imageRendering: "pixelated",
         // Holding to pet needs the browser to stop treating the drag as a scroll. Only his side holds,
