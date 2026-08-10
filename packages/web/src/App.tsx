@@ -243,7 +243,7 @@ function Landing() {
 function RoomPage({ id }: { id: string }) {
   const [view, setView] = useState<RoomView | null>(null);
   const [captureRoom, setCaptureRoom] = useState<(() => Promise<Blob | null>) | null>(null);
-  const [imageStatus, setImageStatus] = useState<"saving" | "saved" | null>(null);
+  const [imageStatus, setImageStatus] = useState<"saving" | "shared" | "saved" | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const handleCaptureReady = useCallback((capture: () => Promise<Blob | null>) => {
     setCaptureRoom(() => capture);
@@ -266,10 +266,29 @@ function RoomPage({ id }: { id: string }) {
     try {
       const blob = await captureRoom();
       if (!blob) throw new Error("capture unavailable");
+      const fileName = `${view?.cat.name?.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") || "mrrp"}-room.png`;
+      const file = new File([blob], fileName, { type: "image/png" });
+      const share = navigator as Navigator & { canShare?: (data?: ShareData) => boolean };
+      // Sharing the actual image feels right on a phone (Messages, WhatsApp, etc.). `canShare` is
+      // essential: Safari can expose navigator.share while declining files, in which case we keep
+      // the ordinary PNG download rather than showing a share sheet that cannot complete.
+      if (navigator.share && share.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ title: `${view?.cat.name ?? "mrrp"}'s room`, files: [file] });
+          setImageStatus("shared");
+          window.setTimeout(() => setImageStatus(null), 2200);
+          return;
+        } catch (err) {
+          if (err instanceof Error && err.name === "AbortError") {
+            setImageStatus(null);
+            return;
+          }
+        }
+      }
       const href = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = href;
-      link.download = `${view?.cat.name?.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") || "mrrp"}-room.png`;
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -598,7 +617,7 @@ function RoomPage({ id }: { id: string }) {
 
         {captureRoom && !setup && (
           <button style={S.quiet} onClick={() => void saveRoomImage()} disabled={imageStatus !== null}>
-            {imageStatus === "saving" ? "Saving room…" : imageStatus === "saved" ? "Saved this moment" : "Save this moment"}
+            {imageStatus === "saving" ? "Making keepsake…" : imageStatus === "shared" ? "Shared this moment" : imageStatus === "saved" ? "Saved this moment" : "Save this moment"}
           </button>
         )}
 
