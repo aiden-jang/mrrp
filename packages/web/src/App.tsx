@@ -6,6 +6,39 @@ import { Cat } from "./Cat.js";
 import { sceneFor } from "./hours.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
 import { MoodFace } from "./faces.js";
+import type { Cue } from "./sound.js";
+import { isMuted, play, toggleMuted } from "./sound.js";
+
+/* What each button sounds like. Sitting with her is the only one that answers with a purr: the rest
+   are things you do to a cat, and that one is a cat deciding to stay. */
+const ACTION_SOUND: Record<Action, Cue> = {
+  pet: "purr",
+  brush: "brush",
+  bring: "thump",
+  sit: "settle",
+  photo: "shutter",
+};
+
+/*
+ * Sound is on by default, which is only defensible because a browser will not start an audio
+ * context until you touch something: the first noise she can make is an answer to your own tap.
+ * Fixed to the corner rather than in a settings panel, because this room gets opened next to
+ * sleeping people and "make it stop" has to be reachable from anywhere in it.
+ */
+function SoundToggle() {
+  const [off, setOff] = useState(isMuted);
+  return (
+    <button
+      type="button"
+      onClick={() => setOff(toggleMuted())}
+      aria-pressed={off}
+      aria-label={off ? "Turn sound on" : "Turn sound off"}
+      style={S.soundToggle}
+    >
+      {off ? "\u{1F507}" : "\u{1F50A}"}
+    </button>
+  );
+}
 
 /** "this morning", "yesterday evening" — warmer and vaguer than a timestamp, which is the point. */
 function whenish(at: number): string {
@@ -201,6 +234,7 @@ function RoomPage({ id }: { id: string }) {
     const prev = wasHere.current;
     wasHere.current = here;
     if (prev === null || !here || prev) return;
+    play("chirp");
     setDoorOpenAt(Date.now());
     const t = setTimeout(() => setDoorOpenAt(null), 4200);
     return () => clearTimeout(t);
@@ -222,6 +256,7 @@ function RoomPage({ id }: { id: string }) {
     const prev = wasTogether.current;
     wasTogether.current = now;
     if (prev === null || !now || prev) return;
+    play("mrrp");
     setNudge(v => v + 1);
   }, [view?.bothHereNow]);
 
@@ -291,6 +326,7 @@ function RoomPage({ id }: { id: string }) {
 
   const act = async (a: Action) => {
     setNudge((v) => v + 1);
+    play(ACTION_SOUND[a]);
     try {
       setView(await doAct(id, a));
       // He gets one line back, phrased the way she'll read it, so the button does something visible.
@@ -429,6 +465,7 @@ function RoomPage({ id }: { id: string }) {
 
   return (
     <main style={S.page}>
+      <SoundToggle />
       <div style={S.card}>
         <div style={S.stage}>
           <Cat
@@ -452,7 +489,7 @@ function RoomPage({ id }: { id: string }) {
             /* The banner says you're both here; this is her doing something about it. */
             together={view.bothHereNow}
             onPet={() => void act("pet")}
-            onPoke={() => setNudge((v) => v + 1)}
+            onPoke={() => { play("mrrp"); setNudge((v) => v + 1); }}
           />
 
         </div>
@@ -960,6 +997,12 @@ const S: Record<string, React.CSSProperties> = {
    */
   card: { width: "100%", maxWidth: 520, minWidth: 0, overflowWrap: "anywhere" },
   h1: { fontSize: 40, margin: "0 0 8px", letterSpacing: "-0.02em", textAlign: "center" },
+  soundToggle: {
+    position: "fixed", top: 12, right: 12, zIndex: 20,
+    width: 36, height: 36, borderRadius: 999, cursor: "pointer",
+    display: "grid", placeItems: "center", fontSize: 15, lineHeight: 1,
+    background: "var(--panel)", border: "1px solid var(--line)", color: "var(--soft)",
+  },
   lede: { fontSize: 15.5, color: "var(--soft)", maxWidth: "38ch", lineHeight: 1.55 },
   small: { fontSize: 13, color: "var(--soft)", margin: 0, lineHeight: 1.5 },
   /**

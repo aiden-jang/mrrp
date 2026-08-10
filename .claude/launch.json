@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "mrrp-web", "runtimeExecutable": "pnpm", "runtimeArgs": ["dev:web"], "port": 5174 }
+  ]
+}
