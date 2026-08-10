@@ -36,6 +36,8 @@ const ZOOM_MS = 1600;
 const BIRD_MS = 5200;
 /** A shooting star is gone before it can turn into an animation someone waits to see again. */
 const STAR_MS = 900;
+/** A double-tap at the night window leaves a tiny constellation to find for a moment. */
+const CONSTELLATION_MS = 6200;
 /** A leaf takes just long enough to fall that it reads as a small response, not an idle loop. */
 const LEAF_FALL_MS = 1200;
 /** Just enough time for a picture-frame glint to read, not enough to turn into decoration. */
@@ -66,6 +68,8 @@ const PROPS = [
   { key: "door", sp: DOOR, x: 6, y: FLOOR - 16 },
   { key: "plant", sp: PLANT, x: 87, y: FLOOR - 13 },
   { key: "bed", sp: BED, x: 24 - 11, y: FLOOR + 22 },
+  // Its hit box is enabled only while there is actually a box in the room (see the filter below).
+  { key: "box", sp: BOX_BACK, x: BOX_X, y: BOX_Y },
 ] as const;
 
 /** Fixed colours. Everything else comes from `look`, so she stays recolourable. */
@@ -190,6 +194,12 @@ export function Cat({
   const bird = useRef(-1e9);
   /** A night-only window surprise. Like the bird, it is a moment rather than shared room state. */
   const shootingStar = useRef(-1e9);
+  /** Looking twice is a little different from looking once. */
+  const windowTaps = useRef({ count: 0, last: -1e9, constellationUntil: -1e9 });
+  /** When the box gets a tap, she rises just far enough to be caught looking. */
+  const boxPeekUntil = useRef(-1e9);
+  /** A tapped bed is an invitation, not a command; she only stays for a small local while. */
+  const bedNestUntil = useRef(-1e9);
   /** The plant is allowed one local little objection when somebody pokes it. */
   const fallingLeaf = useRef(-1e9);
   const plantTaps = useRef({ count: 0, last: -1e9, rainUntil: -1e9 });
@@ -303,14 +313,28 @@ export function Cat({
         tidyRef.current?.();
         return;
       }
-      const hit = PROPS.find((q) => x >= q.x && x < q.x + q.sp.w && y >= q.y && y < q.y + q.sp.h);
+      const hit = PROPS.find((q) =>
+        (q.key !== "box" || boxRef.current) && x >= q.x && x < q.x + q.sp.w && y >= q.y && y < q.y + q.sp.h,
+      );
       let rainStarted = false;
       // The window has a daytime bird and a night-time shooting star. Neither is shared: they are
       // small things you happen to notice, not events the other person needs to be told about.
       if (hit?.key === "window") {
         const now = performance.now();
         const scene = sceneFor(clockRef.current, Date.now(), moodRef.current, togetherRef.current);
-        if (scene.sun < 0.12) shootingStar.current = now;
+        if (scene.sun < 0.12) {
+          shootingStar.current = now;
+          const taps = windowTaps.current;
+          taps.count = now - taps.last < 1400 ? taps.count + 1 : 1;
+          taps.last = now;
+          // The first tap gets a shooting star. The second, quick enough to mean somebody is still
+          // looking, joins the little lights in the glass into a constellation. It is a discovery,
+          // not a permanent decoration or a thing the other person needs a notification about.
+          if (taps.count >= 2) {
+            taps.constellationUntil = now + CONSTELLATION_MS;
+            taps.count = 0;
+          }
+        }
         else {
           bird.current = now;
           play("chirp");
@@ -333,6 +357,14 @@ export function Cat({
       if (hit?.key === "frame" && framedRef.current) {
         photoGlint.current = performance.now();
         play("shutter");
+      }
+      if (hit?.key === "box" && boxRef.current) {
+        boxPeekUntil.current = performance.now() + 1200;
+        speakUntil.current = performance.now() + 800;
+        play("mrrp");
+      }
+      if (hit?.key === "bed") {
+        bedNestUntil.current = performance.now() + 8000;
       }
       // A tap at the door is not shared presence — it is just somebody checking whether she is
       // listening. She is, and answers locally before going back to whatever she was doing.
@@ -523,6 +555,7 @@ export function Cat({
       const birding = t - bird.current < BIRD_MS;
       const starAge = t - shootingStar.current;
       const stargazing = !reduce && night && starAge >= 0 && starAge < STAR_MS;
+      const constellating = night && t < windowTaps.current.constellationUntil;
       if (birding) {
         const hop = Math.floor(t / 380) % 2;
         blit(BIRD, wx + 4 + hop * 3, 16, { w: INK, b: "#8a6a48", o: "#e0a03f" });
@@ -551,6 +584,18 @@ export function Cat({
           px(sx + 1, sy - 1, `rgba(255,235,170,${a * 0.8})`);
           px(sx + 2, sy - 2, `rgba(255,226,150,${a * 0.45})`);
           px(sx + 3, sy - 3, `rgba(255,226,150,${a * 0.2})`);
+        }
+        // A double-tap reveals a tiny drawn constellation, held just long enough to enjoy before
+        // it dissolves back into the ordinary night. The lines are intentionally sparse: at this
+        // scale an actual star map would be visual noise, while four joined points read as a secret.
+        if (constellating) {
+          const fade = Math.min(1, (windowTaps.current.constellationUntil - t) / 800);
+          const c = `rgba(255,239,180,${fade})`;
+          const points = [[4, 7], [7, 5], [10, 7], [13, 3]] as const;
+          for (const [sx, sy] of points) px(wx + sx, wy(sy), c);
+          for (const [sx, sy] of [[5, 7], [6, 6], [8, 5], [9, 6], [11, 6], [12, 4]] as const) {
+            px(wx + sx, wy(sy), `rgba(255,226,150,${fade * 0.55})`);
+          }
         }
       }
       // A tiny shower is the plant's hidden third-tap response. The drops stay inside the window:
@@ -660,6 +705,7 @@ export function Cat({
       // low enough on the boards to read as standing on them rather than floating.
       const boxHere = boxRef.current;
       const inBox = boxHere && !sc.atDoor;
+      const peeking = !reduce && boxHere && t < boxPeekUntil.current;
       if (boxHere) {
         blit(BOX_BACK, BOX_X + shake("box"), BOX_Y, { w: INK, k: "#c69a63", s: "#a97f4d" });
       }
@@ -695,10 +741,13 @@ export function Cat({
       // box does to a cat. A mood that sends her to the door still wins: leaving is leaving.
       // A zoom outranks both, briefly, then hands her back to whatever she was doing.
       const zp = (t - zoom.current.start) / ZOOM_MS;
+      const nesting = t < bedNestUntil.current && !sc.atDoor && !zooming;
       const wantX = zooming
         ? 10 + (Math.sin(zp * Math.PI * 2 - Math.PI / 2) * 0.5 + 0.5) * (GW - 34)
         : inBox
           ? BOX_X + 2
+          : nesting
+            ? 24
           : sc.catX * GW;
       if (catX.current === null) catX.current = wantX;
       // 0.012 took about 190 frames to cover a move, so more than three seconds of a cat inching across
@@ -714,7 +763,10 @@ export function Cat({
        * her hovering a few pixels above it like a cat-shaped balloon. Coming forward as well as
        * across is what makes her be in it.
        */
-      const ky = FLOOR + 19 + (sc.inBed ? 6 : 0);
+      // She only sinks into the cushion once she has actually reached it. Lowering her while she
+      // walked across the room made the invitation look like she was hovering over the floor.
+      const settledInBed = sc.inBed || (nesting && Math.abs(kx - 24) < 8);
+      const ky = FLOOR + 19 + (settledInBed ? 6 : 0);
 
       const want = ptr.in ? Math.max(0, 1 - Math.hypot(ptr.x - kx, ptr.y - (ky - 8)) / 44) : 0;
       near.current += (want - near.current) * 0.07;
@@ -736,14 +788,14 @@ export function Cat({
       // A door opening holds her eyes open too. Without this she stays loafed through the whole
       // swing at any drowsy hour, because the perk pose needs open eyes and the scene had already
       // decided she was sleepy. A cat sleeps through a lot, but not a door.
-      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming || birding || stargazing;
+      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming || birding || stargazing || constellating || peeking;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = forced || (open > 0.4 && !blink);
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
       // A door opening beats whatever she was doing. Perk is the ears-up, head-turned pose, and it
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
       // cat that did not notice, which is the one thing this feature is for.
-      const noticing = (doorRef.current !== null || birding || stargazing) && posed;
+      const noticing = (doorRef.current !== null || birding || stargazing || constellating || peeking) && posed;
       const pose: Pose = zooming ? "play" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
@@ -751,7 +803,10 @@ export function Cat({
       const hop =
         Math.round(bounce.current * 3) +
         (reduce || sc.play <= 0.5 ? 0 : Math.round(Math.abs(Math.sin(t / 260)) * 2));
-      const y = ky + breathe - hop;
+      // The box front still covers the rest of her, so this reads as a shy answer from inside it
+      // rather than a generic jump animation pasted over the furniture.
+      const peekLift = peeking ? Math.round(Math.sin(((boxPeekUntil.current - t) / 1200) * Math.PI) * 5) : 0;
+      const y = ky + breathe - hop - peekLift;
       catBox.current = { x0: kx + sp.ox, y0: y + sp.oy, x1: kx + sp.ox + sp.w, y1: y + sp.oy + sp.h };
 
       const pal: Record<string, string> = {
