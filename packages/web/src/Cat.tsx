@@ -35,6 +35,8 @@ const ZOOM_MS = 1600;
 const BIRD_MS = 5200;
 /** A shooting star is gone before it can turn into an animation someone waits to see again. */
 const STAR_MS = 900;
+/** A leaf takes just long enough to fall that it reads as a small response, not an idle loop. */
+const LEAF_FALL_MS = 1200;
 /**
  * Where it comes to rest, having rolled.
  *
@@ -183,6 +185,8 @@ export function Cat({
   const bird = useRef(-1e9);
   /** A night-only window surprise. Like the bird, it is a moment rather than shared room state. */
   const shootingStar = useRef(-1e9);
+  /** The plant is allowed one local little objection when somebody pokes it. */
+  const fallingLeaf = useRef(-1e9);
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
   const doorShutFrom = useRef({ at: 0, from: 0 });
   lookRef.current = look;
@@ -300,6 +304,7 @@ export function Cat({
         if (scene.sun < 0.12) shootingStar.current = now;
         else bird.current = now;
       }
+      if (hit?.key === "plant") fallingLeaf.current = performance.now();
       if (hit) {
         poked.current = { key: hit.key, at: performance.now() };
         // And she notices. Looking at the thing you touched is most of what makes the room feel lived
@@ -552,6 +557,16 @@ export function Cat({
         blit(FRAME, 16 + shake("frame"), 12, { w: INK, f: "#c69a63", h: "#cfe0e4", g: "#e2926f" });
       }
       blit(PLANT, 87 + shake("plant"), FLOOR - 13, { g: LEAF, w: INK, d: "#b07a4e" });
+      // A plant tap drops one leaf. It is intentionally a little easier to miss than the plant
+      // itself: the pleasure is in catching it, not in being prompted to make it happen.
+      const leafAge = t - fallingLeaf.current;
+      if (!reduce && leafAge >= 0 && leafAge < LEAF_FALL_MS) {
+        const p = leafAge / LEAF_FALL_MS;
+        const lx = Math.round(93 + Math.sin(p * Math.PI * 2) * 3);
+        const ly = Math.round(FLOOR - 16 + p * 22);
+        px(lx, ly, LEAF);
+        px(lx + (p < 0.5 ? 1 : -1), ly + 1, "#5d7a46");
+      }
       // Dusty rose, not the lavender it started as. Lavender was the only cool colour in a room of
       // creams and browns, and at this size it stopped reading as a cat bed and started reading as
       // a stray UI element that had landed on the floor.
