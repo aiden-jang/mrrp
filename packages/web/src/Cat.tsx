@@ -310,7 +310,10 @@ export function Cat({
         const now = performance.now();
         const scene = sceneFor(clockRef.current, Date.now(), moodRef.current, togetherRef.current);
         if (scene.sun < 0.12) shootingStar.current = now;
-        else bird.current = now;
+        else {
+          bird.current = now;
+          play("chirp");
+        }
       }
       if (hit?.key === "plant") {
         const now = performance.now();
