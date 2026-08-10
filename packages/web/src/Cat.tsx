@@ -559,7 +559,7 @@ export function Cat({
       if (!reduce && rainRemaining > 0) {
         const drift = Math.floor(t / 95);
         const a = Math.min(1, rainRemaining / 750);
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 8; i++) {
           const rx = wx + 2 + ((i * 5 + drift) % 12);
           const ry = wy(1) + ((i * 3 + Math.floor(t / 170)) % 8);
           px(rx, ry, night ? `rgba(157,178,216,${a})` : `rgba(141,180,199,${a})`);
