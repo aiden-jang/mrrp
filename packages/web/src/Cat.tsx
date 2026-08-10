@@ -33,6 +33,8 @@ const BOX_X = 44, BOX_Y = FLOOR + 9;
 const ZOOM_MS = 1600;
 /** How long a bird stays before it gets bored of her. */
 const BIRD_MS = 5200;
+/** A shooting star is gone before it can turn into an animation someone waits to see again. */
+const STAR_MS = 900;
 /**
  * Where it comes to rest, having rolled.
  *
@@ -179,6 +181,8 @@ export function Cat({
    * happened four hours ago would be a notification, and this app does not have those.
    */
   const bird = useRef(-1e9);
+  /** A night-only window surprise. Like the bird, it is a moment rather than shared room state. */
+  const shootingStar = useRef(-1e9);
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
   const doorShutFrom = useRef({ at: 0, from: 0 });
   lookRef.current = look;
@@ -288,9 +292,14 @@ export function Cat({
         return;
       }
       const hit = PROPS.find((q) => x >= q.x && x < q.x + q.sp.w && y >= q.y && y < q.y + q.sp.h);
-      // Tapping the window puts a bird on the other side of it. Anyone may: it costs nothing, tells
-      // nobody, and a spectator being allowed to make the cat do the noise is a small kindness.
-      if (hit?.key === "window") bird.current = performance.now();
+      // The window has a daytime bird and a night-time shooting star. Neither is shared: they are
+      // small things you happen to notice, not events the other person needs to be told about.
+      if (hit?.key === "window") {
+        const now = performance.now();
+        const scene = sceneFor(clockRef.current, Date.now(), moodRef.current, togetherRef.current);
+        if (scene.sun < 0.12) shootingStar.current = now;
+        else bird.current = now;
+      }
       if (hit) {
         poked.current = { key: hit.key, at: performance.now() };
         // And she notices. Looking at the thing you touched is most of what makes the room feel lived
@@ -484,6 +493,20 @@ export function Cat({
         // Stars, on their own slow twinkles so they never blink together.
         for (const [sx, sy, ph] of [[12, 2, 0], [14, 6, 0.45], [10, 7, 0.8], [7, 8, 0.25]] as const) {
           if (Math.sin(t / 900 + ph * 7) > -0.35) px(wx + sx, wy(sy), "#fff6dc");
+        }
+        // Tap the window at night and, if you are lucky enough to be looking, a star crosses the
+        // glass. It stays inside the pane rather than streaking across the room: this is a tiny
+        // discovery, not a new feature asking to be noticed.
+        const starAge = t - shootingStar.current;
+        if (!reduce && starAge >= 0 && starAge < STAR_MS) {
+          const p = starAge / STAR_MS;
+          const sx = Math.round(wx + 14 - p * 10);
+          const sy = Math.round(wy(1) + p * 7);
+          const a = 1 - p * 0.45;
+          px(sx, sy, `rgba(255,246,202,${a})`);
+          px(sx + 1, sy - 1, `rgba(255,235,170,${a * 0.8})`);
+          px(sx + 2, sy - 2, `rgba(255,226,150,${a * 0.45})`);
+          px(sx + 3, sy - 3, `rgba(255,226,150,${a * 0.2})`);
         }
       }
       blit(SHELF, 80 + shake("shelf"), FLOOR - 24, { w: INK, d: "#8a6a48" });
