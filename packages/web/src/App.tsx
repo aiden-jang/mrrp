@@ -8,6 +8,7 @@ import { EYES, LOOKS, timezones } from "./looks.js";
 import { MoodFace } from "./faces.js";
 import type { Cue } from "./sound.js";
 import { isMuted, play, toggleMuted } from "./sound.js";
+import { makeKeepsake } from "./keepsake.js";
 
 /* What each button sounds like. Sitting with her is the only one that answers with a purr: the rest
    are things you do to a cat, and that one is a cat deciding to stay. */
@@ -308,9 +309,18 @@ function RoomPage({ id }: { id: string }) {
     if (!captureRoom || imageStatus) return;
     setImageStatus("saving");
     try {
-      const blob = await captureRoom();
-      if (!blob) throw new Error("capture unavailable");
-      const fileName = `${view?.cat.name?.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") || "mrrp"}-room.png`;
+      const roomBlob = await captureRoom();
+      if (!roomBlob) throw new Error("capture unavailable");
+      const currentScene = view
+        ? sceneFor(view.clock, Date.now(), view.catMood, view.bothHereNow)
+        : null;
+      const blob = await makeKeepsake(roomBlob, {
+        catName: view?.cat.name ?? "the cat",
+        doing: currentScene?.doing ?? "keeping the room warm",
+        together: view?.bothHereNow ?? false,
+      });
+      if (!blob) throw new Error("postcard unavailable");
+      const fileName = `${view?.cat.name?.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") || "mrrp"}-postcard.png`;
       const file = new File([blob], fileName, { type: "image/png" });
       const share = navigator as Navigator & { canShare?: (data?: ShareData) => boolean };
       // Sharing the actual image feels right on a phone (Messages, WhatsApp, etc.). `canShare` is
@@ -668,7 +678,7 @@ function RoomPage({ id }: { id: string }) {
 
         {captureRoom && !setup && (
           <button style={S.quiet} onClick={() => void saveRoomImage()} disabled={imageStatus !== null}>
-            {imageStatus === "saving" ? "Making keepsake…" : imageStatus === "shared" ? "Shared this moment" : imageStatus === "saved" ? "Saved this moment" : "Save this moment"}
+            {imageStatus === "saving" ? "Making postcard…" : imageStatus === "shared" ? "Postcard shared" : imageStatus === "saved" ? "Postcard saved" : "Make a postcard"}
           </button>
         )}
 
