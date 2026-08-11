@@ -641,6 +641,7 @@ function RoomPage({ id }: { id: string }) {
       <div style={S.card}>
         <div style={S.stage}>
           <Cat
+            collectionKey={id}
             label={`${previewLook.name} is ${scene.doing}.`}
             look={previewLook}
             clock={setup && draft ? { ...view.clock, tz: draft.tz, homeHour: draft.homeHour } : view.clock}
