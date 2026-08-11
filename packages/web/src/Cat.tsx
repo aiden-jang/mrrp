@@ -76,6 +76,10 @@ const SECRET_BOX_MS = 8200;
 /** Some words are toys if you say them in the right room. */
 const YARN_CODE = "yarn";
 const YARN_MS = 5200;
+/** Ask nicely and a tiny fish-shaped treat appears on the floor. */
+const TREAT_CODE = "treat";
+const TREAT_MS = 5600;
+const TREAT_X = 68;
 /** A second quick box tap turns a peek into a tiny peekaboo performance. */
 const BOX_PLAY_MS = 2800;
 /** How long the cursor has to stay beside her before she answers with a slow blink. */
@@ -277,6 +281,8 @@ export function Cat({
   const secretBoxUntil = useRef(-1e9);
   /** A keyboard-summoned ball that makes two quick trips across the boards. */
   const yarnUntil = useRef(-1e9);
+  /** A typed treat gets a short approach, snack, and very small thank-you. */
+  const treatUntil = useRef(-1e9);
   /** A slow blink is one answer per quiet cursor stay, never an idle animation on a timer. */
   const slowBlink = useRef({ until: -1e9, answered: false });
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
@@ -677,7 +683,7 @@ export function Cat({
 
       if (e.key.length === 1 && /[a-z]/i.test(e.key)) {
         typedRoomCode = `${typedRoomCode}${e.key.toLowerCase()}`.slice(
-          -Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length, BOX_CODE.length, YARN_CODE.length),
+          -Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length, BOX_CODE.length, YARN_CODE.length, TREAT_CODE.length),
         );
         if (typedRoomCode.endsWith(TYPED_ROOM_CODE)) {
           const now = performance.now();
@@ -707,6 +713,14 @@ export function Cat({
           bounce.current = 1;
           typedRoomCode = "";
           play("brush");
+        } else if (typedRoomCode.endsWith(TREAT_CODE)) {
+          const now = performance.now();
+          treatUntil.current = now + TREAT_MS;
+          lookAt.current = { x: TREAT_X, until: now + TREAT_MS };
+          speakUntil.current = now + 900;
+          bounce.current = 1;
+          typedRoomCode = "";
+          play("settle");
         }
       } else if (!ROOM_CODE.includes(e.key)) {
         typedRoomCode = "";
@@ -1224,6 +1238,8 @@ export function Cat({
       const laserPlaying = !reduce && t < laser.current.until && !sc.atDoor;
       const summoning = !reduce && t < summonUntil.current && !sc.atDoor;
       const yarnPlaying = !reduce && t < yarnUntil.current && !sc.atDoor;
+      const treating = t < treatUntil.current && !sc.atDoor;
+      const treatProgress = treating ? 1 - (treatUntil.current - t) / TREAT_MS : 0;
       const yarnProgress = yarnPlaying ? 1 - (yarnUntil.current - t) / YARN_MS : 0;
       // Two passes with a turnaround in the middle. The eased ends make the ball feel pushed rather
       // than motorized, while the little vertical hop below keeps it from sliding like a UI dot.
@@ -1236,6 +1252,8 @@ export function Cat({
           ? laser.current.x
         : yarnPlaying
           ? yarnX
+        : treating
+          ? TREAT_X
         : inBox
           ? BOX_X + 2
           : nesting
@@ -1297,7 +1315,7 @@ export function Cat({
       // A door opening holds her eyes open too. Without this she stays loafed through the whole
       // swing at any drowsy hour, because the perk pose needs open eyes and the scene had already
       // decided she was sleepy. A cat sleeps through a lot, but not a door.
-      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming || laserPlaying || yarnPlaying || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
+      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming || laserPlaying || yarnPlaying || treating || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = !slowBlinking && (forced || (open > 0.4 && !blink));
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
@@ -1305,7 +1323,7 @@ export function Cat({
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
       // cat that did not notice, which is the one thing this feature is for.
       const noticing = (doorRef.current !== null || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking) && posed;
-      const pose: Pose = zooming || laserPlaying || yarnPlaying || summoning ? "play" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
+      const pose: Pose = zooming || laserPlaying || yarnPlaying || summoning || (treating && treatProgress < 0.6) ? "play" : treating ? "sit" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
@@ -1335,6 +1353,23 @@ export function Cat({
         // Shut eyes are a one-pixel line in the outline colour, not a smaller eye.
         e: awake ? L.eyes : INK,
       };
+
+      // The keyboard treat sits on the boards until she reaches it, then leaves a few crumbs. It is
+      // drawn before her so her paws can cover it instead of the snack floating over the sprite.
+      if (treating) {
+        const ty = FLOOR + 18;
+        if (treatProgress < 0.68) {
+          const wiggle = reduce ? 0 : Math.round(Math.sin(t / 95));
+          rect(TREAT_X - 2, ty - 1, 5, 3, "#d78761");
+          px(TREAT_X - 3, ty + wiggle, "#d78761");
+          px(TREAT_X + 3, ty - wiggle, "#d78761");
+          px(TREAT_X, ty, "#f2b47e");
+        } else {
+          px(TREAT_X - 3, ty + 1, "#c87958");
+          px(TREAT_X + 2, ty, "#d99a6f");
+          px(TREAT_X + 4, ty + 1, "#c87958");
+        }
+      }
 
       // Shadow first, so she sits on the floor instead of hovering over it.
       rect(kx - (sp.w >> 1) + 3, ky + 1, sp.w - 6, 1, "rgba(120,84,44,.26)");
@@ -1401,6 +1436,19 @@ export function Cat({
         px(Math.round(yarnX) + direction * 3, yarnY + 1, "#b86c84");
         px(Math.round(yarnX) + direction * 4, yarnY + 2, "#b86c84");
         px(Math.round(yarnX) + direction * 5, yarnY + 2, "#d78aa0");
+      }
+      if (treating && treatProgress > 0.7 && !reduce) {
+        // A single tiny heart is enough acknowledgement; a particle fountain would make feeding
+        // her feel like collecting a reward instead of finding a secret.
+        const heartProgress = ((treatProgress - 0.7) / 0.3) % 1;
+        const hx = kx + 7;
+        const hy = Math.round(y - 7 - heartProgress * 8);
+        const alpha = Math.sin(heartProgress * Math.PI);
+        const hc = `rgba(232,120,140,${alpha})`;
+        px(hx, hy, hc); px(hx + 2, hy, hc);
+        rect(hx - 1, hy + 1, 5, 1, hc);
+        rect(hx, hy + 2, 3, 1, hc);
+        px(hx + 1, hy + 3, hc);
       }
       if (floorTap) {
         const age = (t - pk!.at) / 420;
