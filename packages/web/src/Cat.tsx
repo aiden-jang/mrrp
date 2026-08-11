@@ -73,6 +73,9 @@ const SUMMON_MS = 5200;
 /** A cardboard box is never really absent; sometimes it is only waiting to be asked for. */
 const BOX_CODE = "box";
 const SECRET_BOX_MS = 8200;
+/** How long the cursor has to stay beside her before she answers with a slow blink. */
+const SLOW_BLINK_WAIT_MS = 1800;
+const SLOW_BLINK_MS = 850;
 /** A small secret shower: long enough to notice through the glass, then gone. */
 const RAIN_MS = 6800;
 /** The brief bright thing that can follow the plant's hidden storm. */
@@ -266,6 +269,8 @@ export function Cat({
   const summonUntil = useRef(-1e9);
   /** A local cardboard delivery summoned from the keyboard. */
   const secretBoxUntil = useRef(-1e9);
+  /** A slow blink is one answer per quiet cursor stay, never an idle animation on a timer. */
+  const slowBlink = useRef({ until: -1e9, answered: false });
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
   const doorShutFrom = useRef({ at: 0, from: 0 });
   lookRef.current = look;
@@ -338,13 +343,28 @@ export function Cat({
     const ro = new ResizeObserver(fit);
     ro.observe(cv);
 
-    const ptr = { x: GW / 2, y: FLOOR + 10, in: false };
+    const ptr = {
+      x: GW / 2,
+      y: FLOOR + 10,
+      in: false,
+      stillX: GW / 2,
+      stillY: FLOOR + 10,
+      stillSince: performance.now(),
+    };
     let roomCodeAt = 0;
     let typedRoomCode = "";
     const onMove = (e: PointerEvent) => {
       const r = cv.getBoundingClientRect();
-      ptr.x = cam + ((e.clientX - r.left) / r.width) * VW;
-      ptr.y = ((e.clientY - r.top) / r.height) * GH;
+      const nextX = cam + ((e.clientX - r.left) / r.width) * VW;
+      const nextY = ((e.clientY - r.top) / r.height) * GH;
+      if (Math.hypot(nextX - ptr.stillX, nextY - ptr.stillY) > 1.2) {
+        ptr.stillX = nextX;
+        ptr.stillY = nextY;
+        ptr.stillSince = performance.now();
+        slowBlink.current.answered = false;
+      }
+      ptr.x = nextX;
+      ptr.y = nextY;
       ptr.in = true;
       const press = floorPress.current;
       const now = performance.now();
@@ -371,6 +391,7 @@ export function Cat({
     const onLeave = () => {
       ptr.in = false;
       petting.current = false;
+      slowBlink.current.answered = false;
       if (floorPress.current?.active) laser.current.until = performance.now() + LASER_RELEASE_MS;
       floorPress.current = null;
       lookAt.current = null;
@@ -1208,6 +1229,23 @@ export function Cat({
       const pet = petting.current;
       bounce.current = Math.max(0, bounce.current - 0.02);
 
+      // Stay quietly beside her and she returns the cat version of a smile. The cursor has to be
+      // both close and still; merely passing over the canvas never triggers it, and moving away
+      // resets the one-answer-per-stay latch.
+      const quietAndClose = ptr.in && Math.hypot(ptr.x - kx, ptr.y - (ky - 8)) < 15;
+      if (!quietAndClose) slowBlink.current.answered = false;
+      if (
+        quietAndClose &&
+        !slowBlink.current.answered &&
+        t >= slowBlink.current.until &&
+        t - ptr.stillSince >= SLOW_BLINK_WAIT_MS
+      ) {
+        slowBlink.current.answered = true;
+        slowBlink.current.until = t + SLOW_BLINK_MS;
+        play("purr");
+      }
+      const slowBlinking = t < slowBlink.current.until;
+
       // Her eyes open on her own account (what you told her) or because you came close.
       // Two blinks in a 5.2s cycle, offset so they aren't evenly spaced. Regular blinking reads as
       // a machine; slightly irregular reads as alive.
@@ -1224,7 +1262,7 @@ export function Cat({
       // decided she was sleepy. A cat sleeps through a lot, but not a door.
       const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming || laserPlaying || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
-      const awake = forced || (open > 0.4 && !blink);
+      const awake = !slowBlinking && (forced || (open > 0.4 && !blink));
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
       // A door opening beats whatever she was doing. Perk is the ears-up, head-turned pose, and it
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
@@ -1484,8 +1522,8 @@ export function Cat({
       }
 
       // Purring, shown rather than written: small marks rising off her.
-      if (pet || sc.purring) {
-        const a = pet ? 0.8 : 0.42;
+      if (pet || sc.purring || slowBlinking) {
+        const a = pet || slowBlinking ? 0.8 : 0.42;
         // Clamped inside her silhouette rather than a flat +10. The poses are different widths, and on
         // the narrow standing pose (the one a low mood puts at the door) a fixed offset put the marks
         // out in mid-air beside her, where they read as three stray pixels on the wall rather than as
