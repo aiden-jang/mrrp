@@ -9,6 +9,7 @@ import { seasonFor, seasonalPlantColors } from "./season.js";
 import { mouseRunAt } from "./mouse.js";
 import { BUBBLE_GAME_MS, bubbleMomentAt, bubbleSeeds, type BubbleSeed } from "./bubbles.js";
 import { PIANO_CODE, PIANO_MS, advancePawMelody, pianoKeyAt, pianoKeys } from "./piano.js";
+import { collectConstellationStar, constellationProgress, CONSTELLATION_KEYS, type ConstellationKey } from "./constellation.js";
 import { BED, BIRD, BOX_BACK, BOX_FRONT, DOOR, EK, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, MUG, MUG_DOWN, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
@@ -102,6 +103,10 @@ const MOUSE_MS = 7000;
 const BUBBLE_CODE = "bubbles";
 const BUBBLE_REWARD_MS = 2400;
 const PIANO_REWARD_MS = 4200;
+/** Completing six room discoveries earns a sky that can be called back by name. */
+const STARS_CODE = "stars";
+const CONSTELLATION_REWARD_MS = 7200;
+const STAR_FLIGHT_MS = 1300;
 /** Calling her by her actual name gets a response no generic secret word can give. */
 const NAME_CALL_MS = 6200;
 /** A second quick box tap turns a peek into a tiny peekaboo performance. */
@@ -171,6 +176,7 @@ export function Cat({
   onPet,
   onPoke,
   onCapture,
+  collectionKey,
 }: {
   /** What the room says in words. The canvas is otherwise silent to a screen reader. */
   label: string;
@@ -238,6 +244,8 @@ export function Cat({
   onPoke?: () => void;
   /** Exposes a PNG capture of the rendered room without leaking the canvas out of this component. */
   onCapture?: (capture: () => Promise<Blob | null>) => void;
+  /** Stable room id used only for this device's hidden constellation progress. */
+  collectionKey?: string;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const lookRef = useRef(look);
@@ -338,6 +346,13 @@ export function Cat({
     history: [] as number[],
     rewardUntil: -1e9,
   });
+  const constellation = useRef({
+    found: new Set<ConstellationKey>(collectionKey ? constellationProgress(collectionKey).found : []),
+    flight: null as { fromX: number; fromY: number; startedAt: number } | null,
+    rewardUntil: -1e9,
+  });
+  const collectionKeyRef = useRef(collectionKey);
+  collectionKeyRef.current = collectionKey;
   /** Her name brings her to the middle for one small recognition moment. */
   const nameCallUntil = useRef(-1e9);
   /** A slow blink is one answer per quiet cursor stay, never an idle animation on a timer. */
@@ -727,6 +742,29 @@ export function Cat({
         }
       }
       if (hit) {
+        const activeCollectionKey = collectionKeyRef.current;
+        if (activeCollectionKey && (CONSTELLATION_KEYS as readonly string[]).includes(hit.key)) {
+          const now = performance.now();
+          const progress = collectConstellationStar(activeCollectionKey, hit.key as ConstellationKey);
+          if (progress.discovered) {
+            constellation.current.found = new Set(progress.found);
+            constellation.current.flight = {
+              fromX: hit.x + hit.sp.w / 2,
+              fromY: hit.y + hit.sp.h / 2,
+              startedAt: now,
+            };
+            lookAt.current = { x: hit.x + hit.sp.w / 2, until: now + STAR_FLIGHT_MS };
+            speakUntil.current = now + 900;
+            play("twinkle");
+            if (progress.justCompleted) {
+              constellation.current.rewardUntil = now + CONSTELLATION_REWARD_MS;
+              catTaps.current.chorusUntil = now + PURR_CHORUS_MS;
+              speakUntil.current = now + 1400;
+              bounce.current = 1;
+              play("purr");
+            }
+          }
+        }
         if ((ROOM_TOUR_KEYS as readonly string[]).includes(hit.key)) {
           const tour = roomTour.current;
           tour.seen.add(hit.key);
@@ -805,7 +843,7 @@ export function Cat({
       if (e.key.length === 1 && /[a-z]/i.test(e.key)) {
         const nameCode = catCallCode(lookRef.current.name);
         typedRoomCode = `${typedRoomCode}${e.key.toLowerCase()}`.slice(
-          -Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length, BOX_CODE.length, YARN_CODE.length, TREAT_CODE.length, CATNIP_CODE.length, MUSIC_CODE.length, MOUSE_CODE.length, BUBBLE_CODE.length, PIANO_CODE.length, nameCode?.length ?? 0),
+          -Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length, BOX_CODE.length, YARN_CODE.length, TREAT_CODE.length, CATNIP_CODE.length, MUSIC_CODE.length, MOUSE_CODE.length, BUBBLE_CODE.length, PIANO_CODE.length, STARS_CODE.length, nameCode?.length ?? 0),
         );
         // Her real name wins over the shipped words. A cat called Music should still know that she
         // is being called; room tricks are generic, recognition is not.
@@ -902,6 +940,16 @@ export function Cat({
           bounce.current = 1;
           typedRoomCode = "";
           play("twinkle");
+        } else if (typedRoomCode.endsWith(STARS_CODE)) {
+          if (constellation.current.found.size === CONSTELLATION_KEYS.length) {
+            const now = performance.now();
+            constellation.current.rewardUntil = now + CONSTELLATION_REWARD_MS;
+            catTaps.current.chorusUntil = now + PURR_CHORUS_MS;
+            speakUntil.current = now + 1200;
+            bounce.current = 1;
+            play("twinkle");
+          }
+          typedRoomCode = "";
         }
       } else if (!ROOM_CODE.includes(e.key)) {
         typedRoomCode = "";
@@ -1189,6 +1237,46 @@ export function Cat({
         px(lx + 1, ly, `rgba(255,219,128,${a * 0.72})`);
         px(lx, ly - 1, `rgba(255,232,164,${a * 0.72})`);
         px(lx, ly + 1, `rgba(255,232,164,${a * 0.72})`);
+      }
+
+      // Each permanent room detail found on this device leaves a quiet point in the glass. This is
+      // progress without a badge or menu: the room remembers because the room itself looks changed.
+      const keptStars = [[3, 7], [6, 3], [9, 7], [12, 3], [14, 7], [8, 5]] as const;
+      for (let index = 0; index < constellation.current.found.size; index++) {
+        const [sx, sy] = keptStars[index]!;
+        const glow = 0.58 + Math.sin(t / 720 + index * 1.7) * 0.18;
+        px(wx + sx, wy(sy), `rgba(255,232,166,${glow})`);
+      }
+
+      // A first touch sends its star into the room's sky. Reduced motion gets the destination point
+      // immediately, preserving the discovery without making the user watch it travel.
+      const starFlight = constellation.current.flight;
+      if (starFlight) {
+        const age = t - starFlight.startedAt;
+        if (age >= 0 && age < STAR_FLIGHT_MS) {
+          const raw = reduce ? 1 : age / STAR_FLIGHT_MS;
+          const p = 1 - Math.pow(1 - raw, 3);
+          const targetX = Math.max(cam + 12, Math.min(cam + VW - 12, catX.current ?? WIN_CX));
+          const x = Math.round(starFlight.fromX + (targetX - starFlight.fromX) * p);
+          const y = Math.round(starFlight.fromY + (9 - starFlight.fromY) * p - Math.sin(p * Math.PI) * 6);
+          const c = `rgba(255,236,177,${Math.min(1, 0.45 + p)})`;
+          px(x, y, "#fff9dc");
+          px(x - 1, y, c); px(x + 1, y, c); px(x, y - 1, c); px(x, y + 1, c);
+        }
+      }
+
+      // The sixth point joins into a cat above the room. Once earned, typing "stars" calls it back.
+      if (t < constellation.current.rewardUntil) {
+        const remaining = constellation.current.rewardUntil - t;
+        const fade = Math.min(1, (CONSTELLATION_REWARD_MS - remaining) / 700, remaining / 900);
+        const cx = Math.round(Math.max(cam + 12, Math.min(cam + VW - 12, catX.current ?? WIN_CX)));
+        const cy = 10;
+        const points = [[-8, 0], [-7, -4], [-3, -2], [0, -3], [3, -2], [7, -4], [8, 0], [6, 3], [3, 5], [0, 6], [-3, 5], [-6, 3], [-3, 1], [3, 1]] as const;
+        const joins = [[-7, -1], [-6, -2], [-5, -2], [-4, -2], [-2, -2], [-1, -3], [1, -3], [2, -2], [4, -2], [5, -2], [6, -2], [7, -1], [7, 1], [5, 4], [4, 4], [2, 5], [1, 5], [-1, 5], [-2, 5], [-4, 4], [-5, 4], [-7, 1]] as const;
+        for (const [dx, dy] of joins) px(cx + dx, cy + dy, `rgba(255,222,145,${fade * 0.38})`);
+        for (const [dx, dy] of points) px(cx + dx, cy + dy, `rgba(255,246,205,${fade})`);
+        px(cx - 2, cy + 1, `rgba(255,246,205,${fade})`);
+        px(cx + 2, cy + 1, `rgba(255,246,205,${fade})`);
       }
       // A pair of quick daytime taps gets more than the bird: it catches a little coloured light
       // on the wall and boards. It lives in the sunbeam rather than becoming a screen-wide rainbow,
