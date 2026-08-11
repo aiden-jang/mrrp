@@ -61,6 +61,7 @@ const LASER_CHASE_MS = 2800;
 /** The room's keyboard secret only paints the night window, never the whole screen. */
 const AURORA_MS = 5600;
 const ROOM_CODE = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight"];
+const TYPED_ROOM_CODE = "mrrp";
 /** A small secret shower: long enough to notice through the glass, then gone. */
 const RAIN_MS = 6800;
 /** The brief bright thing that can follow the plant's hidden storm. */
@@ -322,6 +323,7 @@ export function Cat({
 
     const ptr = { x: GW / 2, y: FLOOR + 10, in: false };
     let roomCodeAt = 0;
+    let typedRoomCode = "";
     const onMove = (e: PointerEvent) => {
       const r = cv.getBoundingClientRect();
       ptr.x = cam + ((e.clientX - r.left) / r.width) * VW;
@@ -546,9 +548,32 @@ export function Cat({
       const expected = ROOM_CODE[roomCodeAt];
       roomCodeAt = e.key === expected ? roomCodeAt + 1 : e.key === ROOM_CODE[0] ? 1 : 0;
       if (roomCodeAt === ROOM_CODE.length) {
-        auroraUntil.current = performance.now() + AURORA_MS;
-        speakUntil.current = performance.now() + 1000;
+        const now = performance.now();
+        const scene = sceneFor(clockRef.current, Date.now(), moodRef.current, togetherRef.current);
+        if (scene.sun < 0.12) {
+          auroraUntil.current = now + AURORA_MS;
+        } else {
+          // The original reward only rendered at night, so entering the full code during the day
+          // succeeded invisibly. Daylight now answers with its own longer prism and a visiting bird.
+          windowTaps.current.sunCatcherUntil = now + AURORA_MS;
+          bird.current = now;
+          play("chirp");
+        }
+        speakUntil.current = now + 1000;
         roomCodeAt = 0;
+      }
+
+      if (e.key.length === 1 && /[a-z]/i.test(e.key)) {
+        typedRoomCode = `${typedRoomCode}${e.key.toLowerCase()}`.slice(-TYPED_ROOM_CODE.length);
+        if (typedRoomCode === TYPED_ROOM_CODE) {
+          const now = performance.now();
+          catTaps.current.chorusUntil = now + PURR_CHORUS_MS;
+          speakUntil.current = now + 1250;
+          typedRoomCode = "";
+          play("mrrp");
+        }
+      } else if (!ROOM_CODE.includes(e.key)) {
+        typedRoomCode = "";
       }
     };
     cv.addEventListener("pointermove", onMove);
