@@ -58,6 +58,8 @@ const BED_DREAM_MS = 3200;
 const PURR_CHORUS_MS = 2600;
 /** Holding an empty bit of floor gives her one short thing to chase. */
 const LASER_CHASE_MS = 2800;
+/** After the pointer lifts, she gets one last pounce instead of stopping mid-chase. */
+const LASER_RELEASE_MS = 900;
 /** Visiting every permanent room detail unlocks one quiet whole-room celebration. */
 const ROOM_TOUR_MS = 4200;
 const ROOM_TOUR_KEYS = ["window", "frame", "shelf", "door", "plant", "bed"] as const;
@@ -249,8 +251,9 @@ export function Cat({
   const giftTaps = useRef({ count: 0, last: -1e9, wishUntil: -1e9 });
   const bedTaps = useRef({ count: 0, last: -1e9, dreamUntil: -1e9 });
   const catTaps = useRef({ count: 0, last: -1e9, chorusUntil: -1e9 });
-  const floorPress = useRef<{ x: number; y: number; at: number } | null>(null);
+  const floorPress = useRef<{ x: number; y: number; at: number; active: boolean } | null>(null);
   const laser = useRef({ x: GW / 2, y: FLOOR + 12, until: -1e9 });
+  const laserTrail = useRef<{ x: number; y: number; at: number }[]>([]);
   const roomTour = useRef({ seen: new Set<string>(), partyUntil: -1e9 });
   /** A second knock means somebody is playing with the door, so the room plays back. */
   const doorTaps = useRef({ count: 0, last: -1e9, noteUntil: -1e9 });
@@ -338,8 +341,36 @@ export function Cat({
       ptr.x = cam + ((e.clientX - r.left) / r.width) * VW;
       ptr.y = ((e.clientY - r.top) / r.height) * GH;
       ptr.in = true;
+      const press = floorPress.current;
+      const now = performance.now();
+      if (press && now - press.at >= 460) {
+        if (!press.active) {
+          press.active = true;
+          speakUntil.current = now + 850;
+          play("mrrp");
+        }
+        laser.current = {
+          x: Math.max(10, Math.min(GW - 10, ptr.x)),
+          y: Math.max(FLOOR + 3, Math.min(GH - 4, ptr.y)),
+          // Kept just ahead of pointer events; release extends this into the final pounce below.
+          until: now + 260,
+        };
+        const trail = laserTrail.current;
+        if (!trail.length || now - trail[trail.length - 1]!.at > 55) {
+          trail.push({ x: laser.current.x, y: laser.current.y, at: now });
+          if (trail.length > 9) trail.shift();
+        }
+        lookAt.current = { x: laser.current.x, until: laser.current.until };
+      }
     };
-    const onLeave = () => { ptr.in = false; petting.current = false; floorPress.current = null; lookAt.current = null; poked.current = null; };
+    const onLeave = () => {
+      ptr.in = false;
+      petting.current = false;
+      if (floorPress.current?.active) laser.current.until = performance.now() + LASER_RELEASE_MS;
+      floorPress.current = null;
+      lookAt.current = null;
+      poked.current = null;
+    };
 
     /*
      * Taps are hit-tested here, against the same coordinates the draw code uses.
@@ -545,7 +576,7 @@ export function Cat({
       // The floor is deliberately the only long-press interaction: everything built into the room
       // already has a tap response. Holding an empty board gives her a tiny dot to chase instead.
       if (!hit && y >= FLOOR) {
-        floorPress.current = { x, y, at: performance.now() };
+        floorPress.current = { x, y, at: performance.now(), active: false };
         // A regular board tap is just a small point of interest; holding it is what escalates into
         // the chase. This makes the floor responsive without making every tap an easter egg.
         lookAt.current = { x, until: performance.now() + 900 };
@@ -558,6 +589,11 @@ export function Cat({
       const press = floorPress.current;
       floorPress.current = null;
       if (!press || performance.now() - press.at < 460) return;
+      if (press.active) {
+        laser.current.until = performance.now() + LASER_RELEASE_MS;
+        lookAt.current = { x: laser.current.x, until: laser.current.until };
+        return;
+      }
       laser.current = {
         x: Math.max(10, Math.min(GW - 10, press.x)),
         y: Math.max(FLOOR + 3, Math.min(GH - 4, press.y)),
@@ -1230,6 +1266,15 @@ export function Cat({
         px(lx, ly, "#ff6b6b");
         px(lx + 1, ly, "rgba(255,161,161,.7)");
         if (age < 0.78) px(lx - 1, ly + 1, "rgba(255,116,116,.35)");
+      }
+      // A dragged light leaves only a few dying pixels behind it. The trail makes direction readable
+      // without turning the room into a drawing canvas, and clears itself as soon as the chase ends.
+      if (!reduce && laserTrail.current.length > 0) {
+        laserTrail.current = laserTrail.current.filter(point => t - point.at < 520);
+        for (const point of laserTrail.current) {
+          const opacity = Math.max(0, 1 - (t - point.at) / 520) * 0.42;
+          px(Math.round(point.x), Math.round(point.y), `rgba(255,107,107,${opacity})`);
+        }
       }
       if (floorTap) {
         const age = (t - pk!.at) / 420;
