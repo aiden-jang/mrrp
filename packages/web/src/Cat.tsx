@@ -58,6 +58,9 @@ const BED_DREAM_MS = 3200;
 const PURR_CHORUS_MS = 2600;
 /** Holding an empty bit of floor gives her one short thing to chase. */
 const LASER_CHASE_MS = 2800;
+/** Visiting every permanent room detail unlocks one quiet whole-room celebration. */
+const ROOM_TOUR_MS = 4200;
+const ROOM_TOUR_KEYS = ["window", "frame", "shelf", "door", "plant", "bed"] as const;
 /** The room's keyboard secret only paints the night window, never the whole screen. */
 const AURORA_MS = 5600;
 const ROOM_CODE = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight"];
@@ -245,6 +248,7 @@ export function Cat({
   const catTaps = useRef({ count: 0, last: -1e9, chorusUntil: -1e9 });
   const floorPress = useRef<{ x: number; y: number; at: number } | null>(null);
   const laser = useRef({ x: GW / 2, y: FLOOR + 12, until: -1e9 });
+  const roomTour = useRef({ seen: new Set<string>(), partyUntil: -1e9 });
   /** A second knock means somebody is playing with the door, so the room plays back. */
   const doorTaps = useRef({ count: 0, last: -1e9, noteUntil: -1e9 });
   /** A tiny keyboard secret. It is local, ephemeral, and only visible through the night window. */
@@ -513,6 +517,18 @@ export function Cat({
         }
       }
       if (hit) {
+        if ((ROOM_TOUR_KEYS as readonly string[]).includes(hit.key)) {
+          const tour = roomTour.current;
+          tour.seen.add(hit.key);
+          if (tour.seen.size === ROOM_TOUR_KEYS.length) {
+            const now = performance.now();
+            tour.seen.clear();
+            tour.partyUntil = now + ROOM_TOUR_MS;
+            catTaps.current.chorusUntil = now + PURR_CHORUS_MS;
+            speakUntil.current = now + 1200;
+            play("twinkle");
+          }
+        }
         poked.current = { key: hit.key, at: performance.now() };
         // And she notices. Looking at the thing you touched is most of what makes the room feel lived
         // in, and it costs one number: the eye highlight already knows how to aim at an x.
@@ -1053,6 +1069,22 @@ export function Cat({
             const cx = Math.round(WIN_CX + (beamX - WIN_CX) * k);
             px(cx + m.dx, Math.floor(m.y), sc.beamWarm);
           }
+        }
+      }
+
+      // Touching every permanent detail is a hidden little room tour. Its reward borrows the room's
+      // own warm colors and leaves no badge or progress UI behind; the discovery is the keepsake.
+      const roomPartyRemaining = roomTour.current.partyUntil - t;
+      if (!reduce && roomPartyRemaining > 0) {
+        const p = 1 - roomPartyRemaining / ROOM_TOUR_MS;
+        const a = Math.min(1, roomPartyRemaining / 650);
+        const colors = [[240, 174, 180], [255, 227, 155], [169, 207, 145], [174, 191, 232]] as const;
+        for (let i = 0; i < 10; i++) {
+          const sx = 8 + i * 9 + Math.round(Math.sin(t / 280 + i) * 2);
+          const sy = FLOOR + 24 - Math.round(((p + i * 0.13) % 1) * 40);
+          const [r, green, b] = colors[i % colors.length]!;
+          px(sx, sy, `rgba(${r},${green},${b},${a})`);
+          if (i % 3 === 0) px(sx + 1, sy, `rgba(${r},${green},${b},${a * 0.6})`);
         }
       }
 
