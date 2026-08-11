@@ -775,3 +775,26 @@ describe("the thing she knocks off the shelf", () => {
     expect((await view(HIM)).shelfDown).toBe(false);
   });
 });
+
+describe("the light in the window", () => {
+  it("waits for the other person and disappears when they collect it", async () => {
+    await seat();
+
+    expect((await post("window-light", { me: HIM })).status).toBe(200);
+    expect((await view(HIM)).windowLight).toBe(false);
+    expect((await view(HER)).windowLight).toBe(true);
+
+    const collected = await post("window-light", { me: HER });
+    expect(collected.status).toBe(200);
+    expect(((await collected.json()) as RoomView).windowLight).toBe(false);
+    expect((await view(HIM)).windowLight).toBe(false);
+  });
+
+  it("is private to the two seats", async () => {
+    await seat();
+    await post("window-light", { me: HIM });
+    expect((await view(STRANGER)).windowLight).toBe(false);
+    expect((await post("window-light", { me: STRANGER })).status).toBe(403);
+    expect((await view(HER)).windowLight).toBe(true);
+  });
+});

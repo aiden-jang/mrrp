@@ -146,6 +146,17 @@ export async function doTidy(id: string): Promise<void> {
   if (!r.ok) throw new Error("Couldn't reach the shelf.");
 }
 
+/** Leave a tiny light in the window, or collect the one waiting there from the other seat. */
+export async function doWindowLight(id: string): Promise<RoomView> {
+  const r = await fetch(`/api/room/${id}/window-light`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ me: myToken() }),
+  });
+  if (!r.ok) throw new Error("Couldn't reach the window.");
+  return r.json() as Promise<RoomView>;
+}
+
 /** Leave him a line. Hers only; empty text clears it. */
 export async function doSay(id: string, text: string): Promise<RoomView> {
   const r = await fetch(`/api/room/${id}/say`, {

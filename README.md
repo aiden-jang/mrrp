@@ -108,6 +108,7 @@ than the UI, because a rule enforced in the browser is a rule anyone can turn of
 | `POST .../shelf` | either seat | puts the mug back. The one write both of them may make |
 | `POST .../dress`, `.../clock` | him only | 403 otherwise |
 | `POST .../notes` | him only | this room's notes, one per entry; empty restores the defaults |
+| `POST .../window-light` | either seat | leave one glint in the window, or collect the other person's |
 | `POST .../release` | him only | frees her seat so a new device can be her |
 | `POST .../recover` | his code | takes the first seat back on a new device |
 
