@@ -80,6 +80,10 @@ const YARN_MS = 5200;
 const TREAT_CODE = "treat";
 const TREAT_MS = 5600;
 const TREAT_X = 68;
+/** Catnip turns a typed word into several extremely undignified laps of the room. */
+const CATNIP_CODE = "catnip";
+const CATNIP_MS = 6200;
+const CATNIP_X = 54;
 /** A second quick box tap turns a peek into a tiny peekaboo performance. */
 const BOX_PLAY_MS = 2800;
 /** How long the cursor has to stay beside her before she answers with a slow blink. */
@@ -283,6 +287,8 @@ export function Cat({
   const yarnUntil = useRef(-1e9);
   /** A typed treat gets a short approach, snack, and very small thank-you. */
   const treatUntil = useRef(-1e9);
+  /** A local catnip sprint; never shared as room state because it leaves no lasting object. */
+  const catnipUntil = useRef(-1e9);
   /** A slow blink is one answer per quiet cursor stay, never an idle animation on a timer. */
   const slowBlink = useRef({ until: -1e9, answered: false });
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
@@ -683,7 +689,7 @@ export function Cat({
 
       if (e.key.length === 1 && /[a-z]/i.test(e.key)) {
         typedRoomCode = `${typedRoomCode}${e.key.toLowerCase()}`.slice(
-          -Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length, BOX_CODE.length, YARN_CODE.length, TREAT_CODE.length),
+          -Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length, BOX_CODE.length, YARN_CODE.length, TREAT_CODE.length, CATNIP_CODE.length),
         );
         if (typedRoomCode.endsWith(TYPED_ROOM_CODE)) {
           const now = performance.now();
@@ -721,6 +727,14 @@ export function Cat({
           bounce.current = 1;
           typedRoomCode = "";
           play("settle");
+        } else if (typedRoomCode.endsWith(CATNIP_CODE)) {
+          const now = performance.now();
+          catnipUntil.current = now + CATNIP_MS;
+          lookAt.current = { x: CATNIP_X, until: now + CATNIP_MS };
+          speakUntil.current = now + 1100;
+          bounce.current = 1;
+          typedRoomCode = "";
+          play("chirp");
         }
       } else if (!ROOM_CODE.includes(e.key)) {
         typedRoomCode = "";
@@ -1240,13 +1254,21 @@ export function Cat({
       const yarnPlaying = !reduce && t < yarnUntil.current && !sc.atDoor;
       const treating = t < treatUntil.current && !sc.atDoor;
       const treatProgress = treating ? 1 - (treatUntil.current - t) / TREAT_MS : 0;
+      const catnipActive = t < catnipUntil.current && !sc.atDoor;
+      const catnipping = catnipActive && !reduce;
+      const catnipProgress = catnipActive ? 1 - (catnipUntil.current - t) / CATNIP_MS : 0;
+      const catnipX = reduce
+        ? CATNIP_X
+        : 12 + (Math.sin(catnipProgress * Math.PI * 6 - Math.PI / 2) * 0.5 + 0.5) * (GW - 28);
       const yarnProgress = yarnPlaying ? 1 - (yarnUntil.current - t) / YARN_MS : 0;
       // Two passes with a turnaround in the middle. The eased ends make the ball feel pushed rather
       // than motorized, while the little vertical hop below keeps it from sliding like a UI dot.
       const yarnLap = (yarnProgress * 2) % 2;
       const yarnAcross = yarnLap <= 1 ? yarnLap : 2 - yarnLap;
       const yarnX = 13 + yarnAcross * (GW - 26);
-      const wantX = zooming
+      const wantX = catnipActive
+        ? catnipX
+        : zooming
         ? 10 + (Math.sin(zp * Math.PI * 2 - Math.PI / 2) * 0.5 + 0.5) * (GW - 34)
         : laserPlaying
           ? laser.current.x
@@ -1263,7 +1285,7 @@ export function Cat({
       // 0.012 took about 190 frames to cover a move, so more than three seconds of a cat inching across
       // the boards after a mood tap. It read as lag rather than as walking. 0.05 lands in well under a
       // second and still moves like a cat crossing a room rather than teleporting.
-      catX.current += (wantX - catX.current) * (zooming ? 0.4 : 0.05);
+      catX.current += (wantX - catX.current) * (catnipping || zooming ? 0.4 : 0.05);
       const kx = Math.round(catX.current);
       /*
        * In the bed she sits lower.
@@ -1315,7 +1337,7 @@ export function Cat({
       // A door opening holds her eyes open too. Without this she stays loafed through the whole
       // swing at any drowsy hour, because the perk pose needs open eyes and the scene had already
       // decided she was sleepy. A cat sleeps through a lot, but not a door.
-      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming || laserPlaying || yarnPlaying || treating || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
+      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || catnipActive || zooming || laserPlaying || yarnPlaying || treating || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = !slowBlinking && (forced || (open > 0.4 && !blink));
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
@@ -1323,7 +1345,7 @@ export function Cat({
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
       // cat that did not notice, which is the one thing this feature is for.
       const noticing = (doorRef.current !== null || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking) && posed;
-      const pose: Pose = zooming || laserPlaying || yarnPlaying || summoning || (treating && treatProgress < 0.6) ? "play" : treating ? "sit" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
+      const pose: Pose = catnipping || zooming || laserPlaying || yarnPlaying || summoning || (treating && treatProgress < 0.6) ? "play" : catnipActive || treating ? "sit" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
@@ -1369,6 +1391,15 @@ export function Cat({
           px(TREAT_X + 2, ty, "#d99a6f");
           px(TREAT_X + 4, ty + 1, "#c87958");
         }
+      }
+      if (catnipActive && catnipProgress < 0.28) {
+        // The first beat identifies what caused the chaos. After that the loose leaves travel with
+        // her, so the packet does not sit behind while the camera follows three laps away.
+        const cy = FLOOR + 18;
+        rect(CATNIP_X - 3, cy - 1, 7, 3, "#dbc499");
+        px(CATNIP_X - 2, cy - 2, "#6c9b57");
+        px(CATNIP_X, cy - 3, "#83ad64");
+        px(CATNIP_X + 2, cy - 2, "#5e8d4e");
       }
 
       // Shadow first, so she sits on the floor instead of hovering over it.
@@ -1449,6 +1480,18 @@ export function Cat({
         rect(hx - 1, hy + 1, 5, 1, hc);
         rect(hx, hy + 2, 3, 1, hc);
         px(hx + 1, hy + 3, hc);
+      }
+      if (catnipping) {
+        // Three leaves tumble on different phases rather than forming a particle cloud. At this
+        // scale, restraint is what makes them read as leaves instead of green rendering noise.
+        for (let i = 0; i < 3; i++) {
+          const lp = (catnipProgress * 5 + i / 3) % 1;
+          const lx = Math.round(kx - 8 + i * 8 + Math.sin(t / 150 + i) * 3);
+          const ly = Math.round(y - lp * 15 + 2);
+          const lc = i === 1 ? "rgba(131,173,100,.85)" : "rgba(94,141,78,.72)";
+          px(lx, ly, lc);
+          px(lx + (i % 2 ? 1 : -1), ly + 1, lc);
+        }
       }
       if (floorTap) {
         const age = (t - pk!.at) / 420;
