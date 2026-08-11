@@ -89,6 +89,12 @@ export interface Told {
   at: number;
 }
 
+/** One thing the room held onto between this person's visits. Never grows into an inbox. */
+export type Arrival =
+  | { kind: "action"; at: number; action: Action }
+  | { kind: "mood"; at: number; mood: Mood }
+  | { kind: "line"; at: number; text: string };
+
 export type Gift = "leaf" | "cap" | "moth";
 
 /**
@@ -132,5 +138,7 @@ export interface RoomView {
   theirRecent: Visit[];
   /** He turned up after she said something. Not a read receipt: "saw it, did nothing" is worse to know. */
   theyCameAfter: boolean;
+  /** New things from the other seat since this person last opened the room. */
+  arrivals: Arrival[];
   waitingForThem: boolean;
 }

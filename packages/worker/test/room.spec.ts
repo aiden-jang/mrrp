@@ -490,6 +490,38 @@ describe("presence", () => {
     await view(HIM);
     expect((await view(HER)).theyCameAfter).toBe(true);
   });
+
+  it("hands her his between-visit gestures once, as an arrival card", async () => {
+    await seat();
+    await view(HER);
+    await new Promise((resolve) => setTimeout(resolve, 2));
+    await post("act", { me: HIM, action: "brush" });
+    await post("act", { me: HIM, action: "sit" });
+
+    const returned = await view(HER);
+    expect(returned.arrivals.map((item) => item.kind === "action" ? item.action : item.kind)).toEqual([
+      "sit",
+      "brush",
+    ]);
+    expect((await view(HER)).arrivals).toEqual([]);
+  });
+
+  it("hands him her new mood and line without requiring them to overlap", async () => {
+    await seat();
+    await view(HIM);
+    await new Promise((resolve) => setTimeout(resolve, 2));
+    await post("tell", { me: HER, mood: "tired" });
+    await post("say", { me: HER, text: "sleep soon please" });
+
+    const returned = await view(HIM);
+    expect(returned.arrivals).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "mood", mood: "tired" }),
+        expect.objectContaining({ kind: "line", text: "sleep soon please" }),
+      ]),
+    );
+    expect((await view(HIM)).arrivals).toEqual([]);
+  });
 });
 
 describe("requests that should not get through", () => {
