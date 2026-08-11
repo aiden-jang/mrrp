@@ -73,6 +73,8 @@ const SUMMON_MS = 5200;
 /** A cardboard box is never really absent; sometimes it is only waiting to be asked for. */
 const BOX_CODE = "box";
 const SECRET_BOX_MS = 8200;
+/** A second quick box tap turns a peek into a tiny peekaboo performance. */
+const BOX_PLAY_MS = 2800;
 /** How long the cursor has to stay beside her before she answers with a slow blink. */
 const SLOW_BLINK_WAIT_MS = 1800;
 const SLOW_BLINK_MS = 850;
@@ -241,6 +243,7 @@ export function Cat({
   const windowTaps = useRef({ count: 0, last: -1e9, constellationUntil: -1e9, sunCatcherUntil: -1e9 });
   /** When the box gets a tap, she rises just far enough to be caught looking. */
   const boxPeekUntil = useRef(-1e9);
+  const boxTaps = useRef({ count: 0, last: -1e9, playUntil: -1e9 });
   /** A tapped bed is an invitation, not a command; she only stays for a small local while. */
   const bedNestUntil = useRef(-1e9);
   /** The plant is allowed one local little objection when somebody pokes it. */
@@ -535,9 +538,21 @@ export function Cat({
         }
       }
       if (hit?.key === "box" && boxIsHere) {
-        boxPeekUntil.current = performance.now() + 1200;
-        speakUntil.current = performance.now() + 800;
-        play("mrrp");
+        const now = performance.now();
+        const taps = boxTaps.current;
+        taps.count = now - taps.last < 1250 ? taps.count + 1 : 1;
+        taps.last = now;
+        if (taps.count >= 2) {
+          taps.count = 0;
+          taps.playUntil = now + BOX_PLAY_MS;
+          boxPeekUntil.current = taps.playUntil;
+          speakUntil.current = now + 1100;
+          play("twinkle");
+        } else {
+          boxPeekUntil.current = now + 1200;
+          speakUntil.current = now + 800;
+          play("mrrp");
+        }
       }
       if (hit?.key === "bed") {
         const now = performance.now();
@@ -1141,6 +1156,7 @@ export function Cat({
       const boxHere = boxRef.current || t < secretBoxUntil.current;
       const inBox = boxHere && !sc.atDoor;
       const peeking = !reduce && boxHere && t < boxPeekUntil.current;
+      const boxPlaying = !reduce && boxHere && t < boxTaps.current.playUntil;
       if (boxHere) {
         blit(BOX_BACK, BOX_X + shake("box"), BOX_Y, { w: INK, k: "#c69a63", s: "#a97f4d" });
       }
@@ -1277,7 +1293,11 @@ export function Cat({
         (reduce || sc.play <= 0.5 ? 0 : Math.round(Math.abs(Math.sin(t / 260)) * 2));
       // The box front still covers the rest of her, so this reads as a shy answer from inside it
       // rather than a generic jump animation pasted over the furniture.
-      const peekLift = peeking ? Math.round(Math.sin(((boxPeekUntil.current - t) / 1200) * Math.PI) * 5) : 0;
+      const peekLift = boxPlaying
+        ? 4 + Math.round(Math.abs(Math.sin(t / 210)) * 3)
+        : peeking
+          ? Math.round(Math.sin(((boxPeekUntil.current - t) / 1200) * Math.PI) * 5)
+          : 0;
       const y = ky + breathe - hop - peekLift;
       catBox.current = { x0: kx + sp.ox, y0: y + sp.oy, x1: kx + sp.ox + sp.w, y1: y + sp.oy + sp.h };
 
@@ -1310,6 +1330,23 @@ export function Cat({
       // is the line between a cat in a box and a cat standing behind one.
       if (boxHere) {
         blit(BOX_FRONT, BOX_X + shake("box"), BOX_Y + 3, { w: INK, k: "#d8ab72" });
+        if (boxPlaying) {
+          // Two paws hook over the rim while a few packing-paper flecks escape. The box front is
+          // already drawn over her body, so these four fur pixels are enough to read as peekaboo.
+          const bx = BOX_X + shake("box");
+          rect(bx + 4, BOX_Y + 3, 3, 2, L.fur);
+          rect(bx + 13, BOX_Y + 3, 3, 2, L.fur);
+          px(bx + 4, BOX_Y + 3, INK); px(bx + 6, BOX_Y + 3, INK);
+          px(bx + 13, BOX_Y + 3, INK); px(bx + 15, BOX_Y + 3, INK);
+          const remaining = boxTaps.current.playUntil - t;
+          const fade = Math.min(1, remaining / 450);
+          for (let i = 0; i < 5; i++) {
+            const phase = (t / 430 + i * 0.73) % 1;
+            const fx = bx + 2 + i * 4 + Math.round(Math.sin(t / 180 + i) * 2);
+            const fy = BOX_Y + 2 - Math.round(phase * 12);
+            px(fx, fy, `rgba(255,238,190,${fade * (1 - phase)})`);
+          }
+        }
       }
 
       // The held-floor reward is only a blink of light on the boards. A literal beam would cut
