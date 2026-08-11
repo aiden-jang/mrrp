@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Action, Arrival, Mood, RoomView } from "./types.js";
 import { ACTIONS, MOODS } from "./types.js";
-import { doAct, doClock, doDress, doNotes, doRecover, doRelease, doSay, doTell, doTidy, fetchRoom, lastRoom, myName, newRoomId, roomFromPath } from "./api.js";
+import { doAct, doClock, doDress, doNotes, doRecover, doRelease, doSay, doTell, doTidy, doWindowLight, fetchRoom, lastRoom, myName, newRoomId, roomFromPath } from "./api.js";
 import { Cat } from "./Cat.js";
 import { sceneFor } from "./hours.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
@@ -291,6 +291,18 @@ function RoomPage({ id }: { id: string }) {
       // A failed tidy is not worth an error banner. The mug is still on the floor; tap it again.
     }
   }, []);
+  const windowLightPending = useRef(false);
+  const touchWindowLight = useCallback(async () => {
+    if (windowLightPending.current) return;
+    windowLightPending.current = true;
+    try {
+      setView(await doWindowLight(id));
+    } catch {
+      // It is an easter egg, not a form. A failed glint leaves the ordinary window untouched.
+    } finally {
+      windowLightPending.current = false;
+    }
+  }, [id]);
 
   const saveRoomImage = async (): Promise<void> => {
     if (!captureRoom || imageStatus) return;
@@ -629,6 +641,8 @@ function RoomPage({ id }: { id: string }) {
             doorOpenAt={doorOpenAt}
             box={view.box}
             gift={view.gift}
+            windowLight={view.windowLight}
+            onWindowLight={() => void touchWindowLight()}
             shelfDown={view.shelfDown}
             onTidy={() => void tidy()}
             /* Holding on her is petting, the one gesture that isn't a button. She gets a poke instead:

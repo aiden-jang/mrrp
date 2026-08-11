@@ -47,6 +47,12 @@ interface Person {
   visits: number;
 }
 
+/** One shared, replaceable glint — never a history, count, or unread obligation. */
+interface WindowLight {
+  from: string;
+  at: number;
+}
+
 /**
  * One Durable Object per room, and a room is exactly two people.
  *
@@ -179,6 +185,27 @@ export class Room extends DurableObject<Env> {
   }
 
   /**
+   * Pass one small light through the room's window.
+   *
+   * With no light waiting, a seated person leaves one. If the other person touches it, it is simply
+   * collected. There can only ever be one, it has no text and there is no counter, so a hidden
+   * gesture cannot quietly turn into another inbox to clear.
+   */
+  async touchWindowLight(me: string): Promise<RoomView | null> {
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    const { him, her } = this.roles(people);
+    if (me !== him && me !== her) return null;
+
+    const current = await this.ctx.storage.get<WindowLight>("windowLight");
+    if (current && current.from !== me) await this.ctx.storage.delete("windowLight");
+    else await this.ctx.storage.put<WindowLight>("windowLight", { from: me, at: Date.now() });
+
+    people[me]!.lastSeen = Date.now();
+    await this.ctx.storage.put("people", people);
+    return this.build(me, people);
+  }
+
+  /**
    * Set her name and colouring, so the cat can look like a cat she actually knows.
    *
    * His to set, and it is checked here rather than by hiding the form. The room link is the only
@@ -239,6 +266,8 @@ export class Room extends DurableObject<Env> {
     delete people[him];
     people[me] = { ...old, lastSeen: Date.now() };
     await this.ctx.storage.put("people", people);
+    const light = await this.ctx.storage.get<WindowLight>("windowLight");
+    if (light?.from === him) await this.ctx.storage.put("windowLight", { ...light, from: me });
     return true;
   }
 
@@ -303,6 +332,8 @@ export class Room extends DurableObject<Env> {
     // things done by a stranger.
     const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
     await this.ctx.storage.put("log", log.filter((v) => v.who !== her));
+    const light = await this.ctx.storage.get<WindowLight>("windowLight");
+    if (light?.from === her) await this.ctx.storage.delete("windowLight");
     return true;
   }
 
@@ -407,6 +438,7 @@ export class Room extends DurableObject<Env> {
     const otherId = youAreHer ? him : her;
     const them = otherId ? people[otherId] ?? null : null;
     const waitingForThem = !her;
+    const windowLight = await this.ctx.storage.get<WindowLight>("windowLight");
 
     // A bounded arrival card, not a message history. The timestamp captured before view() updates
     // lastSeen makes this work after a day away and during a live poll alike; the next read is empty.
@@ -471,6 +503,9 @@ export class Room extends DurableObject<Env> {
       shelfDown: (await this.ctx.storage.get<boolean>("shelfDown")) ?? false,
       // His only. Telling her what she left would turn a thing she did into a thing she performed.
       gift: me === him ? ((await this.ctx.storage.get<Gift>("gift")) ?? null) : null,
+      // The sender does not see their own glint as something waiting for them. Spectators see no
+      // private handoff at all, even though they may look around the rest of the room.
+      windowLight: seated && !!windowLight && windowLight.from !== me,
       // Only today's box. An older one is simply not reported, so it needs no cleanup pass.
       box: ((await this.ctx.storage.get<number>("boxDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
       // His only, and readable for as long as he holds the seat. Useless to anybody else: redeeming it

@@ -124,6 +124,8 @@ export interface RoomView {
   shelfDown: boolean;
   /** Something she left on the floor while he was away. His side only, cleared the moment he acts. */
   gift: Gift | null;
+  /** A tiny window light left by the other seat. Touching the window collects it. */
+  windowLight: boolean;
   /** Takes his seat back on a new device. Sent to him and nobody else. */
   recoveryCode: string | null;
   /** His side, so he can edit them. She must never receive the ones she has not reached. */

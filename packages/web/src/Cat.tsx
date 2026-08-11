@@ -40,6 +40,8 @@ const SUN_CATCHER_MS = 3200;
 const STAR_MS = 900;
 /** A double-tap at the night window leaves a tiny constellation to find for a moment. */
 const CONSTELLATION_MS = 6200;
+/** A sent light rises into the glass before it waits on the other person's side. */
+const WINDOW_LIGHT_SEND_MS = 1900;
 /** A leaf takes just long enough to fall that it reads as a small response, not an idle loop. */
 const LEAF_FALL_MS = 1200;
 /** Just enough time for a picture-frame glint to read, not enough to turn into decoration. */
@@ -146,6 +148,8 @@ export function Cat({
   doorOpenAt = null,
   box = false,
   gift = null,
+  windowLight = false,
+  onWindowLight,
   shelfDown = false,
   onTidy,
   role = null,
@@ -193,6 +197,10 @@ export function Cat({
   box?: boolean;
   /** Something she left on the floor. His side only; the room just draws whatever it's handed. */
   gift?: Gift | null;
+  /** The other person left a light in the window. It waits until this person touches it. */
+  windowLight?: boolean;
+  /** Leaves a light when the window is double-tapped, or collects one already waiting. */
+  onWindowLight?: () => void;
   /** The mug is on the floor rather than the shelf. Tapping it there puts it back. */
   shelfDown?: boolean;
   /** Called when someone taps the fallen mug. Seat-checked on the server, not here. */
@@ -231,6 +239,10 @@ export function Cat({
   boxRef.current = box;
   const giftRef = useRef(gift);
   giftRef.current = gift;
+  const windowLightRef = useRef(windowLight);
+  windowLightRef.current = windowLight;
+  const onWindowLightRef = useRef(onWindowLight);
+  onWindowLightRef.current = onWindowLight;
   const downRef = useRef(shelfDown);
   downRef.current = shelfDown;
   const tidyRef = useRef(onTidy);
@@ -253,6 +265,8 @@ export function Cat({
   const bird = useRef(-1e9);
   /** A night-only window surprise. Like the bird, it is a moment rather than shared room state. */
   const shootingStar = useRef(-1e9);
+  /** Local send/collect flourish; the waiting state itself comes from the room. */
+  const windowLightTouchedAt = useRef(-1e9);
   /** Looking twice is a little different from looking once. */
   const windowTaps = useRef({ count: 0, last: -1e9, constellationUntil: -1e9, sunCatcherUntil: -1e9 });
   /** When the box gets a tap, she rises just far enough to be caught looking. */
@@ -504,6 +518,14 @@ export function Cat({
       if (hit?.key === "window") {
         const now = performance.now();
         const scene = sceneFor(clockRef.current, Date.now(), moodRef.current, togetherRef.current);
+        // A light from the other person outranks the ordinary window secrets. One touch collects it;
+        // the server clears the shared bit while this local burst makes the handoff visible now.
+        if (windowLightRef.current && roleRef.current) {
+          windowLightTouchedAt.current = now;
+          windowTaps.current.count = 0;
+          onWindowLightRef.current?.();
+          play("twinkle");
+        }
         if (scene.sun < 0.12) {
           shootingStar.current = now;
           const taps = windowTaps.current;
@@ -515,6 +537,10 @@ export function Cat({
           if (taps.count >= 2) {
             taps.constellationUntil = now + CONSTELLATION_MS;
             taps.count = 0;
+            if (roleRef.current && !windowLightRef.current) {
+              windowLightTouchedAt.current = now;
+              onWindowLightRef.current?.();
+            }
           }
         }
         else {
@@ -526,6 +552,10 @@ export function Cat({
           if (taps.count >= 2) {
             taps.sunCatcherUntil = now + SUN_CATCHER_MS;
             taps.count = 0;
+            if (roleRef.current && !windowLightRef.current) {
+              windowLightTouchedAt.current = now;
+              onWindowLightRef.current?.();
+            }
           }
         }
       }
@@ -984,6 +1014,34 @@ export function Cat({
             for (let col = start; col < 15; col += 3) px(wx + col, wy(row), color);
           }
         }
+      }
+      // Unlike shooting stars and prisms, this one came from the other seat and stays in the pane
+      // until found. Five pixel-art points are enough to read as a deliberately brighter star in
+      // both daylight and night without adding a badge, label, or notification to the room.
+      if (windowLightRef.current) {
+        const pulse = 0.72 + Math.sin(t / 520) * 0.2;
+        const c = `rgba(255,226,139,${pulse})`;
+        const lx = wx + 12;
+        const ly = wy(5);
+        px(lx, ly, "#fff8d8");
+        px(lx - 1, ly, c); px(lx + 1, ly, c);
+        px(lx, ly - 1, c); px(lx, ly + 1, c);
+        if (Math.sin(t / 700) > 0.35) {
+          px(lx - 2, ly, `rgba(255,226,139,${pulse * 0.42})`);
+          px(lx + 2, ly, `rgba(255,226,139,${pulse * 0.42})`);
+        }
+      }
+      const lightTouchAge = t - windowLightTouchedAt.current;
+      if (!reduce && lightTouchAge >= 0 && lightTouchAge < WINDOW_LIGHT_SEND_MS) {
+        const p = lightTouchAge / WINDOW_LIGHT_SEND_MS;
+        const a = Math.sin(Math.min(1, p) * Math.PI) * 0.85;
+        const lx = wx + 4 + Math.round(p * 8);
+        const ly = wy(8) - Math.round(Math.sin(p * Math.PI) * 5);
+        px(lx, ly, `rgba(255,248,211,${a})`);
+        px(lx - 1, ly, `rgba(255,219,128,${a * 0.72})`);
+        px(lx + 1, ly, `rgba(255,219,128,${a * 0.72})`);
+        px(lx, ly - 1, `rgba(255,232,164,${a * 0.72})`);
+        px(lx, ly + 1, `rgba(255,232,164,${a * 0.72})`);
       }
       // A pair of quick daytime taps gets more than the bird: it catches a little coloured light
       // on the wall and boards. It lives in the sunbeam rather than becoming a screen-wide rainbow,
