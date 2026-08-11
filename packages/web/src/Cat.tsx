@@ -3,6 +3,7 @@ import type { Cat as CatLook, Clock, Gift, Mood } from "./types.js";
 import { mixHex, sceneFor } from "./hours.js";
 import { fireflyAt, mothAt } from "./critters.js";
 import { play } from "./sound.js";
+import { catCallCode } from "./secrets.js";
 import { BED, BIRD, BOX_BACK, BOX_FRONT, DOOR, EK, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, MUG, MUG_DOWN, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
@@ -89,6 +90,8 @@ const CATNIP_X = 54;
 /** A word becomes a five-note tune and a dance too small for dignity. */
 const MUSIC_CODE = "music";
 const MUSIC_MS = 5600;
+/** Calling her by her actual name gets a response no generic secret word can give. */
+const NAME_CALL_MS = 6200;
 /** A second quick box tap turns a peek into a tiny peekaboo performance. */
 const BOX_PLAY_MS = 2800;
 /** How long the cursor has to stay beside her before she answers with a slow blink. */
@@ -308,6 +311,8 @@ export function Cat({
   const catnipUntil = useRef(-1e9);
   /** Hold her dance near where she heard the command instead of letting the mood walk her away. */
   const music = useRef({ until: -1e9, x: GW / 2 });
+  /** Her name brings her to the middle for one small recognition moment. */
+  const nameCallUntil = useRef(-1e9);
   /** A slow blink is one answer per quiet cursor stay, never an idle animation on a timer. */
   const slowBlink = useRef({ until: -1e9, answered: false });
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
@@ -723,10 +728,20 @@ export function Cat({
       }
 
       if (e.key.length === 1 && /[a-z]/i.test(e.key)) {
+        const nameCode = catCallCode(lookRef.current.name);
         typedRoomCode = `${typedRoomCode}${e.key.toLowerCase()}`.slice(
-          -Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length, BOX_CODE.length, YARN_CODE.length, TREAT_CODE.length, CATNIP_CODE.length, MUSIC_CODE.length),
+          -Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length, BOX_CODE.length, YARN_CODE.length, TREAT_CODE.length, CATNIP_CODE.length, MUSIC_CODE.length, nameCode?.length ?? 0),
         );
-        if (typedRoomCode.endsWith(TYPED_ROOM_CODE)) {
+        // Her real name wins over the shipped words. A cat called Music should still know that she
+        // is being called; room tricks are generic, recognition is not.
+        if (nameCode && typedRoomCode.endsWith(nameCode)) {
+          const now = performance.now();
+          nameCallUntil.current = now + NAME_CALL_MS;
+          speakUntil.current = now + 1200;
+          bounce.current = 1;
+          typedRoomCode = "";
+          play("purr");
+        } else if (typedRoomCode.endsWith(TYPED_ROOM_CODE)) {
           const now = performance.now();
           catTaps.current.chorusUntil = now + PURR_CHORUS_MS;
           speakUntil.current = now + 1250;
@@ -1332,13 +1347,16 @@ export function Cat({
         : 12 + (Math.sin(catnipProgress * Math.PI * 6 - Math.PI / 2) * 0.5 + 0.5) * (GW - 28);
       const musicPlaying = t < music.current.until && !sc.atDoor;
       const musicDancing = musicPlaying && !reduce;
+      const nameCalled = t < nameCallUntil.current;
       const yarnProgress = yarnPlaying ? 1 - (yarnUntil.current - t) / YARN_MS : 0;
       // Two passes with a turnaround in the middle. The eased ends make the ball feel pushed rather
       // than motorized, while the little vertical hop below keeps it from sliding like a UI dot.
       const yarnLap = (yarnProgress * 2) % 2;
       const yarnAcross = yarnLap <= 1 ? yarnLap : 2 - yarnLap;
       const yarnX = 13 + yarnAcross * (GW - 26);
-      const wantX = musicPlaying
+      const wantX = nameCalled
+        ? GW / 2
+        : musicPlaying
         ? music.current.x
         : catnipActive
         ? catnipX
@@ -1411,7 +1429,7 @@ export function Cat({
       // A door opening holds her eyes open too. Without this she stays loafed through the whole
       // swing at any drowsy hour, because the perk pose needs open eyes and the scene had already
       // decided she was sleepy. A cat sleeps through a lot, but not a door.
-      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || musicPlaying || catnipActive || zooming || laserPlaying || yarnPlaying || treating || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
+      const forced = eyesRef.current || nameCalled || (looking && !reduce) || doorRef.current !== null || musicPlaying || catnipActive || zooming || laserPlaying || yarnPlaying || treating || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = !slowBlinking && (forced || (open > 0.4 && !blink));
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
@@ -1491,6 +1509,26 @@ export function Cat({
       const tailY = pose === "loaf" ? y - 4 : pose === "perk" ? y - 9 : y - 6;
       blit(TAIL, pose === "stand" ? kx - 12 : tailX, tailY + wag, pal, pose === "stand");
       blit(sp, kx, y, pal);
+
+      // Her own name is the most personal secret in the room. She comes to the middle, looks up,
+      // and leaves a tiny collar-shaped ring of warmth around herself. Reduced motion keeps the
+      // recognition and swaps the rising trail for one still heart.
+      if (nameCalled) {
+        const remaining = nameCallUntil.current - t;
+        const fade = Math.min(1, remaining / 650);
+        const count = reduce ? 1 : 4;
+        for (let i = 0; i < count; i++) {
+          const p = reduce ? 0.35 : (1 - remaining / NAME_CALL_MS + i / count) % 1;
+          const hx = kx - 11 + i * 7 + Math.round(Math.sin(t / 310 + i) * (reduce ? 0 : 2));
+          const hy = Math.round(y - 3 - p * 13);
+          const a = fade * (reduce ? 0.75 : Math.sin(p * Math.PI));
+          const c = `rgba(232,120,140,${a})`;
+          px(hx, hy, c); px(hx + 2, hy, c);
+          rect(hx - 1, hy + 1, 5, 1, c);
+          rect(hx, hy + 2, 3, 1, c);
+          px(hx + 1, hy + 3, c);
+        }
+      }
       // The box, near wall. Drawn after her, which is the whole reason the box is two sprites: this
       // is the line between a cat in a box and a cat standing behind one.
       if (boxHere) {
