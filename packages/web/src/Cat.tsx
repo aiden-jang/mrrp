@@ -54,6 +54,8 @@ const MUG_GLOW_MS = 2600;
 const GIFT_WISH_MS = 2800;
 /** A second invitation to the bed gets a tiny sleepy dream. */
 const BED_DREAM_MS = 3200;
+/** Three quick pats are enough to make the whole little room purr back. */
+const PURR_CHORUS_MS = 2600;
 /** The room's keyboard secret only paints the night window, never the whole screen. */
 const AURORA_MS = 5600;
 const ROOM_CODE = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight"];
@@ -237,6 +239,7 @@ export function Cat({
   const giftGlint = useRef(-1e9);
   const giftTaps = useRef({ count: 0, last: -1e9, wishUntil: -1e9 });
   const bedTaps = useRef({ count: 0, last: -1e9, dreamUntil: -1e9 });
+  const catTaps = useRef({ count: 0, last: -1e9, chorusUntil: -1e9 });
   /** A second knock means somebody is playing with the door, so the room plays back. */
   const doorTaps = useRef({ count: 0, last: -1e9, noteUntil: -1e9 });
   /** A tiny keyboard secret. It is local, ephemeral, and only visible through the night window. */
@@ -343,8 +346,20 @@ export function Cat({
       // drawn 24 pixels wide.
       const b = catBox.current;
       if (b && x >= b.x0 - 2 && x <= b.x1 + 2 && y >= b.y0 - 2 && y <= b.y1 + 3) {
+        const now = performance.now();
         if (roleRef.current === "him") { petting.current = true; onPetRef.current?.(); }
         else if (roleRef.current === "her") onPokeRef.current?.();
+        if (roleRef.current) {
+          const taps = catTaps.current;
+          taps.count = now - taps.last < 1200 ? taps.count + 1 : 1;
+          taps.last = now;
+          if (taps.count >= 3) {
+            taps.chorusUntil = now + PURR_CHORUS_MS;
+            taps.count = 0;
+            speakUntil.current = now + 1250;
+            play("mrrp");
+          }
+        }
         return;
       }
       // The fallen mug first: it sits on the boards under the shelf, so a tap there is much more
@@ -1273,6 +1288,22 @@ export function Cat({
           px(purrX, yy, c);
           px(purrX + 1, yy - 1, c);
           px(purrX + 2, yy, c);
+        }
+      }
+
+      // Three quick little pats are an accidental rhythm, so she answers in one: a few low purr
+      // waves spread from her instead of hearts bursting over her. It feels like the room joining
+      // in for a second, then gets out of the way before it can become feedback for every pet.
+      const chorusRemaining = catTaps.current.chorusUntil - t;
+      if (!reduce && chorusRemaining > 0) {
+        const p = 1 - chorusRemaining / PURR_CHORUS_MS;
+        const a = Math.min(1, chorusRemaining / 450) * (1 - p * 0.25);
+        for (let ring = 0; ring < 3; ring++) {
+          const radius = 5 + ring * 5 + Math.round((p * 5 + ring) % 3);
+          const c = `rgba(240,174,180,${a * (0.62 - ring * 0.14)})`;
+          px(kx - radius, ky + 2, c);
+          px(kx + radius, ky + 2, c);
+          if (ring < 2) px(kx - radius + 2, ky + 4, c);
         }
       }
 
