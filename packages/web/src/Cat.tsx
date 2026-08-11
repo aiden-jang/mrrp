@@ -397,8 +397,10 @@ export function Cat({
         if (taps.count >= 2) {
           taps.wishUntil = now + GIFT_WISH_MS;
           taps.count = 0;
+          play("twinkle");
+        } else {
+          play("mrrp");
         }
-        play("mrrp");
         return;
       }
       const hit = PROPS.find((q) =>
@@ -460,8 +462,10 @@ export function Cat({
         if (taps.count >= 2) {
           taps.memoryUntil = now + PHOTO_MEMORY_MS;
           taps.count = 0;
+          play("twinkle");
+        } else {
+          play("shutter");
         }
-        play("shutter");
       }
       if (hit?.key === "box" && boxRef.current) {
         boxPeekUntil.current = performance.now() + 1200;
@@ -477,6 +481,7 @@ export function Cat({
         if (taps.count >= 2) {
           taps.dreamUntil = now + BED_DREAM_MS;
           taps.count = 0;
+          play("settle");
         }
       }
       if (hit?.key === "shelf" && !downRef.current) {
@@ -488,6 +493,7 @@ export function Cat({
         if (taps.count >= 2) {
           taps.glowUntil = now + MUG_GLOW_MS;
           taps.count = 0;
+          play("twinkle");
         }
       }
       // A tap at the door is not shared presence — it is just somebody checking whether she is
@@ -501,8 +507,10 @@ export function Cat({
         if (taps.count >= 2) {
           taps.noteUntil = now + DOOR_NOTE_MS;
           taps.count = 0;
+          play("thump");
+        } else {
+          play("mrrp");
         }
-        play("mrrp");
       }
       if (hit) {
         poked.current = { key: hit.key, at: performance.now() };
@@ -557,8 +565,8 @@ export function Cat({
           // succeeded invisibly. Daylight now answers with its own longer prism and a visiting bird.
           windowTaps.current.sunCatcherUntil = now + AURORA_MS;
           bird.current = now;
-          play("chirp");
         }
+        play("twinkle");
         speakUntil.current = now + 1000;
         roomCodeAt = 0;
       }
@@ -570,7 +578,7 @@ export function Cat({
           catTaps.current.chorusUntil = now + PURR_CHORUS_MS;
           speakUntil.current = now + 1250;
           typedRoomCode = "";
-          play("mrrp");
+          play("purr");
         }
       } else if (!ROOM_CODE.includes(e.key)) {
         typedRoomCode = "";

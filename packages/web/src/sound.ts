@@ -202,7 +202,7 @@ function voice(
   osc.stop(o.at + o.dur + 0.05);
 }
 
-export type Cue = "purr" | "mrrp" | "chirp" | "brush" | "thump" | "shutter" | "settle";
+export type Cue = "purr" | "mrrp" | "chirp" | "brush" | "thump" | "shutter" | "settle" | "twinkle";
 
 const CUES: Record<Cue, (g: { ctx: AudioContext; master: GainNode }, t: number) => void> = {
   /*
@@ -249,6 +249,14 @@ const CUES: Record<Cue, (g: { ctx: AudioContext; master: GainNode }, t: number) 
   /* Her settling against you: a short purr with no attack to speak of. */
   settle: (g, t) => {
     rumble(g, { at: t, dur: 1.1, gain: 0.2, filter: "lowpass", from: 320, q: 0.7, flutter: 24, flutterDepth: 0.55, attack: 0.25 });
+  },
+
+  /* Three tiny glassy notes for a secret being accepted. It stays shorter and quieter than her
+     voice, because the room should acknowledge the discovery without turning into a game menu. */
+  twinkle: (g, t) => {
+    voice(g, { at: t, dur: 0.18, gain: 0.055, sweep: [660, 740], type: "sine" });
+    voice(g, { at: t + 0.11, dur: 0.2, gain: 0.05, sweep: [880, 990], type: "sine" });
+    voice(g, { at: t + 0.23, dur: 0.25, gain: 0.045, sweep: [1100, 1320], type: "sine" });
   },
 };
 
