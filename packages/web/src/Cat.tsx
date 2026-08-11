@@ -518,6 +518,7 @@ export function Cat({
         // A regular board tap is just a small point of interest; holding it is what escalates into
         // the chase. This makes the floor responsive without making every tap an easter egg.
         lookAt.current = { x, until: performance.now() + 900 };
+        poked.current = { key: "floor", at: performance.now() };
       }
     };
     const onUp = () => {
@@ -705,6 +706,7 @@ export function Cat({
         if (age < 0 || age > 620) return 0;
         return Math.round(Math.sin(age / 30) * (1 - age / 620) * 2);
       };
+      const floorTap = pk?.key === "floor" && t - pk.at < 420;
 
       // Props AFTER the light. Drawn before it, the beam's dither punched holes through them.
       /*
@@ -1151,6 +1153,10 @@ export function Cat({
         px(lx, ly, "#ff6b6b");
         px(lx + 1, ly, "rgba(255,161,161,.7)");
         if (age < 0.78) px(lx - 1, ly + 1, "rgba(255,116,116,.35)");
+      }
+      if (floorTap) {
+        const age = (t - pk!.at) / 420;
+        px(Math.round(ptr.x), FLOOR + 1, `rgba(255,239,183,${1 - age})`);
       }
 
       // The moth, drawn before her so she can be in front of it, and so its position is known when
