@@ -7,6 +7,7 @@ import { catCallCode } from "./secrets.js";
 import { moonPhase, moonPixelLit } from "./moon.js";
 import { seasonFor, seasonalPlantColors } from "./season.js";
 import { mouseRunAt } from "./mouse.js";
+import { BUBBLE_GAME_MS, bubbleMomentAt, bubbleSeeds, type BubbleSeed } from "./bubbles.js";
 import { BED, BIRD, BOX_BACK, BOX_FRONT, DOOR, EK, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, MUG, MUG_DOWN, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
@@ -96,6 +97,9 @@ const MUSIC_MS = 5600;
 /** A typed mouse gets one cinematic mistake: peeking in while a cat is home. */
 const MOUSE_CODE = "mouse";
 const MOUSE_MS = 7000;
+/** A typed invitation fills the room with five bubbles that can actually be chased and popped. */
+const BUBBLE_CODE = "bubbles";
+const BUBBLE_REWARD_MS = 2400;
 /** Calling her by her actual name gets a response no generic secret word can give. */
 const NAME_CALL_MS = 6200;
 /** A second quick box tap turns a peek into a tiny peekaboo performance. */
@@ -317,6 +321,13 @@ export function Cat({
   /** Hold her dance near where she heard the command instead of letting the mood walk her away. */
   const music = useRef({ until: -1e9, x: GW / 2 });
   const mouseStartedAt = useRef(-1e9);
+  const bubbleGame = useRef<{ startedAt: number; seeds: BubbleSeed[]; popped: Set<number>; completedAt: number; lastPop: { x: number; y: number; at: number } | null }>({
+    startedAt: -1e9,
+    seeds: [],
+    popped: new Set(),
+    completedAt: -1e9,
+    lastPop: null,
+  });
   /** Her name brings her to the middle for one small recognition moment. */
   const nameCallUntil = useRef(-1e9);
   /** A slow blink is one answer per quiet cursor stay, never an idle animation on a timer. */
@@ -467,6 +478,31 @@ export function Cat({
       cv.focus({ preventScroll: true });
       const { x, y } = gridAt(e);
       ptr.x = x; ptr.y = y; ptr.in = true;
+      const game = bubbleGame.current;
+      const bubbleElapsed = performance.now() - game.startedAt;
+      if (bubbleElapsed >= 0 && bubbleElapsed < BUBBLE_GAME_MS && game.completedAt < 0) {
+        const bubbleHit = game.seeds.findIndex((seed, index) => {
+          if (game.popped.has(index)) return false;
+          const bubble = bubbleMomentAt(seed, bubbleElapsed, reduce);
+          return bubble !== null && Math.hypot(x - bubble.x, y - bubble.y) <= 5;
+        });
+        if (bubbleHit >= 0) {
+          const now = performance.now();
+          const bubble = bubbleMomentAt(game.seeds[bubbleHit]!, bubbleElapsed, reduce)!;
+          game.popped.add(bubbleHit);
+          game.lastPop = { x: bubble.x, y: bubble.y, at: now };
+          lookAt.current = { x: bubble.x, until: now + 1100 };
+          bounce.current = 1;
+          play("brush");
+          if (game.popped.size === game.seeds.length) {
+            game.completedAt = now;
+            catTaps.current.chorusUntil = now + BUBBLE_REWARD_MS;
+            speakUntil.current = now + 1200;
+            play("purr");
+          }
+          return;
+        }
+      }
       // Her first, and with a couple of pixels of slack, because a finger is much bigger than a cat
       // drawn 24 pixels wide.
       const b = catBox.current;
@@ -739,7 +775,7 @@ export function Cat({
       if (e.key.length === 1 && /[a-z]/i.test(e.key)) {
         const nameCode = catCallCode(lookRef.current.name);
         typedRoomCode = `${typedRoomCode}${e.key.toLowerCase()}`.slice(
-          -Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length, BOX_CODE.length, YARN_CODE.length, TREAT_CODE.length, CATNIP_CODE.length, MUSIC_CODE.length, MOUSE_CODE.length, nameCode?.length ?? 0),
+          -Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length, BOX_CODE.length, YARN_CODE.length, TREAT_CODE.length, CATNIP_CODE.length, MUSIC_CODE.length, MOUSE_CODE.length, BUBBLE_CODE.length, nameCode?.length ?? 0),
         );
         // Her real name wins over the shipped words. A cat called Music should still know that she
         // is being called; room tricks are generic, recognition is not.
@@ -809,6 +845,19 @@ export function Cat({
           bounce.current = 1;
           typedRoomCode = "";
           play("chirp");
+        } else if (typedRoomCode.endsWith(BUBBLE_CODE)) {
+          const now = performance.now();
+          bubbleGame.current = {
+            startedAt: now,
+            seeds: bubbleSeeds(catX.current ?? GW / 2),
+            popped: new Set(),
+            completedAt: -1e9,
+            lastPop: null,
+          };
+          speakUntil.current = now + 1050;
+          bounce.current = 1;
+          typedRoomCode = "";
+          play("twinkle");
         }
       } else if (!ROOM_CODE.includes(e.key)) {
         typedRoomCode = "";
@@ -1398,6 +1447,15 @@ export function Cat({
         : mouseRunAt(t - mouseStartedAt.current, MOUSE_MS);
       const mouseVisiting = mouseMoment !== null && !sc.atDoor;
       const mouseChasing = mouseVisiting && !reduce && mouseMoment.phase !== 'peek';
+      const bubbleElapsed = t - bubbleGame.current.startedAt;
+      const liveBubbles = bubbleGame.current.seeds.flatMap((seed, index) => {
+        if (bubbleGame.current.popped.has(index)) return [];
+        const moment = bubbleMomentAt(seed, bubbleElapsed, reduce);
+        return moment ? [{ ...moment, index }] : [];
+      });
+      const bubblePlaying = liveBubbles.length > 0 && !sc.atDoor;
+      const bubbleTarget = liveBubbles[0] ?? null;
+      const bubbleRewarding = t - bubbleGame.current.completedAt < BUBBLE_REWARD_MS;
       const nameCalled = t < nameCallUntil.current;
       const yarnProgress = yarnPlaying ? 1 - (yarnUntil.current - t) / YARN_MS : 0;
       // Two passes with a turnaround in the middle. The eased ends make the ball feel pushed rather
@@ -1407,6 +1465,8 @@ export function Cat({
       const yarnX = 13 + yarnAcross * (GW - 26);
       const wantX = nameCalled
         ? GW / 2
+        : bubblePlaying
+        ? bubbleTarget!.x
         : mouseChasing
         ? Math.max(12, mouseMoment!.x - 8)
         : musicPlaying
@@ -1482,7 +1542,7 @@ export function Cat({
       // A door opening holds her eyes open too. Without this she stays loafed through the whole
       // swing at any drowsy hour, because the perk pose needs open eyes and the scene had already
       // decided she was sleepy. A cat sleeps through a lot, but not a door.
-      const forced = eyesRef.current || nameCalled || mouseVisiting || (looking && !reduce) || doorRef.current !== null || musicPlaying || catnipActive || zooming || laserPlaying || yarnPlaying || treating || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
+      const forced = eyesRef.current || nameCalled || mouseVisiting || bubblePlaying || bubbleRewarding || (looking && !reduce) || doorRef.current !== null || musicPlaying || catnipActive || zooming || laserPlaying || yarnPlaying || treating || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = !slowBlinking && (forced || (open > 0.4 && !blink));
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
@@ -1490,7 +1550,7 @@ export function Cat({
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
       // cat that did not notice, which is the one thing this feature is for.
       const noticing = (mouseVisiting || doorRef.current !== null || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking) && posed;
-      const pose: Pose = mouseChasing || musicDancing || catnipping || zooming || laserPlaying || yarnPlaying || summoning || (treating && treatProgress < 0.6) ? "play" : musicPlaying || catnipActive || treating ? "sit" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
+      const pose: Pose = mouseChasing || bubblePlaying || musicDancing || catnipping || zooming || laserPlaying || yarnPlaying || summoning || (treating && treatProgress < 0.6) ? "play" : musicPlaying || catnipActive || treating ? "sit" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
@@ -1580,6 +1640,46 @@ export function Cat({
       const tailY = pose === "loaf" ? y - 4 : pose === "perk" ? y - 9 : y - 6;
       blit(TAIL, pose === "stand" ? kx - 12 : tailX, tailY + wag, pal, pose === "stand");
       blit(sp, kx, y, pal);
+
+      // The bubbles are drawn in front of her because they are targets, not ambient particles.
+      // Each has a bright edge, a glassy blue shadow, and one moving highlight; five taps completes
+      // the scene and turns the last pop into a brief ring of hearts around the cat.
+      for (const bubble of liveBubbles) {
+        const bx = Math.round(bubble.x);
+        const by = Math.round(bubble.y);
+        const edge = `rgba(165,215,232,${bubble.presence * 0.9})`;
+        const shine = `rgba(255,255,245,${bubble.presence})`;
+        px(bx - 2, by - 1, edge); px(bx - 2, by, edge); px(bx - 1, by - 2, edge);
+        px(bx + 1, by - 2, edge); px(bx + 2, by - 1, edge); px(bx + 2, by, edge);
+        px(bx - 1, by + 2, edge); px(bx, by + 2, edge); px(bx + 1, by + 1, edge);
+        px(bx - 1, by - 1, shine);
+        if (Math.floor(t / 280 + bubble.index) % 2 === 0) px(bx, by - 2, shine);
+      }
+      const lastPop = bubbleGame.current.lastPop;
+      if (lastPop && t - lastPop.at < 520) {
+        const progress = (t - lastPop.at) / 520;
+        const radius = 2 + Math.round(progress * 5);
+        const alpha = 1 - progress;
+        const sparkle = `rgba(255,245,188,${alpha})`;
+        px(Math.round(lastPop.x - radius), Math.round(lastPop.y), sparkle);
+        px(Math.round(lastPop.x + radius), Math.round(lastPop.y), sparkle);
+        px(Math.round(lastPop.x), Math.round(lastPop.y - radius), sparkle);
+        px(Math.round(lastPop.x), Math.round(lastPop.y + radius), sparkle);
+      }
+      if (bubbleRewarding) {
+        const remaining = bubbleGame.current.completedAt + BUBBLE_REWARD_MS - t;
+        const fade = Math.min(1, remaining / 500);
+        for (let i = 0; i < 5; i++) {
+          const angle = i * (Math.PI * 2 / 5) + (reduce ? 0 : t / 850);
+          const hx = Math.round(kx + Math.cos(angle) * 15);
+          const hy = Math.round(y - 7 + Math.sin(angle) * 9);
+          const heart = `rgba(232,120,140,${fade})`;
+          px(hx, hy, heart); px(hx + 2, hy, heart);
+          rect(hx - 1, hy + 1, 5, 1, heart);
+          rect(hx, hy + 2, 3, 1, heart);
+          px(hx + 1, hy + 3, heart);
+        }
+      }
 
       // Her own name is the most personal secret in the room. She comes to the middle, looks up,
       // and leaves a tiny collar-shaped ring of warmth around herself. Reduced motion keeps the
