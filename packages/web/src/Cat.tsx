@@ -73,6 +73,9 @@ const SUMMON_MS = 5200;
 /** A cardboard box is never really absent; sometimes it is only waiting to be asked for. */
 const BOX_CODE = "box";
 const SECRET_BOX_MS = 8200;
+/** Some words are toys if you say them in the right room. */
+const YARN_CODE = "yarn";
+const YARN_MS = 5200;
 /** A second quick box tap turns a peek into a tiny peekaboo performance. */
 const BOX_PLAY_MS = 2800;
 /** How long the cursor has to stay beside her before she answers with a slow blink. */
@@ -272,6 +275,8 @@ export function Cat({
   const summonUntil = useRef(-1e9);
   /** A local cardboard delivery summoned from the keyboard. */
   const secretBoxUntil = useRef(-1e9);
+  /** A keyboard-summoned ball that makes two quick trips across the boards. */
+  const yarnUntil = useRef(-1e9);
   /** A slow blink is one answer per quiet cursor stay, never an idle animation on a timer. */
   const slowBlink = useRef({ until: -1e9, answered: false });
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
@@ -672,7 +677,7 @@ export function Cat({
 
       if (e.key.length === 1 && /[a-z]/i.test(e.key)) {
         typedRoomCode = `${typedRoomCode}${e.key.toLowerCase()}`.slice(
-          -Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length, BOX_CODE.length),
+          -Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length, BOX_CODE.length, YARN_CODE.length),
         );
         if (typedRoomCode.endsWith(TYPED_ROOM_CODE)) {
           const now = performance.now();
@@ -695,6 +700,13 @@ export function Cat({
           bounce.current = 1;
           typedRoomCode = "";
           play("thump");
+        } else if (typedRoomCode.endsWith(YARN_CODE)) {
+          const now = performance.now();
+          yarnUntil.current = now + YARN_MS;
+          speakUntil.current = now + 900;
+          bounce.current = 1;
+          typedRoomCode = "";
+          play("brush");
         }
       } else if (!ROOM_CODE.includes(e.key)) {
         typedRoomCode = "";
@@ -1211,10 +1223,19 @@ export function Cat({
       const nesting = t < bedNestUntil.current && !sc.atDoor && !zooming;
       const laserPlaying = !reduce && t < laser.current.until && !sc.atDoor;
       const summoning = !reduce && t < summonUntil.current && !sc.atDoor;
+      const yarnPlaying = !reduce && t < yarnUntil.current && !sc.atDoor;
+      const yarnProgress = yarnPlaying ? 1 - (yarnUntil.current - t) / YARN_MS : 0;
+      // Two passes with a turnaround in the middle. The eased ends make the ball feel pushed rather
+      // than motorized, while the little vertical hop below keeps it from sliding like a UI dot.
+      const yarnLap = (yarnProgress * 2) % 2;
+      const yarnAcross = yarnLap <= 1 ? yarnLap : 2 - yarnLap;
+      const yarnX = 13 + yarnAcross * (GW - 26);
       const wantX = zooming
         ? 10 + (Math.sin(zp * Math.PI * 2 - Math.PI / 2) * 0.5 + 0.5) * (GW - 34)
         : laserPlaying
           ? laser.current.x
+        : yarnPlaying
+          ? yarnX
         : inBox
           ? BOX_X + 2
           : nesting
@@ -1276,7 +1297,7 @@ export function Cat({
       // A door opening holds her eyes open too. Without this she stays loafed through the whole
       // swing at any drowsy hour, because the perk pose needs open eyes and the scene had already
       // decided she was sleepy. A cat sleeps through a lot, but not a door.
-      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming || laserPlaying || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
+      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming || laserPlaying || yarnPlaying || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = !slowBlinking && (forced || (open > 0.4 && !blink));
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
@@ -1284,7 +1305,7 @@ export function Cat({
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
       // cat that did not notice, which is the one thing this feature is for.
       const noticing = (doorRef.current !== null || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking) && posed;
-      const pose: Pose = zooming || laserPlaying || summoning ? "play" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
+      const pose: Pose = zooming || laserPlaying || yarnPlaying || summoning ? "play" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
@@ -1367,6 +1388,19 @@ export function Cat({
           const opacity = Math.max(0, 1 - (t - point.at) / 520) * 0.42;
           px(Math.round(point.x), Math.round(point.y), `rgba(255,107,107,${opacity})`);
         }
+      }
+      if (yarnPlaying) {
+        const yarnY = FLOOR + 17 - Math.round(Math.abs(Math.sin(yarnProgress * Math.PI * 8)) * 2);
+        const yc = "#d78aa0";
+        rect(Math.round(yarnX) - 2, yarnY - 1, 5, 3, yc);
+        rect(Math.round(yarnX) - 1, yarnY - 2, 3, 5, yc);
+        px(Math.round(yarnX) - 1, yarnY - 1, "#a95d76");
+        px(Math.round(yarnX) + 1, yarnY + 1, "#efb3c0");
+        // A loose strand trails opposite the direction of travel and curls once on the floor.
+        const direction = yarnLap < 1 ? -1 : 1;
+        px(Math.round(yarnX) + direction * 3, yarnY + 1, "#b86c84");
+        px(Math.round(yarnX) + direction * 4, yarnY + 2, "#b86c84");
+        px(Math.round(yarnX) + direction * 5, yarnY + 2, "#d78aa0");
       }
       if (floorTap) {
         const age = (t - pk!.at) / 420;
