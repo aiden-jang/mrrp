@@ -6,6 +6,7 @@ import { play } from "./sound.js";
 import { catCallCode } from "./secrets.js";
 import { moonPhase, moonPixelLit } from "./moon.js";
 import { seasonFor, seasonalPlantColors } from "./season.js";
+import { mouseRunAt } from "./mouse.js";
 import { BED, BIRD, BOX_BACK, BOX_FRONT, DOOR, EK, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, MUG, MUG_DOWN, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
@@ -92,6 +93,9 @@ const CATNIP_X = 54;
 /** A word becomes a five-note tune and a dance too small for dignity. */
 const MUSIC_CODE = "music";
 const MUSIC_MS = 5600;
+/** A typed mouse gets one cinematic mistake: peeking in while a cat is home. */
+const MOUSE_CODE = "mouse";
+const MOUSE_MS = 7000;
 /** Calling her by her actual name gets a response no generic secret word can give. */
 const NAME_CALL_MS = 6200;
 /** A second quick box tap turns a peek into a tiny peekaboo performance. */
@@ -312,6 +316,7 @@ export function Cat({
   const catnipUntil = useRef(-1e9);
   /** Hold her dance near where she heard the command instead of letting the mood walk her away. */
   const music = useRef({ until: -1e9, x: GW / 2 });
+  const mouseStartedAt = useRef(-1e9);
   /** Her name brings her to the middle for one small recognition moment. */
   const nameCallUntil = useRef(-1e9);
   /** A slow blink is one answer per quiet cursor stay, never an idle animation on a timer. */
@@ -734,7 +739,7 @@ export function Cat({
       if (e.key.length === 1 && /[a-z]/i.test(e.key)) {
         const nameCode = catCallCode(lookRef.current.name);
         typedRoomCode = `${typedRoomCode}${e.key.toLowerCase()}`.slice(
-          -Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length, BOX_CODE.length, YARN_CODE.length, TREAT_CODE.length, CATNIP_CODE.length, MUSIC_CODE.length, nameCode?.length ?? 0),
+          -Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length, BOX_CODE.length, YARN_CODE.length, TREAT_CODE.length, CATNIP_CODE.length, MUSIC_CODE.length, MOUSE_CODE.length, nameCode?.length ?? 0),
         );
         // Her real name wins over the shipped words. A cat called Music should still know that she
         // is being called; room tricks are generic, recognition is not.
@@ -796,6 +801,14 @@ export function Cat({
           bounce.current = 1;
           typedRoomCode = "";
           play("jingle");
+        } else if (typedRoomCode.endsWith(MOUSE_CODE)) {
+          const now = performance.now();
+          mouseStartedAt.current = now;
+          lookAt.current = { x: 14, until: now + MOUSE_MS };
+          speakUntil.current = now + 1100;
+          bounce.current = 1;
+          typedRoomCode = "";
+          play("chirp");
         }
       } else if (!ROOM_CODE.includes(e.key)) {
         typedRoomCode = "";
@@ -1380,6 +1393,11 @@ export function Cat({
         : 12 + (Math.sin(catnipProgress * Math.PI * 6 - Math.PI / 2) * 0.5 + 0.5) * (GW - 28);
       const musicPlaying = t < music.current.until && !sc.atDoor;
       const musicDancing = musicPlaying && !reduce;
+      const mouseMoment = reduce && t - mouseStartedAt.current < MOUSE_MS
+        ? { x: 72, y: FLOOR + 17, presence: 1, phase: 'peek' as const }
+        : mouseRunAt(t - mouseStartedAt.current, MOUSE_MS);
+      const mouseVisiting = mouseMoment !== null && !sc.atDoor;
+      const mouseChasing = mouseVisiting && !reduce && mouseMoment.phase !== 'peek';
       const nameCalled = t < nameCallUntil.current;
       const yarnProgress = yarnPlaying ? 1 - (yarnUntil.current - t) / YARN_MS : 0;
       // Two passes with a turnaround in the middle. The eased ends make the ball feel pushed rather
@@ -1389,6 +1407,8 @@ export function Cat({
       const yarnX = 13 + yarnAcross * (GW - 26);
       const wantX = nameCalled
         ? GW / 2
+        : mouseChasing
+        ? Math.max(12, mouseMoment!.x - 8)
         : musicPlaying
         ? music.current.x
         : catnipActive
@@ -1410,7 +1430,7 @@ export function Cat({
       // 0.012 took about 190 frames to cover a move, so more than three seconds of a cat inching across
       // the boards after a mood tap. It read as lag rather than as walking. 0.05 lands in well under a
       // second and still moves like a cat crossing a room rather than teleporting.
-      catX.current += (wantX - catX.current) * (catnipping || zooming ? 0.4 : 0.05);
+      catX.current += (wantX - catX.current) * (catnipping || zooming || mouseChasing ? 0.4 : 0.05);
       const kx = Math.round(catX.current);
       /*
        * In the bed she sits lower.
@@ -1462,15 +1482,15 @@ export function Cat({
       // A door opening holds her eyes open too. Without this she stays loafed through the whole
       // swing at any drowsy hour, because the perk pose needs open eyes and the scene had already
       // decided she was sleepy. A cat sleeps through a lot, but not a door.
-      const forced = eyesRef.current || nameCalled || (looking && !reduce) || doorRef.current !== null || musicPlaying || catnipActive || zooming || laserPlaying || yarnPlaying || treating || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
+      const forced = eyesRef.current || nameCalled || mouseVisiting || (looking && !reduce) || doorRef.current !== null || musicPlaying || catnipActive || zooming || laserPlaying || yarnPlaying || treating || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = !slowBlinking && (forced || (open > 0.4 && !blink));
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
       // A door opening beats whatever she was doing. Perk is the ears-up, head-turned pose, and it
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
       // cat that did not notice, which is the one thing this feature is for.
-      const noticing = (doorRef.current !== null || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking) && posed;
-      const pose: Pose = musicDancing || catnipping || zooming || laserPlaying || yarnPlaying || summoning || (treating && treatProgress < 0.6) ? "play" : musicPlaying || catnipActive || treating ? "sit" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
+      const noticing = (mouseVisiting || doorRef.current !== null || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking) && posed;
+      const pose: Pose = mouseChasing || musicDancing || catnipping || zooming || laserPlaying || yarnPlaying || summoning || (treating && treatProgress < 0.6) ? "play" : musicPlaying || catnipActive || treating ? "sit" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
@@ -1529,6 +1549,24 @@ export function Cat({
         px(CATNIP_X - 2, cy - 2, "#6c9b57");
         px(CATNIP_X, cy - 3, "#83ad64");
         px(CATNIP_X + 2, cy - 2, "#5e8d4e");
+      }
+
+      if (mouseVisiting) {
+        const mx = Math.round(mouseMoment!.x);
+        const my = Math.round(mouseMoment!.y);
+        const alpha = mouseMoment!.presence;
+        const body = `rgba(142,119,99,${alpha})`;
+        const ear = `rgba(224,156,158,${alpha})`;
+        // Tail trails toward the door while the body stays only four pixels long. Small enough to
+        // be a discovery, distinct enough not to look like dust on the floorboards.
+        px(mx - 4, my, body); px(mx - 3, my - 1, body); px(mx - 2, my - 1, body);
+        rect(mx - 1, my - 2, 4, 3, body);
+        px(mx + 2, my - 3, ear);
+        px(mx + 2, my - 2, `rgba(74,53,32,${alpha})`);
+        if (!reduce && mouseMoment!.phase === 'dash') {
+          px(mx, my + 1, `rgba(116,91,72,${alpha * 0.6})`);
+          px(mx + 3, my + 1, `rgba(116,91,72,${alpha * 0.6})`);
+        }
       }
 
       // Shadow first, so she sits on the floor instead of hovering over it.
@@ -1698,7 +1736,7 @@ export function Cat({
         };
         const e = EYES[pose];
         // What you just touched wins, then the moth, then your cursor.
-        const at = looking ? la!.x : m && sc.sun > 0.15 ? m.x : ptr.in ? ptr.x : null;
+        const at = mouseVisiting ? mouseMoment!.x : looking ? la!.x : m && sc.sun > 0.15 ? m.x : ptr.in ? ptr.x : null;
         // Only 3px-wide eyes have room to shift; a 2px eye would spill onto the fur.
         const look = !e.wide || at === null ? 0 : Math.sign(at - kx) * (Math.abs(at - kx) > 4 ? 1 : 0);
         px(kx + e.l + look, ey, WHITE);
