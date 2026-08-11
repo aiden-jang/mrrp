@@ -70,6 +70,9 @@ const TYPED_ROOM_CODE = "mrrp";
 /** Calling a cat the traditional way gets a tiny answer from the room. */
 const SUMMON_CODE = "pspsps";
 const SUMMON_MS = 5200;
+/** A cardboard box is never really absent; sometimes it is only waiting to be asked for. */
+const BOX_CODE = "box";
+const SECRET_BOX_MS = 8200;
 /** A small secret shower: long enough to notice through the glass, then gone. */
 const RAIN_MS = 6800;
 /** The brief bright thing that can follow the plant's hidden storm. */
@@ -261,6 +264,8 @@ export function Cat({
   const auroraUntil = useRef(-1e9);
   /** The room's second typed secret: a few bright things come when somebody calls for her. */
   const summonUntil = useRef(-1e9);
+  /** A local cardboard delivery summoned from the keyboard. */
+  const secretBoxUntil = useRef(-1e9);
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
   const doorShutFrom = useRef({ at: 0, from: 0 });
   lookRef.current = look;
@@ -443,8 +448,9 @@ export function Cat({
         }
         return;
       }
+      const boxIsHere = boxRef.current || performance.now() < secretBoxUntil.current;
       const hit = PROPS.find((q) =>
-        (q.key !== "box" || boxRef.current) && x >= q.x && x < q.x + q.sp.w && y >= q.y && y < q.y + q.sp.h,
+        (q.key !== "box" || boxIsHere) && x >= q.x && x < q.x + q.sp.w && y >= q.y && y < q.y + q.sp.h,
       );
       let rainStarted = false;
       // The window has a daytime bird and a night-time shooting star. Neither is shared: they are
@@ -507,7 +513,7 @@ export function Cat({
           play("shutter");
         }
       }
-      if (hit?.key === "box" && boxRef.current) {
+      if (hit?.key === "box" && boxIsHere) {
         boxPeekUntil.current = performance.now() + 1200;
         speakUntil.current = performance.now() + 800;
         play("mrrp");
@@ -629,7 +635,9 @@ export function Cat({
       }
 
       if (e.key.length === 1 && /[a-z]/i.test(e.key)) {
-        typedRoomCode = `${typedRoomCode}${e.key.toLowerCase()}`.slice(-Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length));
+        typedRoomCode = `${typedRoomCode}${e.key.toLowerCase()}`.slice(
+          -Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length, BOX_CODE.length),
+        );
         if (typedRoomCode.endsWith(TYPED_ROOM_CODE)) {
           const now = performance.now();
           catTaps.current.chorusUntil = now + PURR_CHORUS_MS;
@@ -642,6 +650,15 @@ export function Cat({
           speakUntil.current = now + 1000;
           typedRoomCode = "";
           play("chirp");
+        } else if (typedRoomCode.endsWith(BOX_CODE)) {
+          const now = performance.now();
+          secretBoxUntil.current = now + SECRET_BOX_MS;
+          boxPeekUntil.current = now + 1200;
+          lookAt.current = { x: BOX_X + 5, until: now + 2200 };
+          speakUntil.current = now + 950;
+          bounce.current = 1;
+          typedRoomCode = "";
+          play("thump");
         }
       } else if (!ROOM_CODE.includes(e.key)) {
         typedRoomCode = "";
@@ -1100,7 +1117,7 @@ export function Cat({
       }
       // The box, back half. Sits right of centre so it does not fight the bed or the sunbeam, and
       // low enough on the boards to read as standing on them rather than floating.
-      const boxHere = boxRef.current;
+      const boxHere = boxRef.current || t < secretBoxUntil.current;
       const inBox = boxHere && !sc.atDoor;
       const peeking = !reduce && boxHere && t < boxPeekUntil.current;
       if (boxHere) {
