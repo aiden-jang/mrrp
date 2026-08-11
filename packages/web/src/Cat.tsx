@@ -4,6 +4,7 @@ import { mixHex, sceneFor } from "./hours.js";
 import { fireflyAt, mothAt } from "./critters.js";
 import { play } from "./sound.js";
 import { catCallCode } from "./secrets.js";
+import { moonPhase, moonPixelLit } from "./moon.js";
 import { BED, BIRD, BOX_BACK, BOX_FRONT, DOOR, EK, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, MUG, MUG_DOWN, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
@@ -371,6 +372,7 @@ export function Cat({
     const cv = ref.current!;
     const g = cv.getContext("2d")!;
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const lunar = moonPhase(new Date());
 
     /** Size of one logical pixel, in device pixels. Recomputed on resize. */
     let s = 5;
@@ -979,13 +981,15 @@ export function Cat({
         blit(BIRD, wx + 4 + hop * 3, 16, { w: INK, b: "#8a6a48", o: "#e0a03f" });
       }
       if (night) {
-        // A crescent, made by drawing a full moon and biting a hole out of it with the night colour.
-        rect(wx + 3, wy(1), 3, 1, "#f4e6b8");
-        rect(wx + 2, wy(2), 4, 1, "#f4e6b8");
-        rect(wx + 2, wy(3), 4, 1, "#f4e6b8");
-        rect(wx + 3, wy(4), 3, 1, "#f4e6b8");
-        rect(wx + 4, wy(1), 2, 1, "#2b3450");
-        rect(wx + 4, wy(2), 2, 1, "#2b3450");
+        // The moon is today's actual eighth of the lunar cycle. Five columns are enough to read
+        // waxing from waning while keeping it a room detail rather than turning the window into UI.
+        const moonRows = [[1, 3], [0, 4], [0, 4], [0, 4], [1, 3]] as const;
+        for (let my = 0; my < moonRows.length; my++) {
+          const [start, end] = moonRows[my]!;
+          for (let mx = start; mx <= end; mx++) {
+            if (moonPixelLit(lunar.index, mx)) px(wx + 2 + mx, wy(my + 1), "#f4e6b8");
+          }
+        }
         // Stars, on their own slow twinkles so they never blink together.
         for (const [sx, sy, ph] of [[12, 2, 0], [14, 6, 0.45], [10, 7, 0.8], [7, 8, 0.25]] as const) {
           if (Math.sin(t / 900 + ph * 7) > -0.35) px(wx + sx, wy(sy), "#fff6dc");
@@ -1009,9 +1013,16 @@ export function Cat({
         if (constellating) {
           const fade = Math.min(1, (windowTaps.current.constellationUntil - t) / 800);
           const c = `rgba(255,239,180,${fade})`;
-          const points = [[4, 7], [7, 5], [10, 7], [13, 3]] as const;
+          // On the full moon the same secret draws two ears and a tiny cat face. It is available
+          // for only one eighth of the month and never announced; the ordinary constellation stays.
+          const points = lunar.index === 4
+            ? [[7, 7], [6, 5], [8, 6], [10, 6], [12, 5], [11, 7], [9, 8]] as const
+            : [[4, 7], [7, 5], [10, 7], [13, 3]] as const;
           for (const [sx, sy] of points) px(wx + sx, wy(sy), c);
-          for (const [sx, sy] of [[5, 7], [6, 6], [8, 5], [9, 6], [11, 6], [12, 4]] as const) {
+          const joins = lunar.index === 4
+            ? [[7, 6], [9, 6], [11, 6], [8, 8], [10, 8]] as const
+            : [[5, 7], [6, 6], [8, 5], [9, 6], [11, 6], [12, 4]] as const;
+          for (const [sx, sy] of joins) {
             px(wx + sx, wy(sy), `rgba(255,226,150,${fade * 0.55})`);
           }
         }
