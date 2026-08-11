@@ -202,7 +202,7 @@ function voice(
   osc.stop(o.at + o.dur + 0.05);
 }
 
-export type Cue = "purr" | "mrrp" | "chirp" | "brush" | "thump" | "shutter" | "settle" | "twinkle";
+export type Cue = "purr" | "mrrp" | "chirp" | "brush" | "thump" | "shutter" | "settle" | "twinkle" | "jingle";
 
 const CUES: Record<Cue, (g: { ctx: AudioContext; master: GainNode }, t: number) => void> = {
   /*
@@ -257,6 +257,15 @@ const CUES: Record<Cue, (g: { ctx: AudioContext; master: GainNode }, t: number) 
     voice(g, { at: t, dur: 0.18, gain: 0.055, sweep: [660, 740], type: "sine" });
     voice(g, { at: t + 0.11, dur: 0.2, gain: 0.05, sweep: [880, 990], type: "sine" });
     voice(g, { at: t + 0.23, dur: 0.25, gain: 0.045, sweep: [1100, 1320], type: "sine" });
+  },
+
+  /* A tiny pentatonic phrase for the room's dance secret. Five separated plucks read as a tune,
+     while a longer loop would make a hidden interaction annoy everyone else in the room. */
+  jingle: (g, t) => {
+    const notes = [523, 659, 784, 659, 880];
+    notes.forEach((freq, index) => {
+      voice(g, { at: t + index * 0.13, dur: 0.19, gain: 0.045, sweep: [freq, freq * 1.025], type: "sine" });
+    });
   },
 };
 

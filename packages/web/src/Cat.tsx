@@ -84,6 +84,9 @@ const TREAT_X = 68;
 const CATNIP_CODE = "catnip";
 const CATNIP_MS = 6200;
 const CATNIP_X = 54;
+/** A word becomes a five-note tune and a dance too small for dignity. */
+const MUSIC_CODE = "music";
+const MUSIC_MS = 5600;
 /** A second quick box tap turns a peek into a tiny peekaboo performance. */
 const BOX_PLAY_MS = 2800;
 /** How long the cursor has to stay beside her before she answers with a slow blink. */
@@ -289,6 +292,8 @@ export function Cat({
   const treatUntil = useRef(-1e9);
   /** A local catnip sprint; never shared as room state because it leaves no lasting object. */
   const catnipUntil = useRef(-1e9);
+  /** Hold her dance near where she heard the command instead of letting the mood walk her away. */
+  const music = useRef({ until: -1e9, x: GW / 2 });
   /** A slow blink is one answer per quiet cursor stay, never an idle animation on a timer. */
   const slowBlink = useRef({ until: -1e9, answered: false });
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
@@ -689,7 +694,7 @@ export function Cat({
 
       if (e.key.length === 1 && /[a-z]/i.test(e.key)) {
         typedRoomCode = `${typedRoomCode}${e.key.toLowerCase()}`.slice(
-          -Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length, BOX_CODE.length, YARN_CODE.length, TREAT_CODE.length, CATNIP_CODE.length),
+          -Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length, BOX_CODE.length, YARN_CODE.length, TREAT_CODE.length, CATNIP_CODE.length, MUSIC_CODE.length),
         );
         if (typedRoomCode.endsWith(TYPED_ROOM_CODE)) {
           const now = performance.now();
@@ -735,6 +740,13 @@ export function Cat({
           bounce.current = 1;
           typedRoomCode = "";
           play("chirp");
+        } else if (typedRoomCode.endsWith(MUSIC_CODE)) {
+          const now = performance.now();
+          music.current = { until: now + MUSIC_MS, x: catX.current ?? GW / 2 };
+          speakUntil.current = now + 950;
+          bounce.current = 1;
+          typedRoomCode = "";
+          play("jingle");
         }
       } else if (!ROOM_CODE.includes(e.key)) {
         typedRoomCode = "";
@@ -1260,13 +1272,17 @@ export function Cat({
       const catnipX = reduce
         ? CATNIP_X
         : 12 + (Math.sin(catnipProgress * Math.PI * 6 - Math.PI / 2) * 0.5 + 0.5) * (GW - 28);
+      const musicPlaying = t < music.current.until && !sc.atDoor;
+      const musicDancing = musicPlaying && !reduce;
       const yarnProgress = yarnPlaying ? 1 - (yarnUntil.current - t) / YARN_MS : 0;
       // Two passes with a turnaround in the middle. The eased ends make the ball feel pushed rather
       // than motorized, while the little vertical hop below keeps it from sliding like a UI dot.
       const yarnLap = (yarnProgress * 2) % 2;
       const yarnAcross = yarnLap <= 1 ? yarnLap : 2 - yarnLap;
       const yarnX = 13 + yarnAcross * (GW - 26);
-      const wantX = catnipActive
+      const wantX = musicPlaying
+        ? music.current.x
+        : catnipActive
         ? catnipX
         : zooming
         ? 10 + (Math.sin(zp * Math.PI * 2 - Math.PI / 2) * 0.5 + 0.5) * (GW - 34)
@@ -1337,7 +1353,7 @@ export function Cat({
       // A door opening holds her eyes open too. Without this she stays loafed through the whole
       // swing at any drowsy hour, because the perk pose needs open eyes and the scene had already
       // decided she was sleepy. A cat sleeps through a lot, but not a door.
-      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || catnipActive || zooming || laserPlaying || yarnPlaying || treating || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
+      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || musicPlaying || catnipActive || zooming || laserPlaying || yarnPlaying || treating || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = !slowBlinking && (forced || (open > 0.4 && !blink));
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
@@ -1345,13 +1361,17 @@ export function Cat({
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
       // cat that did not notice, which is the one thing this feature is for.
       const noticing = (doorRef.current !== null || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking) && posed;
-      const pose: Pose = catnipping || zooming || laserPlaying || yarnPlaying || summoning || (treating && treatProgress < 0.6) ? "play" : catnipActive || treating ? "sit" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
+      const pose: Pose = musicDancing || catnipping || zooming || laserPlaying || yarnPlaying || summoning || (treating && treatProgress < 0.6) ? "play" : musicPlaying || catnipActive || treating ? "sit" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
       const hop =
         Math.round(bounce.current * 3) +
-        (reduce || sc.play <= 0.5 ? 0 : Math.round(Math.abs(Math.sin(t / 260)) * 2));
+        (musicDancing
+          ? Math.round(Math.abs(Math.sin(t / 145)) * 3)
+          : reduce || sc.play <= 0.5
+            ? 0
+            : Math.round(Math.abs(Math.sin(t / 260)) * 2));
       // The box front still covers the rest of her, so this reads as a shy answer from inside it
       // rather than a generic jump animation pasted over the furniture.
       const peekLift = boxPlaying
@@ -1491,6 +1511,23 @@ export function Cat({
           const lc = i === 1 ? "rgba(131,173,100,.85)" : "rgba(94,141,78,.72)";
           px(lx, ly, lc);
           px(lx + (i % 2 ? 1 : -1), ly + 1, lc);
+        }
+      }
+      if (musicPlaying) {
+        // The reduced-motion version keeps two notes still beside her; otherwise four notes rise
+        // on offset loops, with stems so they read as music instead of another sparkle effect.
+        const noteCount = reduce ? 2 : 4;
+        for (let i = 0; i < noteCount; i++) {
+          const np = reduce ? 0.45 + i * 0.12 : (t / 1050 + i / noteCount) % 1;
+          const nx = kx - 14 + i * 9 + Math.round(Math.sin(t / 260 + i) * (reduce ? 0 : 2));
+          const ny = Math.round(y - 2 - np * 15);
+          const alpha = reduce ? 0.7 : Math.sin(np * Math.PI);
+          const nc = i % 2 === 0
+            ? `rgba(126,102,181,${alpha})`
+            : `rgba(232,120,140,${alpha})`;
+          rect(nx, ny, 2, 2, nc);
+          rect(nx + 1, ny - 4, 1, 5, nc);
+          if (i % 2 === 0) px(nx + 2, ny - 4, nc);
         }
       }
       if (floorTap) {
