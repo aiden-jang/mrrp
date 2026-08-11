@@ -1,5 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
-import type { Action, Cat, Clock, Gift, Mood, Note, RoomView, Told, Told2, Visit } from "./types.js";
+import type { Action, Arrival, Cat, Clock, Gift, Mood, Note, RoomView, Told, Told2, Visit } from "./types.js";
 import { NOTES } from "./notes.js";
 import type { Env } from "./env.js";
 
@@ -62,6 +62,9 @@ export class Room extends DurableObject<Env> {
   async view(me: string, name: string | null): Promise<RoomView> {
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     const now = Date.now();
+    // Capture this before the visit updates it. build() uses the old timestamp to hand back only
+    // what the other person left since this seat last opened the door.
+    const lastVisit = people[me]?.lastSeen;
 
     // Seats are claimed by whoever opens the link first and second. No accounts, no invites.
     if (!people[me] && Object.keys(people).length < 2) {
@@ -107,7 +110,7 @@ export class Room extends DurableObject<Env> {
       }
     }
 
-    return this.build(me, people);
+    return this.build(me, people, lastVisit);
   }
 
   /**
@@ -392,7 +395,7 @@ export class Room extends DurableObject<Env> {
     };
   }
 
-  private async build(me: string, people: Record<string, Person>): Promise<RoomView> {
+  private async build(me: string, people: Record<string, Person>, since?: number): Promise<RoomView> {
     const cat = (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT;
     const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
     const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
@@ -404,6 +407,26 @@ export class Room extends DurableObject<Env> {
     const otherId = youAreHer ? him : her;
     const them = otherId ? people[otherId] ?? null : null;
     const waitingForThem = !her;
+
+    // A bounded arrival card, not a message history. The timestamp captured before view() updates
+    // lastSeen makes this work after a day away and during a live poll alike; the next read is empty.
+    const arrivals: Arrival[] = [];
+    if (since !== undefined && seated) {
+      if (youAreHer && him) {
+        arrivals.push(
+          ...log
+            .filter((visit) => visit.who === him && visit.at > since)
+            .slice(0, 4)
+            .map((visit) => ({ kind: "action" as const, at: visit.at, action: visit.action })),
+        );
+      } else if (her) {
+        const mood = moods[her];
+        const line = (await this.ctx.storage.get<Told2>("herLine")) ?? null;
+        if (mood && mood.at > since) arrivals.push({ kind: "mood", at: mood.at, mood: mood.mood });
+        if (line && line.at > since) arrivals.push({ kind: "line", at: line.at, text: line.text });
+      }
+      arrivals.sort((a, b) => b.at - a.at);
+    }
 
     // Her mood, whoever is looking, because the cat is her.
     const catTold = her ? moods[her] ?? null : null;
@@ -456,6 +479,7 @@ export class Room extends DurableObject<Env> {
       // Only she sees what was done, because only he does anything.
       theirRecent: youAreHer && him ? log.filter((v) => v.who === him).slice(0, 4) : [],
       theyCameAfter: !!catTold && !!them && youAreHer && them.lastSeen > catTold.at,
+      arrivals,
       waitingForThem,
     };
   }

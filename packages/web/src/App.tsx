@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Action, Mood, RoomView } from "./types.js";
+import type { Action, Arrival, Mood, RoomView } from "./types.js";
 import { ACTIONS, MOODS } from "./types.js";
 import { doAct, doClock, doDress, doNotes, doRecover, doRelease, doSay, doTell, doTidy, fetchRoom, lastRoom, myName, newRoomId, roomFromPath } from "./api.js";
 import { Cat } from "./Cat.js";
@@ -100,6 +100,38 @@ function whenish(at: number): string {
 }
 
 const pastTense = (a: Action) => ACTIONS.find((x) => x.id === a)?.past ?? "was here";
+
+/** A one-read postcard assembled from things the other person did between visits. */
+function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[]; onClose: () => void }) {
+  return (
+    <section style={S.arrival} aria-label="Things the room kept for you">
+      <div style={S.arrivalTop}>
+        <div>
+          <p style={S.arrivalTitle}>the room kept this for you</p>
+          <p style={{ ...S.small, marginTop: 2 }}>It waited here until you looked in.</p>
+        </div>
+        <button type="button" onClick={onClose} style={S.arrivalClose} aria-label="Put away arrival card">×</button>
+      </div>
+      <ul style={S.arrivalList}>
+        {items.map((item, index) => (
+          <li key={`${item.kind}-${item.at}-${index}`} style={S.arrivalItem}>
+            <span style={S.arrivalPaw} aria-hidden>{item.kind === "line" ? "✦" : "·"}</span>
+            <span>
+              {item.kind === "action" ? (
+                <><b>{name}</b> {pastTense(item.action)}.</>
+              ) : item.kind === "mood" ? (
+                <><b>{name}</b> said she was {MOODS.find((m) => m.id === item.mood)?.said ?? item.mood}.</>
+              ) : (
+                <><b>{name}</b> left: “{item.text}”</>
+              )}
+              <small style={S.arrivalWhen}>{whenish(item.at)}</small>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 /**
  * A tint per mood, because six identical grey pills was the least cute thing on the page and this
@@ -356,6 +388,7 @@ function RoomPage({ id }: { id: string }) {
   const [did, setDid] = useState<string | null>(null);
   const [line, setLine] = useState("");
   const [lineOpen, setLineOpen] = useState(false);
+  const [arrivalCard, setArrivalCard] = useState<Arrival[] | null>(null);
   const [saving, setSaving] = useState(false);
   const [setup, setSetup] = useState(false);
   const [releasing, setReleasing] = useState(false);
@@ -368,7 +401,11 @@ function RoomPage({ id }: { id: string }) {
 
   const load = useCallback(async (n?: string | null) => {
     try {
-      setView(await fetchRoom(id, n ?? myName.get()));
+      const next = await fetchRoom(id, n ?? myName.get());
+      setView(next);
+      // Polls return an empty list after the server advances this seat's last-seen marker. Keep the
+      // postcard on screen until the person puts it away, rather than flashing it for 15 seconds.
+      if (next.arrivals.length > 0) setArrivalCard(next.arrivals);
       setErr(null);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Something went wrong.");
@@ -813,6 +850,10 @@ function RoomPage({ id }: { id: string }) {
           </div>
         )}
 
+        {arrivalCard && arrivalCard.length > 0 && view.them && (
+          <ArrivalCard name={view.them} items={arrivalCard} onClose={() => setArrivalCard(null)} />
+        )}
+
         {view.waitingForThem ? (
           <>
             {/* The italic caption above already says she's asleep, in the room's own voice. Saying it
@@ -1177,6 +1218,22 @@ const S: Record<string, React.CSSProperties> = {
     background: "var(--honey)", color: "#fff",
   },
   togetherMain: { fontSize: 17, fontWeight: 700, margin: 0, lineHeight: 1.45 },
+  arrival: {
+    animation: "arrive .5s var(--ease-bounce) both",
+    margin: "14px 0 4px", padding: "14px 15px", borderRadius: 18,
+    background: "linear-gradient(145deg, #fffaf1, var(--panel))",
+    border: "1px solid var(--line)", boxShadow: "0 10px 24px -17px rgba(120,84,44,.55)",
+  },
+  arrivalTop: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 },
+  arrivalTitle: { fontSize: 15, fontWeight: 700, margin: 0, color: "var(--ink)" },
+  arrivalClose: {
+    width: 28, height: 28, flexShrink: 0, borderRadius: 999, cursor: "pointer",
+    border: "1px solid var(--line)", background: "var(--air)", color: "var(--soft)", font: "inherit", fontSize: 17,
+  },
+  arrivalList: { display: "grid", gap: 9, listStyle: "none", padding: "11px 0 0", margin: "10px 0 0", borderTop: "1px solid var(--line)" },
+  arrivalItem: { display: "grid", gridTemplateColumns: "18px minmax(0, 1fr)", gap: 7, fontSize: 14, lineHeight: 1.45 },
+  arrivalPaw: { color: "var(--honey)", fontWeight: 800, textAlign: "center" },
+  arrivalWhen: { display: "block", marginTop: 1, color: "var(--soft)", fontSize: 11.5 },
   sayBox: { margin: "16px 0 4px" },
   sayInput: {
     font: "inherit", fontSize: 15.5, lineHeight: 1.5, width: "100%", resize: "none",
