@@ -5,6 +5,7 @@ import { fireflyAt, mothAt } from "./critters.js";
 import { play } from "./sound.js";
 import { catCallCode } from "./secrets.js";
 import { moonPhase, moonPixelLit } from "./moon.js";
+import { seasonFor, seasonalPlantColors } from "./season.js";
 import { BED, BIRD, BOX_BACK, BOX_FRONT, DOOR, EK, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, MUG, MUG_DOWN, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
@@ -138,7 +139,6 @@ const PROPS = [
 const INK = "#4a3520";
 const PINK = "#e79ba3";
 const BLUSH = "#f0aeb4";
-const LEAF = "#7d9e63";
 const WHITE = "#fffdf6";
 
 export function Cat({
@@ -373,6 +373,8 @@ export function Cat({
     const g = cv.getContext("2d")!;
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const lunar = moonPhase(new Date());
+    const season = seasonFor(new Date());
+    const seasonalPlant = seasonalPlantColors(season);
 
     /** Size of one logical pixel, in device pixels. Recomputed on resize. */
     let s = 5;
@@ -968,6 +970,19 @@ export function Cat({
       const night = sc.sun < 0.12;
       const wx = WIN_X + shake("window");
       blit(WINDOW, wx, 4, { w: INK, h: sc.sun > 0.2 ? sc.beamWarm : night ? "#2b3450" : sc.wallTop });
+      // The view changes quietly with the calendar: petals, thick summer green, falling color, or
+      // a little snow caught on the sill. Static in the glass so seasonal atmosphere never becomes
+      // another idle animation competing with her.
+      if (season === "spring") {
+        px(wx + 3, wy(8), "#efb0ba"); px(wx + 13, wy(3), "#f5c5ca");
+      } else if (season === "summer") {
+        px(wx + 3, wy(8), "#7fa965"); px(wx + 4, wy(7), "#9bbb76"); px(wx + 13, wy(8), "#7fa965");
+      } else if (season === "autumn") {
+        px(wx + 3, wy(3), "#d88945"); px(wx + 13, wy(7), "#bd633b"); px(wx + 6, wy(8), "#e0a14d");
+      } else {
+        rect(wx + 1, wy(8), 7, 1, "#edf0e8"); rect(wx + 9, wy(8), 7, 1, "#edf0e8");
+        px(wx + 4, wy(3), "#f8faf4"); px(wx + 13, wy(5), "#f8faf4");
+      }
       // A bird on the sill, hopping. Two positions on a slow alternation rather than a smooth
       // slide, because a bird does not slide.
       const birding = t - bird.current < BIRD_MS;
@@ -1238,7 +1253,12 @@ export function Cat({
           px(hx, hy, c); px(hx + 2, hy, c); px(hx + 1, hy + 1, c); px(hx + 1, hy + 2, c);
         }
       }
-      blit(PLANT, 87 + shake("plant"), FLOOR - 13, { g: LEAF, w: INK, d: "#b07a4e" });
+      blit(PLANT, 87 + shake("plant"), FLOOR - 13, { g: seasonalPlant.leaf, w: INK, d: "#b07a4e" });
+      if (season === "spring") {
+        px(91, FLOOR - 19, seasonalPlant.detail); px(95, FLOOR - 17, seasonalPlant.detail);
+      } else if (season === "winter") {
+        px(90, FLOOR - 18, seasonalPlant.detail); px(94, FLOOR - 19, seasonalPlant.detail);
+      }
       // The weather sequence ends where it began: one fresh little flower on the plant. It fades
       // away after a few seconds so the room never accumulates a permanent checklist of secrets.
       if (plantBlooming) {
@@ -1253,8 +1273,10 @@ export function Cat({
         const p = leafAge / LEAF_FALL_MS;
         const lx = Math.round(93 + Math.sin(p * Math.PI * 2) * 3);
         const ly = Math.round(FLOOR - 16 + p * 22);
-        px(lx, ly, LEAF);
-        px(lx + (p < 0.5 ? 1 : -1), ly + 1, "#5d7a46");
+        px(lx, ly, seasonalPlant.detail);
+        if (season !== "spring" && season !== "winter") {
+          px(lx + (p < 0.5 ? 1 : -1), ly + 1, seasonalPlant.leaf);
+        }
       }
       // Dusty rose, not the lavender it started as. Lavender was the only cool colour in a room of
       // creams and browns, and at this size it stopped reading as a cat bed and started reading as
