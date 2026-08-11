@@ -798,3 +798,97 @@ describe("the light in the window", () => {
     expect((await view(HER)).windowLight).toBe(true);
   });
 });
+
+/*
+ * What the two of them have noticed.
+ *
+ * The room is full of secrets that only fire if you go looking, and every one of them used to be
+ * invisible to the other person: she could find all of them and he would never know. These cover the
+ * ledger being shared, being seat-only, and not spoiling a secret the viewer has not found yet.
+ */
+describe("shared discoveries", () => {
+  it("counts what either of them noticed, for both of them", async () => {
+    await seat();
+    expect((await post("found", { me: HIM, key: "piano" })).status).toBe(200);
+    expect((await post("found", { me: HER, key: "mouse" })).status).toBe(200);
+
+    expect((await view(HIM)).noticed).toBe(2);
+    expect((await view(HER)).noticed).toBe(2);
+  });
+
+  it("counts a thing they both found once", async () => {
+    await seat();
+    await post("found", { me: HIM, key: "piano" });
+    await post("found", { me: HER, key: "piano" });
+    expect((await view(HIM)).noticed).toBe(1);
+  });
+
+  it("refuses a key the room does not have", async () => {
+    await seat();
+    // The allowlist lives on the server, so an invented key cannot inflate the count.
+    expect((await post("found", { me: HIM, key: "definitely-not-real" })).status).toBe(400);
+    expect((await post("found", { me: HIM, key: "__proto__" })).status).toBe(400);
+    expect((await view(HIM)).noticed).toBe(0);
+  });
+
+  it("ignores a stranger holding the link", async () => {
+    await seat();
+    expect((await post("found", { me: STRANGER, key: "piano" })).status).toBe(400);
+    // What the two of them found together stays theirs.
+    expect((await view(HIM)).noticed).toBe(0);
+  });
+
+  it("tells you the other one found something, without saying what", async () => {
+    await seat();
+    await view(HIM); // his clock starts now
+    await post("found", { me: HER, key: "piano" });
+
+    const found = (await view(HIM)).arrivals.filter((a) => a.kind === "found");
+    expect(found).toHaveLength(1);
+    // He has not found the piano, so naming it would hand him the answer to a thing he was going to
+    // enjoy walking into.
+    expect(found[0]).toMatchObject({ kind: "found", what: null });
+  });
+
+  it("names it once you have found it too", async () => {
+    await seat();
+    await post("found", { me: HIM, key: "piano" });
+    await view(HIM);
+    await post("found", { me: HER, key: "piano" });
+
+    const found = (await view(HIM)).arrivals.filter((a) => a.kind === "found");
+    expect(found[0]).toMatchObject({ kind: "found", what: "piano" });
+  });
+
+  it("does not report your own finds back to you", async () => {
+    await seat();
+    await view(HIM);
+    await post("found", { me: HIM, key: "piano" });
+    expect((await view(HIM)).arrivals.filter((a) => a.kind === "found")).toEqual([]);
+  });
+
+  it("stops reporting a find once you have seen it", async () => {
+    await seat();
+    await view(HIM);
+    await post("found", { me: HER, key: "piano" });
+    expect((await view(HIM)).arrivals.some((a) => a.kind === "found")).toBe(true);
+    // Second read: already delivered, so the card is clean.
+    expect((await view(HIM)).arrivals.some((a) => a.kind === "found")).toBe(false);
+  });
+
+  it("shows a spectator nothing", async () => {
+    await seat();
+    await post("found", { me: HIM, key: "piano" });
+    const nosy = await view(STRANGER);
+    expect(nosy.noticed).toBe(0);
+    expect(nosy.arrivals).toEqual([]);
+  });
+
+  it("is quietly fine about being told the same thing twice", async () => {
+    await seat();
+    expect((await post("found", { me: HIM, key: "piano" })).status).toBe(200);
+    // The client reports optimistically on every device, so a repeat is normal, not an error.
+    expect((await post("found", { me: HIM, key: "piano" })).status).toBe(200);
+    expect((await view(HIM)).noticed).toBe(1);
+  });
+});

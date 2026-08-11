@@ -1,5 +1,9 @@
 /** The contract between the Worker and the web client. */
 
+import type { DiscoveryKey } from "./discoveries.js";
+
+export type { DiscoveryKey };
+
 export type Action = "pet" | "brush" | "bring" | "sit" | "photo";
 
 /**
@@ -93,7 +97,16 @@ export interface Told {
 export type Arrival =
   | { kind: "action"; at: number; action: Action }
   | { kind: "mood"; at: number; mood: Mood }
-  | { kind: "line"; at: number; text: string };
+  | { kind: "line"; at: number; text: string }
+  /*
+   * The other seat found one of the room's secrets.
+   *
+   * `what` is null unless you have found it too. Spoiling it would be worse than saying nothing: the
+   * whole pleasure of these is walking into one, and "Bean showed her the piano" hands you the answer
+   * to a thing you were going to enjoy discovering. Encoded in the type rather than left to the UI so
+   * a careless render cannot leak it.
+   */
+  | { kind: "found"; at: number; what: DiscoveryKey | null };
 
 export type Gift = "leaf" | "cap" | "moth";
 
@@ -142,5 +155,12 @@ export interface RoomView {
   theyCameAfter: boolean;
   /** New things from the other seat since this person last opened the room. */
   arrivals: Arrival[];
+  /**
+   * How many of the room's secrets the two of you have noticed between you.
+   *
+   * Deliberately not "n of m". The total is the spoiler: knowing there are fifteen turns a room you
+   * poke at into a list you complete, and the room stops being a room.
+   */
+  noticed: number;
   waitingForThem: boolean;
 }

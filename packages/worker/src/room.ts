@@ -1,6 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import type { Action, Arrival, Cat, Clock, Gift, Mood, Note, RoomView, Told, Told2, Visit } from "./types.js";
 import { NOTES } from "./notes.js";
+import { arrivalsFor, foundCount, isDiscoveryKey, recordFound, type DiscoveryKey, type FoundLedger } from "./discoveries.js";
 import type { Env } from "./env.js";
 
 const LOG_KEEP = 40;
@@ -272,6 +273,33 @@ export class Room extends DurableObject<Env> {
   }
 
   /** The notes this room runs on: his if he wrote any, otherwise the shipped defaults. */
+  private async found(): Promise<FoundLedger> {
+    return (await this.ctx.storage.get<FoundLedger>("found")) ?? {};
+  }
+
+  /**
+   * Record that this seat noticed one of the room's secrets.
+   *
+   * Seats only. A spectator holding the link can look around all they like, but what the two of them
+   * have noticed together is theirs, and letting a third person write into it would put a stranger's
+   * finds in their count.
+   *
+   * Returns false for an unknown key or an unseated caller, and true even when it was already known,
+   * because the client reports optimistically and "you already had this" is not an error worth
+   * surfacing to somebody who just found a piano.
+   */
+  async noticed(me: string, key: unknown): Promise<boolean> {
+    if (!isDiscoveryKey(key)) return false;
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    const { him, her } = this.roles(people);
+    if (me !== him && me !== her) return false;
+
+    const before = await this.found();
+    const { ledger, isNew } = recordFound(before, key as DiscoveryKey, me, Date.now());
+    if (isNew) await this.ctx.storage.put("found", ledger);
+    return true;
+  }
+
   private async notes(): Promise<string[]> {
     const own = await this.ctx.storage.get<string[]>("notes");
     return own && own.length > 0 ? own : NOTES;
@@ -457,6 +485,18 @@ export class Room extends DurableObject<Env> {
         if (mood && mood.at > since) arrivals.push({ kind: "mood", at: mood.at, mood: mood.mood });
         if (line && line.at > since) arrivals.push({ kind: "line", at: line.at, text: line.text });
       }
+      /*
+       * Secrets the other person found while you were away.
+       *
+       * Both seats get these, unlike almost everything else in build(), which is deliberately
+       * asymmetric (he acts, she says how she is). Finding something in the room is the one thing
+       * either of them does in the same way, so it is the one thing that travels both directions.
+       */
+      if (otherId) {
+        for (const found of arrivalsFor(await this.found(), me, otherId, since)) {
+          arrivals.push({ kind: "found", at: found.at, what: found.mutual ? found.key : null });
+        }
+      }
       arrivals.sort((a, b) => b.at - a.at);
     }
 
@@ -515,6 +555,8 @@ export class Room extends DurableObject<Env> {
       theirRecent: youAreHer && him ? log.filter((v) => v.who === him).slice(0, 4) : [],
       theyCameAfter: !!catTold && !!them && youAreHer && them.lastSeen > catTold.at,
       arrivals,
+      // Both seats, and spectators get zero: a stranger with the link is not part of "the two of you".
+      noticed: seated ? foundCount(await this.found()) : 0,
       waitingForThem,
     };
   }

@@ -107,6 +107,21 @@ app.post("/api/room/:id/recover", async (c) => {
 });
 
 /** Put the thing she knocked off back on the shelf. Either seat; the Room re-checks. */
+/*
+ * "I found the thing."
+ *
+ * Reported by the client the first time a secret fires on that device, so it is chatty by nature:
+ * the DO answers ok for a key it already knew rather than making the client track what the server
+ * has. Unknown keys are refused, because the allowlist lives on this side.
+ */
+app.post("/api/room/:id/found", async (c) => {
+  const id = c.req.param("id");
+  const body = (await c.req.json().catch(() => null)) as { me?: string; key?: unknown } | null;
+  if (!ROOM_RE.test(id) || !body?.me) return c.json({ error: "bad request" }, 400);
+  const ok = await room(c.env, id).noticed(body.me, body.key);
+  return ok ? c.json({ ok: true }) : c.json({ error: "bad request" }, 400);
+});
+
 app.post("/api/room/:id/shelf", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);

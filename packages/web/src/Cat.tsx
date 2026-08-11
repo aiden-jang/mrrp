@@ -10,6 +10,7 @@ import { mouseRunAt } from "./mouse.js";
 import { BUBBLE_GAME_MS, bubbleMomentAt, bubbleSeeds, type BubbleSeed } from "./bubbles.js";
 import { PIANO_CODE, PIANO_MS, advancePawMelody, pianoKeyAt, pianoKeys } from "./piano.js";
 import { collectConstellationStar, constellationProgress, CONSTELLATION_KEYS, type ConstellationKey } from "./constellation.js";
+import type { DiscoveryKey } from "./discoveries.js";
 import { BED, BIRD, BOX_BACK, BOX_FRONT, DOOR, EK, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, MUG, MUG_DOWN, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
@@ -175,6 +176,7 @@ export function Cat({
   together = false,
   onPet,
   onPoke,
+  onFound,
   onCapture,
   collectionKey,
 }: {
@@ -242,6 +244,12 @@ export function Cat({
   onPet?: () => void;
   /** She tapped her own cat. Local only, no request. */
   onPoke?: () => void;
+  /**
+   * One of the room's secrets just fired. Reported so the other seat can be told somebody found
+   * something, which is the only reason this component knows the concept exists: it stays ignorant of
+   * rooms, tokens and the network, exactly like onPet and onPoke.
+   */
+  onFound?: (key: DiscoveryKey) => void;
   /** Exposes a PNG capture of the rendered room without leaking the canvas out of this component. */
   onCapture?: (capture: () => Promise<Blob | null>) => void;
   /** Stable room id used only for this device's hidden constellation progress. */
@@ -369,9 +377,11 @@ export function Cat({
   const roleRef = useRef(role);
   const onPetRef = useRef(onPet);
   const onPokeRef = useRef(onPoke);
+  const onFoundRef = useRef(onFound);
   roleRef.current = role;
   onPetRef.current = onPet;
   onPokeRef.current = onPoke;
+  onFoundRef.current = onFound;
 
   /** True while he is holding on her. Owned here rather than by the caller, see the pointer setup. */
   const petting = useRef(false);
@@ -522,6 +532,7 @@ export function Cat({
           if (game.popped.size === game.seeds.length) {
             game.completedAt = now;
             catTaps.current.chorusUntil = now + BUBBLE_REWARD_MS;
+            onFoundRef.current?.("bubbles");
             speakUntil.current = now + 1200;
             play("purr");
           }
@@ -542,6 +553,7 @@ export function Cat({
           playPianoNote(key);
           if (melody.complete) {
             piano.rewardUntil = now + PIANO_REWARD_MS;
+            onFoundRef.current?.("piano");
             speakUntil.current = now + 1100;
             play("purr");
           }
@@ -762,6 +774,7 @@ export function Cat({
               speakUntil.current = now + 1400;
               bounce.current = 1;
               play("purr");
+              onFoundRef.current?.("constellation");
             }
           }
         }
@@ -775,6 +788,7 @@ export function Cat({
             catTaps.current.chorusUntil = now + PURR_CHORUS_MS;
             speakUntil.current = now + 1200;
             play("twinkle");
+            onFoundRef.current?.("roomTour");
           }
         }
         poked.current = { key: hit.key, at: performance.now() };
@@ -836,6 +850,7 @@ export function Cat({
           bird.current = now;
         }
         play("twinkle");
+        onFoundRef.current?.("aurora");
         speakUntil.current = now + 1000;
         roomCodeAt = 0;
       }
@@ -850,6 +865,7 @@ export function Cat({
         if (nameCode && typedRoomCode.endsWith(nameCode)) {
           const now = performance.now();
           nameCallUntil.current = now + NAME_CALL_MS;
+          onFoundRef.current?.("herName");
           speakUntil.current = now + 1200;
           bounce.current = 1;
           typedRoomCode = "";
@@ -858,17 +874,20 @@ export function Cat({
           const now = performance.now();
           catTaps.current.chorusUntil = now + PURR_CHORUS_MS;
           speakUntil.current = now + 1250;
+          onFoundRef.current?.("mrrp");
           typedRoomCode = "";
           play("purr");
         } else if (typedRoomCode.endsWith(SUMMON_CODE)) {
           const now = performance.now();
           summonUntil.current = now + SUMMON_MS;
+          onFoundRef.current?.("summon");
           speakUntil.current = now + 1000;
           typedRoomCode = "";
           play("chirp");
         } else if (typedRoomCode.endsWith(BOX_CODE)) {
           const now = performance.now();
           secretBoxUntil.current = now + SECRET_BOX_MS;
+          onFoundRef.current?.("box");
           boxPeekUntil.current = now + 1200;
           lookAt.current = { x: BOX_X + 5, until: now + 2200 };
           speakUntil.current = now + 950;
@@ -878,6 +897,7 @@ export function Cat({
         } else if (typedRoomCode.endsWith(YARN_CODE)) {
           const now = performance.now();
           yarnUntil.current = now + YARN_MS;
+          onFoundRef.current?.("yarn");
           speakUntil.current = now + 900;
           bounce.current = 1;
           typedRoomCode = "";
@@ -885,6 +905,7 @@ export function Cat({
         } else if (typedRoomCode.endsWith(TREAT_CODE)) {
           const now = performance.now();
           treatUntil.current = now + TREAT_MS;
+          onFoundRef.current?.("treat");
           lookAt.current = { x: TREAT_X, until: now + TREAT_MS };
           speakUntil.current = now + 900;
           bounce.current = 1;
@@ -893,6 +914,7 @@ export function Cat({
         } else if (typedRoomCode.endsWith(CATNIP_CODE)) {
           const now = performance.now();
           catnipUntil.current = now + CATNIP_MS;
+          onFoundRef.current?.("catnip");
           lookAt.current = { x: CATNIP_X, until: now + CATNIP_MS };
           speakUntil.current = now + 1100;
           bounce.current = 1;
@@ -901,6 +923,7 @@ export function Cat({
         } else if (typedRoomCode.endsWith(MUSIC_CODE)) {
           const now = performance.now();
           music.current = { until: now + MUSIC_MS, x: catX.current ?? GW / 2 };
+          onFoundRef.current?.("music");
           speakUntil.current = now + 950;
           bounce.current = 1;
           typedRoomCode = "";
@@ -908,6 +931,7 @@ export function Cat({
         } else if (typedRoomCode.endsWith(MOUSE_CODE)) {
           const now = performance.now();
           mouseStartedAt.current = now;
+          onFoundRef.current?.("mouse");
           lookAt.current = { x: 14, until: now + MOUSE_MS };
           speakUntil.current = now + 1100;
           bounce.current = 1;
@@ -922,6 +946,7 @@ export function Cat({
             completedAt: -1e9,
             lastPop: null,
           };
+          onFoundRef.current?.("bubbles");
           speakUntil.current = now + 1050;
           bounce.current = 1;
           typedRoomCode = "";
@@ -936,6 +961,7 @@ export function Cat({
             history: [],
             rewardUntil: -1e9,
           };
+          onFoundRef.current?.("piano");
           speakUntil.current = now + 950;
           bounce.current = 1;
           typedRoomCode = "";
@@ -948,6 +974,7 @@ export function Cat({
             speakUntil.current = now + 1200;
             bounce.current = 1;
             play("twinkle");
+            onFoundRef.current?.("constellation");
           }
           typedRoomCode = "";
         }

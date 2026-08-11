@@ -9,6 +9,8 @@ import { MoodFace } from "./faces.js";
 import type { Cue } from "./sound.js";
 import { isMuted, play, toggleMuted } from "./sound.js";
 import { makeKeepsake } from "./keepsake.js";
+import { noticed } from "./discoveries.js";
+import { myToken } from "./api.js";
 
 /* What each button sounds like. Sitting with her is the only one that answers with a purr: the rest
    are things you do to a cat, and that one is a cat deciding to stay. */
@@ -102,6 +104,30 @@ function whenish(at: number): string {
 
 const pastTense = (a: Action) => ACTIONS.find((x) => x.id === a)?.past ?? "was here";
 
+/*
+ * What to call a secret the other person found.
+ *
+ * Only reachable when the viewer has found it too, because the server sends `what: null` otherwise.
+ * These are the shared-memory version of the name, phrased as a thing that happened in the room
+ * rather than a feature that has a label: "the piano in the floorboards", not "piano easter egg".
+ */
+const FOUND_NAMES: Record<string, string> = {
+  constellation: "the stars in the window",
+  roomTour: "every corner of the room",
+  piano: "the piano in the floorboards",
+  bubbles: "the bubbles",
+  aurora: "the lights over the window",
+  mrrp: "what she does when you say her word",
+  summon: "that she comes when called",
+  herName: "that she knows her own name",
+  box: "the box that turns up",
+  yarn: "the yarn",
+  treat: "where the treats are",
+  catnip: "the catnip",
+  music: "the music",
+  mouse: "the mouse",
+};
+
 /** A one-read postcard assembled from things the other person did between visits. */
 function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[]; onClose: () => void }) {
   return (
@@ -116,12 +142,20 @@ function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[];
       <ul style={S.arrivalList}>
         {items.map((item, index) => (
           <li key={`${item.kind}-${item.at}-${index}`} style={S.arrivalItem}>
-            <span style={S.arrivalPaw} aria-hidden>{item.kind === "line" ? "✦" : "·"}</span>
+            <span style={S.arrivalPaw} aria-hidden>{item.kind === "line" ? "✦" : item.kind === "found" ? "✧" : "·"}</span>
             <span>
               {item.kind === "action" ? (
                 <><b>{name}</b> {pastTense(item.action)}.</>
               ) : item.kind === "mood" ? (
                 <><b>{name}</b> said she was {MOODS.find((m) => m.id === item.mood)?.said ?? item.mood}.</>
+              ) : item.kind === "found" ? (
+                item.what ? (
+                  <><b>{name}</b> found {FOUND_NAMES[item.what] ?? "something in here"} too.</>
+                ) : (
+                  /* Unnamed on purpose: there is something in here he has not walked into yet, and
+                     telling him what it is would spend the best part of it for him. */
+                  <><b>{name}</b> found something in here you haven&apos;t seen yet.</>
+                )
               ) : (
                 <><b>{name}</b> left: “{item.text}”</>
               )}
@@ -665,6 +699,8 @@ function RoomPage({ id }: { id: string }) {
             together={view.bothHereNow}
             onPet={() => void act("pet")}
             onPoke={() => { play("mrrp"); setNudge((v) => v + 1); }}
+            /* Fire and forget. The canvas calls this mid-frame, so nothing here may await or throw. */
+            onFound={(key) => noticed(id, myToken(), key)}
             onCapture={handleCaptureReady}
           />
 
@@ -681,6 +717,22 @@ function RoomPage({ id }: { id: string }) {
           <button style={S.quiet} onClick={() => void saveRoomImage()} disabled={imageStatus !== null}>
             {imageStatus === "saving" ? "Making postcard…" : imageStatus === "shared" ? "Postcard shared" : imageStatus === "saved" ? "Postcard saved" : "Make a postcard"}
           </button>
+        )}
+
+        {/*
+          * What the two of you have turned up in here.
+          *
+          * A count and nothing else. No total, no list, no progress bar: the moment it says "3 of 14"
+          * the room stops being a room somebody poked at and becomes a thing to finish, and the point
+          * of hiding a piano under the floorboards is that nobody told you it was there.
+          *
+          * Only from two onwards. At one it reads as a score for the thing you just did, which is the
+          * opposite of the tone, and at zero it would advertise that there is anything to find.
+          */}
+        {!setup && view.noticed >= 2 && (iAmHim || view.youAreHer) && (
+          <p style={S.noticed}>
+            Between you, you have noticed {view.noticed} things in here.
+          </p>
         )}
 
         {/* The one gesture that isn't a button was also the one nobody could find. It disappears after
@@ -1224,6 +1276,8 @@ const S: Record<string, React.CSSProperties> = {
     background: "#efdcc2", boxShadow: "0 18px 44px -22px rgba(120,84,44,.45)",
   },
   doing: { fontSize: 13.5, color: "var(--soft)", textAlign: "center", margin: "14px 0 0", fontStyle: "italic" },
+  // Quieter than `doing` and not italic: a fact about the two of them, not something the cat is doing.
+  noticed: { fontSize: 12.5, color: "var(--soft)", textAlign: "center", margin: "10px 0 0", opacity: 0.85 },
   // A quiet panel, not a gold block. How she is appears on his side every single day, whereas the
   // two of you being in the room at the same moment happens rarely — and when it did, two identical
   // gold cards stacked on top of each other and the rare one lost. Only one of these should shout.
