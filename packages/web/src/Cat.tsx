@@ -56,6 +56,8 @@ const GIFT_WISH_MS = 2800;
 const BED_DREAM_MS = 3200;
 /** Three quick pats are enough to make the whole little room purr back. */
 const PURR_CHORUS_MS = 2600;
+/** Holding an empty bit of floor gives her one short thing to chase. */
+const LASER_CHASE_MS = 2800;
 /** The room's keyboard secret only paints the night window, never the whole screen. */
 const AURORA_MS = 5600;
 const ROOM_CODE = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight"];
@@ -240,6 +242,8 @@ export function Cat({
   const giftTaps = useRef({ count: 0, last: -1e9, wishUntil: -1e9 });
   const bedTaps = useRef({ count: 0, last: -1e9, dreamUntil: -1e9 });
   const catTaps = useRef({ count: 0, last: -1e9, chorusUntil: -1e9 });
+  const floorPress = useRef<{ x: number; y: number; at: number } | null>(null);
+  const laser = useRef({ x: GW / 2, y: FLOOR + 12, until: -1e9 });
   /** A second knock means somebody is playing with the door, so the room plays back. */
   const doorTaps = useRef({ count: 0, last: -1e9, noteUntil: -1e9 });
   /** A tiny keyboard secret. It is local, ephemeral, and only visible through the night window. */
@@ -324,7 +328,7 @@ export function Cat({
       ptr.y = ((e.clientY - r.top) / r.height) * GH;
       ptr.in = true;
     };
-    const onLeave = () => { ptr.in = false; petting.current = false; lookAt.current = null; poked.current = null; };
+    const onLeave = () => { ptr.in = false; petting.current = false; floorPress.current = null; lookAt.current = null; poked.current = null; };
 
     /*
      * Taps are hit-tested here, against the same coordinates the draw code uses.
@@ -507,8 +511,33 @@ export function Cat({
           until: performance.now() + (rainStarted ? 4200 : 2400),
         };
       }
+      // The floor is deliberately the only long-press interaction: everything built into the room
+      // already has a tap response. Holding an empty board gives her a tiny dot to chase instead.
+      if (!hit && y >= FLOOR) {
+        floorPress.current = { x, y, at: performance.now() };
+        // A regular board tap is just a small point of interest; holding it is what escalates into
+        // the chase. This makes the floor responsive without making every tap an easter egg.
+        lookAt.current = { x, until: performance.now() + 900 };
+      }
     };
-    const onUp = () => { petting.current = false; ptr.in = true; };
+    const onUp = () => {
+      petting.current = false;
+      ptr.in = true;
+      const press = floorPress.current;
+      floorPress.current = null;
+      if (!press || performance.now() - press.at < 460) return;
+      laser.current = {
+        x: Math.max(10, Math.min(GW - 10, press.x)),
+        y: Math.max(FLOOR + 3, Math.min(GH - 4, press.y)),
+        until: performance.now() + LASER_CHASE_MS,
+      };
+      lookAt.current = { x: laser.current.x, until: laser.current.until };
+      speakUntil.current = performance.now() + 850;
+      play("mrrp");
+    };
+    // A cancelled touch is not a held-floor choice (it can be a browser gesture or a phone taking
+    // over the pointer), so it only clears local press state instead of starting a surprise chase.
+    const onCancel = () => { petting.current = false; floorPress.current = null; };
     const onKey = (e: KeyboardEvent) => {
       // The room needs focus for its little code. Once it has it, arrow keys should not also scroll
       // the page away from the window while someone is trying the sequence.
@@ -525,7 +554,7 @@ export function Cat({
     cv.addEventListener("pointerleave", onLeave);
     cv.addEventListener("pointerdown", onDown);
     cv.addEventListener("pointerup", onUp);
-    cv.addEventListener("pointercancel", onUp);
+    cv.addEventListener("pointercancel", onCancel);
     cv.addEventListener("keydown", onKey);
 
     // Dust lives in the beam. Integer positions, because half a pixel of dust is a grey smudge.
@@ -1012,8 +1041,11 @@ export function Cat({
       // A zoom outranks both, briefly, then hands her back to whatever she was doing.
       const zp = (t - zoom.current.start) / ZOOM_MS;
       const nesting = t < bedNestUntil.current && !sc.atDoor && !zooming;
+      const laserPlaying = !reduce && t < laser.current.until && !sc.atDoor;
       const wantX = zooming
         ? 10 + (Math.sin(zp * Math.PI * 2 - Math.PI / 2) * 0.5 + 0.5) * (GW - 34)
+        : laserPlaying
+          ? laser.current.x
         : inBox
           ? BOX_X + 2
           : nesting
@@ -1058,7 +1090,7 @@ export function Cat({
       // A door opening holds her eyes open too. Without this she stays loafed through the whole
       // swing at any drowsy hour, because the perk pose needs open eyes and the scene had already
       // decided she was sleepy. A cat sleeps through a lot, but not a door.
-      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
+      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming || laserPlaying || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = forced || (open > 0.4 && !blink);
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
@@ -1066,7 +1098,7 @@ export function Cat({
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
       // cat that did not notice, which is the one thing this feature is for.
       const noticing = (doorRef.current !== null || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking) && posed;
-      const pose: Pose = zooming ? "play" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
+      const pose: Pose = zooming || laserPlaying ? "play" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
@@ -1108,6 +1140,17 @@ export function Cat({
       // is the line between a cat in a box and a cat standing behind one.
       if (boxHere) {
         blit(BOX_FRONT, BOX_X + shake("box"), BOX_Y + 3, { w: INK, k: "#d8ab72" });
+      }
+
+      // The held-floor reward is only a blink of light on the boards. A literal beam would cut
+      // through the room; the chase tells the rest of the story.
+      if (laserPlaying && Math.floor(t / 110) % 2 === 0) {
+        const age = 1 - (laser.current.until - t) / LASER_CHASE_MS;
+        const lx = Math.round(laser.current.x + Math.sin(t / 130) * 1);
+        const ly = Math.round(laser.current.y + Math.sin(t / 180) * 1);
+        px(lx, ly, "#ff6b6b");
+        px(lx + 1, ly, "rgba(255,161,161,.7)");
+        if (age < 0.78) px(lx - 1, ly + 1, "rgba(255,116,116,.35)");
       }
 
       // The moth, drawn before her so she can be in front of it, and so its position is known when
@@ -1329,7 +1372,7 @@ export function Cat({
       cv.removeEventListener("pointerleave", onLeave);
       cv.removeEventListener("pointerdown", onDown);
       cv.removeEventListener("pointerup", onUp);
-      cv.removeEventListener("pointercancel", onUp);
+      cv.removeEventListener("pointercancel", onCancel);
       cv.removeEventListener("keydown", onKey);
     };
   }, []);
