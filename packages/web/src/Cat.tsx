@@ -2,12 +2,13 @@ import { useEffect, useRef } from "react";
 import type { Cat as CatLook, Clock, Gift, Mood } from "./types.js";
 import { mixHex, sceneFor } from "./hours.js";
 import { fireflyAt, mothAt } from "./critters.js";
-import { play } from "./sound.js";
+import { play, playPianoNote } from "./sound.js";
 import { catCallCode } from "./secrets.js";
 import { moonPhase, moonPixelLit } from "./moon.js";
 import { seasonFor, seasonalPlantColors } from "./season.js";
 import { mouseRunAt } from "./mouse.js";
 import { BUBBLE_GAME_MS, bubbleMomentAt, bubbleSeeds, type BubbleSeed } from "./bubbles.js";
+import { PIANO_CODE, PIANO_MS, advancePawMelody, pianoKeyAt, pianoKeys } from "./piano.js";
 import { BED, BIRD, BOX_BACK, BOX_FRONT, DOOR, EK, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, MUG, MUG_DOWN, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
@@ -100,6 +101,7 @@ const MOUSE_MS = 7000;
 /** A typed invitation fills the room with five bubbles that can actually be chased and popped. */
 const BUBBLE_CODE = "bubbles";
 const BUBBLE_REWARD_MS = 2400;
+const PIANO_REWARD_MS = 4200;
 /** Calling her by her actual name gets a response no generic secret word can give. */
 const NAME_CALL_MS = 6200;
 /** A second quick box tap turns a peek into a tiny peekaboo performance. */
@@ -328,6 +330,14 @@ export function Cat({
     completedAt: -1e9,
     lastPop: null,
   });
+  const pianoGame = useRef({
+    until: -1e9,
+    center: GW / 2,
+    lastKey: -1,
+    lastAt: -1e9,
+    history: [] as number[],
+    rewardUntil: -1e9,
+  });
   /** Her name brings her to the middle for one small recognition moment. */
   const nameCallUntil = useRef(-1e9);
   /** A slow blink is one answer per quiet cursor stay, never an idle animation on a timer. */
@@ -498,6 +508,26 @@ export function Cat({
             game.completedAt = now;
             catTaps.current.chorusUntil = now + BUBBLE_REWARD_MS;
             speakUntil.current = now + 1200;
+            play("purr");
+          }
+          return;
+        }
+      }
+      const piano = pianoGame.current;
+      if (performance.now() < piano.until) {
+        const key = pianoKeyAt(pianoKeys(piano.center), x, y);
+        if (key !== null) {
+          const now = performance.now();
+          const melody = advancePawMelody(piano.history, key);
+          piano.history = melody.history;
+          piano.lastKey = key;
+          piano.lastAt = now;
+          lookAt.current = { x, until: now + 900 };
+          bounce.current = 1;
+          playPianoNote(key);
+          if (melody.complete) {
+            piano.rewardUntil = now + PIANO_REWARD_MS;
+            speakUntil.current = now + 1100;
             play("purr");
           }
           return;
@@ -775,7 +805,7 @@ export function Cat({
       if (e.key.length === 1 && /[a-z]/i.test(e.key)) {
         const nameCode = catCallCode(lookRef.current.name);
         typedRoomCode = `${typedRoomCode}${e.key.toLowerCase()}`.slice(
-          -Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length, BOX_CODE.length, YARN_CODE.length, TREAT_CODE.length, CATNIP_CODE.length, MUSIC_CODE.length, MOUSE_CODE.length, BUBBLE_CODE.length, nameCode?.length ?? 0),
+          -Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length, BOX_CODE.length, YARN_CODE.length, TREAT_CODE.length, CATNIP_CODE.length, MUSIC_CODE.length, MOUSE_CODE.length, BUBBLE_CODE.length, PIANO_CODE.length, nameCode?.length ?? 0),
         );
         // Her real name wins over the shipped words. A cat called Music should still know that she
         // is being called; room tricks are generic, recognition is not.
@@ -855,6 +885,20 @@ export function Cat({
             lastPop: null,
           };
           speakUntil.current = now + 1050;
+          bounce.current = 1;
+          typedRoomCode = "";
+          play("twinkle");
+        } else if (typedRoomCode.endsWith(PIANO_CODE)) {
+          const now = performance.now();
+          pianoGame.current = {
+            until: now + PIANO_MS,
+            center: catX.current ?? GW / 2,
+            lastKey: -1,
+            lastAt: -1e9,
+            history: [],
+            rewardUntil: -1e9,
+          };
+          speakUntil.current = now + 950;
           bounce.current = 1;
           typedRoomCode = "";
           play("twinkle");
@@ -1456,6 +1500,10 @@ export function Cat({
       const bubblePlaying = liveBubbles.length > 0 && !sc.atDoor;
       const bubbleTarget = liveBubbles[0] ?? null;
       const bubbleRewarding = t - bubbleGame.current.completedAt < BUBBLE_REWARD_MS;
+      const pianoPlaying = t < pianoGame.current.until && !sc.atDoor;
+      const pianoKeysNow = pianoPlaying ? pianoKeys(pianoGame.current.center) : [];
+      const pianoPawing = pianoPlaying && t - pianoGame.current.lastAt < 520;
+      const pianoRewarding = t < pianoGame.current.rewardUntil;
       const nameCalled = t < nameCallUntil.current;
       const yarnProgress = yarnPlaying ? 1 - (yarnUntil.current - t) / YARN_MS : 0;
       // Two passes with a turnaround in the middle. The eased ends make the ball feel pushed rather
@@ -1542,7 +1590,7 @@ export function Cat({
       // A door opening holds her eyes open too. Without this she stays loafed through the whole
       // swing at any drowsy hour, because the perk pose needs open eyes and the scene had already
       // decided she was sleepy. A cat sleeps through a lot, but not a door.
-      const forced = eyesRef.current || nameCalled || mouseVisiting || bubblePlaying || bubbleRewarding || (looking && !reduce) || doorRef.current !== null || musicPlaying || catnipActive || zooming || laserPlaying || yarnPlaying || treating || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
+      const forced = eyesRef.current || nameCalled || mouseVisiting || bubblePlaying || bubbleRewarding || pianoPawing || pianoRewarding || (looking && !reduce) || doorRef.current !== null || musicPlaying || catnipActive || zooming || laserPlaying || yarnPlaying || treating || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = !slowBlinking && (forced || (open > 0.4 && !blink));
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
@@ -1550,13 +1598,13 @@ export function Cat({
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
       // cat that did not notice, which is the one thing this feature is for.
       const noticing = (mouseVisiting || doorRef.current !== null || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking) && posed;
-      const pose: Pose = mouseChasing || bubblePlaying || musicDancing || catnipping || zooming || laserPlaying || yarnPlaying || summoning || (treating && treatProgress < 0.6) ? "play" : musicPlaying || catnipActive || treating ? "sit" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
+      const pose: Pose = mouseChasing || bubblePlaying || pianoPawing || pianoRewarding || musicDancing || catnipping || zooming || laserPlaying || yarnPlaying || summoning || (treating && treatProgress < 0.6) ? "play" : musicPlaying || catnipActive || treating ? "sit" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
       const hop =
         Math.round(bounce.current * 3) +
-        (musicDancing
+        (musicDancing || (pianoRewarding && !reduce)
           ? Math.round(Math.abs(Math.sin(t / 145)) * 3)
           : reduce || sc.play <= 0.5
             ? 0
@@ -1609,6 +1657,24 @@ export function Cat({
         px(CATNIP_X - 2, cy - 2, "#6c9b57");
         px(CATNIP_X, cy - 3, "#83ad64");
         px(CATNIP_X + 2, cy - 2, "#5e8d4e");
+      }
+
+      if (pianoPlaying) {
+        // Five warm floor keys, with the next left-to-right note carrying one small paw hint. The
+        // hint makes the melody discoverable without writing instructions into the room.
+        const nextNote = pianoGame.current.history.length;
+        for (const key of pianoKeysNow) {
+          const pressed = key.index === pianoGame.current.lastKey && t - pianoGame.current.lastAt < 260;
+          const fill = pressed ? "#e8a9b5" : key.index % 2 === 0 ? "#f7ead1" : "#efe0c4";
+          rect(Math.round(key.x), key.y, key.width, key.height, "#684b32");
+          rect(Math.round(key.x) + 1, key.y + 1, key.width - 2, key.height - 2, fill);
+          if (key.index === nextNote && !pianoRewarding) {
+            const px0 = Math.round(key.x + key.width / 2);
+            const py0 = key.y + 5;
+            px(px0 - 1, py0, "rgba(104,75,50,.45)"); px(px0 + 1, py0, "rgba(104,75,50,.45)");
+            rect(px0 - 2, py0 + 1, 5, 2, "rgba(104,75,50,.45)");
+          }
+        }
       }
 
       if (mouseVisiting) {
@@ -1678,6 +1744,18 @@ export function Cat({
           rect(hx - 1, hy + 1, 5, 1, heart);
           rect(hx, hy + 2, 3, 1, heart);
           px(hx + 1, hy + 3, heart);
+        }
+      }
+      if (pianoRewarding) {
+        const remaining = pianoGame.current.rewardUntil - t;
+        const fade = Math.min(1, remaining / 600);
+        for (let i = 0; i < 6; i++) {
+          const progress = reduce ? i / 6 : (1 - remaining / PIANO_REWARD_MS + i / 6) % 1;
+          const nx = Math.round(kx - 15 + i * 6 + Math.sin(t / 260 + i) * (reduce ? 0 : 2));
+          const ny = Math.round(y - 4 - progress * 18);
+          const note = i % 2 === 0 ? `rgba(232,169,181,${fade * (1 - progress * 0.5)})` : `rgba(255,232,143,${fade * (1 - progress * 0.5)})`;
+          px(nx, ny, note); px(nx, ny + 1, note); px(nx + 1, ny, note);
+          if (i % 2 === 0) px(nx + 2, ny - 1, note);
         }
       }
 

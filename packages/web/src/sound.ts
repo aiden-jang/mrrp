@@ -296,3 +296,13 @@ export function play(cue: Cue): void {
   lastPlayed.set(cue, at);
   CUES[cue](g, at);
 }
+
+/** One of the five soft pentatonic notes under the hidden paw piano. */
+export function playPianoNote(index: number): void {
+  const g = graph();
+  if (!g) return;
+  const notes = [392, 494, 587, 659, 784];
+  const frequency = notes[Math.max(0, Math.min(notes.length - 1, Math.round(index)))]!;
+  const at = g.ctx.currentTime + LOOKAHEAD_SECONDS;
+  voice(g, { at, dur: 0.3, gain: 0.055, sweep: [frequency, frequency * 1.012], type: "sine" });
+}
