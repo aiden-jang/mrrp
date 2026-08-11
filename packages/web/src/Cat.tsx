@@ -48,6 +48,12 @@ const PHOTO_GLINT_MS = 700;
 const PHOTO_MEMORY_MS = 2200;
 /** A just-tapped cup sends up a little steam before the room goes quiet again. */
 const MUG_STEAM_MS = 2200;
+/** A second tap on the warm mug leaves a short, candle-like glow on the shelf. */
+const MUG_GLOW_MS = 2600;
+/** Gifts get one private little send-off when somebody lingers on them. */
+const GIFT_WISH_MS = 2800;
+/** A second invitation to the bed gets a tiny sleepy dream. */
+const BED_DREAM_MS = 3200;
 /** The room's keyboard secret only paints the night window, never the whole screen. */
 const AURORA_MS = 5600;
 const ROOM_CODE = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight"];
@@ -226,8 +232,11 @@ export function Cat({
   const photoTaps = useRef({ count: 0, last: -1e9, memoryUntil: -1e9 });
   /** The shelf holds a warm mug, which only needs to announce itself when somebody notices it. */
   const mugSteamedAt = useRef(-1e9);
+  const mugTaps = useRef({ count: 0, last: -1e9, glowUntil: -1e9 });
   /** A gift only sparkles after someone notices what she carried in. */
   const giftGlint = useRef(-1e9);
+  const giftTaps = useRef({ count: 0, last: -1e9, wishUntil: -1e9 });
+  const bedTaps = useRef({ count: 0, last: -1e9, dreamUntil: -1e9 });
   /** A second knock means somebody is playing with the door, so the room plays back. */
   const doorTaps = useRef({ count: 0, last: -1e9, noteUntil: -1e9 });
   /** A tiny keyboard secret. It is local, ephemeral, and only visible through the night window. */
@@ -357,9 +366,17 @@ export function Cat({
       // — not a claim or a state change — but the glint makes the object feel chosen instead of like
       // a leftover sprite. It is intentionally local because the gift itself already carries meaning.
       if (giftRef.current && x >= 14 && x < 24 && y >= FLOOR + 13 && y < FLOOR + 22) {
-        giftGlint.current = performance.now();
-        speakUntil.current = performance.now() + 800;
+        const now = performance.now();
+        giftGlint.current = now;
+        speakUntil.current = now + 800;
         lookAt.current = { x: 19, until: performance.now() + 1900 };
+        const taps = giftTaps.current;
+        taps.count = now - taps.last < 1200 ? taps.count + 1 : 1;
+        taps.last = now;
+        if (taps.count >= 2) {
+          taps.wishUntil = now + GIFT_WISH_MS;
+          taps.count = 0;
+        }
         play("mrrp");
         return;
       }
@@ -431,10 +448,26 @@ export function Cat({
         play("mrrp");
       }
       if (hit?.key === "bed") {
-        bedNestUntil.current = performance.now() + 8000;
+        const now = performance.now();
+        bedNestUntil.current = now + 8000;
+        const taps = bedTaps.current;
+        taps.count = now - taps.last < 1300 ? taps.count + 1 : 1;
+        taps.last = now;
+        if (taps.count >= 2) {
+          taps.dreamUntil = now + BED_DREAM_MS;
+          taps.count = 0;
+        }
       }
       if (hit?.key === "shelf" && !downRef.current) {
-        mugSteamedAt.current = performance.now();
+        const now = performance.now();
+        mugSteamedAt.current = now;
+        const taps = mugTaps.current;
+        taps.count = now - taps.last < 1200 ? taps.count + 1 : 1;
+        taps.last = now;
+        if (taps.count >= 2) {
+          taps.glowUntil = now + MUG_GLOW_MS;
+          taps.count = 0;
+        }
       }
       // A tap at the door is not shared presence — it is just somebody checking whether she is
       // listening. She is, and answers locally before going back to whatever she was doing.
@@ -785,6 +818,15 @@ export function Cat({
             px(sx + 1, sy - 1, `rgba(255,253,235,${a * 0.45})`);
           }
         }
+        // A second cup tap reads as someone staying with the moment. The warm glow hugs the shelf
+        // instead of tinting the room, so it feels like a small lamp found in an ordinary object.
+        const mugGlowRemaining = mugTaps.current.glowUntil - t;
+        if (!reduce && mugGlowRemaining > 0) {
+          const a = Math.min(1, mugGlowRemaining / 500);
+          for (const [dx, dy, opacity] of [[-2, -1, 0.18], [5, -2, 0.26], [8, 1, 0.14], [1, -4, 0.16]] as const) {
+            px(87 + dx, FLOOR - 28 + dy, `rgba(255,220,157,${a * opacity})`);
+          }
+        }
       }
       {
         const prog = doorProg;
@@ -900,6 +942,18 @@ export function Cat({
           const gx = 20 + Math.round(p * 2);
           const gy = FLOOR + 15 - Math.round(p * 3);
           px(gx, gy, c); px(gx - 1, gy, c); px(gx + 1, gy, c); px(gx, gy - 1, c); px(gx, gy + 1, c);
+        }
+        // Two quick taps let the gift make a tiny wish: a few warmer specks find their way up,
+        // then the gift goes back to being a quiet thing left by the door.
+        const wishRemaining = giftTaps.current.wishUntil - t;
+        if (!reduce && wishRemaining > 0) {
+          const p = 1 - wishRemaining / GIFT_WISH_MS;
+          const a = Math.min(1, wishRemaining / 500);
+          for (let i = 0; i < 4; i++) {
+            const sx = 18 + i * 2 + Math.round(Math.sin(t / 230 + i) * 1);
+            const sy = FLOOR + 15 - Math.round(p * (8 + i));
+            px(sx, sy, `rgba(255,224,150,${a * (0.75 - i * 0.1)})`);
+          }
         }
       }
       // The box, back half. Sits right of centre so it does not fight the bed or the sunbeam, and
@@ -1173,6 +1227,21 @@ export function Cat({
           px(zx, zy, c); px(zx + 1, zy, c);
           px(zx + 1, zy + 1, c);
           px(zx, zy + 2, c); px(zx + 1, zy + 2, c);
+        }
+      }
+
+      // A second bed tap is an invitation she takes literally: three tiny dream stars rise from
+      // the cushion while she settles. They are not a new state or a reward badge, just a glimpse
+      // of what a particularly good nap might look like.
+      const dreamRemaining = bedTaps.current.dreamUntil - t;
+      if (!reduce && dreamRemaining > 0) {
+        const p = 1 - dreamRemaining / BED_DREAM_MS;
+        const a = Math.min(1, dreamRemaining / 600);
+        for (let i = 0; i < 3; i++) {
+          const dx = 18 + i * 4 + Math.round(Math.sin(t / 320 + i) * 1);
+          const dy = FLOOR + 18 - Math.round(p * (8 + i * 2));
+          const c = `rgba(255,239,183,${a * (0.75 - i * 0.12)})`;
+          px(dx, dy, c); px(dx - 1, dy + 1, c); px(dx + 1, dy + 1, c); px(dx, dy + 2, c);
         }
       }
 
