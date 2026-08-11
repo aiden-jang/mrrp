@@ -65,6 +65,9 @@ const ROOM_TOUR_KEYS = ["window", "frame", "shelf", "door", "plant", "bed"] as c
 const AURORA_MS = 5600;
 const ROOM_CODE = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight"];
 const TYPED_ROOM_CODE = "mrrp";
+/** Calling a cat the traditional way gets a tiny answer from the room. */
+const SUMMON_CODE = "pspsps";
+const SUMMON_MS = 5200;
 /** A small secret shower: long enough to notice through the glass, then gone. */
 const RAIN_MS = 6800;
 /** The brief bright thing that can follow the plant's hidden storm. */
@@ -253,6 +256,8 @@ export function Cat({
   const doorTaps = useRef({ count: 0, last: -1e9, noteUntil: -1e9 });
   /** A tiny keyboard secret. It is local, ephemeral, and only visible through the night window. */
   const auroraUntil = useRef(-1e9);
+  /** The room's second typed secret: a few bright things come when somebody calls for her. */
+  const summonUntil = useRef(-1e9);
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
   const doorShutFrom = useRef({ at: 0, from: 0 });
   lookRef.current = look;
@@ -588,13 +593,19 @@ export function Cat({
       }
 
       if (e.key.length === 1 && /[a-z]/i.test(e.key)) {
-        typedRoomCode = `${typedRoomCode}${e.key.toLowerCase()}`.slice(-TYPED_ROOM_CODE.length);
-        if (typedRoomCode === TYPED_ROOM_CODE) {
+        typedRoomCode = `${typedRoomCode}${e.key.toLowerCase()}`.slice(-Math.max(TYPED_ROOM_CODE.length, SUMMON_CODE.length));
+        if (typedRoomCode.endsWith(TYPED_ROOM_CODE)) {
           const now = performance.now();
           catTaps.current.chorusUntil = now + PURR_CHORUS_MS;
           speakUntil.current = now + 1250;
           typedRoomCode = "";
           play("purr");
+        } else if (typedRoomCode.endsWith(SUMMON_CODE)) {
+          const now = performance.now();
+          summonUntil.current = now + SUMMON_MS;
+          speakUntil.current = now + 1000;
+          typedRoomCode = "";
+          play("chirp");
         }
       } else if (!ROOM_CODE.includes(e.key)) {
         typedRoomCode = "";
@@ -1109,6 +1120,7 @@ export function Cat({
       const zp = (t - zoom.current.start) / ZOOM_MS;
       const nesting = t < bedNestUntil.current && !sc.atDoor && !zooming;
       const laserPlaying = !reduce && t < laser.current.until && !sc.atDoor;
+      const summoning = !reduce && t < summonUntil.current && !sc.atDoor;
       const wantX = zooming
         ? 10 + (Math.sin(zp * Math.PI * 2 - Math.PI / 2) * 0.5 + 0.5) * (GW - 34)
         : laserPlaying
@@ -1157,7 +1169,7 @@ export function Cat({
       // A door opening holds her eyes open too. Without this she stays loafed through the whole
       // swing at any drowsy hour, because the perk pose needs open eyes and the scene had already
       // decided she was sleepy. A cat sleeps through a lot, but not a door.
-      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming || laserPlaying || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
+      const forced = eyesRef.current || (looking && !reduce) || doorRef.current !== null || zooming || laserPlaying || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = forced || (open > 0.4 && !blink);
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
@@ -1165,7 +1177,7 @@ export function Cat({
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
       // cat that did not notice, which is the one thing this feature is for.
       const noticing = (doorRef.current !== null || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking) && posed;
-      const pose: Pose = zooming || laserPlaying ? "play" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
+      const pose: Pose = zooming || laserPlaying || summoning ? "play" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
@@ -1291,6 +1303,28 @@ export function Cat({
           const sy = Math.round(y + sp.oy - 2 - p * 9);
           const c = `rgba(255,236,150,${Math.sin(p * Math.PI)})`;
           px(sx, sy, c); px(sx - 1, sy + 1, c); px(sx + 1, sy + 1, c); px(sx, sy + 2, c);
+        }
+      }
+
+      // Type "pspsps" while the room has focus and a small flock answers. They orbit her rather
+      // than filling the scene, so the joke reads as the world's gentlest cat-summoning ritual.
+      // A fixed phase per light keeps the motion legible as a flock instead of random glitter.
+      if (summoning) {
+        const remaining = summonUntil.current - t;
+        const fade = Math.min(1, remaining / 650);
+        for (let i = 0; i < 6; i++) {
+          const phase = t / (520 + i * 35) + i * 1.7;
+          const radius = 10 + (i % 3) * 4;
+          const sx = Math.round(kx + Math.cos(phase) * radius);
+          const sy = Math.round(y - 7 + Math.sin(phase * 1.35) * (5 + (i % 2) * 3));
+          const color = i % 2 === 0
+            ? `rgba(255,232,143,${fade})`
+            : `rgba(240,174,180,${fade * 0.9})`;
+          px(sx, sy, color);
+          if (Math.floor(t / 140 + i) % 2 === 0) {
+            px(sx - 1, sy, color);
+            px(sx + 1, sy, color);
+          }
         }
       }
 
