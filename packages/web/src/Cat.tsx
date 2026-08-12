@@ -3,6 +3,7 @@ import type { Cat as CatLook, Clock, Gift, Mood } from "./types.js";
 import { mixHex, sceneFor } from "./hours.js";
 import { fireflyAt, mothAt } from "./critters.js";
 import { play, playPianoNote } from "./sound.js";
+import { dreamOf, type Dream, type DreamContext, type DreamScene } from "./dreams.js";
 import { catCallCode } from "./secrets.js";
 import { moonPhase, moonPixelLit } from "./moon.js";
 import { seasonFor, seasonalPlantColors } from "./season.js";
@@ -196,6 +197,8 @@ export function Cat({
   onFound,
   onCapture,
   onProps,
+  dreamContext,
+  onDream,
   collectionKey,
 }: {
   /** What the room says in words. The canvas is otherwise silent to a screen reader. */
@@ -279,6 +282,10 @@ export function Cat({
    * left two of the largest secrets in the app impossible for them to find.
    */
   onProps?: (props: { key: string; label: string }[], poke: (key: string) => void) => void;
+  /** What the room knows, for the dream on the bed. Read at the moment she settles, not on render. */
+  dreamContext?: DreamContext;
+  /** The dream she just started, so the room can say it out loud. */
+  onDream?: (dream: Dream) => void;
   /** Stable room id used only for this device's hidden constellation progress. */
   collectionKey?: string;
 }) {
@@ -343,7 +350,12 @@ export function Cat({
   /** A gift only sparkles after someone notices what she carried in. */
   const giftGlint = useRef(-1e9);
   const giftTaps = useRef({ count: 0, last: -1e9, wishUntil: -1e9 });
-  const bedTaps = useRef({ count: 0, last: -1e9, dreamUntil: -1e9 });
+  const bedTaps = useRef({ count: 0, last: -1e9, dreamUntil: -1e9, scene: "fish" as DreamScene });
+  // Refs, because the draw loop and the tap handler both close over this once and must not go stale.
+  const dreamCtxRef = useRef(dreamContext);
+  dreamCtxRef.current = dreamContext;
+  const onDreamRef = useRef(onDream);
+  onDreamRef.current = onDream;
   const catTaps = useRef({ count: 0, last: -1e9, chorusUntil: -1e9 });
   const floorPress = useRef<{ x: number; y: number; at: number; active: boolean } | null>(null);
   const laser = useRef({ x: GW / 2, y: FLOOR + 12, until: -1e9 });
@@ -806,6 +818,12 @@ export function Cat({
           taps.dreamUntil = now + BED_DREAM_MS;
           taps.count = 0;
           play("settle");
+          const context = dreamCtxRef.current;
+          if (context) {
+            const dream = dreamOf(context, now);
+            taps.scene = dream.scene;
+            onDreamRef.current?.(dream);
+          }
         }
       }
       if (hit?.key === "shelf" && !downRef.current) {
@@ -2248,6 +2266,34 @@ export function Cat({
           const dy = FLOOR + 18 - Math.round(p * (8 + i * 2));
           const c = `rgba(255,239,183,${a * (0.75 - i * 0.12)})`;
           px(dx, dy, c); px(dx - 1, dy + 1, c); px(dx + 1, dy + 1, c); px(dx, dy + 2, c);
+        }
+        /*
+         * What is in the cloud.
+         *
+         * A few pixels each, in the last and largest puff. Any more detail at this size reads as noise,
+         * and the line the room says under the canvas is where the dream is actually legible.
+         */
+        const sx = 18 + 2 * 4;
+        const sy = FLOOR + 18 - Math.round(p * 12) - 4;
+        const ink = `rgba(120,96,60,${a * 0.8})`;
+        if (bedTaps.current.scene === "mouse") {
+          px(sx, sy, ink); px(sx + 1, sy, ink); px(sx + 2, sy + 1, ink); px(sx - 1, sy + 1, ink);
+        } else if (bedTaps.current.scene === "fish") {
+          px(sx, sy, ink); px(sx + 1, sy, ink); px(sx + 2, sy - 1, ink); px(sx + 2, sy + 1, ink);
+        } else if (bedTaps.current.scene === "stars") {
+          px(sx, sy - 1, ink); px(sx + 2, sy, ink); px(sx + 1, sy + 2, ink);
+        } else if (bedTaps.current.scene === "moth") {
+          px(sx, sy, ink); px(sx + 2, sy, ink); px(sx + 1, sy + 1, ink);
+        } else if (bedTaps.current.scene === "piano") {
+          px(sx, sy, ink); px(sx + 1, sy, ink); px(sx + 2, sy, ink); px(sx + 1, sy + 1, ink);
+        } else if (bedTaps.current.scene === "box") {
+          px(sx, sy, ink); px(sx + 1, sy, ink); px(sx + 2, sy, ink);
+          px(sx, sy + 1, ink); px(sx + 2, sy + 1, ink);
+        } else if (bedTaps.current.scene === "brush") {
+          px(sx, sy, ink); px(sx + 1, sy + 1, ink); px(sx + 2, sy + 2, ink);
+        } else {
+          // sun: a small warm square rather than an outline, since it is a patch of light.
+          px(sx, sy, ink); px(sx + 1, sy, ink); px(sx, sy + 1, ink); px(sx + 1, sy + 1, ink);
         }
       }
 
