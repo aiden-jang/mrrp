@@ -1,28 +1,12 @@
 /**
- * What the two of you have noticed in here.
+ * What the two of you have noticed, remembered per seat.
  *
- * The room is full of things that only happen if you go looking: a piano in the floorboards, stars
- * in the window, a mouse, a moth, the cat answering to her own name typed at the keyboard. All of it
- * was invisible to the other person. She could spend a week finding every one and he would never
- * know, which for an app whose entire premise is "one cat, exactly two people" is the wrong shape.
- *
- * So the room remembers, per seat, and tells each of you what the other found while you were out.
- *
- * Two rules keep it from turning into a checklist, which would kill the thing it is celebrating:
- *
- *   1. Nothing ever lists what you have not found. The only aggregate is a count, and the count
- *      never says what it is out of, because "7 of 15" is a to-do list with a nicer font.
- *   2. A discovery the other person made is named only if you have found it too. Otherwise all you
- *      hear is that there is something in here you have not seen yet, which is the fun part.
+ * Two rules keep it from becoming a checklist:
+ *   1. Never list what you have not found. The only aggregate is a count, never "7 of 15".
+ *   2. Name the other person's find only if you found it too; otherwise just say there is something.
  */
 
-/**
- * Every secret the room knows about, as the client may report it.
- *
- * Allowlisted here rather than trusted from the request. Without it, anybody holding the link could
- * post arbitrary keys and inflate the count into nonsense, or wedge junk into storage that the UI
- * then has to render. The client is not the authority on what exists in the room.
- */
+/** Allowlisted, not trusted from the request: anybody with the link could otherwise post junk keys. */
 export const DISCOVERY_KEYS = [
   'constellation',
   'roomTour',
@@ -49,13 +33,8 @@ export function isDiscoveryKey(value: unknown): value is DiscoveryKey {
   return typeof value === 'string' && (DISCOVERY_KEYS as readonly string[]).includes(value);
 }
 
-/**
- * Record that `who` noticed `key`, keeping the first time they did.
- *
- * Returns the ledger and whether this was new for that person. Not overwriting matters: the second
- * visit to the same secret is not a discovery, and letting it re-stamp would resurface it as an
- * arrival on the other side every single time, which turns a small delight into a notification.
- */
+/** Keeps the first time, never re-stamps: a re-stamp resurfaces it as an arrival on the other side
+ *  every visit, which turns a small delight into a notification. */
 export function recordFound(
   ledger: FoundLedger,
   key: DiscoveryKey,

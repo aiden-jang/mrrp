@@ -1,17 +1,12 @@
-/**
- * Telling the room you found something.
+/*
+ * Fired from inside the animation loop, so it must cost nothing and never send the same secret twice:
+ * without that, holding a piano key posts a request per frame.
  *
- * The canvas fires these from inside the animation loop, so the two things that matter are that it
- * costs nothing on the hot path and that it never sends the same secret twice from the same device.
- * Without the second part, holding down a piano key would post a request per frame.
- *
- * Every failure here is swallowed on purpose. This is bookkeeping about a nice moment; a dropped
- * request means the other person hears about it next time instead, and there is nothing a person
- * could usefully do with "we could not record that you found the mouse".
+ * Failures are swallowed. Nobody can act on "we could not record that you found the mouse".
  */
 
-/** Kept in sync with the Worker's allowlist, which is the one that actually decides. */
-/** Mirrors the worker's DISCOVERY_KEYS. An array so the keys exist at runtime, not only as a type. */
+/** Mirrors the worker's allowlist, which is the one that actually decides. An array, not just a union,
+ *  so the keys exist at runtime. */
 export const DISCOVERY_KEYS = [
   'constellation',
   'roomTour',
