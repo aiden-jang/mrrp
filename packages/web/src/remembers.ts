@@ -76,3 +76,35 @@ export function personalityLine(personality: Personality, youAreHer: boolean, th
   const line = TRAIT_LINES[personality.trait];
   return youAreHer ? line.hers(them ?? "he") : line.his;
 }
+
+/* ------------------------------------------------------------------ coming back */
+
+const HOUR = 3_600_000;
+const DAY = 24 * HOUR;
+
+/**
+ * Nothing at all until somebody has genuinely been gone.
+ *
+ * A refresh is not a return. Below this the room says nothing, which is what makes the greeting mean
+ * something on the days it does appear.
+ */
+export const AWAY_FLOOR_MS = 8 * HOUR;
+
+/**
+ * What the room says when you come back.
+ *
+ * The whole rule for this app is that nothing here can be neglected: no streak, no decay, nothing that
+ * can be fallen behind on. So a long absence has to read as pleasure at seeing you, never as an account
+ * of how long it has been. "Where have you been" is the one sentence this room must never say, and the
+ * longer the gap the warmer this gets rather than the more pointed.
+ *
+ * Null for a first visit, for a refresh, and for anything the room has no opinion about.
+ */
+export function awayLine(awayMs: number | null, catName: string): string | null {
+  if (awayMs === null || awayMs < AWAY_FLOOR_MS) return null;
+  if (awayMs < DAY) return `${catName} looks up. she was not expecting you until later.`;
+  if (awayMs < 4 * DAY) return `${catName} is already on her way over.`;
+  if (awayMs < 14 * DAY) return `${catName} takes a moment, and then decides it is definitely you.`;
+  if (awayMs < 60 * DAY) return `${catName} has been keeping your spot warm. she will deny this.`;
+  return `${catName} settles in like you never left, which is the whole trick of her.`;
+}

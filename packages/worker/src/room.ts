@@ -588,6 +588,15 @@ export class Room extends DurableObject<Env> {
        * Answered in her timezone, because the room only has the one, and a day that turns over at UTC
        * midnight is nobody's day.
        */
+      /*
+       * How long this person was gone, from their own last visit to this one.
+       *
+       * `since` is their previous lastSeen, captured in view() before it was updated, so it exists only
+       * for somebody who already held a seat. That makes it null for a first visit and for a spectator
+       * without a seat check of its own. Null rather than zero: never having been here is a different
+       * thing from having just been here.
+       */
+      awayMs: since !== undefined ? Math.max(0, Date.now() - since) : null,
       milestone: seated ? milestoneFor(startedAt, Date.now(), clock.tz) : null,
       personality: seated
         ? personalityFrom(

@@ -495,6 +495,25 @@ export const BOX_FRONT = sprite(
  *
  * `g` leaf green, `r` its rib, `m` metal, `n` moth wing, `w` outline.
  */
+/*
+ * A cake, for the room's own birthday.
+ *
+ * Seven pixels across, which is the widest a thing can be here without competing with the cat. `r` is
+ * the candle flame and `g` the icing; both come from the palette the caller passes, like every other
+ * sprite, so it recolours with the room rather than being three hardcoded browns.
+ */
+export const CAKE = sprite(
+  [
+    "...r...",
+    "...d...",
+    ".ggggg.",
+    "ddddddd",
+    "ddddddd",
+  ],
+  0,
+  0,
+);
+
 export const GIFT_LEAF = sprite(
   [
     ".ggg.",

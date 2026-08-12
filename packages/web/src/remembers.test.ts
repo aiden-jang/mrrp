@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Milestone, Personality } from "./types.js";
-import { milestoneLine, personalityLine } from "./remembers.js";
+import { awayLine, AWAY_FLOOR_MS, milestoneLine, personalityLine } from "./remembers.js";
 
 /*
  * These are copy tests, so they check the rules the copy claims to follow rather than the strings.
@@ -116,6 +116,63 @@ describe("milestones", () => {
   it("uses the cat's real name", () => {
     for (const milestone of MILESTONES) {
       expect(milestoneLine(milestone, "Pumpkin")).toContain("Pumpkin");
+    }
+  });
+});
+
+describe("coming back", () => {
+  const HOUR = 3_600_000;
+  const DAY = 24 * HOUR;
+  const gaps = [10 * HOUR, 2 * DAY, 9 * DAY, 30 * DAY, 200 * DAY];
+  const lines = gaps.map((gap) => awayLine(gap, "Bean")!);
+
+  it("says nothing on a first visit", () => {
+    expect(awayLine(null, "Bean")).toBeNull();
+  });
+
+  it("says nothing for a refresh", () => {
+    /*
+     * A greeting on every reload is wallpaper, and wallpaper is what the room is careful not to be.
+     * The floor is what makes the line mean something on the days it does appear.
+     */
+    expect(awayLine(0, "Bean")).toBeNull();
+    expect(awayLine(AWAY_FLOOR_MS - 1, "Bean")).toBeNull();
+    expect(awayLine(AWAY_FLOOR_MS, "Bean")).toBeTruthy();
+  });
+
+  /*
+   * The rule this exists to keep.
+   *
+   * Nothing in mrrp can be neglected: no streak, no decay, nothing to fall behind on. A greeting that
+   * counts the days is a guilt trip wearing a cat costume, and it would undo the one promise the app
+   * makes. The longer the gap the warmer this gets, never the more pointed.
+   */
+  it("never mentions how long it has been", () => {
+    for (const line of lines) {
+      expect(line, line).not.toMatch(/\d/);
+      expect(line, line).not.toMatch(/week|month|day|been a while|so long|finally|at last|missed you/i);
+    }
+  });
+
+  it("never asks where you were", () => {
+    for (const line of lines) {
+      expect(line, line).not.toMatch(/where|why|haven't|have not|forgot|neglect|abandon|sorry/i);
+    }
+  });
+
+  it("gets warmer with the gap rather than sharper", () => {
+    // The longest absence gets the kindest line, which is the opposite of what most apps do.
+    expect(awayLine(200 * DAY, "Bean")).toMatch(/like you never left/);
+  });
+
+  it("gives each stretch its own line", () => {
+    expect(new Set(lines).size).toBe(lines.length);
+  });
+
+  it("uses her name and stays in the room's voice", () => {
+    for (const line of awayLine ? gaps.map((gap) => awayLine(gap, "Pumpkin")!) : []) {
+      expect(line).toContain("Pumpkin");
+      expect(line, line).not.toContain("!");
     }
   });
 });

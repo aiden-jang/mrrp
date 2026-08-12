@@ -12,7 +12,7 @@ import { BUBBLE_GAME_MS, bubbleMomentAt, bubbleSeeds, type BubbleSeed } from "./
 import { PIANO_CODE, PIANO_MS, advancePawMelody, pianoKeyAt, pianoKeys } from "./piano.js";
 import { collectConstellationStar, constellationProgress, CONSTELLATION_KEYS, type ConstellationKey } from "./constellation.js";
 import type { DiscoveryKey } from "./discoveries.js";
-import { BED, BIRD, BOX_BACK, BOX_FRONT, DOOR, EK, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, MUG, MUG_DOWN, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
+import { BED, BIRD, BOX_BACK, BOX_FRONT, CAKE, DOOR, EK, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, MUG, MUG_DOWN, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
  * The room, drawn as pixel art at her local time of day.
@@ -186,6 +186,7 @@ export function Cat({
   doorOpenAt = null,
   box = false,
   gift = null,
+  cake = false,
   windowLight = false,
   onWindowLight,
   shelfDown = false,
@@ -240,6 +241,8 @@ export function Cat({
   box?: boolean;
   /** Something she left on the floor. His side only; the room just draws whatever it's handed. */
   gift?: Gift | null;
+  /** True on the room's own anniversary, and on its first week and month. Puts a cake on the floor. */
+  cake?: boolean;
   /** The other person left a light in the window. It waits until this person touches it. */
   windowLight?: boolean;
   /** Leaves a light when the window is double-tapped, or collects one already waiting. */
@@ -303,6 +306,8 @@ export function Cat({
   boxRef.current = box;
   const giftRef = useRef(gift);
   giftRef.current = gift;
+  const cakeRef = useRef(cake);
+  cakeRef.current = cake;
   const windowLightRef = useRef(windowLight);
   windowLightRef.current = windowLight;
   const onWindowLightRef = useRef(onWindowLight);
@@ -1605,6 +1610,19 @@ export function Cat({
       // creams and browns, and at this size it stopped reading as a cat bed and started reading as
       // a stray UI element that had landed on the floor.
       blit(BED, 24 + shake("bed"), FLOOR + 22, { d: "#b07f76", f: "#d8a79c", b: "#c4918a" });
+
+      /*
+       * A cake, on the days the room has a birthday.
+       *
+       * Sat on the floor beside her bed rather than announced, like everything else in here: the line
+       * under the canvas already says what the day is, and a thing you notice is worth more than a thing
+       * you are told. Down in the front strip on purpose, since the middle band is where she sits and a
+       * cake behind the cat is a cake nobody sees. The flame holds still under reduced motion.
+       */
+      if (cakeRef.current) {
+        const flame = reduce || Math.sin(t / 260) > -0.4 ? "#ffca6b" : "#ffe6a8";
+        blit(CAKE, 42, FLOOR + 20, { d: "#e8d3b0", g: "#f0a6b4", r: flame });
+      }
       // What she left, put down near the door rather than mid-floor: mid-floor is where she loafs, so
       // the first version was drawn perfectly and then covered by the cat every single time.
       const g0 = giftRef.current;
