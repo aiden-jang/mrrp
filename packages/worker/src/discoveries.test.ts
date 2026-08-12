@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   arrivalsFor,
+  bothFound,
   DISCOVERY_KEYS,
   foundCount,
   isDiscoveryKey,
@@ -127,5 +128,23 @@ describe("telling you what the other one found", () => {
 
   it("is empty on a room where nothing has been found", () => {
     expect(arrivalsFor({}, HIM, HER, 0)).toEqual([]);
+  });
+});
+
+describe("what both of them found", () => {
+  it("is true only when each seat has it", () => {
+    const ledger = { herName: { him: 1, her: 2 }, piano: { him: 1 } };
+    expect(bothFound(ledger, "herName", "him", "her")).toBe(true);
+    expect(bothFound(ledger, "piano", "him", "her")).toBe(false);
+  });
+
+  it("is false for a secret nobody has found", () => {
+    expect(bothFound({}, "herName", "him", "her")).toBe(false);
+  });
+
+  it("does not count one seat twice", () => {
+    // A room where only one person exists must not read as "both of you have done this".
+    expect(bothFound({ herName: { him: 1 } }, "herName", "him", "him")).toBe(true);
+    expect(bothFound({ herName: { him: 1 } }, "herName", "him", "her")).toBe(false);
   });
 });

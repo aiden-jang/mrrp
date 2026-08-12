@@ -136,6 +136,13 @@ const pastTense = (a: Action) => ACTIONS.find((x) => x.id === a)?.past ?? "was h
  * These are the shared-memory version of the name, phrased as a thing that happened in the room
  * rather than a feature that has a label: "the piano in the floorboards", not "piano easter egg".
  */
+/** What she left on the floor, named so the sentence about it reads like a thing rather than a type. */
+const GIFT_NAMES: Record<string, string> = {
+  leaf: "leaf",
+  cap: "bottle cap",
+  moth: "moth",
+};
+
 const FOUND_NAMES: Record<string, string> = {
   constellation: "the stars in the window",
   roomTour: "every corner of the room",
@@ -167,7 +174,9 @@ function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[];
       <ul style={S.arrivalList}>
         {items.map((item, index) => (
           <li key={`${item.kind}-${item.at}-${index}`} style={S.arrivalItem}>
-            <span style={S.arrivalPaw} aria-hidden>{item.kind === "line" ? "✦" : item.kind === "found" ? "✧" : "·"}</span>
+            <span style={S.arrivalPaw} aria-hidden>
+              {item.kind === "line" ? "✦" : item.kind === "found" ? "✧" : item.kind === "kept" ? "❧" : "·"}
+            </span>
             <span>
               {item.kind === "action" ? (
                 <><b>{name}</b> {pastTense(item.action)}.</>
@@ -181,6 +190,10 @@ function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[];
                      telling him what it is would spend the best part of it for him. */
                   <><b>{name}</b> found something in here you haven&apos;t seen yet.</>
                 )
+              ) : item.kind === "kept" ? (
+                /* The one arrival that closes a loop rather than reporting a new thing: she left it,
+                   he took it, and this is the only way she finds out. */
+                <><b>{name}</b> took the {GIFT_NAMES[item.gift] ?? "thing"} you left.</>
               ) : (
                 <><b>{name}</b> left: “{item.text}”</>
               )}

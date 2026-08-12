@@ -1,7 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import type { Action, Arrival, Cat, Clock, Gift, Mood, Note, RoomView, Told, Told2, Visit } from "./types.js";
 import { NOTES } from "./notes.js";
-import { arrivalsFor, foundCount, isDiscoveryKey, recordFound, type DiscoveryKey, type FoundLedger } from "./discoveries.js";
+import { arrivalsFor, bothFound, foundCount, isDiscoveryKey, recordFound, type DiscoveryKey, type FoundLedger } from "./discoveries.js";
 import type { Env } from "./env.js";
 import { DAY_MS, milestoneFor, personalityFrom, roomStartedAt, tallyFrom, type Tally } from "./remembers.js";
 
@@ -157,8 +157,18 @@ export class Room extends DurableObject<Env> {
       await this.ctx.storage.put("boxDay", localDayNumber(Date.now(), clock.tz));
     }
 
-    // Touching anything counts as picking it up. It is gone from the floor, not stored anywhere:
-    // a keepsake he could re-read would make it an inbox, and this is meant to be a moment.
+    /*
+     * Touching anything counts as picking it up.
+     *
+     * Gone from the floor, and never a keepsake he can re-read: that would make it an inbox. What is
+     * kept is a single timestamp, so she can be told once that the thing she left was taken. Until now
+     * the gift was the one gesture in here that went one way and stayed there, which for an app about
+     * two people is the wrong shape.
+     */
+    const onFloor = await this.ctx.storage.get<Gift>("gift");
+    if (onFloor) {
+      await this.ctx.storage.put("giftKept", { gift: onFloor, at: Date.now() });
+    }
     await this.ctx.storage.delete("gift");
 
     const previous = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
@@ -517,6 +527,20 @@ export class Room extends DurableObject<Env> {
           arrivals.push({ kind: "found", at: found.at, what: found.mutual ? found.key : null });
         }
       }
+      /*
+       * He took the thing she left.
+       *
+       * Delivered as an arrival rather than its own field, so it disappears on the next read like
+       * everything else and cannot pile up.
+       *
+       * The seat check is belt-and-braces today: act() stamps his lastSeen after recording this, so his
+       * `since` is always at or past it and the time bound alone excludes him. Reorder those two and
+       * this becomes the only thing stopping him being told about his own picking up.
+       */
+      if (youAreHer) {
+        const kept = await this.ctx.storage.get<{ gift: Gift; at: number }>("giftKept");
+        if (kept && kept.at > since) arrivals.push({ kind: "kept", at: kept.at, gift: kept.gift });
+      }
       arrivals.sort((a, b) => b.at - a.at);
     }
 
@@ -577,6 +601,15 @@ export class Room extends DurableObject<Env> {
       arrivals,
       // Both seats, and spectators get zero: a stranger with the link is not part of "the two of you".
       noticed: seated ? foundCount(await this.found()) : 0,
+      /*
+       * Both of you have called her by name.
+       *
+       * The only state in the room that needs both seats rather than either, which is why it is worth
+       * having: everything else here is his-to-do or hers-to-do. Nothing announces it; she just starts
+       * answering to it now and then.
+       */
+      bothCalledHer:
+        seated && him && her ? bothFound(await this.found(), "herName", him, her) : false,
       /*
        * How long this has been going, and what she has come to expect.
        *
