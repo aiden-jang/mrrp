@@ -2,13 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { Milestone, Personality } from "./types.js";
 import { awayLine, AWAY_FLOOR_MS, milestoneLine, personalityLine } from "./remembers.js";
 
-/*
- * These are copy tests, so they check the rules the copy claims to follow rather than the strings.
- *
- * The failure mode worth guarding is tonal: the moment one of these lines congratulates somebody, counts
- * something, or implies a thing owed, mrrp turns into every other app with a streak in it. That is not
- * something a typecheck catches, so it is asserted here.
- */
+/* Copy tests: the rules the copy claims to follow, since a tonal regression is not something a
+ * typecheck catches. */
 
 const TRAITS: Personality["trait"][] = ["petted", "brushed", "fed", "accompanied", "photographed"];
 const MILESTONES: Milestone[] = [
@@ -56,13 +51,8 @@ describe("the room's voice", () => {
 });
 
 describe("who each seat is reading about", () => {
-  /*
-   * The bug this exists for.
-   *
-   * On her side the cat is "you", so a line about "her" is a line about somebody who is not in the room.
-   * The first draft of this file used one phrasing for both seats and told her the cat had learned to
-   * expect things from a third person. Same mistake as the one that produced "you brushed you".
-   */
+  // On her side the cat is "you", so a line about "her" is about somebody not in the room. Same mistake
+  // that produced "you brushed you".
   it("never calls the cat 'she' on the side where the cat is you", () => {
     for (const trait of TRAITS) {
       const hers = personalityLine({ trait, count: 20 }, true, "Ada");
@@ -140,13 +130,7 @@ describe("coming back", () => {
     expect(awayLine(AWAY_FLOOR_MS, "Bean")).toBeTruthy();
   });
 
-  /*
-   * The rule this exists to keep.
-   *
-   * Nothing in mrrp can be neglected: no streak, no decay, nothing to fall behind on. A greeting that
-   * counts the days is a guilt trip wearing a cat costume, and it would undo the one promise the app
-   * makes. The longer the gap the warmer this gets, never the more pointed.
-   */
+  // Nothing here can be neglected, so a greeting that counts the days is a guilt trip in a cat costume.
   it("never mentions how long it has been", () => {
     for (const line of lines) {
       expect(line, line).not.toMatch(/\d/);

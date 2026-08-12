@@ -9,13 +9,8 @@ import {
   TRAIT_SHARE,
 } from "./remembers.js";
 
-/*
- * Both of these are derived from history, so the tests are mostly about restraint.
- *
- * A personality that appears on day two is a character sheet. One that changes weekly is a readout. And an
- * anniversary answered in the server's timezone lands on the wrong evening for half the planet, which is
- * the same bug that made owewell's rent come due on the 31st.
- */
+/* Mostly about restraint: a personality on day two is a character sheet, one that changes weekly is a
+ * readout, and an anniversary in the server's timezone lands on the wrong evening for half the planet. */
 
 const DAY = 86_400_000;
 const AT = (iso: string) => Date.parse(iso);
@@ -42,16 +37,9 @@ describe("anniversaries", () => {
   });
 
   /*
-   * The timezone case, which is the whole reason this takes a zone at all.
-   *
-   * Both instants below are "the 13th" in UTC, and the anniversary belongs to only one of them. A room
-   * started at 11:00 on her 12th is still having its day at 21:00 on her 12th, and has missed it by 01:00
-   * on her 13th. A server reading its own date sees the 13th for both and gets the first one wrong, which is
-   * the same class of bug as owewell's rent coming due on the 31st.
-   *
-   * Note the start instant is read in the same zone, so "the day the room started" means her calendar date
-   * rather than a fixed UTC one. That is why this cannot be demonstrated by varying the zone: both sides
-   * shift together, and a Tokyo room genuinely has a different birthday from a New York one.
+   * Both instants are "the 13th" in UTC and only one is her anniversary, so a server reading its own date
+   * gets the first wrong. Cannot be shown by varying the zone instead: the start is read in the same zone,
+   * so both sides shift together and a Tokyo room genuinely has a different birthday.
    */
   it("answers in her timezone, not the server's", () => {
     const started = AT("2025-08-12T15:00:00Z"); // 11:00 on the 12th in New York
@@ -113,13 +101,8 @@ describe("what she comes to expect", () => {
   /** Long enough that the age gate is not what these tests are measuring. */
   const SETTLED = TRAIT_MIN_DAYS + 60;
 
-  /*
-   * The hole a screenshot found.
-   *
-   * Petting her is a button, so twelve of them is an afternoon rather than a month, and the room duly
-   * announced a personality on the day it was made. The count was standing in for elapsed time and is not
-   * able to: only the room's own age is.
-   */
+  // Petting her is a button, so twelve is an afternoon rather than a month. The count cannot stand in
+  // for elapsed time; only the room's age can.
   it("has no personality on the day the room is made, however much happens in it", () => {
     expect(personalityFrom({ pet: 50 }, 0)).toBeNull();
     expect(personalityFrom({ pet: 50 }, TRAIT_MIN_DAYS - 1)).toBeNull();
@@ -150,12 +133,7 @@ describe("what she comes to expect", () => {
     expect(personalityFrom({ brush: 10, pet: 3, sit: 2 }, SETTLED)?.trait).toBe("brushed");
   });
 
-  /*
-   * The threshold matters more than the minimum.
-   *
-   * A plurality across five actions is noise, and without this the trait flips whenever the leader changes
-   * by one. A personality that changes weekly is a readout, not a personality.
-   */
+  // Without this the trait flips whenever the leader changes by one, which is a readout.
   it("stays silent when nothing really dominates", () => {
     // A clear leader and still not enough of one, so this isolates the share threshold rather than
     // leaning on the tie check below: 5 of 17 is the shape of somebody who does a bit of everything.
@@ -179,13 +157,8 @@ describe("what she comes to expect", () => {
     expect(personalityFrom({}, SETTLED)).toBeNull();
   });
 
-  /*
-   * The reason this is a running total and not a read of the visit log.
-   *
-   * The log keeps the last forty visits, so a year in it holds a season rather than a history. Counting it
-   * directly would let the trait drift with nothing in the code admitting to it, which is why the tally is
-   * stored: the eightieth pet still counts once the first forty have been trimmed away.
-   */
+  // The log keeps forty visits, so counting it directly lets the trait drift. The eightieth pet still
+  // counts once the first forty are trimmed.
   it("keeps counting past the length of the visit log", () => {
     const seeded = tallyFrom(Array.from({ length: 40 }, (_, i) => ({ at: i, who: "him", action: "sit" as const })));
     expect(seeded).toEqual({ sit: 40 });

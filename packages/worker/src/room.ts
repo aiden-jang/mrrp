@@ -610,26 +610,11 @@ export class Room extends DurableObject<Env> {
        */
       bothCalledHer:
         seated && him && her ? bothFound(await this.found(), "herName", him, her) : false,
-      /*
-       * How long this has been going, and what she has come to expect.
-       *
-       * Both derived rather than stored, from the earliest arrival and the running tally. The room started
-       * when the first of them opened it, which is why this reads the minimum `firstSeen` rather than a
-       * separate key: a takeover deliberately carries that timestamp over, so the room keeps its own age
-       * even when a seat changes hands.
-       *
-       * Answered in her timezone, because the room only has the one, and a day that turns over at UTC
-       * midnight is nobody's day.
-       */
-      /*
-       * How long this person was gone, from their own last visit to this one.
-       *
-       * `since` is their previous lastSeen, captured in view() before it was updated, so it exists only
-       * for somebody who already held a seat. That makes it null for a first visit and for a spectator
-       * without a seat check of its own. Null rather than zero: never having been here is a different
-       * thing from having just been here.
-       */
+      /* `since` is their previous lastSeen, so this is null for a first visit and for a spectator. Null
+       * rather than zero: never having been here is different from having just been here. */
       awayMs: since !== undefined ? Math.max(0, Date.now() - since) : null,
+      /* Derived from the earliest arrival and the running tally, and answered in her timezone: a day
+       * that turns over at UTC midnight is nobody's day. */
       milestone: seated ? milestoneFor(startedAt, Date.now(), clock.tz) : null,
       personality: seated
         ? personalityFrom(

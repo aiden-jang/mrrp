@@ -129,13 +129,6 @@ function whenish(at: number): string {
 
 const pastTense = (a: Action) => ACTIONS.find((x) => x.id === a)?.past ?? "was here";
 
-/*
- * What to call a secret the other person found.
- *
- * Only reachable when the viewer has found it too, because the server sends `what: null` otherwise.
- * These are the shared-memory version of the name, phrased as a thing that happened in the room
- * rather than a feature that has a label: "the piano in the floorboards", not "piano easter egg".
- */
 /** What she left on the floor, named so the sentence about it reads like a thing rather than a type. */
 const GIFT_NAMES: Record<string, string> = {
   leaf: "leaf",
@@ -143,6 +136,13 @@ const GIFT_NAMES: Record<string, string> = {
   moth: "moth",
 };
 
+/*
+ * What to call a secret the other person found.
+ *
+ * Only reachable when the viewer has found it too, because the server sends `what: null` otherwise.
+ * These are the shared-memory version of the name, phrased as a thing that happened in the room
+ * rather than a feature that has a label: "the piano in the floorboards", not "piano easter egg".
+ */
 const FOUND_NAMES: Record<string, string> = {
   constellation: "the stars in the window",
   roomTour: "every corner of the room",
