@@ -88,6 +88,30 @@ function RecoveryCode({ code }: { code: string }) {
   );
 }
 
+/**
+ * What to say out loud when a secret fires.
+ *
+ * The visual reward is the whole payoff for most of these, so without a spoken equivalent somebody using a
+ * screen reader does the work of finding a secret and is told nothing. Phrased as observations of the room
+ * rather than confirmations, for the same reason the room itself never says "unlocked".
+ */
+export const FOUND_ANNOUNCEMENTS: Record<string, string> = {
+  constellation: 'the stars in the window have all come out.',
+  roomTour: 'the whole room is awake at once.',
+  piano: 'the floorboards are playing notes.',
+  bubbles: 'bubbles are drifting through the room.',
+  aurora: 'lights are moving across the window.',
+  mrrp: 'she is purring.',
+  summon: 'she has come over.',
+  herName: 'she knows her own name.',
+  box: 'a box has turned up.',
+  yarn: 'there is yarn on the floor now.',
+  treat: 'she has found a treat.',
+  catnip: 'the catnip has arrived.',
+  music: 'music is playing.',
+  mouse: 'a mouse just ran along the wall.',
+};
+
 /** "this morning", "yesterday evening" — warmer and vaguer than a timestamp, which is the point. */
 function whenish(at: number): string {
   const mins = Math.round((Date.now() - at) / 60000);
@@ -310,6 +334,13 @@ function Landing() {
 function RoomPage({ id }: { id: string }) {
   const [view, setView] = useState<RoomView | null>(null);
   const [captureRoom, setCaptureRoom] = useState<(() => Promise<Blob | null>) | null>(null);
+  /** The room's objects and a way to touch them without a pointer. See Cat's onProps. */
+  const [roomProps, setRoomProps] = useState<{
+    props: { key: string; label: string }[];
+    poke: (key: string) => void;
+  } | null>(null);
+  /** What just happened, for anybody who cannot see the room react. */
+  const [found, setFound] = useState('');
   const [imageStatus, setImageStatus] = useState<"saving" | "shared" | "saved" | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const handleCaptureReady = useCallback((capture: () => Promise<Blob | null>) => {
@@ -700,11 +731,44 @@ function RoomPage({ id }: { id: string }) {
             onPet={() => void act("pet")}
             onPoke={() => { play("mrrp"); setNudge((v) => v + 1); }}
             /* Fire and forget. The canvas calls this mid-frame, so nothing here may await or throw. */
-            onFound={(key) => noticed(id, myToken(), key)}
+            onFound={(key) => {
+              noticed(id, myToken(), key);
+              // Announced as a thing that happened in the room, not as an achievement unlocked.
+              setFound(FOUND_ANNOUNCEMENTS[key] ?? 'something in the room answered.');
+            }}
+            onProps={(props, poke) => setRoomProps({ props, poke })}
             onCapture={handleCaptureReady}
           />
 
         </div>
+
+        {/*
+          * The room, reachable without a pointer.
+          *
+          * Visually hidden and fully focusable. Every one of these was tap-only, which meant the two
+          * biggest secrets in the app (the stars and the room tour) could not be found at all without a
+          * mouse or a screen to touch. Activating one runs the real interaction, so the room reacts
+          * exactly as it would to a tap.
+          */}
+        {roomProps && !setup && (
+          <div style={S.srOnly}>
+            <h2>things in the room</h2>
+            <ul>
+              {roomProps.props.map((prop) => (
+                <li key={prop.key}>
+                  <button type="button" onClick={() => roomProps.poke(prop.key)}>
+                    {prop.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Anything the room does in response, spoken once. Polite so it never interrupts a reader. */}
+        <p aria-live="polite" style={S.srOnly}>
+          {found}
+        </p>
 
         {/* What she's doing about what you told her, in her time, not the server's. During setup she is
             held awake so her eye colour is visible, which makes "deeply asleep" a lie, so it says what
@@ -1235,6 +1299,16 @@ const S: Record<string, React.CSSProperties> = {
    */
   card: { width: "100%", maxWidth: 520, minWidth: 0, overflowWrap: "anywhere" },
   h1: { fontSize: 40, margin: "0 0 8px", letterSpacing: "-0.02em", textAlign: "center" },
+  /*
+   * Available to a screen reader and to Tab, invisible on screen.
+   *
+   * Not display:none and not visibility:hidden, either of which would take it out of the accessibility
+   * tree and the focus order along with it, which is the exact opposite of the point.
+   */
+  srOnly: {
+    position: "absolute", width: 1, height: 1, padding: 0, margin: -1,
+    overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap", border: 0,
+  },
   soundToggle: {
     position: "fixed", top: 12, right: 12, zIndex: 20,
     width: 36, height: 36, borderRadius: 999, cursor: "pointer",
