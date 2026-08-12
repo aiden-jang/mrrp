@@ -1,29 +1,18 @@
 import type { Action, Visit } from "./types.js";
 
 /*
- * What the room works out from having been used for a while.
+ * Derived from history, never stored: nothing to migrate and nothing that can disagree with it.
  *
- * Two things, both derived rather than stored: how long the two of you have had her, and what she has
- * come to expect from you. Neither needs a new table, because the room already keeps the day it started
- * and a log of what has been done in it. Deriving means there is nothing to migrate and nothing that can
- * disagree with the history it came from.
- *
- * The rule both obey, the same one the rest of this app obeys: nothing here counts consecutive days,
- * nothing can be broken, and nothing tells you what you missed. A cat who has been petted forty times
- * over two years likes being petted. It does not matter which days.
+ * Nothing here counts consecutive days or can be broken. A cat petted forty times over two years likes
+ * being petted; which days is not the question.
  */
 
 export const DAY_MS = 86_400_000;
 
 /* ------------------------------------------------------------------ anniversaries */
 
-/**
- * A calendar date in a specific zone.
- *
- * Anniversaries have to be answered in her timezone rather than the server's, or a room started on the
- * 1st turns one on the evening of the 31st for anybody west of UTC. Same reasoning as owewell's recurring
- * bills: "the day we started" is a calendar fact, not an instant.
- */
+/** Her zone, not the server's: "the day we started" is a calendar fact, and answering it in UTC turns
+ *  a room started on the 1st one year old on the evening of the 31st for anybody west of it. */
 function localParts(at: number, tz: string): { y: number; m: number; d: number } {
   const [y, m, d] = new Intl.DateTimeFormat("en-CA", {
     timeZone: tz,
@@ -38,12 +27,8 @@ function localParts(at: number, tz: string): { y: number; m: number; d: number }
 }
 
 /**
- * When the room started: the first time either of them opened the door.
- *
- * The earliest arrival rather than a stored key, because a seat handover deliberately carries `firstSeen`
- * over, so the room keeps its own age even when one of the two people changes. Falls back to `now`, which
- * makes an empty room zero days old and therefore quiet, rather than making it 1970 and having every
- * anniversary check fire at once.
+ * Earliest arrival rather than a stored key: a seat handover carries `firstSeen` over, so the room keeps
+ * its age when a person changes. Falls back to `now`, or an empty room is 1970 and fires every check.
  */
 export function roomStartedAt(arrivals: number[], now: number): number {
   const known = arrivals.filter((at) => Number.isFinite(at));
@@ -57,13 +42,10 @@ export interface Milestone {
 }
 
 /**
- * Whether today is worth mentioning.
+ * Three moments and no more: a room that celebrates every fortnight is not celebrating.
  *
- * Three moments and no more. A room that celebrates something every fortnight is not celebrating, and the
- * first week matters because that is when somebody is deciding whether this is a thing they keep.
- *
- * A 29 February room is deliberately answered on 1 March in common years rather than skipped for three
- * years running, which is the kind of edge that only shows up as "why did nothing happen".
+ * A 29 February room answers on 1 March in common years rather than skipping three years running, an
+ * edge that only ever shows up as "why did nothing happen".
  */
 export function milestoneFor(startedAt: number, now: number, tz: string): Milestone | null {
   const start = localParts(startedAt, tz);
@@ -99,35 +81,18 @@ function isLeapYear(y: number): boolean {
  */
 export const TRAIT_MINIMUM = 12;
 
-/**
- * And how dominant. A third of everything is a real preference; a plurality of four actions is noise.
- *
- * The threshold matters more than the minimum. Without it the trait flips whenever the leader changes by
- * one, and a personality that changes weekly is not a personality, it is a readout.
- */
+/** Matters more than the minimum: without it the trait flips whenever the leader changes by one, and a
+ *  personality that changes weekly is a readout. */
 export const TRAIT_SHARE = 0.34;
 
-/**
- * And how long the room has to have existed, regardless of the count.
- *
- * The count alone is not a stand-in for time. Twelve pets is meant to represent a month of somebody
- * dropping in, but petting her is a button, and he can press it twelve times in one sitting on the day the
- * room is made. That produced a room that announced a personality on day one, which is the character sheet
- * this was written to avoid. A fortnight is the floor: whatever he does in the first two weeks, she does
- * not yet have habits about him.
- */
+/** The count is not a stand-in for time: petting her is a button, and twelve taps in one sitting once
+ *  gave a day-old room a personality. */
 export const TRAIT_MIN_DAYS = 14;
 
 export type Trait = "petted" | "brushed" | "fed" | "accompanied" | "photographed";
 
-/**
- * How many times each thing has ever been done in this room.
- *
- * A running total rather than a read of the visit log, because the log is trimmed to the last forty
- * entries. At a few visits a week that is a two-month window, so a trait derived from it would quietly
- * drift: the thing she came to expect in spring would be gone by autumn with nothing in the code saying
- * so. Five integers that only ever go up cost one small key and cannot forget.
- */
+/** A running total, not a read of the visit log: the log keeps forty entries, so a trait derived from
+ *  it would quietly drift with nothing in the code admitting to it. */
 export type Tally = Partial<Record<Action, number>>;
 
 /** Seeds the running total for a room that predates it, from whatever log it still has. */
@@ -152,13 +117,10 @@ export interface Personality {
 }
 
 /**
- * What she has come to expect.
+ * Counted over everything, never a recent window: forgetting is the one thing this is not for.
  *
- * Counted over everything that has ever happened here, never a recent window. A window would make her
- * forget, and the one thing this is for is being the part of the room that does not.
- *
- * Two gates, because either alone is wrong. Without the count a quiet fortnight invents a trait from three
- * visits; without the age an afternoon of tapping invents one from twelve.
+ * Two gates. Without the count a quiet fortnight invents a trait from three visits; without the age an
+ * afternoon of tapping invents one from twelve.
  */
 export function personalityFrom(tally: Tally, daysKnown: number): Personality | null {
   if (!(daysKnown >= TRAIT_MIN_DAYS)) return null; // `!(x >= n)` so a NaN age is silent rather than a trait
@@ -173,12 +135,7 @@ export function personalityFrom(tally: Tally, daysKnown: number): Personality | 
 
   const [trait, count] = ranked[0]!;
   if (count / total < TRAIT_SHARE) return null;
-  /*
-   * A tie is no trait.
-   *
-   * Two actions level on top means the room would pick whichever the sort happened to put first, and it
-   * would swap on the next visit. Saying nothing is the honest answer to "she likes both equally".
-   */
+  // A tie picks whichever the sort put first and swaps next visit. Nothing is the honest answer.
   if (ranked[1] && ranked[1][1] === count) return null;
 
   return { trait, count };
