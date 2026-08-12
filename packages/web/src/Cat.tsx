@@ -192,6 +192,7 @@ export function Cat({
   onFound,
   onCapture,
   onProps,
+  bothCalledHer = false,
   dreamContext,
   onDream,
   collectionKey,
@@ -269,6 +270,8 @@ export function Cat({
   /** The furniture secrets were reachable only by hit-tested canvas taps, so two of the largest were
    *  impossible to find on a keyboard. */
   onProps?: (props: { key: string; label: string }[], poke: (key: string) => void) => void;
+  /** Both of you have called her by name. She answers a little differently once that is true. */
+  bothCalledHer?: boolean;
   /** What the room knows, for the dream on the bed. Read at the moment she settles, not on render. */
   dreamContext?: DreamContext;
   /** The dream she just started, so the room can say it out loud. */
@@ -341,6 +344,8 @@ export function Cat({
   const giftTaps = useRef({ count: 0, last: -1e9, wishUntil: -1e9 });
   const bedTaps = useRef({ count: 0, last: -1e9, dreamUntil: -1e9, scene: "fish" as DreamScene });
   // Refs, because the draw loop and the tap handler both close over this once and must not go stale.
+  const bothCalledRef = useRef(bothCalledHer);
+  bothCalledRef.current = bothCalledHer;
   const dreamCtxRef = useRef(dreamContext);
   dreamCtxRef.current = dreamContext;
   const onDreamRef = useRef(onDream);
@@ -950,6 +955,16 @@ export function Cat({
           bounce.current = 1;
           typedRoomCode = "";
           play("purr");
+          /*
+           * Once both of them have called her, she sometimes actually comes.
+           *
+           * Not every time: a cat that arrives on command is a dog, and the whole point of this one is
+           * that turning up is her idea. Rare enough to stay a surprise, and reusing the summon she
+           * already knows rather than inventing a second walk.
+           */
+          if (bothCalledRef.current && Math.random() < 1 / 3) {
+            summonUntil.current = now + SUMMON_MS;
+          }
         } else if (typedRoomCode.endsWith(TYPED_ROOM_CODE)) {
           const now = performance.now();
           catTaps.current.chorusUntil = now + PURR_CHORUS_MS;
