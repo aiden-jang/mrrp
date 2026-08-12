@@ -11,21 +11,25 @@
  */
 
 /** Kept in sync with the Worker's allowlist, which is the one that actually decides. */
-export type DiscoveryKey =
-  | 'constellation'
-  | 'roomTour'
-  | 'piano'
-  | 'bubbles'
-  | 'aurora'
-  | 'mrrp'
-  | 'summon'
-  | 'herName'
-  | 'box'
-  | 'yarn'
-  | 'treat'
-  | 'catnip'
-  | 'music'
-  | 'mouse';
+/** Mirrors the worker's DISCOVERY_KEYS. An array so the keys exist at runtime, not only as a type. */
+export const DISCOVERY_KEYS = [
+  'constellation',
+  'roomTour',
+  'piano',
+  'bubbles',
+  'aurora',
+  'mrrp',
+  'summon',
+  'herName',
+  'box',
+  'yarn',
+  'treat',
+  'catnip',
+  'music',
+  'mouse',
+] as const;
+
+export type DiscoveryKey = (typeof DISCOVERY_KEYS)[number];
 
 const STORAGE_KEY = 'mrrp:found';
 
@@ -63,6 +67,13 @@ const sentThisSession = new Set<string>();
  * Deliberately not async from the caller's point of view: the canvas calls this mid-frame and must
  * not await anything.
  */
+/** What this device has found, for anything that may only mention secrets the viewer already knows. */
+export function foundKeys(): DiscoveryKey[] {
+  return [...alreadySent()].filter((key): key is DiscoveryKey =>
+    (DISCOVERY_KEYS as readonly string[]).includes(key),
+  );
+}
+
 export function noticed(roomId: string | null, me: string, key: DiscoveryKey): void {
   if (!roomId) return;
   if (sentThisSession.has(key)) return;

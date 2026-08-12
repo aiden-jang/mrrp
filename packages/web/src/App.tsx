@@ -9,7 +9,7 @@ import { MoodFace } from "./faces.js";
 import type { Cue } from "./sound.js";
 import { isMuted, play, toggleMuted } from "./sound.js";
 import { makeKeepsake } from "./keepsake.js";
-import { noticed } from "./discoveries.js";
+import { foundKeys, noticed } from "./discoveries.js";
 import { milestoneLine, personalityLine } from "./remembers.js";
 import { myToken } from "./api.js";
 
@@ -738,6 +738,21 @@ function RoomPage({ id }: { id: string }) {
               setFound(FOUND_ANNOUNCEMENTS[key] ?? 'something in the room answered.');
             }}
             onProps={(props, poke) => setRoomProps({ props, poke })}
+            /*
+             * Everything she could be dreaming about, gathered here rather than in the canvas.
+             *
+             * `found` is this device's own discoveries: the dream may only mention a secret the person
+             * looking has already walked into, or it hands them the answer to the thing they were going
+             * to enjoy finding.
+             */
+            dreamContext={{
+              found: foundKeys(),
+              recent: view.theirRecent.map((visit) => visit.action),
+              trait: view.personality?.trait ?? null,
+              framed: view.framed,
+              hasBox: view.box,
+            }}
+            onDream={(dream) => setFound(dream.line)}
             onCapture={handleCaptureReady}
           />
 
