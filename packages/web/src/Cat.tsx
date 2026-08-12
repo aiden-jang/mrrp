@@ -135,19 +135,7 @@ const DOOR_NOTE_MS = 3600;
  */
 const MUG_FLOOR_X = 66, MUG_FLOOR_Y = FLOOR + 14;
 
-/**
- * The furniture, with its boxes.
- *
- * One table so that drawing and hit-testing cannot disagree. Every sprite here has a zero offset
- * except BED, whose ox is -11, which is why its box starts left of its draw x.
- */
-/**
- * What each object is called out loud.
- *
- * Written as things in a room rather than as features: somebody hearing this list is being told what is in
- * there, not shown a menu of interactions. Nothing here hints that a particular object holds a secret,
- * because finding that out is the part worth having.
- */
+/** Things in a room, not a menu of interactions. Nothing hints which objects hold a secret. */
 const PROP_LABELS: Record<string, string> = {
   window: 'the window',
   frame: 'the picture on the wall',
@@ -158,6 +146,12 @@ const PROP_LABELS: Record<string, string> = {
   box: 'the box',
 };
 
+/**
+ * The furniture, with its boxes.
+ *
+ * One table so drawing and hit-testing cannot disagree. Every sprite has a zero offset except BED,
+ * whose ox is -11, which is why its box starts left of its draw x.
+ */
 const PROPS = [
   { key: "window", sp: WINDOW, x: WIN_X, y: 4 },
   { key: "frame", sp: FRAME, x: 16, y: 12 },
@@ -268,22 +262,12 @@ export function Cat({
   onPet?: () => void;
   /** She tapped her own cat. Local only, no request. */
   onPoke?: () => void;
-  /**
-   * One of the room's secrets just fired. Reported so the other seat can be told somebody found
-   * something, which is the only reason this component knows the concept exists: it stays ignorant of
-   * rooms, tokens and the network, exactly like onPet and onPoke.
-   */
+  /** Reported up so the other seat can be told. This stays ignorant of rooms and the network. */
   onFound?: (key: DiscoveryKey) => void;
   /** Exposes a PNG capture of the rendered room without leaking the canvas out of this component. */
   onCapture?: (capture: () => Promise<Blob | null>) => void;
-  /**
-   * Hands up the room's touchable objects and a way to touch them without a pointer.
-   *
-   * Every secret that lives in the furniture (the constellation stars, the room tour, the mug, the box,
-   * the door) was reachable only by tapping hit-tested canvas coordinates. Somebody on a keyboard could
-   * focus the canvas and type the twelve codes, and could not reach any of the furniture at all, which
-   * left two of the largest secrets in the app impossible for them to find.
-   */
+  /** The furniture secrets were reachable only by hit-tested canvas taps, so two of the largest were
+   *  impossible to find on a keyboard. */
   onProps?: (props: { key: string; label: string }[], poke: (key: string) => void) => void;
   /** What the room knows, for the dream on the bed. Read at the moment she settles, not on render. */
   dreamContext?: DreamContext;
@@ -449,16 +433,10 @@ export function Cat({
     if (!cv) return;
 
     /*
-     * A keyboard poke, delivered as a real pointer event.
+     * A synthetic pointer event, not a second code path: the furniture handler is ~180 lines that grows
+     * with every secret, and a parallel keyboard branch would drift from it immediately.
      *
-     * Deliberately not a second code path. The furniture handler is ~180 lines of hit-testing, combos and
-     * per-object behaviour that keeps growing as secrets get added, and a parallel keyboard branch would
-     * drift from it the first time somebody adds one. Aiming a synthetic pointerdown at the object's centre
-     * means there is exactly one implementation of what touching the shelf does.
-     *
-     * The x needs the live camera pan: the room is wider than the view and scrolls with her, so an
-     * object's screen position is only knowable at the moment of the tap. camRef is written every frame
-     * for precisely this.
+     * The x needs the live camera pan, since the room is wider than the view and scrolls with her.
      */
     const poke = (key: string): void => {
       const prop = PROPS.find((p) => p.key === key);
@@ -478,12 +456,8 @@ export function Cat({
         isPrimary: true,
       };
       /*
-       * Put focus back where it was.
-       *
-       * The pointer handler calls cv.focus() so that typing a code works straight after a tap, which is
-       * right for a pointer and wrong here: it drags focus out of the room list on every activation. A
-       * keyboard user would lose their place after each object and have to tab back through the whole list
-       * for the next one, which makes the six-object room tour a chore rather than a discovery.
+       * The pointer handler calls cv.focus() so a code can be typed after a tap. On a keyboard that drags
+       * focus out of the room list every time, making the six-object room tour a chore.
        */
       const before = document.activeElement as HTMLElement | null;
       cv.dispatchEvent(new PointerEvent('pointerdown', init));

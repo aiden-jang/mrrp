@@ -106,7 +106,6 @@ app.post("/api/room/:id/recover", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "that code does not match" }, 403);
 });
 
-/** Put the thing she knocked off back on the shelf. Either seat; the Room re-checks. */
 /*
  * "I found the thing."
  *
@@ -122,6 +121,7 @@ app.post("/api/room/:id/found", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "bad request" }, 400);
 });
 
+/** Put the thing she knocked off back on the shelf. Either seat; the Room re-checks. */
 app.post("/api/room/:id/shelf", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);

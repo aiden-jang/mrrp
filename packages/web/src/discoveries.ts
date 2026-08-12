@@ -1,9 +1,5 @@
-/*
- * Fired from inside the animation loop, so it must cost nothing and never send the same secret twice:
- * without that, holding a piano key posts a request per frame.
- *
- * Failures are swallowed. Nobody can act on "we could not record that you found the mouse".
- */
+/* Fired from the animation loop: must never send twice, or holding a piano key posts a request per
+ * frame. Failures are swallowed, since nobody can act on "could not record that you found the mouse". */
 
 /** Mirrors the worker's allowlist, which is the one that actually decides. An array, not just a union,
  *  so the keys exist at runtime. */
@@ -56,12 +52,6 @@ function remember(sent: Set<string>): void {
 /** In-memory guard as well, so a burst inside one session cannot outrun the localStorage write. */
 const sentThisSession = new Set<string>();
 
-/**
- * Tell the room this device just noticed `key`, at most once ever.
- *
- * Deliberately not async from the caller's point of view: the canvas calls this mid-frame and must
- * not await anything.
- */
 /** What this device has found, for anything that may only mention secrets the viewer already knows. */
 export function foundKeys(): DiscoveryKey[] {
   return [...alreadySent()].filter((key): key is DiscoveryKey =>
@@ -69,6 +59,7 @@ export function foundKeys(): DiscoveryKey[] {
   );
 }
 
+/** At most once ever. Not async from the caller's side: the canvas calls this mid-frame. */
 export function noticed(roomId: string | null, me: string, key: DiscoveryKey): void {
   if (!roomId) return;
   if (sentThisSession.has(key)) return;

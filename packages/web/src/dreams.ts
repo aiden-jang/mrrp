@@ -5,16 +5,8 @@ import type { Personality } from "./types.js";
 type Trait = Personality["trait"];
 
 /*
- * What she dreams about, when somebody settles her on the bed twice.
- *
- * The dream was three rising pixels and nothing else: pretty, and about nothing. This gives it a
- * subject, and the subject is the room's own history, so a nap becomes the one place the room shows
- * you what has happened in it rather than counting it.
- *
- * The rule that shapes everything here is the one discoveries.ts already sets: she never dreams about
- * a secret you have not found. Dreaming of the piano would tell somebody there is a piano, which is
- * the whole thing they were going to enjoy discovering, and it would leak it through the softest,
- * least suspicious surface in the app.
+ * She never dreams about a secret you have not found: naming the piano tells somebody there is a piano,
+ * and a sleeping cat is the least suspicious surface in the app to leak one through.
  */
 
 export type DreamScene = "mouse" | "moth" | "piano" | "stars" | "box" | "brush" | "fish" | "sun";
@@ -66,14 +58,8 @@ const PLAIN: { scene: DreamScene; line: string }[] = [
   { scene: "moth", line: "something small she nearly caught." },
 ];
 
-/**
- * Pick a dream.
- *
- * `seed` rotates the choice so two naps in a row are not the same picture, and is a parameter rather
- * than `Math.random()` so a test can pin it. Candidates are gathered in preference order and the seed
- * only chooses among them, which keeps the good ones (things that actually happened) ahead of the
- * generic ones without making the result fixed.
- */
+/** `seed` is a parameter, not Math.random(), so a test can pin it. Candidates are gathered in preference
+ *  order and the seed only chooses among them, keeping what actually happened ahead of the generic. */
 export function dreamOf(context: DreamContext, seed: number): Dream {
   const found = new Set(context.found);
   const candidates: { scene: DreamScene; line: string }[] = [];

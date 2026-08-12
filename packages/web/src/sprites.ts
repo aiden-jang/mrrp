@@ -486,15 +486,6 @@ export const BOX_FRONT = sprite(
   0,
 );
 
-/**
- * The things she leaves on the floor while he's away.
- *
- * Tiny on purpose. A cat's gift is not impressive, it is specific: the point is that she chose
- * to carry this particular worthless object to the middle of the room and put it down. Anything
- * bigger or prettier would read as loot, and loot is a game mechanic.
- *
- * `g` leaf green, `r` its rib, `m` metal, `n` moth wing, `w` outline.
- */
 /*
  * A cake, for the room's own birthday.
  *
@@ -514,6 +505,15 @@ export const CAKE = sprite(
   0,
 );
 
+/**
+ * The things she leaves on the floor while he's away.
+ *
+ * Tiny on purpose. A cat's gift is not impressive, it is specific: the point is that she chose
+ * to carry this particular worthless object to the middle of the room and put it down. Anything
+ * bigger or prettier would read as loot, and loot is a game mechanic.
+ *
+ * `g` leaf green, `r` its rib, `m` metal, `n` moth wing, `w` outline.
+ */
 export const GIFT_LEAF = sprite(
   [
     ".ggg.",
