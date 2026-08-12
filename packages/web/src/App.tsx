@@ -767,6 +767,7 @@ function RoomPage({ id }: { id: string }) {
             }}
             onDream={(dream) => setFound(dream.line)}
             cake={!!view.milestone}
+            bothCalledHer={view.bothCalledHer}
             onCapture={handleCaptureReady}
           />
 
