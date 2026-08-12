@@ -59,6 +59,18 @@ export interface FoundArrival {
 }
 
 /**
+ * Whether both seats have found the same secret.
+ *
+ * The room behaves slightly differently once both of you have called her by name, which is the only
+ * state in here that needs *both* rather than either. Derived from the ledger rather than stored,
+ * so it cannot disagree with the finds it came from.
+ */
+export function bothFound(ledger: FoundLedger, key: DiscoveryKey, a: string, b: string): boolean {
+  const seats = ledger[key] ?? {};
+  return seats[a] !== undefined && seats[b] !== undefined;
+}
+
+/**
  * What the other seat found since `since`, from the viewer's side.
  *
  * Sorted newest first and capped, because this shares an arrival card with everything else the room

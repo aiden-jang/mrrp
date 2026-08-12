@@ -103,7 +103,9 @@ export type Arrival =
    * pleasure of these is walking into one, and naming it hands over the answer to something you were
    * going to enjoy discovering. Encoded in the type so a careless render cannot leak it.
    */
-  | { kind: "found"; at: number; what: DiscoveryKey | null };
+  | { kind: "found"; at: number; what: DiscoveryKey | null }
+  /** He took the thing she left on the floor. Her side only, and told once. */
+  | { kind: "kept"; at: number; gift: Gift };
 
 export type Gift = "leaf" | "cap" | "moth";
 
@@ -173,6 +175,8 @@ export interface RoomView {
    */
   noticed: number;
   waitingForThem: boolean;
+  /** Both of you have called her by name. Nothing announces it; she just answers to it now and then. */
+  bothCalledHer: boolean;
   /** Milliseconds since this person's previous visit. Null on their first. */
   awayMs: number | null;
   /** Today is worth mentioning: the room's own anniversary, or its first week or month. Rarely set. */

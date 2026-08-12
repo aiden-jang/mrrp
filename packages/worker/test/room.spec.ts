@@ -1031,3 +1031,66 @@ describe("how long you were away", () => {
     expect((await view(STRANGER)).awayMs).toBeNull();
   });
 });
+
+describe("the thing she left, and what happens to it", () => {
+  it("tells her he took it, once", async () => {
+    /*
+     * The gift used to go one way and stop. She left it, he picked it up, and she never found out,
+     * which for an app about two people is the wrong shape.
+     */
+    await seat();
+    away(72);
+    await view(HER); // she drops in while he has been away, which is what leaves the gift
+    expect((await view(HIM)).gift).not.toBeNull();
+
+    await post("act", { me: HIM, action: "pet" });
+    const hers = await view(HER);
+    const kept = hers.arrivals.find((arrival) => arrival.kind === "kept");
+    expect(kept).toBeTruthy();
+
+    // Told once: the next read has nothing, because an arrival is not an inbox.
+    expect((await view(HER)).arrivals.find((a) => a.kind === "kept")).toBeUndefined();
+  });
+
+  it("says nothing when there was nothing on the floor", async () => {
+    await seat();
+    await post("act", { me: HIM, action: "pet" });
+    expect((await view(HER)).arrivals.find((a) => a.kind === "kept")).toBeUndefined();
+  });
+
+  it("does not tell him about his own picking up", async () => {
+    await seat();
+    away(72);
+    await view(HER);
+    await post("act", { me: HIM, action: "pet" });
+    expect((await view(HIM)).arrivals.find((a) => a.kind === "kept")).toBeUndefined();
+  });
+});
+
+describe("both of you calling her by name", () => {
+  it("is false until each of them has", async () => {
+    await seat();
+    expect((await view(HIM)).bothCalledHer).toBe(false);
+
+    await post("found", { me: HIM, key: "herName" });
+    expect((await view(HIM)).bothCalledHer).toBe(false);
+
+    await post("found", { me: HER, key: "herName" });
+    expect((await view(HIM)).bothCalledHer).toBe(true);
+    expect((await view(HER)).bothCalledHer).toBe(true);
+  });
+
+  it("is not reachable by one person doing it twice", async () => {
+    await seat();
+    await post("found", { me: HIM, key: "herName" });
+    await post("found", { me: HIM, key: "herName" });
+    expect((await view(HIM)).bothCalledHer).toBe(false);
+  });
+
+  it("tells a spectator nothing", async () => {
+    await seat();
+    await post("found", { me: HIM, key: "herName" });
+    await post("found", { me: HER, key: "herName" });
+    expect((await view(STRANGER)).bothCalledHer).toBe(false);
+  });
+});
