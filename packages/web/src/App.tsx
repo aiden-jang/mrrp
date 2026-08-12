@@ -10,7 +10,7 @@ import type { Cue } from "./sound.js";
 import { isMuted, play, toggleMuted } from "./sound.js";
 import { makeKeepsake } from "./keepsake.js";
 import { foundKeys, noticed } from "./discoveries.js";
-import { milestoneLine, personalityLine } from "./remembers.js";
+import { awayLine, milestoneLine, personalityLine } from "./remembers.js";
 import { myToken } from "./api.js";
 
 /* What each button sounds like. Sitting with her is the only one that answers with a purr: the rest
@@ -753,6 +753,7 @@ function RoomPage({ id }: { id: string }) {
               hasBox: view.box,
             }}
             onDream={(dream) => setFound(dream.line)}
+            cake={!!view.milestone}
             onCapture={handleCaptureReady}
           />
 
@@ -827,6 +828,10 @@ function RoomPage({ id }: { id: string }) {
           */}
         {!setup && view.milestone && (iAmHim || view.youAreHer) && (
           <p style={S.remembers}>{milestoneLine(view.milestone, view.cat.name)}</p>
+        )}
+        {/* Only after a real absence, and never a count of it. See awayLine. */}
+        {!setup && (iAmHim || view.youAreHer) && awayLine(view.awayMs, view.cat.name) && (
+          <p style={S.remembers}>{awayLine(view.awayMs, view.cat.name)}</p>
         )}
         {!setup && view.personality && (iAmHim || view.youAreHer) && (
           <p style={S.remembers}>{personalityLine(view.personality, view.youAreHer, view.them)}</p>

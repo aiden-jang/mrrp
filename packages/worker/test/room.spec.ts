@@ -1002,3 +1002,32 @@ describe("what the room works out from having been used a while", () => {
     expect((await view(HIM)).personality).toEqual({ trait: "accompanied", count: 12 });
   });
 });
+
+describe("how long you were away", () => {
+  it("has no answer on a first visit", async () => {
+    // Not zero: never having been here is a different thing from having just been here.
+    expect((await view(HIM, "Aiden")).awayMs).toBeNull();
+  });
+
+  it("measures to the previous visit, not to this one", async () => {
+    await view(HIM, "Aiden");
+    away(30);
+    const back = await view(HIM);
+    expect(back.awayMs).not.toBeNull();
+    expect(Math.round(back.awayMs! / 3_600_000)).toBe(30);
+  });
+
+  it("resets each time, so two visits in a row read as a short gap", async () => {
+    await view(HIM, "Aiden");
+    away(30);
+    await view(HIM);
+    const again = await view(HIM);
+    // The 30-hour gap belongs to the previous read; this one happened immediately after it.
+    expect(again.awayMs!).toBeLessThan(60_000);
+  });
+
+  it("tells a spectator nothing, since they hold no seat", async () => {
+    await seat();
+    expect((await view(STRANGER)).awayMs).toBeNull();
+  });
+});

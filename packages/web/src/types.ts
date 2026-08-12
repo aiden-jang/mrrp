@@ -173,6 +173,8 @@ export interface RoomView {
    */
   noticed: number;
   waitingForThem: boolean;
+  /** Milliseconds since this person's previous visit. Null on their first. */
+  awayMs: number | null;
   /** Today is worth mentioning: the room's own anniversary, or its first week or month. Rarely set. */
   milestone: Milestone | null;
   /** What she has come to expect, once there is enough history behind it to mean anything. */
