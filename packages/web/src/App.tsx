@@ -10,6 +10,7 @@ import type { Cue } from "./sound.js";
 import { isMuted, play, toggleMuted } from "./sound.js";
 import { makeKeepsake } from "./keepsake.js";
 import { noticed } from "./discoveries.js";
+import { milestoneLine, personalityLine } from "./remembers.js";
 import { myToken } from "./api.js";
 
 /* What each button sounds like. Sitting with her is the only one that answers with a purr: the rest
@@ -799,6 +800,23 @@ function RoomPage({ id }: { id: string }) {
           </p>
         )}
 
+        {/*
+          * The two things the room worked out from having been used for a while.
+          *
+          * Above the discovery count and below the room itself, because both are about the room rather
+          * than about anything you just did. The milestone is first on the rare day there is one: it is
+          * the only line in here that is about a date, and burying it under a personality would read as
+          * an afterthought.
+          *
+          * Neither is shown to a spectator. A stranger with the link is not part of the year.
+          */}
+        {!setup && view.milestone && (iAmHim || view.youAreHer) && (
+          <p style={S.remembers}>{milestoneLine(view.milestone, view.cat.name)}</p>
+        )}
+        {!setup && view.personality && (iAmHim || view.youAreHer) && (
+          <p style={S.remembers}>{personalityLine(view.personality, view.youAreHer, view.them)}</p>
+        )}
+
         {/* The one gesture that isn't a button was also the one nobody could find. It disappears after
             the first touch rather than nagging, and it is never shown to a spectator, who has nothing
             to touch. */}
@@ -1351,6 +1369,17 @@ const S: Record<string, React.CSSProperties> = {
   },
   doing: { fontSize: 13.5, color: "var(--soft)", textAlign: "center", margin: "14px 0 0", fontStyle: "italic" },
   // Quieter than `doing` and not italic: a fact about the two of them, not something the cat is doing.
+  // A shade warmer and a touch larger than the discovery count: this is the room saying something, not
+  // a footnote about it.
+  remembers: {
+    fontSize: 13,
+    color: "var(--soft)",
+    textAlign: "center",
+    margin: "12px auto 0",
+    maxWidth: 340,
+    lineHeight: 1.5,
+    textWrap: "pretty",
+  },
   noticed: { fontSize: 12.5, color: "var(--soft)", textAlign: "center", margin: "10px 0 0", opacity: 0.85 },
   // A quiet panel, not a gold block. How she is appears on his side every single day, whereas the
   // two of you being in the room at the same moment happens rarely — and when it did, two identical

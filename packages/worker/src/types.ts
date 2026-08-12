@@ -1,8 +1,10 @@
 /** The contract between the Worker and the web client. */
 
 import type { DiscoveryKey } from "./discoveries.js";
+import type { Milestone, Personality } from "./remembers.js";
 
 export type { DiscoveryKey };
+export type { Milestone, Personality };
 
 export type Action = "pet" | "brush" | "bring" | "sit" | "photo";
 
@@ -163,4 +165,8 @@ export interface RoomView {
    */
   noticed: number;
   waitingForThem: boolean;
+  /** Today is worth mentioning: the room's own anniversary, or its first week or month. Rarely set. */
+  milestone: Milestone | null;
+  /** What she has come to expect, once there is enough history behind it to mean anything. */
+  personality: Personality | null;
 }

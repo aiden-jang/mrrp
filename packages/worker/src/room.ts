@@ -3,6 +3,7 @@ import type { Action, Arrival, Cat, Clock, Gift, Mood, Note, RoomView, Told, Tol
 import { NOTES } from "./notes.js";
 import { arrivalsFor, foundCount, isDiscoveryKey, recordFound, type DiscoveryKey, type FoundLedger } from "./discoveries.js";
 import type { Env } from "./env.js";
+import { DAY_MS, milestoneFor, personalityFrom, roomStartedAt, tallyFrom, type Tally } from "./remembers.js";
 
 const LOG_KEEP = 40;
 /** How recently they must have been seen to count as being here now, rather than having been here. */
@@ -160,9 +161,24 @@ export class Room extends DurableObject<Env> {
     // a keepsake he could re-read would make it an inbox, and this is meant to be a moment.
     await this.ctx.storage.delete("gift");
 
-    const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
-    log.unshift({ at: Date.now(), who: me, action });
-    await this.ctx.storage.put("log", log.slice(0, LOG_KEEP));
+    const previous = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
+
+    /*
+     * A total that outlives the log's forty entries, which is what her personality is read from.
+     *
+     * Seeded from whatever log a room already has, so a room that predates this does not start from zero
+     * and lose the history it has. The seed happens once, on the first action after deploy, and this is
+     * the only place it is written: every action in this app comes through here.
+     *
+     * Seeded from the log as it was BEFORE this visit, which is the whole reason the append happens after.
+     * Seeding from a log that already contained the new visit counted the first action after deploy twice,
+     * and it was invisible in isolation because it only happens on the one action that also seeds.
+     */
+    const tally = (await this.ctx.storage.get<Tally>("tally")) ?? tallyFrom(previous);
+    tally[action] = (tally[action] ?? 0) + 1;
+    await this.ctx.storage.put("tally", tally);
+
+    await this.ctx.storage.put("log", [{ at: Date.now(), who: me, action }, ...previous].slice(0, LOG_KEEP));
 
     people[me].lastSeen = Date.now();
     await this.ctx.storage.put("people", people);
@@ -467,6 +483,10 @@ export class Room extends DurableObject<Env> {
     const them = otherId ? people[otherId] ?? null : null;
     const waitingForThem = !her;
     const windowLight = await this.ctx.storage.get<WindowLight>("windowLight");
+    const startedAt = roomStartedAt(
+      Object.values(people).map((person) => person.firstSeen),
+      Date.now(),
+    );
 
     // A bounded arrival card, not a message history. The timestamp captured before view() updates
     // lastSeen makes this work after a day away and during a live poll alike; the next read is empty.
@@ -557,6 +577,24 @@ export class Room extends DurableObject<Env> {
       arrivals,
       // Both seats, and spectators get zero: a stranger with the link is not part of "the two of you".
       noticed: seated ? foundCount(await this.found()) : 0,
+      /*
+       * How long this has been going, and what she has come to expect.
+       *
+       * Both derived rather than stored, from the earliest arrival and the running tally. The room started
+       * when the first of them opened it, which is why this reads the minimum `firstSeen` rather than a
+       * separate key: a takeover deliberately carries that timestamp over, so the room keeps its own age
+       * even when a seat changes hands.
+       *
+       * Answered in her timezone, because the room only has the one, and a day that turns over at UTC
+       * midnight is nobody's day.
+       */
+      milestone: seated ? milestoneFor(startedAt, Date.now(), clock.tz) : null,
+      personality: seated
+        ? personalityFrom(
+            (await this.ctx.storage.get<Tally>("tally")) ?? tallyFrom(log),
+            Math.floor((Date.now() - startedAt) / DAY_MS),
+          )
+        : null,
       waitingForThem,
     };
   }
