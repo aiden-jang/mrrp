@@ -892,3 +892,113 @@ describe("shared discoveries", () => {
     expect((await view(HIM)).noticed).toBe(1);
   });
 });
+
+describe("what the room works out from having been used a while", () => {
+  /** Every action goes through the same route the app uses, so the tally is built the real way. */
+  const acted = async (action: string, times: number): Promise<void> => {
+    for (let i = 0; i < times; i += 1) expect((await post("act", { me: HIM, action })).status).toBe(200);
+  };
+
+  /**
+   * A room old enough to have habits about, without the fortnight of waiting.
+   *
+   * Seats first, then jumps: the room's age is measured from the first arrival, so seating after the jump
+   * would produce a brand-new room in the future rather than an old one.
+   */
+  const settled = async (): Promise<void> => {
+    await seat();
+    away(24 * 30);
+  };
+
+  it("says nothing about a room that has just started", async () => {
+    await seat();
+    const v = await view(HIM);
+    expect(v.milestone).toBeNull();
+    expect(v.personality).toBeNull();
+  });
+
+  it("gives a brand-new room no personality, however much he taps in it", async () => {
+    // Petting her is a button, so a count on its own is not a stand-in for elapsed time.
+    await seat();
+    await acted("pet", 20);
+    expect((await view(HIM)).personality).toBeNull();
+  });
+
+  it("marks the first week, on the day and not before", async () => {
+    await seat();
+    away(24 * 6 + 1);
+    expect((await view(HIM)).milestone).toBeNull();
+    away(24);
+    expect((await view(HIM)).milestone).toEqual({ kind: "first-week", years: 0 });
+  });
+
+  it("tells both of them, because it is the room's age and not one person's", async () => {
+    await seat();
+    away(24 * 7);
+    expect((await view(HIM)).milestone?.kind).toBe("first-week");
+    expect((await view(HER)).milestone?.kind).toBe("first-week");
+  });
+
+  it("keeps the room's age when a seat changes hands", async () => {
+    /*
+     * The reason the start is the earliest `firstSeen` rather than a stored key.
+     *
+     * He can take his seat back on a new device with the recovery code, which carries the old seat's
+     * arrival over. If the room's age came from the new device it would reset to zero on a recovery, and
+     * a year of this would vanish because somebody got a new phone.
+     */
+    await seat();
+    const code = (await view(HIM)).recoveryCode;
+    expect(code).toBeTruthy();
+    away(24 * 7);
+    expect((await post("recover", { me: "brandnewdevice1", code })).status).toBe(200);
+    expect((await view("brandnewdevice1")).milestone?.kind).toBe("first-week");
+  });
+
+  it("has no personality until there is enough history", async () => {
+    await settled();
+    await acted("pet", 11);
+    expect((await view(HIM)).personality).toBeNull();
+    await acted("pet", 1);
+    expect((await view(HIM)).personality).toEqual({ trait: "petted", count: 12 });
+  });
+
+  // Forty-five round trips through workerd, which is over the default 5s and reads as a logic failure
+  // when it trips. The test is worth its own timeout rather than a smaller number: the number IS the test.
+  it(
+    "keeps counting past the length of the visit log",
+    async () => {
+      // The log holds forty. The whole point of the separate tally is that the forty-first still counts.
+      await settled();
+      await acted("brush", 45);
+      expect((await view(HIM)).personality).toEqual({ trait: "brushed", count: 45 });
+    },
+    30_000,
+  );
+
+  it("says nothing when he does a bit of everything", async () => {
+    await settled();
+    await acted("pet", 5);
+    await acted("brush", 4);
+    await acted("sit", 4);
+    await acted("bring", 4);
+    expect((await view(HIM)).personality).toBeNull();
+  });
+
+  it("shows a spectator neither, since a stranger is not part of the year", async () => {
+    await seat();
+    away(24 * 7);
+    await acted("pet", 12);
+    const v = await view(STRANGER);
+    expect(v.personality).toBeNull();
+    expect(v.milestone).toBeNull();
+  });
+
+  it("is not something she can move by reading the room", async () => {
+    // build() reads the tally and must never write it: a page open is not a thing done to the cat.
+    await settled();
+    await acted("sit", 12);
+    for (let i = 0; i < 5; i += 1) await view(HER);
+    expect((await view(HIM)).personality).toEqual({ trait: "accompanied", count: 12 });
+  });
+});

@@ -107,6 +107,19 @@ export type Arrival =
 
 export type Gift = "leaf" | "cap" | "moth";
 
+/** A day in the room's own history worth saying something about. */
+export interface Milestone {
+  kind: "anniversary" | "first-week" | "first-month";
+  /** Whole years, for an anniversary. Zero for the earlier two. */
+  years: number;
+}
+
+/** The one thing she has come to expect, and how much of her history says so. */
+export interface Personality {
+  trait: "petted" | "brushed" | "fed" | "accompanied" | "photographed";
+  count: number;
+}
+
 /**
  * The room, from one seat.
  *
@@ -160,4 +173,8 @@ export interface RoomView {
    */
   noticed: number;
   waitingForThem: boolean;
+  /** Today is worth mentioning: the room's own anniversary, or its first week or month. Rarely set. */
+  milestone: Milestone | null;
+  /** What she has come to expect, once there is enough history behind it to mean anything. */
+  personality: Personality | null;
 }
