@@ -138,7 +138,7 @@ local day, so a day she doesn't visit is not a note she never sees.
 ## Tests
 
 ```bash
-pnpm check       # typecheck, lint, then 141 tests: 68 web, 73 worker
+pnpm check       # typecheck, lint, then 292 tests: 144 web, 148 worker
 ```
 
 `lint` exists for one rule. owewell shipped a `useEffect` below a component's early returns, so the
@@ -155,6 +155,40 @@ times, so `mothAt` is a pure function of `t` with its own tests. Same reasoning 
 rollover, which uses zones 26 hours apart (`Etc/GMT+12` and `Pacific/Kiritimati`) so their local
 dates always differ. An earlier version used New York to Tokyo, passed in the evening, and failed
 in the morning.
+
+## Talking about this
+
+**The short version.** A shared pixel cat for exactly two people. One of you is the cat: you tap how
+your day is going, she becomes that, and the other one sees it and can do something about it. No
+accounts, no database, no notifications.
+
+**The shape.** One Durable Object per room, and that's the entire backend. Two seats, assigned by
+arrival order and enforced in the object rather than the UI, because the link is the only credential
+the app has. A third person holding the link gets no notes, no mood, and a 403 on anything that
+writes. The room runs on her clock, not the server's, so the light crosses the floor over her day and
+the cat waits by the door around the time she usually gets home.
+
+**The call I'd defend.** Almost all of the design work here was refusing things. Nothing bad can
+happen to the cat: no hunger, no streaks, no decay, because the moment a shared pet can be neglected
+it becomes a chore and the other person becomes someone you're letting down. She also doesn't copy a
+low mood, she comes over and stays. And you only ever see what the other person did, never whether
+they saw yours, because knowing someone saw and did nothing is worse than not knowing.
+
+**The interesting technical bit.** She learns what you usually do. That needed the whole history, but
+the visit log is capped at 40 entries to keep the object small, so a naive count over the log silently
+stopped being true once you passed 40 visits. There's a running tally alongside the log now. The bug
+that caught me was subtler: I seeded the tally from a log that already had the new visit appended, so
+every action counted twice. Unit tests passed. Only the tests running against a real Durable Object
+found it.
+
+**What breaks first.** Nothing, realistically. Two people per room and rooms don't talk to each other,
+so it scales by doing nothing. The real limit is that the room is the only copy of the data, and
+there's no export.
+
+**What I'd change.** The art is hand-authored pixel grids you can read in the source, one rectangle
+per logical pixel with no upscaling, because resampling a small canvas leaves you with pixels of two
+different sizes and it reads as a mistake rather than a style. That was right, but it means adding a
+sprite is a manual job and there's no tooling for it. I'd build a tiny editor before adding many more.
 
 ## Deploying
 
