@@ -18,7 +18,7 @@
  *  c blush (two pixels per cheek, and worth more than any other pair)
  */
 
-export type Pose = "loaf" | "sit" | "stand" | "play" | "perk";
+export type Pose = "loaf" | "sit" | "stand" | "play" | "perk" | "walk" | "stretch" | "pounce" | "peek";
 
 /** Parsed sprite: rows of characters, guaranteed rectangular. */
 export interface Sprite {
@@ -195,12 +195,108 @@ export const PERK = sprite(
   -20,
 );
 
+/** A passing step rather than the standing cat sliding across the boards. */
+export const WALK = sprite(
+  [
+    "..ww..........ww..",
+    ".wffw........wffw.",
+    ".wfpfw......wfpfw.",
+    ".wffffwwwwwwffffw.",
+    ".wfdffffdffffdfw..",
+    ".wfbbbbbbbbbbbbfw.",
+    ".wfbchebbbbhecbfw.",
+    ".wfbceebbbbeecbfw.",
+    ".wfbbbbnnbbbbbfw..",
+    ".wffbbbmmmbbbffw..",
+    "..wffffffffffffw..",
+    "..wfdbbbbbbbbdfw..",
+    "..wfbbbbbbbbbbfw..",
+    "..wffffffffffffw..",
+    ".wwbbwwffffww.....",
+    "wwddww......wwbbww",
+    ".wwww........wwww.",
+  ],
+  -9,
+  -17,
+);
+
+/** Front paws long, chin low, and the back half still high: an actual cat stretch. */
+export const STRETCH = sprite(
+  [
+    "..ww..........ww..........",
+    ".wffw........wffw.........",
+    ".wfpfw......wfpfw.........",
+    ".wffffwwwwwwffffwwwww.....",
+    ".wfdffffdffffdfwfffffw....",
+    ".wfbbbbbbbbbbbbfwfffffw...",
+    ".wfbchebbbbhecbfwffffdfw..",
+    ".wfbceebbbbeecbfwffffdfw..",
+    ".wfbbbbnnbbbbbfwwffffdfw..",
+    ".wffbbbmmmbbbffffffffdfw..",
+    "..wffbbbbbbffffffffffffw..",
+    "...wffffffffffffffffffdfw.",
+    "...wwbbwwffffffffffbbffw..",
+    ".wwbbww...........wwbbwww.",
+    "wwwwww.............wwwww..",
+  ],
+  -9,
+  -15,
+);
+
+/** Low and wide for the last beat of a chase, with both paws committed. */
+export const POUNCE = sprite(
+  [
+    "...ww..........ww.....",
+    "..wffw........wffw....",
+    "..wfpfw......wfpfw....",
+    "..wffffwwwwwwffffw....",
+    ".wfdffffdffffdfw......",
+    ".wfbbbbbbbbbbbbfw.....",
+    ".wfbchebbbbhecbfw.....",
+    ".wfbceebbbbeecbfw.....",
+    ".wfbbbbnnbbbbbfw......",
+    ".wffbbbmmmbbbffw......",
+    ".wwfdffffffffdfww.....",
+    "wwbbfbbbbbbbbfbbww....",
+    "wwwwfdbbbbbbdffwww....",
+    "....wffffffffw........",
+    "...wwbbwwwwbbww.......",
+    "..wwww......wwww......",
+  ],
+  -10,
+  -16,
+);
+
+/** Only the part of her that should clear the box rim, paws included. */
+export const PEEK = sprite(
+  [
+    "..ww..........ww..",
+    ".wffw........wffw.",
+    ".wfpfw......wfpfw.",
+    ".wffffwwwwwwffffw.",
+    ".wfdffffdffffdfw..",
+    ".wfbbbbbbbbbbbbfw.",
+    ".wfbchebbbbhecbfw.",
+    ".wfbceebbbbeecbfw.",
+    ".wfbbbbnnbbbbbfw..",
+    "wwffbbbmmmbbbffww.",
+    "wbbwwffffffffwwbbw",
+    ".ww............ww.",
+  ],
+  -9,
+  -12,
+);
+
 export const POSES: Record<Pose, Sprite> = {
   loaf: LOAF,
   sit: SIT,
   stand: STAND,
   play: PLAY,
   perk: PERK,
+  walk: WALK,
+  stretch: STRETCH,
+  pounce: POUNCE,
+  peek: PEEK,
 };
 
 /** The door she waits at. */
