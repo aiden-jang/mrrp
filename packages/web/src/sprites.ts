@@ -42,38 +42,34 @@ function sprite(rows: string[], ox: number, oy: number): Sprite {
 /**
  * Bread. The default, and the one she's in most of the time.
  *
- * Her pale front runs unbroken from chin to belly. It used to be two separate cream bands, the
- * muzzle and the belly, with a solid strip of fur between them, and at 24 pixels wide that reads
- * as a cat's head sitting behind a cushion: pale bar, fur, pale bar, dark line under it is exactly
- * the silhouette of a small couch. Joining them into one column makes the body read as the same
- * animal as the head.
- *
- * Tapering the belly was the first attempt and made it worse, because it turned the pale band into
- * an enclosed rounded shape, which is even more cushion-like. The problem was never the belly's
- * width; it was that the head and the body did not visually connect.
+ * The first version was a 24-wide rectangle with a cream rectangle inside it. However carefully the
+ * pixels were shaded, it read as a toaster or a cat behind a cushion because the head, shoulders and
+ * body all shared one box. The v2 silhouette gives the head its own taper, lets the shoulders widen
+ * below the chin, and rounds the loaf back in again at the paws. The pale front still joins muzzle to
+ * chest, but fur at both sides keeps it on the cat instead of turning it into a panel.
  */
 export const LOAF = sprite(
   [
-    "...ww..............ww...",
-    "..wffw............wffw..",
-    "..wfpfw..........wfpfw..",
-    "..wffffwwwwwwwwwwffffw..",
-    "..wfdffffdffffdffffdfw..",
-    "..wfbbbbbbbbbbbbbbbbfw..",
-    "..wfbceeebbbbbbeeecbfw..",
-    "..wfbceeebbbbbbeeecbfw..",
-    "wwwfbbbbbbbnnbbbbbbbfwww",
-    "..wffbbbbbbmmbbbbbbffw..",
-    "...wdffffbbbbbbffffdw...",
-    "..wffdfffbbbbbbfffdffw..",
-    ".wffffdffbbbbbbffdffffw.",
-    ".wfbbbbbbbbbbbbbbbbbbfw.",
-    ".wffbbbbbbbbbbbbbbbbffw.",
-    ".wfdffffffffffffffffdfw.",
-    ".wddddddddddddddddddddw.",
-    "..wwwwwwwwwwwwwwwwwwww..",
+    "...ww........ww.....",
+    "..wffw......wffw....",
+    "..wfpfw....wfpfw....",
+    "..wffffwwwwffffw....",
+    ".wfdffffdffffdfw....",
+    ".wfbbbbbbbbbbbfw....",
+    ".wfbceeebbeeecbfw...",
+    ".wfbbbbnnbbbbbfw....",
+    ".wffbbbmmmbbbffw....",
+    "..wffbbbbbbffw......",
+    "wwffffffffffffww....",
+    "wfdffffffffffffdfwww",
+    "wfbbbbbbbbbbbbbbbffw",
+    "wffbbbbbbbbbbbbbbffw",
+    ".wfdffffffffffffdfw.",
+    "..wffbbffffffbbffw..",
+    "..wwddwwwwwwwwddww..",
+    "...wwwwwwwwwwwwww...",
   ],
-  -12,
+  -10,
   -18,
 );
 

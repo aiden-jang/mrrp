@@ -169,6 +169,22 @@ const PINK = "#e79ba3";
 const BLUSH = "#f0aeb4";
 const WHITE = "#fffdf6";
 
+/*
+ * Closed eyes are authored as lines, not as recolored open-eye blocks.
+ *
+ * The sprite role `e` occupies a two- or three-pixel area so an open colored eye can carry a white
+ * highlight. Painting that entire area brown when she slept produced two heavy rectangles that read
+ * like sunglasses, especially on the new smaller loaf. These coordinates replace those areas with
+ * one intentional line per eye while preserving the same customizable open-eye sprites.
+ */
+const CLOSED_EYES: Record<Pose, { y: number; left: number; right: number; width: number }> = {
+  loaf: { y: 7, left: 5, right: 11, width: 3 },
+  sit: { y: 7, left: 5, right: 11, width: 3 },
+  stand: { y: 6, left: 5, right: 11, width: 2 },
+  play: { y: 6, left: 5, right: 11, width: 3 },
+  perk: { y: 8, left: 5, right: 11, width: 3 },
+};
+
 export function Cat({
   label,
   look,
@@ -1175,6 +1191,20 @@ export function Cat({
       rect(0, FLOOR - 9, GW, 9, sc.wallBottom);
       rect(0, FLOOR, GW, 10, sc.floorFar);
       rect(0, FLOOR + 10, GW, GH - FLOOR - 10, sc.floorNear);
+
+      /*
+       * Quiet surface detail, taken from the v2 golden-hour study.
+       *
+       * These are fixed marks rather than random texture. Random pixels reshuffle every frame and
+       * make a calm room shimmer; a handful of authored clusters lets the plaster and boards feel
+       * touched without becoming visual noise.
+       */
+      const wallShade = mixHex(sc.wallBottom, INK, 0.08);
+      const wallLift = mixHex(sc.wallTop, sc.beamWarm, 0.12 + sc.sun * 0.08);
+      for (const [x, y, w] of [[4, 8, 5], [38, 17, 3], [48, 7, 6], [90, 27, 4]] as const) {
+        dither(x, y, w, 2, wallShade);
+      }
+      for (const [x, y] of [[12, 30], [34, 6], [52, 31], [96, 11]] as const) px(x, y, wallLift);
       /*
        * Skirting: one bright line where the wall meets the floor, to read as depth.
        *
@@ -1185,8 +1215,32 @@ export function Cat({
        * other surface here already does.
        */
       rect(0, FLOOR - 1, GW, 1, mixHex(sc.wallBottom, sc.beamWarm, 0.3 + sc.sun * 0.35));
-      // Floorboards. Half the frame was empty boards, and three lines is enough to say "floor".
+      rect(0, FLOOR, GW, 1, mixHex(sc.floorFar, INK, 0.14));
+      // Floorboards now have staggered joins and tiny highlights as well as perspective bands. The
+      // generated study made clear that material, not more furniture, was what the empty half lacked.
       for (const by of [FLOOR + 9, FLOOR + 15, FLOOR + 23, FLOOR + 30]) rect(0, by, GW, 1, sc.floorFar);
+      const boardJoin = mixHex(sc.floorFar, INK, 0.16);
+      const boardGlint = mixHex(sc.floorNear, sc.beamWarm, 0.1 + sc.sun * 0.08);
+      for (const [x, y, h] of [[8, 49, 8], [31, 49, 8], [70, 49, 8], [18, 58, 5], [52, 58, 5], [86, 58, 5], [5, 64, 7], [40, 64, 7], [75, 64, 7], [25, 72, 8], [62, 72, 8]] as const) {
+        rect(x, y, 1, h, boardJoin);
+        px(x + 1, y + 1, boardGlint);
+      }
+
+      /*
+       * A low rug gives the cat a place in the composition without turning the room into a set.
+       * Pixel-rounded rows keep its silhouette soft; two quiet inner bands imply woven material.
+       */
+      const rugShadow = mixHex(sc.floorNear, INK, 0.25);
+      const rugEdge = mixHex(sc.floorNear, "#765367", 0.58);
+      const rugBody = mixHex(sc.floorNear, "#a8737e", 0.48);
+      const rugThread = mixHex(rugBody, sc.beamWarm, 0.16);
+      rect(35, FLOOR + 12, 40, 1, rugShadow);
+      rect(32, FLOOR + 13, 46, 13, rugEdge);
+      rect(34, FLOOR + 12, 42, 15, rugEdge);
+      rect(35, FLOOR + 13, 40, 13, rugBody);
+      dither(38, FLOOR + 16, 34, 1, rugThread);
+      dither(38, FLOOR + 22, 34, 1, rugThread, 1);
+      for (const x of [35, 40, 69, 74]) px(x, FLOOR + 27, rugEdge);
 
 
       // ── light ─────────────────────────────────────────────────────────────
@@ -1246,7 +1300,29 @@ export function Cat({
        */
       const night = sc.sun < 0.12;
       const wx = WIN_X + shake("window");
+
+      // Curtain panels sit in front of the beam, so the light feels as though it came through an
+      // actual room rather than being painted directly onto the wall. Two folds are enough at this
+      // scale; more turns fabric into striping.
+      const curtainDark = mixHex(sc.wallBottom, "#66516f", 0.5);
+      const curtainLight = mixHex(curtainDark, sc.beamWarm, 0.12 + sc.sun * 0.16);
+      rect(wx - 3, 3, 2, 21, curtainDark);
+      rect(wx - 1, 3, 1, 20, curtainLight);
+      rect(wx + WINDOW.w, 3, 2, 21, curtainDark);
+      rect(wx + WINDOW.w + 2, 3, 1, 20, curtainLight);
+      px(wx - 2, 24, curtainLight); px(wx + WINDOW.w + 1, 24, curtainLight);
       blit(WINDOW, wx, 4, { w: INK, h: sc.sun > 0.2 ? sc.beamWarm : night ? "#2b3450" : sc.wallTop });
+
+      // Distant rooftops live only in the bottom of each pane. They give the window a world without
+      // competing with the moon, stars, bird, or anything the two people can leave for each other.
+      const skyline = night ? "#252a42" : mixHex(sc.wallBottom, "#6d5f72", 0.48);
+      rect(wx + 1, wy(8), 7, 1, skyline);
+      rect(wx + 2, wy(7), 2, 1, skyline);
+      rect(wx + 9, wy(8), 7, 1, skyline);
+      rect(wx + 12, wy(6), 3, 2, skyline);
+      // A proper sill, with one shadow row, grounds the window and makes the sunbeam's source read.
+      rect(wx - 1, 15, WINDOW.w + 2, 1, mixHex(sc.wallBottom, INK, 0.24));
+      rect(wx - 2, 16, WINDOW.w + 4, 1, mixHex(sc.wallBottom, "#a77a58", 0.42));
       // The view changes quietly with the calendar: petals, thick summer green, falling color, or
       // a little snow caught on the sill. Static in the glass so seasonal atmosphere never becomes
       // another idle animation competing with her.
@@ -1461,7 +1537,11 @@ export function Cat({
           colors.forEach((color, band) => px(wx + x, wy(1 + band + curve), color));
         }
       }
+      // Small shelf shadow and two uneven books add depth without making the prop harder to hit.
+      rect(79, FLOOR - 23, 18, 2, mixHex(sc.wallBottom, INK, 0.14));
       blit(SHELF, 80 + shake("shelf"), FLOOR - 24, { w: INK, d: "#8a6a48" });
+      rect(92 + shake("shelf"), FLOOR - 28, 2, 4, "#7d6b86");
+      rect(94 + shake("shelf"), FLOOR - 29, 2, 5, "#b87868");
       // The mug: on the shelf, or on its side on the boards under it. Same object either way, so
       // it has to be recognisably the same drawing.
       if (downRef.current) {
@@ -1536,6 +1616,8 @@ export function Cat({
         px(nx, ny + 1, INK); px(nx + 5, ny + 2, INK);
         px(nx + 2, ny + 1, `rgba(198,154,99,${a})`);
       }
+      // The frame casts one blocky shadow, which is enough to lift it from the wall.
+      rect(18, 14, FRAME.w, FRAME.h, mixHex(sc.wallBottom, INK, 0.12));
       if (framedRef.current) {
         blit(FRAME_CAT, 16 + shake("frame"), 12, { w: INK, f: "#c69a63", h: "#cfe0e4", c: L.fur, e: INK, n: PINK });
       } else {
@@ -1570,6 +1652,19 @@ export function Cat({
           px(hx, hy, c); px(hx + 2, hy, c); px(hx + 1, hy + 1, c); px(hx + 1, hy + 2, c);
         }
       }
+      // A hanging cutting balances the high left side of the room from the art study. It is scenery,
+      // not another secret: the permanent interactive plant remains on the floor at the right.
+      const hangingX = 48 + (!reduce ? Math.round(Math.sin(t / 1900)) : 0);
+      rect(49, 5, 1, 6, INK);
+      px(48, 11, INK); px(50, 11, INK);
+      rect(hangingX - 2, 12, 6, 3, "#a86f4f");
+      rect(hangingX - 1, 15, 4, 1, "#7d523d");
+      const hangingLeaf = mixHex(seasonalPlant.leaf, sc.wallTop, night ? 0.22 : 0.08);
+      for (const [dx, dy] of [[-4, -2], [-2, -4], [1, -5], [4, -3], [-5, 1], [5, 0], [-3, 3], [3, 4]] as const) {
+        px(hangingX + dx, 12 + dy, hangingLeaf);
+        px(hangingX + dx + (dx < 0 ? 1 : -1), 13 + dy, hangingLeaf);
+      }
+
       blit(PLANT, 87 + shake("plant"), FLOOR - 13, { g: seasonalPlant.leaf, w: INK, d: "#b07a4e" });
       if (season === "spring") {
         px(91, FLOOR - 19, seasonalPlant.detail); px(95, FLOOR - 17, seasonalPlant.detail);
@@ -1598,6 +1693,7 @@ export function Cat({
       // Dusty rose, not the lavender it started as. Lavender was the only cool colour in a room of
       // creams and browns, and at this size it stopped reading as a cat bed and started reading as
       // a stray UI element that had landed on the floor.
+      rect(13, FLOOR + 23, 22, 2, mixHex(sc.floorNear, INK, 0.18));
       blit(BED, 24 + shake("bed"), FLOOR + 22, { d: "#b07f76", f: "#d8a79c", b: "#c4918a" });
 
       /*
@@ -1853,8 +1949,9 @@ export function Cat({
         m: INK,
         c: awake ? BLUSH : "",
         h: WHITE,
-        // Shut eyes are a one-pixel line in the outline colour, not a smaller eye.
-        e: awake ? L.eyes : INK,
+        // Shut eyes are drawn as authored lines below; leaving the open-eye cells transparent avoids
+        // turning their full highlight-sized area into two dark blocks.
+        e: awake ? L.eyes : "",
       };
 
       // The keyboard treat sits on the boards until she reaches it, then leaves a few crumbs. It is
@@ -1919,9 +2016,12 @@ export function Cat({
         }
       }
 
-      // Shadow first, so she sits on the floor instead of hovering over it.
-      rect(kx - (sp.w >> 1) + 3, ky + 1, sp.w - 6, 1, "rgba(120,84,44,.26)");
-      rect(kx - (sp.w >> 1) + 5, ky + 2, sp.w - 10, 1, "rgba(120,84,44,.18)");
+      // A three-step contact shadow from the v2 composition. The darkest row stays tight to her paws;
+      // the softer rows spread sideways, so she feels planted without gaining a smooth blurry halo.
+      const shadowX = kx - (sp.w >> 1);
+      rect(shadowX + 1, ky + 1, sp.w - 2, 1, "rgba(74,53,32,.12)");
+      rect(shadowX + 3, ky + 2, sp.w - 6, 1, "rgba(74,53,32,.22)");
+      rect(shadowX + 6, ky + 3, sp.w - 12, 1, "rgba(74,53,32,.14)");
 
       const wag = reduce ? 0 : Math.round(Math.sin(t / (620 - sc.play * 380)) * (1 + sc.play * 2 + n));
       // Tucked against her flank. A one-pixel gap here reads as a detached tail, which is worse
@@ -1930,6 +2030,13 @@ export function Cat({
       const tailY = pose === "loaf" ? y - 4 : pose === "perk" ? y - 9 : y - 6;
       blit(TAIL, pose === "stand" ? kx - 12 : tailX, tailY + wag, pal, pose === "stand");
       blit(sp, kx, y, pal);
+      if (!awake) {
+        const eye = CLOSED_EYES[pose];
+        const faceX = kx + sp.ox;
+        const eyeY = y + sp.oy + eye.y;
+        rect(faceX + eye.left, eyeY, eye.width, 1, INK);
+        rect(faceX + eye.right, eyeY, eye.width, 1, INK);
+      }
 
       // The bubbles are drawn in front of her because they are targets, not ambient particles.
       // Each has a bright edge, a glassy blue shadow, and one moving highlight; five taps completes
