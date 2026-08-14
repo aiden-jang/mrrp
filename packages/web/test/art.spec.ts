@@ -109,6 +109,16 @@ describe("sprites", () => {
       expect(sp.rows.some((row) => row.includes("nn")), `${name} nose`).toBe(true);
     }
   });
+
+  it("has authored silhouettes for movement instead of sliding a standing cat", () => {
+    expect(Object.keys(POSES)).toEqual([
+      "loaf", "sit", "stand", "play", "perk", "walk", "stretch", "pounce", "peek",
+    ]);
+    expect(POSES.stretch.w).toBeGreaterThan(POSES.sit.w);
+    expect(POSES.pounce.h).toBeLessThan(POSES.sit.h);
+    expect(POSES.peek.h).toBeLessThan(POSES.sit.h);
+    expect(new Set(["walk", "stretch", "pounce", "peek"].map((pose) => POSES[pose as keyof typeof POSES].rows.join("\n"))).size).toBe(4);
+  });
 });
 
 describe("moods", () => {

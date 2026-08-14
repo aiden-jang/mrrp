@@ -42,3 +42,27 @@ Prompt:
 > uniform square pixels, a limited ginger, cream, chocolate, green, pink, and white palette, neutral
 > studio lighting, and a plain warm ivory background. No text, labels, scenery, shadows, accessories,
 > extra animals, perspective distortion, 3D, vector, painterly, anime, or photorealistic rendering.
+
+## Cat motion sheet v1
+
+File: `cat-motion-sheet-v1.png`
+
+Role: silhouette and anatomy reference for four motion-specific runtime poses: walk, stretch,
+pounce, and box peek. As with the core sheet, the reference is translated into semantic grid
+sprites rather than bundled into the live renderer, preserving instant loading and cat colors.
+
+Generated with the built-in image generation model using `cat-model-sheet-v1.png` as the locked
+character reference.
+
+Prompt:
+
+> Create a second clean model sheet showing exactly four additional poses of the same
+> ginger-and-cream cat: walking in profile, a full-body forward stretch with front paws extended and
+> hips raised, a low playful pounce with front paws forward, and peeking from a cardboard box with
+> paws hooked over the rim. Use crisp hand-authored 16-bit pixel art with one consistent logical
+> pixel size. Arrange the four poses in one evenly spaced horizontal row with ample whitespace and
+> no labels. Match the reference's ginger fur, cream muzzle, chest and paws, dark chocolate outline,
+> pink nose and ears, and green eyes. Preserve the exact head size, ear spacing, eye placement,
+> muzzle shape, limb proportions, outline weight, and palette. The box is plain warm kraft brown.
+> No anatomy drift, extra limbs or tails, mixed pixel sizes, antialiasing, gradients, shadows,
+> scenery, text, watermark, costumes, or accessories.

@@ -183,6 +183,10 @@ const CLOSED_EYES: Record<Pose, { y: number; left: number; right: number; width:
   stand: { y: 7, left: 5, right: 11, width: 2 },
   play: { y: 7, left: 5, right: 11, width: 2 },
   perk: { y: 8, left: 5, right: 11, width: 2 },
+  walk: { y: 7, left: 5, right: 11, width: 2 },
+  stretch: { y: 7, left: 5, right: 11, width: 2 },
+  pounce: { y: 7, left: 5, right: 11, width: 2 },
+  peek: { y: 7, left: 5, right: 11, width: 2 },
 };
 
 export function Cat({
@@ -1918,7 +1922,25 @@ export function Cat({
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
       // cat that did not notice, which is the one thing this feature is for.
       const noticing = (mouseVisiting || doorRef.current !== null || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking) && posed;
-      const pose: Pose = mouseChasing || bubblePlaying || pianoPawing || pianoRewarding || musicDancing || catnipping || zooming || laserPlaying || yarnPlaying || summoning || (treating && treatProgress < 0.6) ? "play" : musicPlaying || catnipActive || treating ? "sit" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
+      const stretchCycle = t % 40_000;
+      const stretching = !reduce && awake && sc.play < 0.5 && !inBox && Math.abs(wantX - kx) < 2 && stretchCycle < 1400;
+      const pouncing = mouseChasing || laserPlaying;
+      const walking = Math.abs(wantX - kx) > 3 && !zooming && !catnipping && !pouncing;
+      const pose: Pose = boxPlaying || peeking
+        ? "peek"
+        : stretching
+          ? "stretch"
+          : pouncing
+            ? "pounce"
+            : walking
+              ? "walk"
+              : bubblePlaying || pianoPawing || pianoRewarding || musicDancing || catnipping || zooming || yarnPlaying || summoning || (treating && treatProgress < 0.6)
+                ? "play"
+                : musicPlaying || catnipActive || treating
+                  ? "sit"
+                  : noticing
+                    ? "perk"
+                    : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
@@ -2026,9 +2048,9 @@ export function Cat({
       const wag = reduce ? 0 : Math.round(Math.sin(t / (620 - sc.play * 380)) * (1 + sc.play * 2 + n));
       // Tucked against her flank. A one-pixel gap here reads as a detached tail, which is worse
       // than no tail at all.
-      const tailX = pose === "loaf" ? kx + 8 : kx + 5;
+      const tailX = pose === "loaf" ? kx + 8 : pose === "stretch" ? kx + 14 : pose === "pounce" ? kx + 9 : kx + 5;
       const tailY = pose === "loaf" ? y - 4 : pose === "perk" ? y - 9 : y - 6;
-      blit(TAIL, pose === "stand" ? kx - 12 : tailX, tailY + wag, pal, pose === "stand");
+      if (pose !== "peek") blit(TAIL, pose === "stand" ? kx - 12 : tailX, tailY + wag, pal, pose === "stand");
       blit(sp, kx, y, pal);
       if (!awake) {
         const eye = CLOSED_EYES[pose];
@@ -2242,6 +2264,10 @@ export function Cat({
           perk: { l: -3, r: 2, wide: true },
           play: { l: -4, r: 3, wide: true },
           stand: { l: -5, r: 1, wide: false },
+          walk: { l: -4, r: 2, wide: true },
+          stretch: { l: -4, r: 2, wide: true },
+          pounce: { l: -5, r: 1, wide: true },
+          peek: { l: -4, r: 2, wide: true },
         };
         const e = EYES[pose];
         // What you just touched wins, then the moth, then your cursor.
@@ -2409,19 +2435,6 @@ export function Cat({
           // sun: a small warm square rather than an outline, since it is a patch of light.
           px(sx, sy, ink); px(sx + 1, sy, ink); px(sx, sy + 1, ink); px(sx + 1, sy + 1, ink);
         }
-      }
-
-      // A stretch, roughly every 40 seconds, and only when she is awake and not busy being something
-      // else. Rare on purpose: an idle animation you can predict stops reading as alive.
-      const stretchCycle = t % 40_000;
-      const stretching = !reduce && awake && sc.play < 0.5 && stretchCycle < 1400;
-      if (stretching) {
-        const k = Math.sin((stretchCycle / 1400) * Math.PI);
-        const reach = Math.round(k * 5);
-        // Front paws pushed forward along the floor, and a hint of arch in the back.
-        rect(kx - (sp.w >> 1) - reach, ky - 1, reach + 2, 2, L.fur);
-        px(kx - (sp.w >> 1) - reach, ky - 1, INK);
-        px(kx - (sp.w >> 1) - reach, ky, INK);
       }
 
       // Purring, shown rather than written: small marks rising off her.
