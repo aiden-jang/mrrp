@@ -178,11 +178,11 @@ const WHITE = "#fffdf6";
  * one intentional line per eye while preserving the same customizable open-eye sprites.
  */
 const CLOSED_EYES: Record<Pose, { y: number; left: number; right: number; width: number }> = {
-  loaf: { y: 7, left: 5, right: 11, width: 3 },
-  sit: { y: 7, left: 5, right: 11, width: 3 },
-  stand: { y: 6, left: 5, right: 11, width: 2 },
-  play: { y: 6, left: 5, right: 11, width: 3 },
-  perk: { y: 8, left: 5, right: 11, width: 3 },
+  loaf: { y: 7, left: 5, right: 11, width: 2 },
+  sit: { y: 7, left: 5, right: 11, width: 2 },
+  stand: { y: 7, left: 5, right: 11, width: 2 },
+  play: { y: 7, left: 5, right: 11, width: 2 },
+  perk: { y: 8, left: 5, right: 11, width: 2 },
 };
 
 export function Cat({
@@ -1948,7 +1948,7 @@ export function Cat({
         n: PINK,
         m: INK,
         c: awake ? BLUSH : "",
-        h: WHITE,
+        h: awake ? WHITE : "",
         // Shut eyes are drawn as authored lines below; leaving the open-eye cells transparent avoids
         // turning their full highlight-sized area into two dark blocks.
         e: awake ? L.eyes : "",
