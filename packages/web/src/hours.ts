@@ -2,6 +2,8 @@ import type { Clock, Mood } from "./types.js";
 import { RESPONSES } from "./moods.js";
 import type { Pose } from "./sprites.js";
 
+export type LightPhase = "night" | "dawn" | "day" | "golden" | "evening";
+
 /**
  * What the room looks like at a given moment of HER day.
  *
@@ -15,6 +17,8 @@ import type { Pose } from "./sprites.js";
 export interface Scene {
   /** Fractional local hour, 0-24. */
   hour: number;
+  /** Authored lighting chapter used for details that should not cross-fade into mush. */
+  lightPhase: LightPhase;
   /** 0 at night, 1 at full daylight. Drives the beam and how bright the room reads. */
   sun: number;
   /** Horizontal centre of the sunbeam on the floor, 0-1. Crosses the room over the day. */
@@ -72,6 +76,14 @@ export function hourIn(tz: string, at = Date.now()): number {
 }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+export function lightPhaseAt(hour: number): LightPhase {
+  if (hour < 5 || hour >= 22) return "night";
+  if (hour < 8) return "dawn";
+  if (hour < 17) return "day";
+  if (hour < 20) return "golden";
+  return "evening";
+}
 
 export function mixHex(a: string, b: string, t: number): string {
   const n = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
@@ -133,6 +145,17 @@ export function sceneFor(
 
   const sun = lerp(a.sun, b.sun, t);
   const beam = lerp(a.beam, b.beam, t);
+  const lightPhase = lightPhaseAt(hour);
+  const wall = mixHex(a.wall, b.wall, t);
+  const wall2 = mixHex(a.wall2, b.wall2, t);
+  const floor = mixHex(a.floor, b.floor, t);
+  const floor2 = mixHex(a.floor2, b.floor2, t);
+  const warm = mixHex(a.warm, b.warm, t);
+  // Night gets moon color, not a weak beige sunbeam. Golden hour deliberately holds the strongest
+  // material lift even as the numeric daylight begins to fall.
+  const wallLight = lightPhase === "night" ? 0 : lightPhase === "golden" ? 0.7 : 0.12 + sun * 0.5;
+  const floorLight = lightPhase === "night" ? 0 : lightPhase === "golden" ? 0.62 : 0.1 + sun * 0.45;
+  const patchLight = lightPhase === "night" ? 0 : lightPhase === "golden" ? 0.82 : 0.16 + sun * 0.6;
 
   // Waiting starts an hour before she expects you and eases off once you're in.
   const untilHome = clock.homeHour - hour;
@@ -156,16 +179,17 @@ export function sceneFor(
 
   const scene: Scene = {
     hour,
+    lightPhase,
     sun,
     beam,
-    wallTop: mixHex(a.wall, b.wall, t),
-    wallBottom: mixHex(a.wall2, b.wall2, t),
-    floorFar: mixHex(a.floor, b.floor, t),
-    floorNear: mixHex(a.floor2, b.floor2, t),
-    beamWarm: mixHex(a.warm, b.warm, t),
-    litWall: mixHex(mixHex(a.wall, b.wall, t), mixHex(a.warm, b.warm, t), 0.22 + sun * 0.5),
-    litFloor: mixHex(mixHex(a.floor2, b.floor2, t), mixHex(a.warm, b.warm, t), 0.2 + sun * 0.45),
-    patch: mixHex(mixHex(a.floor2, b.floor2, t), mixHex(a.warm, b.warm, t), 0.3 + sun * 0.6),
+    wallTop: wall,
+    wallBottom: wall2,
+    floorFar: floor,
+    floorNear: floor2,
+    beamWarm: warm,
+    litWall: mixHex(wall, warm, wallLight),
+    litFloor: mixHex(floor2, warm, floorLight),
+    patch: mixHex(floor2, warm, patchLight),
     // She follows the light, except when she's waiting for you, which beats the light, except when
     // you've told her something, which beats both.
     // Once she has been told something, that outranks the clock. Otherwise "bored" could still put

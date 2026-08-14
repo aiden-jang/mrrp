@@ -4,7 +4,7 @@ import { RESPONSES } from "../src/moods.js";
 import { FACE_KEYS } from "../src/faces.js";
 import { LOOKS, EYES, timezones } from "../src/looks.js";
 import { POSES, BED, DOOR, FRAME, MRRP, PLANT, SHELF, TAIL, WINDOW, type Sprite } from "../src/sprites.js";
-import { sceneFor, hourIn } from "../src/hours.js";
+import { sceneFor, hourIn, lightPhaseAt } from "../src/hours.js";
 
 /**
  * The art and the copy have their own failure modes, and none of them throw.
@@ -180,6 +180,21 @@ describe("her clock", () => {
     expect(scene(15).sun).toBeGreaterThan(0.9);
     expect(scene(2).sun).toBeLessThan(0.1);
     expect(scene(23).sun).toBeLessThan(0.2);
+  });
+
+  it("gives each part of the day an authored lighting chapter", () => {
+    expect([2, 6, 12, 18, 21, 23].map(lightPhaseAt)).toEqual([
+      "night", "dawn", "day", "golden", "evening", "night",
+    ]);
+    expect(scene(6).lightPhase).toBe("dawn");
+    expect(scene(18).lightPhase).toBe("golden");
+    expect(scene(23).lightPhase).toBe("night");
+  });
+
+  it("does not paint a warm sun patch through the room at night", () => {
+    expect(scene(2).litWall).toBe(scene(2).wallTop);
+    expect(scene(2).litFloor).toBe(scene(2).floorNear);
+    expect(scene(2).patch).toBe(scene(2).floorNear);
   });
 
   it("moves the sunbeam across the room over the day", () => {
