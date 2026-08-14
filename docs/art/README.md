@@ -66,3 +66,28 @@ Prompt:
 > muzzle shape, limb proportions, outline weight, and palette. The box is plain warm kraft brown.
 > No anatomy drift, extra limbs or tails, mixed pixel sizes, antialiasing, gradients, shadows,
 > scenery, text, watermark, costumes, or accessories.
+
+## Room lighting study v1
+
+File: `room-lighting-study-v1.png`
+
+Role: locked lighting reference for dawn, clear afternoon, golden hour, and late night. The runtime
+uses authored palette chapters and Canvas details rather than shipping the study itself, so the room
+still follows the cat's timezone, loads offline, and stays interactive.
+
+Generated with the built-in image generation model using `golden-hour-room-concept-v1.png` as the
+locked composition, character, furniture, and pixel-style reference.
+
+Prompt:
+
+> Show the exact same small room and ginger cat in four equal panels at dawn, clear afternoon,
+> golden hour, and late night. Change only the natural light, window view, curtain color response,
+> shadows, and tiny ambient details. Use crisp hand-authored 16-bit pixel art with one consistent
+> logical pixel size and identical camera and object placement in every panel. Dawn has a cool
+> lavender sky with a thin peach horizon and long delicate light. Afternoon has airy cream daylight
+> and one quiet cloud. Golden hour has honey light and the strongest warm beam. Late night has deep
+> blue-violet glass, a crescent moon, sparse stars, a few lit distant windows, and a small warm pool
+> around the shelf. Preserve the warm cream, ginger, chocolate, faded sage, dusty rose, muted
+> lavender, and honey palette. Keep the cat as the highest-contrast object. No labels, text, UI,
+> extra furniture, weather icons, neon, harsh black shadows, full-screen overlays, photorealism, 3D,
+> smooth gradients, antialiasing, mixed pixel sizes, or watermark.
