@@ -22,3 +22,23 @@ Prompt:
 > shadows, and quiet environmental storytelling. No text, logo, UI, watermark, smooth vector
 > gradients, photorealism, 3D rendering, anime styling, extra animals, or people.
 
+## Cat model sheet v1
+
+File: `cat-model-sheet-v1.png`
+
+Role: proportion and silhouette reference for the five core runtime poses. The generated pixels are
+not shipped directly; each pose is translated into Mrrp's semantic palette grid so fur, belly, and
+eye customization continue to work.
+
+Generated with the built-in image generation model using the approved room concept and original
+Mrrp social image as references.
+
+Prompt:
+
+> Create a clean pixel-art character model sheet of the exact same ginger cat in five separated
+> full-body poses: compact loaf, upright sit, standing side profile with tail raised, playful rear-up
+> pose with one paw extended, and alert ears-up sit. Lock head size, ear spacing, eye placement,
+> cream markings, outline, paws, body proportions, and tail thickness across every pose. Use crisp
+> uniform square pixels, a limited ginger, cream, chocolate, green, pink, and white palette, neutral
+> studio lighting, and a plain warm ivory background. No text, labels, scenery, shadows, accessories,
+> extra animals, perspective distortion, 3D, vector, painterly, anime, or photorealistic rendering.

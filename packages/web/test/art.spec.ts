@@ -99,6 +99,16 @@ describe("sprites", () => {
       expect(flat, `${name} nose`).toContain("n");
     }
   });
+
+  it("keeps the same facial landmarks across every pose", () => {
+    for (const [name, sp] of Object.entries(POSES)) {
+      const eyeColumns = [...new Set(sp.rows.flatMap((row) => [...row].flatMap((ch, x) => ch === "e" ? [x] : [])))].sort((a, b) => a - b);
+      const highlightColumns = [...new Set(sp.rows.flatMap((row) => [...row].flatMap((ch, x) => ch === "h" ? [x] : [])))].sort((a, b) => a - b);
+      expect(eyeColumns, `${name} eye columns`).toEqual([5, 6, 11, 12]);
+      expect(highlightColumns, `${name} highlight columns`).toEqual([5, 11]);
+      expect(sp.rows.some((row) => row.includes("nn")), `${name} nose`).toBe(true);
+    }
+  });
 });
 
 describe("moods", () => {
