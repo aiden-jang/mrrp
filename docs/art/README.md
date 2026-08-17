@@ -1,13 +1,13 @@
 # Art references
 
-These images are references for composition, lighting, and material treatment. They are not shipped
-as runtime room layers until they have been translated into consistent, interaction-safe assets.
+These images are generated source assets for the visible room. Each one is locally bundled only
+after its crop, compression, interaction alignment, and visual consistency have been checked.
 
 ## Golden-hour room concept v1
 
 File: `golden-hour-room-concept-v1.png`
 
-Role: approved direction reference for the first Mrrp art pass.
+Role: approved direction and first visible runtime room state.
 
 Generated with the built-in image generation model using the existing Mrrp social image as an
 identity and palette reference.
@@ -91,3 +91,38 @@ Prompt:
 > lavender, and honey palette. Keep the cat as the highest-contrast object. No labels, text, UI,
 > extra furniture, weather icons, neon, harsh black shadows, full-screen overlays, photorealism, 3D,
 > smooth gradients, antialiasing, mixed pixel sizes, or watermark.
+
+The four panels are cropped into the bundled dawn, day, golden-hour, and night runtime images. They
+share one camera and object layout, so changing the cat's local hour does not move the room around.
+
+## Evening room v1
+
+File: `packages/web/public/art/room-evening-v1.png`
+
+Role: generated blue-hour runtime state between golden hour and late night.
+
+Generated with the built-in image generation model using the golden-hour runtime crop as the edit
+target. Final prompt:
+
+> Change only the lighting and window view from golden hour to quiet blue-hour evening, after sunset
+> but before full night. Use a muted lavender-blue window, a last dusty-rose band at the horizon,
+> weak cool ambient room light, and a small trace of warmth in the mug and wood. Preserve the crop,
+> camera, room geometry, cat identity and pose, furniture placement, pixel grid, hard pixel edges,
+> and every object. No moon, stars, rain, neon, black shadows, text, UI, watermark, antialiasing,
+> blur, gradients, or geometry changes.
+
+## Rain room v1
+
+File: `packages/web/public/art/room-rain-v1.png`
+
+Role: generated runtime weather state shown while the room's rain moment is active.
+
+Generated with the built-in image generation model using the daylight runtime crop as the edit
+target. Final prompt:
+
+> Change only the weather outside and its light response: steady gentle rain on the window,
+> overcast cool daylight outside, visible rain streaks and droplets on the glass, softly muted room
+> light, and a slightly warmer candle-and-wood interior contrast. Preserve the crop, camera, room
+> geometry, cat identity and pose, furniture placement, pixel grid, hard pixel edges, and every
+> object. Rain stays outside. No storm drama, lightning, flooding, dark distressed mood, text, UI,
+> watermark, antialiasing, blur, smooth gradients, or geometry changes.

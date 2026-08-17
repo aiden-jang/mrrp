@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { Cat as CatLook, Clock, Gift, Mood } from "./types.js";
-import { mixHex, sceneFor } from "./hours.js";
+import { mixHex, sceneFor, type LightPhase } from "./hours.js";
 import { fireflyAt, mothAt } from "./critters.js";
 import { play, playPianoNote } from "./sound.js";
 import { dreamOf, type Dream, type DreamContext, type DreamScene } from "./dreams.js";
@@ -169,6 +169,17 @@ const PINK = "#e79ba3";
 const BLUSH = "#f0aeb4";
 const WHITE = "#fffdf6";
 
+const GENERATED_ROOMS: Record<LightPhase, string> = {
+  dawn: "/art/room-dawn-v1.png",
+  day: "/art/room-day-v1.png",
+  golden: "/art/room-golden-v1.png",
+  evening: "/art/room-evening-v1.png",
+  night: "/art/room-night-v1.png",
+};
+
+export const generatedRoomFor = (phase: LightPhase, raining = false): string =>
+  raining ? "/art/room-rain-v1.png" : GENERATED_ROOMS[phase];
+
 /*
  * Closed eyes are authored as lines, not as recolored open-eye blocks.
  *
@@ -300,6 +311,7 @@ export function Cat({
   collectionKey?: string;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const roomImageRef = useRef<HTMLImageElement>(null);
   const lookRef = useRef(look);
   const clockRef = useRef(clock);
   const moodRef = useRef(mood);
@@ -1331,6 +1343,10 @@ export function Cat({
       const wx = WIN_X + shake("window");
       const rainRemaining = plantTaps.current.rainUntil - t;
       const raining = rainRemaining > 0;
+      const generatedRoom = generatedRoomFor(sc.lightPhase, raining);
+      if (roomImageRef.current && !roomImageRef.current.src.endsWith(generatedRoom)) {
+        roomImageRef.current.src = generatedRoom;
+      }
 
       // Curtain panels sit in front of the beam, so the light feels as though it came through an
       // actual room rather than being painted directly onto the wall. Two folds are enough at this
@@ -2640,19 +2656,33 @@ export function Cat({
   }, []);
 
   return (
-    <canvas
-      ref={ref}
-      role="img"
-      tabIndex={0}
-      aria-label={`${label} The room has quiet interactive details.`}
-      style={{
-        display: "block", width: "100%", height: "100%", imageRendering: "pixelated",
-        // Holding to pet needs the browser to stop treating the drag as a scroll. Only his side holds,
-        // so everyone else keeps normal scrolling over the canvas.
-        touchAction: role === "him" ? "none" : "manipulation",
-        // The room responds to taps/presses; a grab hand promises a drag that does not exist.
-        cursor: role ? "pointer" : "default",
-      }}
-    />
+    <div className="generated-room" style={{ position: "relative", width: "100%", height: "100%" }}>
+      <img
+        ref={roomImageRef}
+        src={generatedRoomFor(sceneFor(clock, Date.now(), mood, together).lightPhase)}
+        alt=""
+        aria-hidden="true"
+        draggable={false}
+        style={{
+          position: "absolute", inset: 0, width: "100%", height: "100%",
+          objectFit: "cover", objectPosition: "center", imageRendering: "pixelated",
+        }}
+      />
+      <canvas
+        ref={ref}
+        role="img"
+        tabIndex={0}
+        aria-label={`${label} The room has quiet interactive details.`}
+        style={{
+          position: "absolute", inset: 0, display: "block", width: "100%", height: "100%",
+          opacity: 0,
+          // Holding to pet needs the browser to stop treating the drag as a scroll. Only his side holds,
+          // so everyone else keeps normal scrolling over the canvas.
+          touchAction: role === "him" ? "none" : "manipulation",
+          // The room responds to taps/presses; a grab hand promises a drag that does not exist.
+          cursor: role ? "pointer" : "default",
+        }}
+      />
+    </div>
   );
 }

@@ -59,6 +59,10 @@ button, select, [role="button"] {
 }
 button:active:not(:disabled), select:active { transform: scale(.965); }
 button:disabled { opacity: .55; }
+.generated-room:focus-within {
+  outline: 3px solid var(--honey);
+  outline-offset: -3px;
+}
 
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; opacity: 1 !important; transform: none !important; }
