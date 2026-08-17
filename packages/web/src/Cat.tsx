@@ -343,6 +343,7 @@ export function Cat({
   collectionKey?: string;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const roomRootRef = useRef<HTMLDivElement>(null);
   const roomImageRef = useRef<HTMLImageElement>(null);
   const catImageRef = useRef<HTMLImageElement>(null);
   const eyeImageRef = useRef<HTMLImageElement>(null);
@@ -548,8 +549,60 @@ export function Cat({
     if (!onCapture) return;
     onCapture(() =>
       new Promise((resolve) => {
-        const canvas = ref.current;
-        if (!canvas) return resolve(null);
+        const room = roomRootRef.current;
+        if (!room) return resolve(null);
+
+        const bounds = room.getBoundingClientRect();
+        if (bounds.width <= 0 || bounds.height <= 0) return resolve(null);
+
+        const scale = Math.min(2, devicePixelRatio || 1);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(bounds.width * scale));
+        canvas.height = Math.max(1, Math.round(bounds.height * scale));
+        const context = canvas.getContext("2d");
+        if (!context) return resolve(null);
+
+        context.scale(scale, scale);
+        for (const image of room.querySelectorAll("img")) {
+          const style = getComputedStyle(image);
+          if (!image.complete || image.naturalWidth === 0 || style.display === "none" || style.visibility === "hidden") continue;
+
+          const opacity = Number.parseFloat(style.opacity);
+          if (opacity <= 0) continue;
+
+          const imageBounds = image.getBoundingClientRect();
+          const x = imageBounds.left - bounds.left;
+          const y = imageBounds.top - bounds.top;
+          const width = imageBounds.width;
+          const height = imageBounds.height;
+          if (width <= 0 || height <= 0) continue;
+
+          context.save();
+          context.globalAlpha = Number.isFinite(opacity) ? opacity : 1;
+          context.globalCompositeOperation = style.mixBlendMode === "screen" ? "screen" : "source-over";
+          context.filter = style.filter === "none" ? "none" : style.filter;
+
+          if (style.objectFit === "cover") {
+            const sourceRatio = image.naturalWidth / image.naturalHeight;
+            const targetRatio = width / height;
+            let sourceX = 0;
+            let sourceY = 0;
+            let sourceWidth = image.naturalWidth;
+            let sourceHeight = image.naturalHeight;
+            if (sourceRatio > targetRatio) {
+              sourceWidth = image.naturalHeight * targetRatio;
+              sourceX = (image.naturalWidth - sourceWidth) / 2;
+            } else {
+              sourceHeight = image.naturalWidth / targetRatio;
+              sourceY = (image.naturalHeight - sourceHeight) / 2;
+            }
+            context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+          } else {
+            context.drawImage(image, x, y, width, height);
+          }
+          context.restore();
+        }
+
         canvas.toBlob((blob) => resolve(blob), "image/png");
       }),
     );
@@ -2760,7 +2813,7 @@ export function Cat({
   const initialPose = initialScene.pose ?? (initialScene.atDoor ? "stand" : initialScene.sleepy > 0.55 ? "loaf" : "sit");
 
   return (
-    <div className="generated-room" style={{ position: "relative", width: "100%", height: "100%" }}>
+    <div ref={roomRootRef} className="generated-room" style={{ position: "relative", width: "100%", height: "100%" }}>
       <img
         ref={roomImageRef}
         src={generatedRoomFor(sceneFor(clock, Date.now(), mood, together).lightPhase)}
