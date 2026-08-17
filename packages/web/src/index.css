@@ -93,6 +93,20 @@ button:disabled { opacity: .55; }
   outline-offset: 2px;
 }
 
+/*
+ * And nothing at all when you used a pointer.
+ *
+ * :focus-visible on its own only adds a ring; it never removes the one the browser draws by itself.
+ * So clicking the room, which is tabbable because it is genuinely interactive, put a rectangle around
+ * the picture the whole app exists to show. Suppressing the pointer case is the other half of the
+ * pattern and is the part that is easy to leave out, because on a keyboard everything looks correct.
+ *
+ * :focus rather than a canvas-specific rule: a mouse should never leave a ring behind anywhere.
+ */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; opacity: 1 !important; transform: none !important; }
   button:active:not(:disabled) { transform: none; }
