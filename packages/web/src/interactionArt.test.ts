@@ -3,9 +3,17 @@ import { INTERACTION_ART, INTERACTION_BLEND_MODE } from "./interactionArt.js";
 
 describe("generated interaction art", () => {
   it("packages every generated cell under one stable runtime contract", () => {
-    expect(Object.keys(INTERACTION_ART)).toHaveLength(20);
-    expect(new Set(Object.values(INTERACTION_ART)).size).toBe(20);
+    expect(Object.keys(INTERACTION_ART)).toHaveLength(23);
+    expect(new Set(Object.values(INTERACTION_ART)).size).toBe(23);
     expect(Object.values(INTERACTION_ART).every((path) => path.startsWith("/art/interactions/") && path.endsWith(".png"))).toBe(true);
+  });
+
+  it("provides transparent overlays for permanent furniture state", () => {
+    expect([INTERACTION_ART.fallenMug, INTERACTION_ART.doorClosed, INTERACTION_ART.doorOpen]).toEqual([
+      "/art/interactions/fallen-mug-v1.png",
+      "/art/interactions/door-closed-v1.png",
+      "/art/interactions/door-open-v1.png",
+    ]);
   });
 
   it("declares the blend mode required by the black-backed source", () => {

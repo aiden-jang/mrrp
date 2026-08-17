@@ -113,6 +113,10 @@ The sheet contains the leaf, bottle cap, moth, cake, yarn, treat, catnip, mouse,
 shooting star, constellation, rainbow, aurora, window light, note, bird, steam, sparkles, and plant
 bloom. It was generated with the approved room and cat sheets as palette and pixel-grid references.
 
+Three later transparent furniture overlays complete state that cannot be baked into a single room:
+`fallen-mug-v1.png`, `door-closed-v1.png`, and `door-open-v1.png`. The closed and open doors share
+one design and runtime position; lighting filters adapt them across the room's time-of-day chapters.
+
 The image model did not preserve clean alpha for this sheet after repeated extraction passes. The
 selected source therefore retains its solid black background and declares `screen` as its runtime
 blend mode; black contributes no light while the authored colored pixels remain visible. Do not draw
