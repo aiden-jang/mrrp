@@ -1,9 +1,9 @@
 # Mrrp art direction and rollout plan
 
 Mrrp should keep the small, hand-made feeling it already has while becoming richer, warmer, and
-more visually authored. Approved generated scenes are the new visible room artwork, not references
-that must be rebuilt from Canvas rectangles. The existing Canvas remains temporarily as a transparent
-interaction layer while generated lighting states and animated overlays take over its visual work.
+more visually authored. Approved generated scenes are the visible room artwork, not references
+rebuilt from Canvas rectangles. A transparent focusable DOM surface owns interaction geometry while
+generated room, furniture, cat, eye, and effect layers own every visible pixel.
 
 The first approved reference is
 [`docs/art/golden-hour-room-concept-v1.png`](docs/art/golden-hour-room-concept-v1.png). It is the
@@ -65,9 +65,18 @@ The room should render in this order:
 5. Cat shadow, tail, and cat
 6. Foreground objects, weather, and secret effects
 
-The existing Canvas renderer remains the source of interaction geometry during migration, but not
-the intended visible background. Generated room states sit below it; sprite atlases and overlays use
-the same logical coordinates as hit testing.
+The generated layer stack uses the existing 100×80 logical coordinates for hit testing and animated
+placement. Postcard export composites those live image and DOM layers into a short-lived offscreen
+canvas; there is no live Canvas renderer.
+
+## Migration status
+
+- Complete: dawn, day, golden, evening, night, and rain room states
+- Complete: nine synchronized generated cat poses and recolorable eye overlays
+- Complete: keepsakes, secrets, weather, furniture states, and DOM reaction effects
+- Complete: keyboard/pointer interaction surface and generated-layer postcard capture
+- Complete: desktop and 390px mobile browser QA, including overflow and keyboard secrets
+- Remaining: remove obsolete painter-only source branches after state calculations are extracted
 
 ## Phase 1: visual foundation
 
@@ -146,7 +155,7 @@ Stopping point:
 - Compare fixed screenshots for major hours, moods, cat palettes, and viewport sizes.
 - Test high-DPI and low-DPI rendering, reduced motion, touch targets, offline loading, and captures.
 - Measure startup size and frame time on a representative phone.
-- Keep a temporary `?art=classic` fallback while the new rendering settles.
+- Keep generated assets locally bundled and verify every interaction against the generated renderer.
 - Document generated-source provenance and confirm redistribution rights for every bundled asset.
 
 Stopping point:

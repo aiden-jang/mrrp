@@ -86,7 +86,7 @@ arranging loaf, sit, stand, play, perk, walk, stretch, pounce, and box-peek in a
 
 The four lighting-study runtime crops, evening image, and rain image were also edited to remove their
 baked cat and reconstruct the rug and floor beneath it. The generated pose sheet is now the only
-visible cat layer; the transparent Canvas continues to provide interaction geometry during migration.
+visible cat layer; a transparent focusable DOM surface provides interaction geometry.
 
 ## Runtime eye overlay sheet v1
 
@@ -122,15 +122,15 @@ selected source therefore retains its solid black background and declares `scree
 blend mode; black contributes no light while the authored colored pixels remain visible. Do not draw
 these cells with normal blending unless they are given a verified alpha extraction first.
 
-This completes planned image generation for the Canvas-to-generated-art migration. Remaining work is
-runtime integration, positioning, animation, reduced-motion behavior, and visual QA.
+The later door and fallen-mug overlays complete planned image generation for the generated-art
+migration. Runtime integration, positioning, captures, and responsive visual QA are complete.
 
 ## Room lighting study v1
 
 File: `room-lighting-study-v1.png`
 
 Role: locked lighting reference for dawn, clear afternoon, golden hour, and late night. The runtime
-uses authored palette chapters and Canvas details rather than shipping the study itself, so the room
+uses bundled generated room chapters rather than rebuilding the study in Canvas, so the room
 still follows the cat's timezone, loads offline, and stays interactive.
 
 Generated with the built-in image generation model using `golden-hour-room-concept-v1.png` as the
