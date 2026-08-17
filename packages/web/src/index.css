@@ -44,6 +44,10 @@ body {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: none; }
 }
+@keyframes room-glimmer {
+  from { opacity: .68; transform: scale(.96); }
+  to { opacity: 1; transform: scale(1.04); }
+}
 
 /*
  * Everything answers a touch.

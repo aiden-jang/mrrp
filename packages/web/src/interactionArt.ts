@@ -21,5 +21,7 @@ export const INTERACTION_ART = {
   bloom: "/art/interactions/bloom.png",
 } as const;
 
+export type InteractionArtKey = keyof typeof INTERACTION_ART;
+
 /** The source sheet is clean RGB-on-black; screen blending makes black contribute no light. */
 export const INTERACTION_BLEND_MODE = "screen" as const;
