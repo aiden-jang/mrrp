@@ -74,6 +74,10 @@ File: `cat-runtime-sheet-v1.png`
 Role: transparent generated runtime overlay containing the nine locked poses from the two approved
 model sheets. Individual cells are bundled under `packages/web/public/art/cat/`.
 
+The runtime uses the `*-v3.png` cells. These were re-extracted by isolating each pose's connected
+silhouette, centering it on a consistent transparent frame, and applying the identical transform to
+the matching eye overlay. This avoids neighboring-cell fragments and keeps all nine eye layers aligned.
+
 Generated with the built-in image generation model using both approved cat sheets as identity and
 pose references, followed by a background-extraction edit. The extracted PNG was verified to contain
 a real alpha channel before being added to the project. The source request preserved the shared head,
