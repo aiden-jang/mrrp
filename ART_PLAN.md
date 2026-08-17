@@ -1,13 +1,13 @@
 # Mrrp art direction and rollout plan
 
 Mrrp should keep the small, hand-made feeling it already has while becoming richer, warmer, and
-more visually authored. The goal is not to paste an AI illustration behind the cat. The goal is to
-use image generation to explore composition and atmosphere, then translate the approved direction
-into consistent pixel art that still responds to the clock, moods, touch, and each room's cat.
+more visually authored. Approved generated scenes are the visible room artwork, not references
+rebuilt from Canvas rectangles. A transparent focusable DOM surface owns interaction geometry while
+generated room, furniture, cat, eye, and effect layers own every visible pixel.
 
 The first approved reference is
-[`docs/art/golden-hour-room-concept-v1.png`](docs/art/golden-hour-room-concept-v1.png). It is a target
-for warmth, depth, material detail, and environmental storytelling. It is not a drop-in game asset.
+[`docs/art/golden-hour-room-concept-v1.png`](docs/art/golden-hour-room-concept-v1.png). It is the
+first runtime room state and the identity reference for the remaining generated states.
 
 ## What must survive
 
@@ -47,13 +47,9 @@ Use the image model for:
 - Furniture, keepsake, and seasonal prop concepts
 - Marketing art and larger non-interactive illustrations
 
-Do not use it directly for:
-
-- Runtime-generated rooms
-- Final animation frames without pixel cleanup
-- Interface copy or labels
-- Independent cat poses that do not share a locked model sheet
-- Anything that prevents palette replacement for custom cats
+Generated artwork is bundled locally; the app never requests image generation at runtime. Full room
+states may ship directly once their crop, compression, interaction alignment, and redistribution
+rights are verified. Animated cat frames still share a locked model sheet so anatomy does not drift.
 
 Every generated reference kept in the repository should include its final prompt and intended role
 in `docs/art/README.md`. Final runtime assets must be locally bundled and require no network request.
@@ -69,8 +65,18 @@ The room should render in this order:
 5. Cat shadow, tail, and cat
 6. Foreground objects, weather, and secret effects
 
-The existing Canvas renderer remains the source of interaction geometry. If sprite atlases are
-introduced later, their metadata must use the same logical coordinates as hit testing.
+The generated layer stack uses the existing 100×80 logical coordinates for hit testing and animated
+placement. Postcard export composites those live image and DOM layers into a short-lived offscreen
+canvas; there is no live Canvas renderer.
+
+## Migration status
+
+- Complete: dawn, day, golden, evening, night, and rain room states
+- Complete: nine synchronized generated cat poses and recolorable eye overlays
+- Complete: keepsakes, secrets, weather, furniture states, and DOM reaction effects
+- Complete: keyboard/pointer interaction surface and generated-layer postcard capture
+- Complete: desktop and 390px mobile browser QA, including overflow and keyboard secrets
+- Remaining: remove obsolete painter-only source branches after state calculations are extracted
 
 ## Phase 1: visual foundation
 
@@ -149,7 +155,7 @@ Stopping point:
 - Compare fixed screenshots for major hours, moods, cat palettes, and viewport sizes.
 - Test high-DPI and low-DPI rendering, reduced motion, touch targets, offline loading, and captures.
 - Measure startup size and frame time on a representative phone.
-- Keep a temporary `?art=classic` fallback while the new rendering settles.
+- Keep generated assets locally bundled and verify every interaction against the generated renderer.
 - Document generated-source provenance and confirm redistribution rights for every bundled asset.
 
 Stopping point:
