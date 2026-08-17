@@ -12,6 +12,7 @@ import { BUBBLE_GAME_MS, bubbleMomentAt, bubbleSeeds, type BubbleSeed } from "./
 import { PIANO_CODE, PIANO_MS, advancePawMelody, pianoKeyAt, pianoKeys } from "./piano.js";
 import { collectConstellationStar, constellationProgress, CONSTELLATION_KEYS, type ConstellationKey } from "./constellation.js";
 import type { DiscoveryKey } from "./discoveries.js";
+import { INTERACTION_ART, INTERACTION_BLEND_MODE, type InteractionArtKey } from "./interactionArt.js";
 import { BED, BIRD, BOX_BACK, BOX_FRONT, CAKE, DOOR, EK, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, MUG, MUG_DOWN, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
@@ -168,6 +169,10 @@ const INK = "#4a3520";
 const PINK = "#e79ba3";
 const BLUSH = "#f0aeb4";
 const WHITE = "#fffdf6";
+const DYNAMIC_INTERACTION_ART: InteractionArtKey[] = [
+  "yarn", "treat", "catnip", "mouse", "piano", "bird", "steam",
+  "shootingStar", "constellation", "rainbow", "aurora", "sparkles", "bloom",
+];
 
 const GENERATED_ROOMS: Record<LightPhase, string> = {
   dawn: "/art/room-dawn-v1.png",
@@ -341,6 +346,7 @@ export function Cat({
   const roomImageRef = useRef<HTMLImageElement>(null);
   const catImageRef = useRef<HTMLImageElement>(null);
   const eyeImageRef = useRef<HTMLImageElement>(null);
+  const interactionImageRefs = useRef<Partial<Record<InteractionArtKey, HTMLImageElement>>>({});
   const lookRef = useRef(look);
   const clockRef = useRef(clock);
   const moodRef = useRef(mood);
@@ -1192,6 +1198,22 @@ export function Cat({
       }
     };
 
+    const placeGeneratedInteraction = (
+      key: InteractionArtKey,
+      visible: boolean,
+      x: number,
+      y: number,
+      width: number,
+    ) => {
+      const image = interactionImageRefs.current[key];
+      if (!image) return;
+      image.style.display = visible ? "block" : "none";
+      if (!visible) return;
+      image.style.left = `${((x - cam) / VW) * 100}%`;
+      image.style.top = `${(y / GH) * 100}%`;
+      image.style.width = `${width}%`;
+    };
+
     let raf = 0;
     const frame = (t: number) => {
       /*
@@ -1962,6 +1984,19 @@ export function Cat({
       const yarnLap = (yarnProgress * 2) % 2;
       const yarnAcross = yarnLap <= 1 ? yarnLap : 2 - yarnLap;
       const yarnX = 13 + yarnAcross * (GW - 26);
+
+      placeGeneratedInteraction("yarn", yarnPlaying, yarnX, FLOOR + 16, 20);
+      placeGeneratedInteraction("treat", treating, TREAT_X, FLOOR + 16, 15);
+      placeGeneratedInteraction("catnip", catnipActive && catnipProgress < 0.32, CATNIP_X, FLOOR + 15, 17);
+      placeGeneratedInteraction("mouse", mouseVisiting, mouseMoment?.x ?? 0, mouseMoment?.y ?? FLOOR, 13);
+      placeGeneratedInteraction("piano", pianoPlaying, pianoGame.current.center, FLOOR + 17, 38);
+      placeGeneratedInteraction("bird", birding, wx + 7, 15, 13);
+      placeGeneratedInteraction("steam", t - mugSteamedAt.current < MUG_STEAM_MS, 82, 28, 15);
+      placeGeneratedInteraction("shootingStar", stargazing, WIN_X + 8, 10, 18);
+      placeGeneratedInteraction("constellation", constellating, WIN_X + 8, 10, 19);
+      placeGeneratedInteraction("rainbow", rainbowing, WIN_X + 8, 11, 20);
+      placeGeneratedInteraction("aurora", aurora, WIN_X + 8, 10, 24);
+      placeGeneratedInteraction("bloom", plantBlooming, 91, FLOOR - 15, 15);
       const wantX = nameCalled
         ? GW / 2
         : bubblePlaying
@@ -2717,6 +2752,62 @@ export function Cat({
           objectFit: "cover", objectPosition: "center", imageRendering: "pixelated",
         }}
       />
+      {gift && (
+        <img
+          src={INTERACTION_ART[gift]}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+          style={{
+            position: "absolute", left: "8%", bottom: "8%", width: "22%", height: "auto",
+            objectFit: "contain", imageRendering: "pixelated", pointerEvents: "none",
+            mixBlendMode: INTERACTION_BLEND_MODE,
+          }}
+        />
+      )}
+      {cake && (
+        <img
+          src={INTERACTION_ART.cake}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+          style={{
+            position: "absolute", left: "33%", bottom: "3%", width: "24%", height: "auto",
+            objectFit: "contain", imageRendering: "pixelated", pointerEvents: "none",
+            mixBlendMode: INTERACTION_BLEND_MODE,
+          }}
+        />
+      )}
+      {windowLight && (
+        <img
+          src={INTERACTION_ART.windowLight}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+          style={{
+            position: "absolute", left: "7%", top: "17%", width: "20%", height: "auto",
+            objectFit: "contain", imageRendering: "pixelated", pointerEvents: "none",
+            mixBlendMode: INTERACTION_BLEND_MODE,
+            animation: "room-glimmer 1.8s ease-in-out infinite alternate",
+          }}
+        />
+      )}
+      {DYNAMIC_INTERACTION_ART.map((key) => (
+        <img
+          key={key}
+          ref={(image) => { interactionImageRefs.current[key] = image ?? undefined; }}
+          src={INTERACTION_ART[key]}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+          style={{
+            position: "absolute", display: "none", height: "auto",
+            transform: "translate(-50%, -50%)", objectFit: "contain",
+            imageRendering: "pixelated", pointerEvents: "none",
+            mixBlendMode: INTERACTION_BLEND_MODE,
+          }}
+        />
+      ))}
       <img
         ref={catImageRef}
         src={generatedCatFor(initialPose)}
