@@ -169,9 +169,11 @@ const PINK = "#e79ba3";
 const BLUSH = "#f0aeb4";
 const WHITE = "#fffdf6";
 const DYNAMIC_INTERACTION_ART: InteractionArtKey[] = [
-  "yarn", "treat", "catnip", "mouse", "piano", "bird", "steam",
+  "leaf", "moth", "yarn", "treat", "catnip", "mouse", "piano", "bird", "steam",
   "shootingStar", "constellation", "rainbow", "aurora", "note", "sparkles", "bloom",
 ];
+const GENERATED_EFFECTS = ["speech", "sleep", "purr", "dream", "laser", "firefly"] as const;
+type GeneratedEffectKey = typeof GENERATED_EFFECTS[number];
 
 const GENERATED_ROOMS: Record<LightPhase, string> = {
   dawn: "/art/room-dawn-v1.png",
@@ -348,6 +350,7 @@ export function Cat({
   const eyeImageRef = useRef<HTMLImageElement>(null);
   const interactionImageRefs = useRef<Partial<Record<InteractionArtKey, HTMLImageElement>>>({});
   const bubbleImageRefs = useRef<Array<HTMLImageElement | null>>([]);
+  const generatedEffectRefs = useRef<Partial<Record<GeneratedEffectKey, HTMLDivElement>>>({});
   const lookRef = useRef(look);
   const clockRef = useRef(clock);
   const moodRef = useRef(mood);
@@ -1245,6 +1248,22 @@ export function Cat({
       image.style.width = `${width}%`;
     };
 
+    const placeGeneratedEffect = (
+      key: GeneratedEffectKey,
+      visible: boolean,
+      x: number,
+      y: number,
+      text: string,
+    ) => {
+      const effect = generatedEffectRefs.current[key];
+      if (!effect) return;
+      effect.style.display = visible ? "block" : "none";
+      if (!visible) return;
+      effect.style.left = `${((x - cam) / VW) * 100}%`;
+      effect.style.top = `${(y / GH) * 100}%`;
+      effect.textContent = text;
+    };
+
     let raf = 0;
     const frame = (t: number) => {
       /*
@@ -1672,6 +1691,7 @@ export function Cat({
       // weather belongs outside, and a full-room overlay would turn a private discovery into UI.
       const rainbowing = !reduce && rainRemaining <= 0 && t < plantTaps.current.rainbowUntil;
       const plantBlooming = !reduce && t >= plantTaps.current.rainbowUntil && t < plantTaps.current.bloomUntil;
+      const generatedMoth = reduce ? null : mothAt(t, beamX);
       if (!reduce && rainRemaining > 0) {
         const drift = Math.floor(t / 90);
         const a = Math.min(1, rainRemaining / 750);
@@ -2040,6 +2060,9 @@ export function Cat({
       placeGeneratedInteraction("aurora", aurora, WIN_X + 8, 10, 24);
       placeGeneratedInteraction("bloom", plantBlooming, 91, FLOOR - 15, 15);
       placeGeneratedInteraction("note", t < doorTaps.current.noteUntil, 13, FLOOR - 3, 16);
+      const leafProgress = (t - fallingLeaf.current) / LEAF_FALL_MS;
+      placeGeneratedInteraction("leaf", leafProgress >= 0 && leafProgress < 1, 91 + Math.sin(leafProgress * Math.PI * 2) * 4, FLOOR - 15 + leafProgress * 18, 9);
+      placeGeneratedInteraction("moth", !!generatedMoth && sc.sun > 0.15, generatedMoth?.x ?? 0, generatedMoth?.y ?? 0, 8);
       const wantX = nameCalled
         ? GW / 2
         : bubblePlaying
@@ -2083,11 +2106,20 @@ export function Cat({
       const ky = FLOOR + 19 + (settledInBed ? 6 : 0);
       placeGeneratedInteraction(
         "sparkles",
-        sc.sparkle || bubbleRewarding || pianoRewarding || roomPartyRemaining > 0,
+        sc.sparkle || bubbleRewarding || pianoRewarding || roomPartyRemaining > 0 || sunCatching ||
+          t < mugTaps.current.glowUntil || t < photoTaps.current.memoryUntil ||
+          t < giftTaps.current.wishUntil || t - photoGlint.current < PHOTO_GLINT_MS ||
+          t - giftGlint.current < PHOTO_GLINT_MS,
         kx,
         ky - 10,
         20,
       );
+      const firefly = !reduce && sc.sun < 0.1 ? fireflyAt(t) : null;
+      placeGeneratedEffect("speech", (birding || t < speakUntil.current) && !reduce, kx + 10, ky - 24, birding ? "ek!" : "mrrp");
+      placeGeneratedEffect("purr", (petting.current || sc.purring || t < catTaps.current.chorusUntil) && !reduce, kx, ky - 17, ")))");
+      placeGeneratedEffect("dream", t < bedTaps.current.dreamUntil && !reduce, 26, FLOOR + 10, "✦  ✧  ✦");
+      placeGeneratedEffect("laser", laserPlaying, laser.current.x, laser.current.y, "•");
+      placeGeneratedEffect("firefly", !!firefly, firefly?.x ?? 0, (firefly?.y ?? 0) + 14, "✦");
 
       const want = ptr.in ? Math.max(0, 1 - Math.hypot(ptr.x - kx, ptr.y - (ky - 8)) / 44) : 0;
       near.current += (want - near.current) * 0.07;
@@ -2129,6 +2161,7 @@ export function Cat({
       const forced = eyesRef.current || nameCalled || mouseVisiting || bubblePlaying || bubbleRewarding || pianoPawing || pianoRewarding || (looking && !reduce) || doorRef.current !== null || musicPlaying || catnipActive || zooming || laserPlaying || yarnPlaying || treating || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = !slowBlinking && (forced || (open > 0.4 && !blink));
+      placeGeneratedEffect("sleep", sc.sleepy > 0.75 && !awake && !reduce, kx + 13, ky - 21, "z  z  z");
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
       // A door opening beats whatever she was doing. Perk is the ears-up, head-turned pose, and it
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
@@ -2534,7 +2567,7 @@ export function Cat({
 
       // The moth, drawn before her so she can be in front of it, and so its position is known when
       // her eyes are drawn.
-      const m = reduce ? null : mothAt(t, beamX);
+      const m = generatedMoth;
       if (m && sc.sun > 0.15) {
         const mx = Math.round(m.x), my = Math.round(m.y);
         // One-pixel wings that alternate, which at this scale is all a flap needs to be.
@@ -2915,6 +2948,26 @@ export function Cat({
           transition: "left .45s var(--ease-spring), bottom .3s ease",
         }}
       />
+      {GENERATED_EFFECTS.map((key) => (
+        <div
+          key={key}
+          ref={(effect) => { generatedEffectRefs.current[key] = effect ?? undefined; }}
+          aria-hidden="true"
+          style={{
+            position: "absolute", display: "none", transform: "translate(-50%, -50%)",
+            pointerEvents: "none", zIndex: 3, whiteSpace: "nowrap",
+            fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+            fontWeight: 800, fontSize: key === "laser" ? "20px" : "clamp(10px, 1.8vw, 15px)",
+            lineHeight: 1, letterSpacing: key === "sleep" ? ".12em" : 0,
+            color: key === "laser" ? "#ff6b6b" : key === "firefly" ? "#ffe68f" : "#fff3c2",
+            textShadow: key === "laser" ? "0 0 5px #ff8f8f" : "0 1px 2px #4a3520, 0 0 6px rgba(255,230,143,.55)",
+            ...(key === "speech" ? {
+              padding: "5px 7px", color: "#4a3520", background: "#fffdf6",
+              border: "2px solid #4a3520", borderRadius: "8px", textShadow: "none",
+            } : {}),
+          }}
+        />
+      ))}
       <div
         ref={interactionSurfaceRef}
         role="img"
