@@ -520,7 +520,7 @@ export function Cat({
       const rect = surface.getBoundingClientRect();
       const cx = prop.x + prop.sp.w / 2;
       const cy = prop.y + prop.sp.h / 2;
-      const clientX = rect.left + ((cx - camRef.current) / VW) * rect.width;
+      const clientX = rect.left + (cx / GW) * rect.width;
       const clientY = rect.top + (cy / GH) * rect.height;
       const init: PointerEventInit = {
         clientX,
@@ -676,7 +676,7 @@ export function Cat({
     let typedRoomCode = "";
     const onMove = (e: PointerEvent) => {
       const r = surface.getBoundingClientRect();
-      const nextX = cam + ((e.clientX - r.left) / r.width) * VW;
+      const nextX = ((e.clientX - r.left) / r.width) * GW;
       const nextY = ((e.clientY - r.top) / r.height) * GH;
       if (Math.hypot(nextX - ptr.stillX, nextY - ptr.stillY) > 1.2) {
         ptr.stillX = nextX;
@@ -729,7 +729,7 @@ export function Cat({
      */
     const gridAt = (e: PointerEvent) => {
       const r = surface.getBoundingClientRect();
-      return { x: cam + ((e.clientX - r.left) / r.width) * VW, y: ((e.clientY - r.top) / r.height) * GH };
+      return { x: ((e.clientX - r.left) / r.width) * GW, y: ((e.clientY - r.top) / r.height) * GH };
     };
     const onDown = (e: PointerEvent) => {
       surface.focus({ preventScroll: true });
@@ -1238,7 +1238,7 @@ export function Cat({
       if (!image) return;
       image.style.display = visible ? "block" : "none";
       if (!visible) return;
-      image.style.left = `${((x - cam) / VW) * 100}%`;
+      image.style.left = `${(x / GW) * 100}%`;
       image.style.top = `${(y / GH) * 100}%`;
       image.style.width = `${width}%`;
     };
@@ -1254,7 +1254,7 @@ export function Cat({
       if (!effect) return;
       effect.style.display = visible ? "block" : "none";
       if (!visible) return;
-      effect.style.left = `${((x - cam) / VW) * 100}%`;
+      effect.style.left = `${(x / GW) * 100}%`;
       effect.style.top = `${(y / GH) * 100}%`;
       effect.textContent = text;
     };
@@ -1395,7 +1395,7 @@ export function Cat({
         const bubble = liveBubbles[index];
         image.style.display = bubble ? "block" : "none";
         if (!bubble) continue;
-        image.style.left = `${((bubble.x - cam) / VW) * 100}%`;
+        image.style.left = `${(bubble.x / GW) * 100}%`;
         image.style.top = `${(bubble.y / GH) * 100}%`;
         image.style.opacity = String(bubble.presence);
       }
@@ -1601,7 +1601,7 @@ export function Cat({
             delete catImage.dataset.requestedPose;
           });
         }
-        const left = `${((kx - cam) / VW) * 100}%`;
+        const left = `${(kx / GW) * 100}%`;
         const baseBottom = settledInBed ? 1 : 6;
         const bottom = `${baseBottom + ((hop + peekLift - breathe) / GH) * 100}%`;
         catImage.style.left = left;
