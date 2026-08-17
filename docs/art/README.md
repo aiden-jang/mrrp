@@ -1,13 +1,13 @@
 # Art references
 
-These images are generated source assets for the visible room. Each one is locally bundled only
-after its crop, compression, interaction alignment, and visual consistency have been checked.
+These images are references for composition, lighting, and material treatment. They are not shipped
+as runtime room layers until they have been translated into consistent, interaction-safe assets.
 
 ## Golden-hour room concept v1
 
 File: `golden-hour-room-concept-v1.png`
 
-Role: approved direction and first visible runtime room state.
+Role: approved direction reference for the first Mrrp art pass.
 
 Generated with the built-in image generation model using the existing Mrrp social image as an
 identity and palette reference.
@@ -67,70 +67,12 @@ Prompt:
 > No anatomy drift, extra limbs or tails, mixed pixel sizes, antialiasing, gradients, shadows,
 > scenery, text, watermark, costumes, or accessories.
 
-## Runtime cat pose sheet v1
-
-File: `cat-runtime-sheet-v1.png`
-
-Role: transparent generated runtime overlay containing the nine locked poses from the two approved
-model sheets. Individual cells are bundled under `packages/web/public/art/cat/`.
-
-The runtime uses the `*-v3.png` cells. These were re-extracted by isolating each pose's connected
-silhouette, centering it on a consistent transparent frame, and applying the identical transform to
-the matching eye overlay. This avoids neighboring-cell fragments and keeps all nine eye layers aligned.
-
-Generated with the built-in image generation model using both approved cat sheets as identity and
-pose references, followed by a background-extraction edit. The extracted PNG was verified to contain
-a real alpha channel before being added to the project. The source request preserved the shared head,
-ears, eyes, muzzle, cream markings, outline weight, limbs, tail, palette, and uniform pixel grid while
-arranging loaf, sit, stand, play, perk, walk, stretch, pounce, and box-peek in a 3×3 sheet.
-
-The four lighting-study runtime crops, evening image, and rain image were also edited to remove their
-baked cat and reconstruct the rug and floor beneath it. The generated pose sheet is now the only
-visible cat layer; a transparent focusable DOM surface provides interaction geometry.
-
-## Runtime eye overlay sheet v1
-
-File: `cat-eye-overlay-sheet-v1.png`
-
-Role: semantic transparent overlay that restores selectable eye colors without recoloring the
-generated fur, cream markings, nose, or outline.
-
-Generated with the built-in image generation model using `cat-runtime-sheet-v1.png` as the locked
-alignment reference. The edit removed every pixel except the green eyes and white highlights from
-all nine poses. Its dimensions and alpha channel were verified before the cells were cropped under
-`packages/web/public/art/cat-eyes/`. Runtime color treatments cover green, amber, copper, blue, and
-grey while retaining a single aligned generated silhouette set.
-
-## Interaction overlay sheet v1
-
-File: `interaction-overlay-sheet-v1.png`
-
-Role: final generated source sheet for secrets, gifts, keepsakes, and small room reactions. Its twenty
-cells are bundled under `packages/web/public/art/interactions/` and enumerated in
-`packages/web/src/interactionArt.ts`.
-
-The sheet contains the leaf, bottle cap, moth, cake, yarn, treat, catnip, mouse, bubble, piano,
-shooting star, constellation, rainbow, aurora, window light, note, bird, steam, sparkles, and plant
-bloom. It was generated with the approved room and cat sheets as palette and pixel-grid references.
-
-Three later transparent furniture overlays complete state that cannot be baked into a single room:
-`fallen-mug-v1.png`, `door-closed-v1.png`, and `door-open-v1.png`. The closed and open doors share
-one design and runtime position; lighting filters adapt them across the room's time-of-day chapters.
-
-The image model did not preserve clean alpha for this sheet after repeated extraction passes. The
-selected source therefore retains its solid black background and declares `screen` as its runtime
-blend mode; black contributes no light while the authored colored pixels remain visible. Do not draw
-these cells with normal blending unless they are given a verified alpha extraction first.
-
-The later door and fallen-mug overlays complete planned image generation for the generated-art
-migration. Runtime integration, positioning, captures, and responsive visual QA are complete.
-
 ## Room lighting study v1
 
 File: `room-lighting-study-v1.png`
 
 Role: locked lighting reference for dawn, clear afternoon, golden hour, and late night. The runtime
-uses bundled generated room chapters rather than rebuilding the study in Canvas, so the room
+uses authored palette chapters and Canvas details rather than shipping the study itself, so the room
 still follows the cat's timezone, loads offline, and stays interactive.
 
 Generated with the built-in image generation model using `golden-hour-room-concept-v1.png` as the
@@ -149,38 +91,3 @@ Prompt:
 > lavender, and honey palette. Keep the cat as the highest-contrast object. No labels, text, UI,
 > extra furniture, weather icons, neon, harsh black shadows, full-screen overlays, photorealism, 3D,
 > smooth gradients, antialiasing, mixed pixel sizes, or watermark.
-
-The four panels are cropped into the bundled dawn, day, golden-hour, and night runtime images. They
-share one camera and object layout, so changing the cat's local hour does not move the room around.
-
-## Evening room v1
-
-File: `packages/web/public/art/room-evening-v1.png`
-
-Role: generated blue-hour runtime state between golden hour and late night.
-
-Generated with the built-in image generation model using the golden-hour runtime crop as the edit
-target. Final prompt:
-
-> Change only the lighting and window view from golden hour to quiet blue-hour evening, after sunset
-> but before full night. Use a muted lavender-blue window, a last dusty-rose band at the horizon,
-> weak cool ambient room light, and a small trace of warmth in the mug and wood. Preserve the crop,
-> camera, room geometry, cat identity and pose, furniture placement, pixel grid, hard pixel edges,
-> and every object. No moon, stars, rain, neon, black shadows, text, UI, watermark, antialiasing,
-> blur, gradients, or geometry changes.
-
-## Rain room v1
-
-File: `packages/web/public/art/room-rain-v1.png`
-
-Role: generated runtime weather state shown while the room's rain moment is active.
-
-Generated with the built-in image generation model using the daylight runtime crop as the edit
-target. Final prompt:
-
-> Change only the weather outside and its light response: steady gentle rain on the window,
-> overcast cool daylight outside, visible rain streaks and droplets on the glass, softly muted room
-> light, and a slightly warmer candle-and-wood interior contrast. Preserve the crop, camera, room
-> geometry, cat identity and pose, furniture placement, pixel grid, hard pixel edges, and every
-> object. Rain stays outside. No storm drama, lightning, flooding, dark distressed mood, text, UI,
-> watermark, antialiasing, blur, smooth gradients, or geometry changes.
