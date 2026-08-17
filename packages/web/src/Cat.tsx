@@ -181,6 +181,17 @@ export const generatedRoomFor = (phase: LightPhase, raining = false): string =>
   raining ? "/art/room-rain-v1.png" : GENERATED_ROOMS[phase];
 
 export const generatedCatFor = (pose: Pose): string => `/art/cat/${pose}.png`;
+export const generatedEyesFor = (pose: Pose): string => `/art/cat-eyes/${pose}.png`;
+
+export function generatedEyeFilter(eyes: string): string {
+  switch (eyes.toLowerCase()) {
+    case "#d79a2b": return "hue-rotate(-58deg) saturate(1.35) brightness(1.08)";
+    case "#b4652c": return "hue-rotate(-78deg) saturate(1.4) brightness(.9)";
+    case "#69a4c4": return "hue-rotate(92deg) saturate(.88) brightness(1.08)";
+    case "#8e9aa0": return "grayscale(1) saturate(0) brightness(1.03)";
+    default: return "none";
+  }
+}
 
 /** Palette treatments keep one locked generated silhouette set instead of generating 72 drifting cats. */
 export function generatedCatFilter(look: CatLook): string {
@@ -329,6 +340,7 @@ export function Cat({
   const ref = useRef<HTMLCanvasElement>(null);
   const roomImageRef = useRef<HTMLImageElement>(null);
   const catImageRef = useRef<HTMLImageElement>(null);
+  const eyeImageRef = useRef<HTMLImageElement>(null);
   const lookRef = useRef(look);
   const clockRef = useRef(clock);
   const moodRef = useRef(mood);
@@ -2067,6 +2079,13 @@ export function Cat({
         catImageRef.current.style.bottom = settledInBed ? "1%" : "6%";
         catImageRef.current.style.filter = generatedCatFilter(L);
       }
+      if (eyeImageRef.current) {
+        const generatedEyes = generatedEyesFor(pose);
+        if (!eyeImageRef.current.src.endsWith(generatedEyes)) eyeImageRef.current.src = generatedEyes;
+        eyeImageRef.current.style.left = `${((kx - cam) / VW) * 100}%`;
+        eyeImageRef.current.style.bottom = settledInBed ? "1%" : "6%";
+        eyeImageRef.current.style.filter = generatedEyeFilter(L.eyes);
+      }
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
       const hop =
@@ -2709,6 +2728,20 @@ export function Cat({
           width: "43%", height: "auto", transform: "translateX(-50%)",
           imageRendering: "pixelated", pointerEvents: "none",
           filter: generatedCatFilter(look),
+          transition: "left .45s var(--ease-spring), bottom .3s ease",
+        }}
+      />
+      <img
+        ref={eyeImageRef}
+        src={generatedEyesFor(initialPose)}
+        alt=""
+        aria-hidden="true"
+        draggable={false}
+        style={{
+          position: "absolute", left: `${initialScene.catX * 100}%`, bottom: "6%",
+          width: "43%", height: "auto", transform: "translateX(-50%)",
+          imageRendering: "pixelated", pointerEvents: "none",
+          filter: generatedEyeFilter(look.eyes),
           transition: "left .45s var(--ease-spring), bottom .3s ease",
         }}
       />

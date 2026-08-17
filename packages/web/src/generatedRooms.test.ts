@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generatedCatFilter, generatedCatFor, generatedRoomFor } from "./Cat.js";
+import { generatedCatFilter, generatedCatFor, generatedEyeFilter, generatedEyesFor, generatedRoomFor } from "./Cat.js";
 import type { LightPhase } from "./hours.js";
 import type { Pose } from "./sprites.js";
 
@@ -33,6 +33,15 @@ describe("generated runtime room states", () => {
     expect(generatedCatFilter(cat("#e8963f"))).toBe("none");
     const filters = ["#e8cfa8", "#9aa0a8", "#4b444a", "#f6f1e8", "#a4703f", "#3f3a40", "#e3a95f"]
       .map((fur) => generatedCatFilter(cat(fur)));
+    expect(filters.every((filter) => filter !== "none")).toBe(true);
+    expect(new Set(filters).size).toBe(filters.length);
+  });
+
+  it("aligns an eye overlay with every pose and treats every selectable eye family", () => {
+    const poses: Pose[] = ["loaf", "sit", "stand", "play", "perk", "walk", "stretch", "pounce", "peek"];
+    expect(poses.map(generatedEyesFor)).toEqual(poses.map((pose) => `/art/cat-eyes/${pose}.png`));
+    expect(generatedEyeFilter("#7cb342")).toBe("none");
+    const filters = ["#d79a2b", "#b4652c", "#69a4c4", "#8e9aa0"].map(generatedEyeFilter);
     expect(filters.every((filter) => filter !== "none")).toBe(true);
     expect(new Set(filters).size).toBe(filters.length);
   });

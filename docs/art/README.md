@@ -84,6 +84,19 @@ The four lighting-study runtime crops, evening image, and rain image were also e
 baked cat and reconstruct the rug and floor beneath it. The generated pose sheet is now the only
 visible cat layer; the transparent Canvas continues to provide interaction geometry during migration.
 
+## Runtime eye overlay sheet v1
+
+File: `cat-eye-overlay-sheet-v1.png`
+
+Role: semantic transparent overlay that restores selectable eye colors without recoloring the
+generated fur, cream markings, nose, or outline.
+
+Generated with the built-in image generation model using `cat-runtime-sheet-v1.png` as the locked
+alignment reference. The edit removed every pixel except the green eyes and white highlights from
+all nine poses. Its dimensions and alpha channel were verified before the cells were cropped under
+`packages/web/public/art/cat-eyes/`. Runtime color treatments cover green, amber, copper, blue, and
+grey while retaining a single aligned generated silhouette set.
+
 ## Room lighting study v1
 
 File: `room-lighting-study-v1.png`
