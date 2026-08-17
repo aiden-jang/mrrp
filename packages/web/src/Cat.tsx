@@ -156,7 +156,7 @@ const PROPS = [
   { key: "window", sp: WINDOW, x: WIN_X, y: 4 },
   { key: "frame", sp: FRAME, x: 16, y: 12 },
   { key: "shelf", sp: SHELF, x: 80, y: FLOOR - 24 },
-  { key: "door", sp: DOOR, x: 6, y: FLOOR - 16 },
+  { key: "door", sp: DOOR, x: 35, y: FLOOR - 16 },
   { key: "plant", sp: PLANT, x: 87, y: FLOOR - 13 },
   { key: "bed", sp: BED, x: 24 - 11, y: FLOOR + 22 },
   // Its hit box is enabled only while there is actually a box in the room (see the filter below).
@@ -349,6 +349,7 @@ export function Cat({
   const interactionSurfaceRef = useRef<HTMLDivElement>(null);
   const roomRootRef = useRef<HTMLDivElement>(null);
   const roomImageRef = useRef<HTMLImageElement>(null);
+  const doorImageRef = useRef<HTMLImageElement>(null);
   const catImageRef = useRef<HTMLImageElement>(null);
   const eyeImageRef = useRef<HTMLImageElement>(null);
   const interactionImageRefs = useRef<Partial<Record<InteractionArtKey, HTMLImageElement>>>({});
@@ -1286,6 +1287,10 @@ export function Cat({
         const since = nowMs - doorShutFrom.current.at;
         doorProg = Math.max(0, doorShutFrom.current.from * (1 - since / 900));
       }
+      if (doorImageRef.current) {
+        const generatedDoor = doorProg > 0.35 ? INTERACTION_ART.doorOpen : INTERACTION_ART.doorClosed;
+        if (!doorImageRef.current.src.endsWith(generatedDoor)) doorImageRef.current.src = generatedDoor;
+      }
 
       /*
        * The camera leans toward the door while it is open.
@@ -1302,6 +1307,13 @@ export function Cat({
       camRef.current = cam;
       const L = lookRef.current;
       const sc = sceneFor(clockRef.current, Date.now(), moodRef.current, togetherRef.current);
+      if (doorImageRef.current) {
+        doorImageRef.current.style.filter = sc.lightPhase === "night"
+          ? "brightness(.68) saturate(.72)"
+          : sc.lightPhase === "evening"
+            ? "brightness(.82) saturate(.82)"
+            : "brightness(.95) saturate(.88)";
+      }
       const beamX = Math.round(sc.beam * GW);
 
       // ── room ──────────────────────────────────────────────────────────────
@@ -2857,6 +2869,30 @@ export function Cat({
           objectFit: "cover", objectPosition: "center", imageRendering: "pixelated",
         }}
       />
+      <img
+        ref={doorImageRef}
+        src={doorOpenAt ? INTERACTION_ART.doorOpen : INTERACTION_ART.doorClosed}
+        alt=""
+        aria-hidden="true"
+        draggable={false}
+        style={{
+          position: "absolute", left: "30%", top: "31%", width: "30%", height: "auto",
+          objectFit: "contain", imageRendering: "pixelated", pointerEvents: "none",
+          filter: "brightness(.68) saturate(.72)",
+        }}
+      />
+      {shelfDown && (
+        <img
+          src={INTERACTION_ART.fallenMug}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+          style={{
+            position: "absolute", left: "59%", bottom: "7%", width: "12%", height: "auto",
+            objectFit: "contain", imageRendering: "pixelated", pointerEvents: "none",
+          }}
+        />
+      )}
       {gift && (
         <img
           src={INTERACTION_ART[gift]}

@@ -19,6 +19,9 @@ export const INTERACTION_ART = {
   steam: "/art/interactions/steam.png",
   sparkles: "/art/interactions/sparkles.png",
   bloom: "/art/interactions/bloom.png",
+  fallenMug: "/art/interactions/fallen-mug-v1.png",
+  doorClosed: "/art/interactions/door-closed-v1.png",
+  doorOpen: "/art/interactions/door-open-v1.png",
 } as const;
 
 export type InteractionArtKey = keyof typeof INTERACTION_ART;
