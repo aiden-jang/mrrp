@@ -186,6 +186,7 @@ export const generatedRoomFor = (phase: LightPhase, raining = false): string =>
 
 export const generatedCatFor = (pose: Pose): string => `/art/cat/${pose}.png`;
 export const generatedEyesFor = (pose: Pose): string => `/art/cat-eyes/${pose}.png`;
+const generatedCatClipRight = (pose: Pose): number => pose === "loaf" || pose === "perk" ? 12 : 0;
 
 export function generatedEyeFilter(eyes: string): string {
   switch (eyes.toLowerCase()) {
@@ -580,6 +581,12 @@ export function Cat({
           context.globalAlpha = Number.isFinite(opacity) ? opacity : 1;
           context.globalCompositeOperation = style.mixBlendMode === "screen" ? "screen" : "source-over";
           context.filter = style.filter === "none" ? "none" : style.filter;
+          const clipRight = Number.parseFloat(image.dataset.captureClipRight ?? "0");
+          if (clipRight > 0) {
+            context.beginPath();
+            context.rect(x, y, width * (1 - clipRight / 100), height);
+            context.clip();
+          }
 
           if (style.objectFit === "cover") {
             const sourceRatio = image.naturalWidth / image.naturalHeight;
@@ -2142,6 +2149,9 @@ export function Cat({
       if (catImageRef.current) {
         const generatedCat = generatedCatFor(pose);
         if (!catImageRef.current.src.endsWith(generatedCat)) catImageRef.current.src = generatedCat;
+        const clipRight = generatedCatClipRight(pose);
+        catImageRef.current.dataset.captureClipRight = `${clipRight}`;
+        catImageRef.current.style.clipPath = clipRight ? `inset(0 ${clipRight}% 0 0)` : "none";
         catImageRef.current.style.left = `${((kx - cam) / VW) * 100}%`;
         catImageRef.current.style.bottom = settledInBed ? "1%" : "6%";
         catImageRef.current.style.filter = generatedCatFilter(L);
@@ -2858,6 +2868,7 @@ export function Cat({
       <img
         ref={catImageRef}
         src={generatedCatFor(initialPose)}
+        data-capture-clip-right={generatedCatClipRight(initialPose)}
         alt=""
         aria-hidden="true"
         draggable={false}
@@ -2865,6 +2876,7 @@ export function Cat({
           position: "absolute", left: `${initialScene.catX * 100}%`, bottom: "6%",
           width: "43%", height: "auto", transform: "translateX(-50%)",
           imageRendering: "pixelated", pointerEvents: "none",
+          clipPath: generatedCatClipRight(initialPose) ? `inset(0 ${generatedCatClipRight(initialPose)}% 0 0)` : "none",
           filter: generatedCatFilter(look),
           transition: "left .45s var(--ease-spring), bottom .3s ease",
         }}
