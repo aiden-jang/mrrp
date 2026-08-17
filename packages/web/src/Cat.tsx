@@ -171,7 +171,7 @@ const BLUSH = "#f0aeb4";
 const WHITE = "#fffdf6";
 const DYNAMIC_INTERACTION_ART: InteractionArtKey[] = [
   "yarn", "treat", "catnip", "mouse", "piano", "bird", "steam",
-  "shootingStar", "constellation", "rainbow", "aurora", "sparkles", "bloom",
+  "shootingStar", "constellation", "rainbow", "aurora", "note", "sparkles", "bloom",
 ];
 
 const GENERATED_ROOMS: Record<LightPhase, string> = {
@@ -347,6 +347,7 @@ export function Cat({
   const catImageRef = useRef<HTMLImageElement>(null);
   const eyeImageRef = useRef<HTMLImageElement>(null);
   const interactionImageRefs = useRef<Partial<Record<InteractionArtKey, HTMLImageElement>>>({});
+  const bubbleImageRefs = useRef<Array<HTMLImageElement | null>>([]);
   const lookRef = useRef(look);
   const clockRef = useRef(clock);
   const moodRef = useRef(mood);
@@ -1985,6 +1986,17 @@ export function Cat({
       const yarnAcross = yarnLap <= 1 ? yarnLap : 2 - yarnLap;
       const yarnX = 13 + yarnAcross * (GW - 26);
 
+      for (let index = 0; index < bubbleImageRefs.current.length; index++) {
+        const image = bubbleImageRefs.current[index];
+        if (!image) continue;
+        const bubble = liveBubbles[index];
+        image.style.display = bubble ? "block" : "none";
+        if (!bubble) continue;
+        image.style.left = `${((bubble.x - cam) / VW) * 100}%`;
+        image.style.top = `${(bubble.y / GH) * 100}%`;
+        image.style.opacity = String(bubble.presence);
+      }
+
       placeGeneratedInteraction("yarn", yarnPlaying, yarnX, FLOOR + 16, 20);
       placeGeneratedInteraction("treat", treating, TREAT_X, FLOOR + 16, 15);
       placeGeneratedInteraction("catnip", catnipActive && catnipProgress < 0.32, CATNIP_X, FLOOR + 15, 17);
@@ -1997,6 +2009,7 @@ export function Cat({
       placeGeneratedInteraction("rainbow", rainbowing, WIN_X + 8, 11, 20);
       placeGeneratedInteraction("aurora", aurora, WIN_X + 8, 10, 24);
       placeGeneratedInteraction("bloom", plantBlooming, 91, FLOOR - 15, 15);
+      placeGeneratedInteraction("note", t < doorTaps.current.noteUntil, 13, FLOOR - 3, 16);
       const wantX = nameCalled
         ? GW / 2
         : bubblePlaying
@@ -2038,6 +2051,13 @@ export function Cat({
       // walked across the room made the invitation look like she was hovering over the floor.
       const settledInBed = sc.inBed || (nesting && Math.abs(kx - 24) < 8);
       const ky = FLOOR + 19 + (settledInBed ? 6 : 0);
+      placeGeneratedInteraction(
+        "sparkles",
+        sc.sparkle || bubbleRewarding || pianoRewarding || roomPartyRemaining > 0,
+        kx,
+        ky - 10,
+        20,
+      );
 
       const want = ptr.in ? Math.max(0, 1 - Math.hypot(ptr.x - kx, ptr.y - (ky - 8)) / 44) : 0;
       near.current += (want - near.current) * 0.07;
@@ -2802,6 +2822,22 @@ export function Cat({
           draggable={false}
           style={{
             position: "absolute", display: "none", height: "auto",
+            transform: "translate(-50%, -50%)", objectFit: "contain",
+            imageRendering: "pixelated", pointerEvents: "none",
+            mixBlendMode: INTERACTION_BLEND_MODE,
+          }}
+        />
+      ))}
+      {Array.from({ length: 5 }, (_, index) => (
+        <img
+          key={`bubble-${index}`}
+          ref={(image) => { bubbleImageRefs.current[index] = image; }}
+          src={INTERACTION_ART.bubble}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+          style={{
+            position: "absolute", display: "none", width: "13%", height: "auto",
             transform: "translate(-50%, -50%)", objectFit: "contain",
             imageRendering: "pixelated", pointerEvents: "none",
             mixBlendMode: INTERACTION_BLEND_MODE,
