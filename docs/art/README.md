@@ -67,6 +67,23 @@ Prompt:
 > No anatomy drift, extra limbs or tails, mixed pixel sizes, antialiasing, gradients, shadows,
 > scenery, text, watermark, costumes, or accessories.
 
+## Runtime cat pose sheet v1
+
+File: `cat-runtime-sheet-v1.png`
+
+Role: transparent generated runtime overlay containing the nine locked poses from the two approved
+model sheets. Individual cells are bundled under `packages/web/public/art/cat/`.
+
+Generated with the built-in image generation model using both approved cat sheets as identity and
+pose references, followed by a background-extraction edit. The extracted PNG was verified to contain
+a real alpha channel before being added to the project. The source request preserved the shared head,
+ears, eyes, muzzle, cream markings, outline weight, limbs, tail, palette, and uniform pixel grid while
+arranging loaf, sit, stand, play, perk, walk, stretch, pounce, and box-peek in a 3×3 sheet.
+
+The four lighting-study runtime crops, evening image, and rain image were also edited to remove their
+baked cat and reconstruct the rug and floor beneath it. The generated pose sheet is now the only
+visible cat layer; the transparent Canvas continues to provide interaction geometry during migration.
+
 ## Room lighting study v1
 
 File: `room-lighting-study-v1.png`
