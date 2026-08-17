@@ -39,7 +39,11 @@ export interface Response {
   pose: Pose;
   /** Little sparks around her. Reserved for good, so it stays special. */
   sparkle?: boolean;
+  /** One quiet prop or material response, never a badge or full-screen mood filter. */
+  visual: MoodVisual;
 }
+
+export type MoodVisual = "spark" | "throw" | "quilt" | "warm-pool" | "door-light" | "floor-toys" | "paper" | "blanket" | "exit-line";
 
 export const RESPONSES: Record<Mood, Response> = {
   /*
@@ -50,6 +54,7 @@ export const RESPONSES: Record<Mood, Response> = {
    * cat wants no part of this and is leaving. An absent cat is a colder room; being the punchline earns it.
    */
   feral: {
+    visual: "paper",
     pose: "play",
     eyes: 1,
     doing: "up on her back legs, absolutely unhinged, and everything on that shelf is in danger",
@@ -59,6 +64,7 @@ export const RESPONSES: Record<Mood, Response> = {
     purring: false,
   },
   done: {
+    visual: "blanket",
     pose: "loaf",
     eyes: 0.1,
     doing: "lying flat out on the boards like she has been switched off at the wall",
@@ -68,6 +74,7 @@ export const RESPONSES: Record<Mood, Response> = {
     purring: true,
   },
   horny: {
+    visual: "exit-line",
     pose: "stand",
     eyes: 0.9,
     doing: "suddenly extremely interested in the door and leaving without further comment",
@@ -78,6 +85,7 @@ export const RESPONSES: Record<Mood, Response> = {
     purring: false,
   },
   good: {
+    visual: "spark",
     pose: "perk",
     sparkle: true,
     eyes: 0.85,
@@ -88,6 +96,7 @@ export const RESPONSES: Record<Mood, Response> = {
     purring: false,
   },
   tired: {
+    visual: "throw",
     pose: "loaf",
     eyes: 0.2,
     // Not asleep. Next to you, doing the same nothing you are.
@@ -98,6 +107,7 @@ export const RESPONSES: Record<Mood, Response> = {
     purring: true,
   },
   stressed: {
+    visual: "quilt",
     // The weighted-blanket answer: she is not worried, she is heavy. The loaf rather than the upright
     // sit, so stressed and sad don't render as the same cat.
     pose: "loaf",
@@ -110,6 +120,7 @@ export const RESPONSES: Record<Mood, Response> = {
     purring: true,
   },
   sad: {
+    visual: "warm-pool",
     pose: "sit",
     eyes: 1,
     // She comes over and stays. Eyes open, because being looked at is the point.
@@ -121,6 +132,7 @@ export const RESPONSES: Record<Mood, Response> = {
     purring: true,
   },
   lonely: {
+    visual: "door-light",
     pose: "stand",
     eyes: 0.9,
     doing: "already at the door, and she was there before you said anything",
@@ -131,6 +143,7 @@ export const RESPONSES: Record<Mood, Response> = {
     purring: true,
   },
   bored: {
+    visual: "floor-toys",
     pose: "play",
     eyes: 0.95,
     doing: "sitting next to the one thing she knocked off the shelf, waiting to see what you do",

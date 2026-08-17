@@ -60,6 +60,39 @@ button, select, [role="button"] {
 button:active:not(:disabled), select:active { transform: scale(.965); }
 button:disabled { opacity: .55; }
 
+/*
+ * The cursor gets an answer.
+ *
+ * There was a press state and nothing else, so on a phone the room felt alive and on a laptop
+ * nothing moved until you committed to a click. Brightness and a one-pixel lift are enough; both
+ * ride the transition already declared above, so this costs no new animation.
+ *
+ * Behind `hover: hover` because a touch device fakes hover on tap and then keeps it, leaving the
+ * last thing you touched permanently lit.
+ */
+@media (hover: hover) {
+  button:not(:disabled):hover, [role="button"]:hover, summary:hover, select:hover {
+    filter: brightness(1.04);
+    transform: translateY(-1px);
+  }
+  a:hover { text-decoration-thickness: 2px; }
+}
+
+/*
+ * Where the keyboard is.
+ *
+ * There was not one focus rule in the app, so keyboard users got Chrome's default ring: a blue-black
+ * double line laid over a hand-mixed cream palette, which reads as a rendering fault rather than a
+ * cue. Ink rather than honey, because honey is what selection uses and the two must not be confused,
+ * and because ink stays legible on the coloured fur and eye swatches where a warm ring would vanish.
+ *
+ * :focus-visible, not :focus, so a mouse click never paints a ring nobody asked for.
+ */
+:focus-visible {
+  outline: 2.5px solid var(--ink);
+  outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; opacity: 1 !important; transform: none !important; }
   button:active:not(:disabled) { transform: none; }
