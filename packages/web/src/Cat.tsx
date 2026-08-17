@@ -169,6 +169,26 @@ const PINK = "#e79ba3";
 const BLUSH = "#f0aeb4";
 const WHITE = "#fffdf6";
 
+/*
+ * Closed eyes are authored as lines, not as recolored open-eye blocks.
+ *
+ * The sprite role `e` occupies a two- or three-pixel area so an open colored eye can carry a white
+ * highlight. Painting that entire area brown when she slept produced two heavy rectangles that read
+ * like sunglasses, especially on the new smaller loaf. These coordinates replace those areas with
+ * one intentional line per eye while preserving the same customizable open-eye sprites.
+ */
+const CLOSED_EYES: Record<Pose, { y: number; left: number; right: number; width: number }> = {
+  loaf: { y: 7, left: 5, right: 11, width: 2 },
+  sit: { y: 7, left: 5, right: 11, width: 2 },
+  stand: { y: 7, left: 5, right: 11, width: 2 },
+  play: { y: 7, left: 5, right: 11, width: 2 },
+  perk: { y: 8, left: 5, right: 11, width: 2 },
+  walk: { y: 7, left: 5, right: 11, width: 2 },
+  stretch: { y: 7, left: 5, right: 11, width: 2 },
+  pounce: { y: 7, left: 5, right: 11, width: 2 },
+  peek: { y: 7, left: 5, right: 11, width: 2 },
+};
+
 export function Cat({
   label,
   look,
@@ -1175,6 +1195,20 @@ export function Cat({
       rect(0, FLOOR - 9, GW, 9, sc.wallBottom);
       rect(0, FLOOR, GW, 10, sc.floorFar);
       rect(0, FLOOR + 10, GW, GH - FLOOR - 10, sc.floorNear);
+
+      /*
+       * Quiet surface detail, taken from the v2 golden-hour study.
+       *
+       * These are fixed marks rather than random texture. Random pixels reshuffle every frame and
+       * make a calm room shimmer; a handful of authored clusters lets the plaster and boards feel
+       * touched without becoming visual noise.
+       */
+      const wallShade = mixHex(sc.wallBottom, INK, 0.08);
+      const wallLift = mixHex(sc.wallTop, sc.beamWarm, 0.12 + sc.sun * 0.08);
+      for (const [x, y, w] of [[4, 8, 5], [38, 17, 3], [48, 7, 6], [90, 27, 4]] as const) {
+        dither(x, y, w, 2, wallShade);
+      }
+      for (const [x, y] of [[12, 30], [34, 6], [52, 31], [96, 11]] as const) px(x, y, wallLift);
       /*
        * Skirting: one bright line where the wall meets the floor, to read as depth.
        *
@@ -1185,8 +1219,32 @@ export function Cat({
        * other surface here already does.
        */
       rect(0, FLOOR - 1, GW, 1, mixHex(sc.wallBottom, sc.beamWarm, 0.3 + sc.sun * 0.35));
-      // Floorboards. Half the frame was empty boards, and three lines is enough to say "floor".
+      rect(0, FLOOR, GW, 1, mixHex(sc.floorFar, INK, 0.14));
+      // Floorboards now have staggered joins and tiny highlights as well as perspective bands. The
+      // generated study made clear that material, not more furniture, was what the empty half lacked.
       for (const by of [FLOOR + 9, FLOOR + 15, FLOOR + 23, FLOOR + 30]) rect(0, by, GW, 1, sc.floorFar);
+      const boardJoin = mixHex(sc.floorFar, INK, 0.16);
+      const boardGlint = mixHex(sc.floorNear, sc.beamWarm, 0.1 + sc.sun * 0.08);
+      for (const [x, y, h] of [[8, 49, 8], [31, 49, 8], [70, 49, 8], [18, 58, 5], [52, 58, 5], [86, 58, 5], [5, 64, 7], [40, 64, 7], [75, 64, 7], [25, 72, 8], [62, 72, 8]] as const) {
+        rect(x, y, 1, h, boardJoin);
+        px(x + 1, y + 1, boardGlint);
+      }
+
+      /*
+       * A low rug gives the cat a place in the composition without turning the room into a set.
+       * Pixel-rounded rows keep its silhouette soft; two quiet inner bands imply woven material.
+       */
+      const rugShadow = mixHex(sc.floorNear, INK, 0.25);
+      const rugEdge = mixHex(sc.floorNear, "#765367", 0.58);
+      const rugBody = mixHex(sc.floorNear, "#a8737e", 0.48);
+      const rugThread = mixHex(rugBody, sc.beamWarm, 0.16);
+      rect(35, FLOOR + 12, 40, 1, rugShadow);
+      rect(32, FLOOR + 13, 46, 13, rugEdge);
+      rect(34, FLOOR + 12, 42, 15, rugEdge);
+      rect(35, FLOOR + 13, 40, 13, rugBody);
+      dither(38, FLOOR + 16, 34, 1, rugThread);
+      dither(38, FLOOR + 22, 34, 1, rugThread, 1);
+      for (const x of [35, 40, 69, 74]) px(x, FLOOR + 27, rugEdge);
 
 
       // ── light ─────────────────────────────────────────────────────────────
@@ -1198,14 +1256,20 @@ export function Cat({
       // "checkerboard" edges came out as vertical stripes down the wall.
       // The shaft pivots from a fixed window rather than sliding across the wall with the patch.
       // A window that moves collides with the picture and the door, and windows do not move.
-      for (let y = 14; y < FLOOR; y++) {
-        const k = (y - 14) / (FLOOR - 14);
-        const cx = Math.round(WIN_CX + (beamX - WIN_CX) * k);
-        rect(cx - 8, y, 16, 1, sc.litWall);
-        dither(cx - 11, y, 3, 1, sc.litWall);
-        dither(cx + 8, y, 3, 1, sc.litWall);
-        // quarter density outside that, so the edge falls off in two steps rather than one
-        for (const ox of [-13, -12, 10, 11]) if ((ox + y) % 4 === 0) px(cx + ox, y, sc.litWall);
+      const beamCore = sc.lightPhase === "golden" ? 18 : sc.lightPhase === "dawn" ? 10 : 16;
+      if (sc.lightPhase !== "night") {
+        for (let y = 14; y < FLOOR; y++) {
+          const k = (y - 14) / (FLOOR - 14);
+          const cx = Math.round(WIN_CX + (beamX - WIN_CX) * k);
+          const half = beamCore >> 1;
+          rect(cx - half, y, beamCore, 1, sc.litWall);
+          dither(cx - half - 3, y, 3, 1, sc.litWall);
+          dither(cx + half, y, 3, 1, sc.litWall);
+          // Quarter density outside that, so the edge falls off in two steps rather than one.
+          for (const ox of [-half - 5, -half - 4, half + 2, half + 3]) {
+            if ((ox + y) % 4 === 0) px(cx + ox, y, sc.litWall);
+          }
+        }
       }
       // The pool of light on the boards. Its size is a shape problem, not a number: too short and it
       // sits at her head height as two pale wings either side of her ears; too wide and a mood that
@@ -1214,11 +1278,30 @@ export function Cat({
       const POOL = [
         [1, 16], [2, 20], [3, 24], [4, 26], [5, 26], [6, 24], [7, 22], [8, 18], [9, 14],
       ] as const;
-      for (const [dy, w] of POOL) rect(beamX - (w >> 1), FLOOR + dy, w, 1, sc.patch);
+      const poolScale = sc.lightPhase === "golden" ? 1.14 : sc.lightPhase === "dawn" ? 0.72 : 1;
+      if (sc.lightPhase !== "night") {
+        for (const [dy, w] of POOL) {
+          const width = Math.round(w * poolScale);
+          rect(beamX - (width >> 1), FLOOR + dy, width, 1, sc.patch);
+        }
+      }
       // The soft edge starts below her ear line. Dither running across the rows her ears occupy put a
       // checkerboard fan either side of her face, and speckle next to the one thing you are meant to
       // be looking at just reads as noise.
-      dither(beamX - 15, FLOOR + 5, 30, 9, sc.patch);
+      if (sc.lightPhase !== "night") {
+        const edgeWidth = Math.round(30 * poolScale);
+        dither(beamX - (edgeWidth >> 1), FLOOR + 5, edgeWidth, 9, sc.patch);
+      } else {
+        // A plug-in nightlight lives where the camera already rests when she sleeps. The shelf lamp
+        // can be off-screen beside the bed; this smaller pool keeps the default night room cared for.
+        const nightGlow = mixHex(sc.wallBottom, "#d79a62", 0.3);
+        for (const [dx, dy] of [[-6, -3], [-3, -6], [0, -7], [3, -6], [6, -3], [-4, -1], [4, -1]] as const) {
+          px(40 + dx, FLOOR - 3 + dy, nightGlow);
+        }
+        rect(36, FLOOR - 6, 9, 1, mixHex(sc.wallBottom, "#d79a62", 0.16));
+        rect(39, FLOOR - 4, 3, 3, INK);
+        px(40, FLOOR - 3, "#ffd598");
+      }
 
       /** A y inside the window's glass, given a row offset from its top edge. */
       const wy = (row: number) => 4 + 1 + row;
@@ -1244,9 +1327,77 @@ export function Cat({
        * most of the time it is ever opened: the whole point of it is the two minutes before somebody
        * falls asleep. The most-seen version of the room had the least in it.
        */
-      const night = sc.sun < 0.12;
+      const night = sc.lightPhase === "night";
       const wx = WIN_X + shake("window");
-      blit(WINDOW, wx, 4, { w: INK, h: sc.sun > 0.2 ? sc.beamWarm : night ? "#2b3450" : sc.wallTop });
+      const rainRemaining = plantTaps.current.rainUntil - t;
+      const raining = rainRemaining > 0;
+
+      // Curtain panels sit in front of the beam, so the light feels as though it came through an
+      // actual room rather than being painted directly onto the wall. Two folds are enough at this
+      // scale; more turns fabric into striping.
+      const curtainDark = mixHex(sc.wallBottom, "#66516f", 0.5);
+      const curtainLight = mixHex(curtainDark, sc.beamWarm, 0.12 + sc.sun * 0.16);
+      rect(wx - 3, 3, 2, 21, curtainDark);
+      rect(wx - 1, 3, 1, 20, curtainLight);
+      rect(wx + WINDOW.w, 3, 2, 21, curtainDark);
+      rect(wx + WINDOW.w + 2, 3, 1, 20, curtainLight);
+      const curtainHem = reduce ? 0 : Math.round(Math.sin(t / 2400));
+      px(wx - 2 + curtainHem, 24, curtainLight); px(wx + WINDOW.w + 1 - curtainHem, 24, curtainLight);
+      const glass = raining
+        ? mixHex(sc.wallTop, "#718aa1", 0.58)
+        : sc.lightPhase === "night"
+          ? "#2b3450"
+          : sc.lightPhase === "dawn"
+            ? "#c79aaa"
+            : sc.lightPhase === "golden"
+              ? "#d99672"
+              : sc.lightPhase === "evening"
+                ? "#685b7d"
+                : mixHex("#b7d8dc", sc.beamWarm, 0.2);
+      blit(WINDOW, wx, 4, { w: INK, h: glass });
+
+      // The window tells the time before the caption does. Each chapter gets one unmistakable
+      // landmark, kept inside the glass so the rest of the room stays quiet.
+      if (sc.lightPhase === "dawn") {
+        rect(wx + 1, wy(7), 7, 1, "#e9b39d");
+        rect(wx + 9, wy(7), 7, 1, "#e9b39d");
+        px(wx + 13, wy(5), "#f6d2ac"); px(wx + 14, wy(5), "#f6d2ac");
+      } else if (sc.lightPhase === "day") {
+        const cloud = mixHex(glass, "#fffdf2", 0.76);
+        rect(wx + 3, wy(3), 5, 1, cloud);
+        rect(wx + 5, wy(2), 3, 1, cloud);
+        px(wx + 8, wy(3), cloud);
+      } else if (sc.lightPhase === "golden") {
+        rect(wx + 1, wy(7), 7, 1, "#efb071");
+        rect(wx + 9, wy(7), 7, 1, "#efb071");
+        rect(wx + 12, wy(3), 2, 2, "#ffe0a0");
+      } else if (sc.lightPhase === "evening") {
+        rect(wx + 1, wy(7), 7, 1, "#b87879");
+        rect(wx + 9, wy(7), 7, 1, "#b87879");
+        px(wx + 13, wy(2), "#f7dfbd");
+      }
+
+      // Distant rooftops live only in the bottom of each pane. They give the window a world without
+      // competing with the moon, stars, bird, or anything the two people can leave for each other.
+      const skyline = night ? "#252a42" : mixHex(sc.wallBottom, "#6d5f72", 0.48);
+      rect(wx + 1, wy(8), 7, 1, skyline);
+      rect(wx + 2, wy(7), 2, 1, skyline);
+      rect(wx + 9, wy(8), 7, 1, skyline);
+      rect(wx + 12, wy(6), 3, 2, skyline);
+      if (night) {
+        // Three lived-in windows are enough to turn a silhouette into a neighborhood.
+        px(wx + 3, wy(7), "#e8bd72");
+        px(wx + 11, wy(7), "#d99d62");
+        px(wx + 14, wy(6), "#e8bd72");
+      }
+      // A proper sill, with one shadow row, grounds the window and makes the sunbeam's source read.
+      rect(wx - 1, 15, WINDOW.w + 2, 1, mixHex(sc.wallBottom, INK, 0.24));
+      rect(wx - 2, 16, WINDOW.w + 4, 1, mixHex(sc.wallBottom, "#a77a58", 0.42));
+      if (raining) {
+        rect(wx, 15, WINDOW.w, 1, mixHex(glass, "#dce7e6", 0.5));
+        px(wx + 3, 17, mixHex(sc.wallBottom, glass, 0.5));
+        px(wx + 12, 17, mixHex(sc.wallBottom, glass, 0.5));
+      }
       // The view changes quietly with the calendar: petals, thick summer green, falling color, or
       // a little snow caught on the sill. Static in the glass so seasonal atmosphere never becomes
       // another idle animation competing with her.
@@ -1284,7 +1435,7 @@ export function Cat({
         }
         // Stars, on their own slow twinkles so they never blink together.
         for (const [sx, sy, ph] of [[12, 2, 0], [14, 6, 0.45], [10, 7, 0.8], [7, 8, 0.25]] as const) {
-          if (Math.sin(t / 900 + ph * 7) > -0.35) px(wx + sx, wy(sy), "#fff6dc");
+          if (reduce || Math.sin(t / 900 + ph * 7) > -0.35) px(wx + sx, wy(sy), "#fff6dc");
         }
         // Tap the window at night and, if you are lucky enough to be looking, a star crosses the
         // glass. It stays inside the pane rather than streaking across the room: this is a tiny
@@ -1421,7 +1572,6 @@ export function Cat({
       }
       // A tiny shower is the plant's hidden third-tap response. The drops stay inside the window:
       // weather belongs outside, and a full-room overlay would turn a private discovery into UI.
-      const rainRemaining = plantTaps.current.rainUntil - t;
       const rainbowing = !reduce && rainRemaining <= 0 && t < plantTaps.current.rainbowUntil;
       const plantBlooming = !reduce && t >= plantTaps.current.rainbowUntil && t < plantTaps.current.bloomUntil;
       if (!reduce && rainRemaining > 0) {
@@ -1461,7 +1611,23 @@ export function Cat({
           colors.forEach((color, band) => px(wx + x, wy(1 + band + curve), color));
         }
       }
+      // At night one practical light keeps this from becoming the daytime room with its saturation
+      // turned down. The halo is dithered into the wall; the lamp itself stays smaller than the mug.
+      if (night) {
+        const lampGlow = mixHex(sc.wallBottom, "#d89b65", 0.28);
+        dither(79, FLOOR - 32, 20, 12, lampGlow);
+      }
+      // Small shelf shadow and two uneven books add depth without making the prop harder to hit.
+      rect(79, FLOOR - 23, 18, 2, mixHex(sc.wallBottom, INK, 0.14));
       blit(SHELF, 80 + shake("shelf"), FLOOR - 24, { w: INK, d: "#8a6a48" });
+      rect(92 + shake("shelf"), FLOOR - 28, 2, 4, "#7d6b86");
+      rect(94 + shake("shelf"), FLOOR - 29, 2, 5, "#b87868");
+      if (night) {
+        rect(88, FLOOR - 30, 4, 1, INK);
+        rect(87, FLOOR - 29, 6, 2, "#d59461");
+        rect(89, FLOOR - 27, 2, 3, INK);
+        px(89, FLOOR - 29, "#ffd79a"); px(90, FLOOR - 29, "#ffd79a");
+      }
       // The mug: on the shelf, or on its side on the boards under it. Same object either way, so
       // it has to be recognisably the same drawing.
       if (downRef.current) {
@@ -1536,6 +1702,8 @@ export function Cat({
         px(nx, ny + 1, INK); px(nx + 5, ny + 2, INK);
         px(nx + 2, ny + 1, `rgba(198,154,99,${a})`);
       }
+      // The frame casts one blocky shadow, which is enough to lift it from the wall.
+      rect(18, 14, FRAME.w, FRAME.h, mixHex(sc.wallBottom, INK, 0.12));
       if (framedRef.current) {
         blit(FRAME_CAT, 16 + shake("frame"), 12, { w: INK, f: "#c69a63", h: "#cfe0e4", c: L.fur, e: INK, n: PINK });
       } else {
@@ -1570,6 +1738,19 @@ export function Cat({
           px(hx, hy, c); px(hx + 2, hy, c); px(hx + 1, hy + 1, c); px(hx + 1, hy + 2, c);
         }
       }
+      // A hanging cutting balances the high left side of the room from the art study. It is scenery,
+      // not another secret: the permanent interactive plant remains on the floor at the right.
+      const hangingX = 48 + (!reduce ? Math.round(Math.sin(t / 1900)) : 0);
+      rect(49, 5, 1, 6, INK);
+      px(48, 11, INK); px(50, 11, INK);
+      rect(hangingX - 2, 12, 6, 3, "#a86f4f");
+      rect(hangingX - 1, 15, 4, 1, "#7d523d");
+      const hangingLeaf = mixHex(seasonalPlant.leaf, sc.wallTop, night ? 0.22 : 0.08);
+      for (const [dx, dy] of [[-4, -2], [-2, -4], [1, -5], [4, -3], [-5, 1], [5, 0], [-3, 3], [3, 4]] as const) {
+        px(hangingX + dx, 12 + dy, hangingLeaf);
+        px(hangingX + dx + (dx < 0 ? 1 : -1), 13 + dy, hangingLeaf);
+      }
+
       blit(PLANT, 87 + shake("plant"), FLOOR - 13, { g: seasonalPlant.leaf, w: INK, d: "#b07a4e" });
       if (season === "spring") {
         px(91, FLOOR - 19, seasonalPlant.detail); px(95, FLOOR - 17, seasonalPlant.detail);
@@ -1598,6 +1779,7 @@ export function Cat({
       // Dusty rose, not the lavender it started as. Lavender was the only cool colour in a room of
       // creams and browns, and at this size it stopped reading as a cat bed and started reading as
       // a stray UI element that had landed on the floor.
+      rect(13, FLOOR + 23, 22, 2, mixHex(sc.floorNear, INK, 0.18));
       blit(BED, 24 + shake("bed"), FLOOR + 22, { d: "#b07f76", f: "#d8a79c", b: "#c4918a" });
 
       /*
@@ -1822,7 +2004,25 @@ export function Cat({
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
       // cat that did not notice, which is the one thing this feature is for.
       const noticing = (mouseVisiting || doorRef.current !== null || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking) && posed;
-      const pose: Pose = mouseChasing || bubblePlaying || pianoPawing || pianoRewarding || musicDancing || catnipping || zooming || laserPlaying || yarnPlaying || summoning || (treating && treatProgress < 0.6) ? "play" : musicPlaying || catnipActive || treating ? "sit" : noticing ? "perk" : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
+      const stretchCycle = t % 40_000;
+      const stretching = !reduce && awake && sc.play < 0.5 && !inBox && Math.abs(wantX - kx) < 2 && stretchCycle < 1400;
+      const pouncing = mouseChasing || laserPlaying;
+      const walking = Math.abs(wantX - kx) > 3 && !zooming && !catnipping && !pouncing;
+      const pose: Pose = boxPlaying || peeking
+        ? "peek"
+        : stretching
+          ? "stretch"
+          : pouncing
+            ? "pounce"
+            : walking
+              ? "walk"
+              : bubblePlaying || pianoPawing || pianoRewarding || musicDancing || catnipping || zooming || yarnPlaying || summoning || (treating && treatProgress < 0.6)
+                ? "play"
+                : musicPlaying || catnipActive || treating
+                  ? "sit"
+                  : noticing
+                    ? "perk"
+                    : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
@@ -1852,10 +2052,70 @@ export function Cat({
         n: PINK,
         m: INK,
         c: awake ? BLUSH : "",
-        h: WHITE,
-        // Shut eyes are a one-pixel line in the outline colour, not a smaller eye.
-        e: awake ? L.eyes : INK,
+        h: awake ? WHITE : "",
+        // Shut eyes are drawn as authored lines below; leaving the open-eye cells transparent avoids
+        // turning their full highlight-sized area into two dark blocks.
+        e: awake ? L.eyes : "",
       };
+
+      /*
+       * A mood changes one small thing around her, not the weather and never the whole palette.
+       *
+       * The pose already carries most of the response; these floor-level details make the moods
+       * legible as authored little scenes when two poses happen to share a silhouette. They stay
+       * close to the cat and use room colours so they read as belongings, not status effects. The
+       * motion is optional decoration only: reduced motion keeps the same objects and meaning.
+       */
+      const activeMood = moodRef.current;
+      const moodLeft = kx - 13;
+      const moodRight = kx + 11;
+      if (activeMood === "sad") {
+        // A second cushion turns "sitting with you" into a place kept beside her.
+        rect(moodRight, FLOOR + 17, 8, 1, mixHex(sc.floorNear, INK, 0.2));
+        rect(moodRight - 1, FLOOR + 14, 10, 3, "#c99291");
+        rect(moodRight + 1, FLOOR + 13, 6, 1, "#ddb0a8");
+        px(moodRight + 1, FLOOR + 15, "#b77b7d");
+        px(moodRight + 6, FLOOR + 15, "#b77b7d");
+      } else if (activeMood === "stressed") {
+        // A little quilt edge under the loaf: weight and warmth, without darkening the room.
+        rect(moodLeft, FLOOR + 17, 28, 3, "#b68486");
+        dither(moodLeft + 2, FLOOR + 18, 24, 1, "#d5aaa0");
+        for (const x of [moodLeft + 2, moodLeft + 7, moodLeft + 20, moodLeft + 25]) {
+          px(x, FLOOR + 20, "#9d7077");
+        }
+      } else if (activeMood === "tired") {
+        // She brought the pillow; doing nothing was clearly the plan.
+        rect(moodRight, FLOOR + 16, 9, 2, "#d3aaa0");
+        rect(moodRight + 1, FLOOR + 14, 7, 4, "#e2c0b4");
+        px(moodRight + 1, FLOOR + 15, "#bc8d8b");
+        px(moodRight + 7, FLOOR + 16, "#bc8d8b");
+      } else if (activeMood === "bored") {
+        // The one thing from the shelf, safely unbroken and waiting beside the culprit.
+        rect(moodLeft + 2, FLOOR + 16, 6, 2, "#c8a77d");
+        rect(moodLeft + 1, FLOOR + 15, 2, 2, "#c8a77d");
+        px(moodLeft + 3, FLOOR + 15, "#ead5b1");
+        px(moodLeft + 8, FLOOR + 18, "#8fa172");
+        px(moodLeft + 9, FLOOR + 18, "#8fa172");
+      } else if (activeMood === "lonely") {
+        // Two shoes by the door: somebody can always come sit down again.
+        rect(7, FLOOR + 16, 5, 2, "#84646b");
+        px(8, FLOOR + 15, "#a47b7b");
+        rect(12, FLOOR + 17, 5, 2, "#6f5964");
+        px(13, FLOOR + 16, "#94737a");
+      } else if (activeMood === "feral") {
+        // The shelf's escaped sprig trembles only when motion is welcome.
+        const leafHop = reduce ? 0 : Math.round(Math.abs(Math.sin(t / 150)) * 2);
+        px(moodRight + 2, FLOOR + 17 - leafHop, "#6f925b");
+        px(moodRight + 3, FLOOR + 16 - leafHop, "#8cab69");
+        px(moodRight + 4, FLOOR + 17 - leafHop, "#5f824e");
+        px(moodRight + 1, FLOOR + 18 - leafHop, "#8f7657");
+      } else if (activeMood === "horny") {
+        // Her answer is the door; one politely abandoned toy underscores the exit.
+        rect(19, FLOOR + 17, 4, 3, "#b86f84");
+        px(18, FLOOR + 16, "#d995a5");
+        px(23, FLOOR + 20, "#8f596d");
+        px(24, FLOOR + 20, "#8f596d");
+      }
 
       // The keyboard treat sits on the boards until she reaches it, then leaves a few crumbs. It is
       // drawn before her so her paws can cover it instead of the snack floating over the sprite.
@@ -1919,17 +2179,27 @@ export function Cat({
         }
       }
 
-      // Shadow first, so she sits on the floor instead of hovering over it.
-      rect(kx - (sp.w >> 1) + 3, ky + 1, sp.w - 6, 1, "rgba(120,84,44,.26)");
-      rect(kx - (sp.w >> 1) + 5, ky + 2, sp.w - 10, 1, "rgba(120,84,44,.18)");
+      // A three-step contact shadow from the v2 composition. The darkest row stays tight to her paws;
+      // the softer rows spread sideways, so she feels planted without gaining a smooth blurry halo.
+      const shadowX = kx - (sp.w >> 1);
+      rect(shadowX + 1, ky + 1, sp.w - 2, 1, "rgba(74,53,32,.12)");
+      rect(shadowX + 3, ky + 2, sp.w - 6, 1, "rgba(74,53,32,.22)");
+      rect(shadowX + 6, ky + 3, sp.w - 12, 1, "rgba(74,53,32,.14)");
 
       const wag = reduce ? 0 : Math.round(Math.sin(t / (620 - sc.play * 380)) * (1 + sc.play * 2 + n));
       // Tucked against her flank. A one-pixel gap here reads as a detached tail, which is worse
       // than no tail at all.
-      const tailX = pose === "loaf" ? kx + 8 : kx + 5;
+      const tailX = pose === "loaf" ? kx + 8 : pose === "stretch" ? kx + 14 : pose === "pounce" ? kx + 9 : kx + 5;
       const tailY = pose === "loaf" ? y - 4 : pose === "perk" ? y - 9 : y - 6;
-      blit(TAIL, pose === "stand" ? kx - 12 : tailX, tailY + wag, pal, pose === "stand");
+      if (pose !== "peek") blit(TAIL, pose === "stand" ? kx - 12 : tailX, tailY + wag, pal, pose === "stand");
       blit(sp, kx, y, pal);
+      if (!awake) {
+        const eye = CLOSED_EYES[pose];
+        const faceX = kx + sp.ox;
+        const eyeY = y + sp.oy + eye.y;
+        rect(faceX + eye.left, eyeY, eye.width, 1, INK);
+        rect(faceX + eye.right, eyeY, eye.width, 1, INK);
+      }
 
       // The bubbles are drawn in front of her because they are targets, not ambient particles.
       // Each has a bright edge, a glassy blue shadow, and one moving highlight; five taps completes
@@ -2135,10 +2405,10 @@ export function Cat({
           perk: { l: -3, r: 2, wide: true },
           play: { l: -4, r: 3, wide: true },
           stand: { l: -5, r: 1, wide: false },
-          walk: { l: -3, r: 2, wide: true },
-          stretch: { l: -3, r: 2, wide: true },
-          pounce: { l: -3, r: 2, wide: true },
-          peek: { l: -3, r: 2, wide: true },
+          walk: { l: -4, r: 2, wide: true },
+          stretch: { l: -4, r: 2, wide: true },
+          pounce: { l: -5, r: 1, wide: true },
+          peek: { l: -4, r: 2, wide: true },
         };
         const e = EYES[pose];
         // What you just touched wins, then the moth, then your cursor.
@@ -2306,19 +2576,6 @@ export function Cat({
           // sun: a small warm square rather than an outline, since it is a patch of light.
           px(sx, sy, ink); px(sx + 1, sy, ink); px(sx, sy + 1, ink); px(sx + 1, sy + 1, ink);
         }
-      }
-
-      // A stretch, roughly every 40 seconds, and only when she is awake and not busy being something
-      // else. Rare on purpose: an idle animation you can predict stops reading as alive.
-      const stretchCycle = t % 40_000;
-      const stretching = !reduce && awake && sc.play < 0.5 && stretchCycle < 1400;
-      if (stretching) {
-        const k = Math.sin((stretchCycle / 1400) * Math.PI);
-        const reach = Math.round(k * 5);
-        // Front paws pushed forward along the floor, and a hint of arch in the back.
-        rect(kx - (sp.w >> 1) - reach, ky - 1, reach + 2, 2, L.fur);
-        px(kx - (sp.w >> 1) - reach, ky - 1, INK);
-        px(kx - (sp.w >> 1) - reach, ky, INK);
       }
 
       // Purring, shown rather than written: small marks rising off her.
