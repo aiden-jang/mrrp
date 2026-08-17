@@ -569,41 +569,58 @@ export function Cat({
         if (!context) return resolve(null);
 
         context.scale(scale, scale);
-        for (const image of room.querySelectorAll("img")) {
-          const style = getComputedStyle(image);
-          if (!image.complete || image.naturalWidth === 0 || style.display === "none" || style.visibility === "hidden") continue;
+        for (const layer of room.querySelectorAll<HTMLElement>("img, [data-capture-effect]")) {
+          const style = getComputedStyle(layer);
+          if (style.display === "none" || style.visibility === "hidden") continue;
+          if (layer instanceof HTMLImageElement && (!layer.complete || layer.naturalWidth === 0)) continue;
 
           const opacity = Number.parseFloat(style.opacity);
           if (opacity <= 0) continue;
 
-          const imageBounds = image.getBoundingClientRect();
-          const x = imageBounds.left - bounds.left;
-          const y = imageBounds.top - bounds.top;
-          const width = imageBounds.width;
-          const height = imageBounds.height;
+          const layerBounds = layer.getBoundingClientRect();
+          const x = layerBounds.left - bounds.left;
+          const y = layerBounds.top - bounds.top;
+          const width = layerBounds.width;
+          const height = layerBounds.height;
           if (width <= 0 || height <= 0) continue;
 
           context.save();
           context.globalAlpha = Number.isFinite(opacity) ? opacity : 1;
           context.globalCompositeOperation = style.mixBlendMode === "screen" ? "screen" : "source-over";
           context.filter = style.filter === "none" ? "none" : style.filter;
-          if (style.objectFit === "cover") {
-            const sourceRatio = image.naturalWidth / image.naturalHeight;
+          if (!(layer instanceof HTMLImageElement)) {
+            if (style.backgroundColor !== "rgba(0, 0, 0, 0)") {
+              context.fillStyle = style.backgroundColor;
+              context.fillRect(x, y, width, height);
+            }
+            const borderWidth = Number.parseFloat(style.borderTopWidth);
+            if (borderWidth > 0) {
+              context.lineWidth = borderWidth;
+              context.strokeStyle = style.borderTopColor;
+              context.strokeRect(x + borderWidth / 2, y + borderWidth / 2, width - borderWidth, height - borderWidth);
+            }
+            context.fillStyle = style.color;
+            context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+            context.textAlign = "center";
+            context.textBaseline = "middle";
+            context.fillText(layer.textContent ?? "", x + width / 2, y + height / 2);
+          } else if (style.objectFit === "cover") {
+            const sourceRatio = layer.naturalWidth / layer.naturalHeight;
             const targetRatio = width / height;
             let sourceX = 0;
             let sourceY = 0;
-            let sourceWidth = image.naturalWidth;
-            let sourceHeight = image.naturalHeight;
+            let sourceWidth = layer.naturalWidth;
+            let sourceHeight = layer.naturalHeight;
             if (sourceRatio > targetRatio) {
-              sourceWidth = image.naturalHeight * targetRatio;
-              sourceX = (image.naturalWidth - sourceWidth) / 2;
+              sourceWidth = layer.naturalHeight * targetRatio;
+              sourceX = (layer.naturalWidth - sourceWidth) / 2;
             } else {
-              sourceHeight = image.naturalWidth / targetRatio;
-              sourceY = (image.naturalHeight - sourceHeight) / 2;
+              sourceHeight = layer.naturalWidth / targetRatio;
+              sourceY = (layer.naturalHeight - sourceHeight) / 2;
             }
-            context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+            context.drawImage(layer, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
           } else {
-            context.drawImage(image, x, y, width, height);
+            context.drawImage(layer, x, y, width, height);
           }
           context.restore();
         }
@@ -2999,6 +3016,7 @@ export function Cat({
         <div
           key={key}
           ref={(effect) => { generatedEffectRefs.current[key] = effect ?? undefined; }}
+          data-capture-effect={key}
           aria-hidden="true"
           style={{
             position: "absolute", display: "none", transform: "translate(-50%, -50%)",
