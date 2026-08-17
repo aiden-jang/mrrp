@@ -3,7 +3,7 @@ import type { Action, Arrival, Mood, RoomView } from "./types.js";
 import { ACTIONS, MOODS } from "./types.js";
 import { doAct, doClock, doDress, doNotes, doRecover, doRelease, doSay, doTell, doTidy, doWindowLight, fetchRoom, lastRoom, myName, newRoomId, roomFromPath } from "./api.js";
 import { Cat } from "./Cat.js";
-import { sceneFor } from "./hours.js";
+import { mixHex, sceneFor } from "./hours.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
 import { MoodFace } from "./faces.js";
 import type { Cue } from "./sound.js";
@@ -692,6 +692,21 @@ function RoomPage({ id }: { id: string }) {
   // cat from the one being drawn.
   const scene = sceneFor(view.clock, Date.now(), view.catMood, view.bothHereNow);
 
+  /*
+   * The interface borrows the room's light without becoming another illustrated surface.
+   *
+   * Mixing each live room colour heavily toward the established UI neutrals preserves contrast and
+   * keeps night usable, while still letting dawn feel lavender and golden hour feel honey-warm. The
+   * variables are scoped to this room only; the door and recovery screens keep their stable palette.
+   */
+  const roomTheme = {
+    "--air": mixHex(scene.wallTop, "#f7ecdc", 0.76),
+    "--air-warm": mixHex(scene.beamWarm, "#fdf6ea", 0.76),
+    "--panel": mixHex(scene.wallTop, "#fffaf0", 0.9),
+    "--line": mixHex(scene.wallBottom, "#e6d5bb", 0.72),
+    "--honey": mixHex("#c87936", scene.beamWarm, 0.3),
+  } as React.CSSProperties;
+
   /**
    * Whether the viewer actually holds his seat, rather than merely not being her.
    *
@@ -715,7 +730,7 @@ function RoomPage({ id }: { id: string }) {
     : view.cat;
 
   return (
-    <main style={S.page}>
+    <main style={{ ...S.page, ...roomTheme }}>
       <SoundToggle />
       <div style={S.card}>
         <div style={S.stage}>
@@ -1339,7 +1354,11 @@ function RoomPage({ id }: { id: string }) {
 
 /* ─────────────── styles, inline to keep this one small ─────────────── */
 const S: Record<string, React.CSSProperties> = {
-  page: { minHeight: "100%", display: "grid", placeItems: "center", padding: "28px 18px 48px" },
+  page: {
+    minHeight: "100%", display: "grid", placeItems: "center", padding: "28px 18px 48px",
+    background: "radial-gradient(120% 90% at 78% 6%, var(--air-warm) 0%, var(--air) 62%)",
+    transition: "background .9s ease",
+  },
   /*
    * minWidth 0 + overflowWrap: a grid item defaults to min-width:auto, which is its min-content
    * width, and that silently outranks both width:100% and maxWidth. One unbroken 90-character line
