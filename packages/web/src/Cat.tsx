@@ -621,26 +621,13 @@ export function Cat({
 
   useEffect(() => {
     const cv = ref.current!;
-    const g = cv.getContext("2d")!;
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const lunar = moonPhase(new Date());
     const season = seasonFor(new Date());
     const seasonalPlant = seasonalPlantColors(season);
 
-    /** Size of one logical pixel, in device pixels. Recomputed on resize. */
-    let s = 5;
     /** The view's left edge, in grid columns. Recomputed once per frame from where she is. */
     let cam = 0;
-    const fit = () => {
-      const r = cv.getBoundingClientRect();
-      const d = Math.min(2, devicePixelRatio || 1);
-      cv.width = Math.max(VW, Math.round(r.width * d));
-      cv.height = Math.max(GH, Math.round(r.height * d));
-      s = cv.width / VW;
-    };
-    fit();
-    const ro = new ResizeObserver(fit);
-    ro.observe(cv);
 
     const ptr = {
       x: GW / 2,
@@ -1214,43 +1201,16 @@ export function Cat({
       sp: 0.04 + Math.random() * 0.06,
     }));
 
-    /** One logical pixel. Edges are rounded so neighbours share a boundary exactly. */
-    const px = (x: number, y: number, c: string) => {
-      if (!c || y < 0 || y >= GH) return;
-      // Clipped against the view, not the grid: anything the camera is not looking at is skipped rather
-      // than drawn off the edge of the canvas.
-      const vx = x - cam;
-      if (vx < 0 || vx >= VW) return;
-      const X = Math.round(vx * s), Y = Math.round(y * s);
-      g.fillStyle = c;
-      // Both edges must come from the SAME coordinate space. Taking the left edge from the view and the
-      // right edge from the grid made every pixel (cam + 1) columns wide, which smeared the whole room
-      // sideways the moment the camera moved off zero.
-      g.fillRect(X, Y, Math.round((vx + 1) * s) - X, Math.round((y + 1) * s) - Y);
-    };
-
-    const rect = (x: number, y: number, w: number, h: number, c: string) => {
-      for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) px(x + i, y + j, c);
-    };
-
-    /** 50% checkerboard: the pixel-art way to get a colour between two colours. */
-    const dither = (x: number, y: number, w: number, h: number, c: string, phase = 0) => {
-      for (let j = 0; j < h; j++) {
-        for (let i = 0; i < w; i++) {
-          if ((x + i + y + j + phase) % 2 === 0) px(x + i, y + j, c);
-        }
-      }
-    };
-
-    const blit = (sp: Sprite, x: number, y: number, pal: Record<string, string>, flip = false) => {
-      for (let j = 0; j < sp.h; j++) {
-        const row = sp.rows[j]!;
-        for (let i = 0; i < sp.w; i++) {
-          const ch = row[flip ? sp.w - 1 - i : i]!;
-          px(x + sp.ox + i, y + sp.oy + j, pal[ch] ?? "");
-        }
-      }
-    };
+    /*
+     * Generated images own every visible pixel now. The old scene code still calculates interaction
+     * geometry and animation state used by the DOM layers, but its drawing vocabulary is deliberately
+     * inert. Keeping these typed no-ops temporarily lets that state be extracted in smaller, testable
+     * steps without paying for thousands of invisible canvas writes on every frame.
+     */
+    const px: (x: number, y: number, color: string) => void = () => undefined;
+    const rect: (x: number, y: number, width: number, height: number, color: string) => void = () => undefined;
+    const dither: (x: number, y: number, width: number, height: number, color: string, phase?: number) => void = () => undefined;
+    const blit: (sprite: Sprite, x: number, y: number, palette: Record<string, string>, flip?: boolean) => void = () => undefined;
 
     const placeGeneratedInteraction = (
       key: InteractionArtKey,
@@ -2799,7 +2759,6 @@ export function Cat({
 
     return () => {
       cancelAnimationFrame(raf);
-      ro.disconnect();
       cv.removeEventListener("pointermove", onMove);
       cv.removeEventListener("pointerleave", onLeave);
       cv.removeEventListener("pointerdown", onDown);
@@ -2927,6 +2886,8 @@ export function Cat({
       />
       <canvas
         ref={ref}
+        width={VW}
+        height={GH}
         role="img"
         tabIndex={0}
         aria-label={`${label} The room has quiet interactive details.`}
