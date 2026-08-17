@@ -22,9 +22,9 @@ describe("generated runtime room states", () => {
   it("maps every authored pose to a generated transparent sprite", () => {
     const poses: Pose[] = ["loaf", "sit", "stand", "play", "perk", "walk", "stretch", "pounce", "peek"];
     expect(poses.map(generatedCatFor)).toEqual([
-      "/art/cat/loaf.png", "/art/cat/sit.png", "/art/cat/stand.png",
-      "/art/cat/play.png", "/art/cat/perk.png", "/art/cat/walk.png",
-      "/art/cat/stretch.png", "/art/cat/pounce.png", "/art/cat/peek.png",
+      "/art/cat/loaf-v3.png", "/art/cat/sit-v3.png", "/art/cat/stand-v3.png",
+      "/art/cat/play-v3.png", "/art/cat/perk-v3.png", "/art/cat/walk-v3.png",
+      "/art/cat/stretch-v3.png", "/art/cat/pounce-v3.png", "/art/cat/peek-v3.png",
     ]);
   });
 
@@ -39,7 +39,7 @@ describe("generated runtime room states", () => {
 
   it("aligns an eye overlay with every pose and treats every selectable eye family", () => {
     const poses: Pose[] = ["loaf", "sit", "stand", "play", "perk", "walk", "stretch", "pounce", "peek"];
-    expect(poses.map(generatedEyesFor)).toEqual(poses.map((pose) => `/art/cat-eyes/${pose}.png`));
+    expect(poses.map(generatedEyesFor)).toEqual(poses.map((pose) => `/art/cat-eyes/${pose}-v3.png`));
     expect(generatedEyeFilter("#7cb342")).toBe("none");
     const filters = ["#d79a2b", "#b4652c", "#69a4c4", "#8e9aa0"].map(generatedEyeFilter);
     expect(filters.every((filter) => filter !== "none")).toBe(true);

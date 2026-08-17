@@ -184,9 +184,8 @@ const GENERATED_ROOMS: Record<LightPhase, string> = {
 export const generatedRoomFor = (phase: LightPhase, raining = false): string =>
   raining ? "/art/room-rain-v1.png" : GENERATED_ROOMS[phase];
 
-export const generatedCatFor = (pose: Pose): string => `/art/cat/${pose}.png`;
-export const generatedEyesFor = (pose: Pose): string => `/art/cat-eyes/${pose}.png`;
-const generatedCatClipRight = (pose: Pose): number => pose === "loaf" || pose === "perk" ? 12 : 0;
+export const generatedCatFor = (pose: Pose): string => `/art/cat/${pose}-v3.png`;
+export const generatedEyesFor = (pose: Pose): string => `/art/cat-eyes/${pose}-v3.png`;
 
 export function generatedEyeFilter(eyes: string): string {
   switch (eyes.toLowerCase()) {
@@ -581,13 +580,6 @@ export function Cat({
           context.globalAlpha = Number.isFinite(opacity) ? opacity : 1;
           context.globalCompositeOperation = style.mixBlendMode === "screen" ? "screen" : "source-over";
           context.filter = style.filter === "none" ? "none" : style.filter;
-          const clipRight = Number.parseFloat(image.dataset.captureClipRight ?? "0");
-          if (clipRight > 0) {
-            context.beginPath();
-            context.rect(x, y, width * (1 - clipRight / 100), height);
-            context.clip();
-          }
-
           if (style.objectFit === "cover") {
             const sourceRatio = image.naturalWidth / image.naturalHeight;
             const targetRatio = width / height;
@@ -627,10 +619,29 @@ export function Cat({
 
   useEffect(() => {
     const surface = interactionSurfaceRef.current!;
+    let stopped = false;
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const lunar = moonPhase(new Date());
     const season = seasonFor(new Date());
     const seasonalPlant = seasonalPlantColors(season);
+
+    const generatedImageLoads = new Map<string, Promise<void>>();
+    const loadGeneratedImage = (src: string): Promise<void> => {
+      const cached = generatedImageLoads.get(src);
+      if (cached) return cached;
+      const loading = new Promise<void>((resolve) => {
+        const image = new Image();
+        image.onload = () => resolve();
+        image.onerror = () => resolve();
+        image.src = src;
+      });
+      generatedImageLoads.set(src, loading);
+      return loading;
+    };
+    for (const pose of Object.keys(POSES) as Pose[]) {
+      void loadGeneratedImage(generatedCatFor(pose));
+      void loadGeneratedImage(generatedEyesFor(pose));
+    }
 
     /** The view's left edge, in grid columns. Recomputed once per frame from where she is. */
     let cam = 0;
@@ -2146,22 +2157,30 @@ export function Cat({
 
       // The generated cat is the visible character layer. The legacy sprite still runs invisibly
       // below it for exact hit geometry while interactions migrate to generated overlays.
-      if (catImageRef.current) {
+      if (catImageRef.current && eyeImageRef.current) {
+        const catImage = catImageRef.current;
+        const eyeImage = eyeImageRef.current;
         const generatedCat = generatedCatFor(pose);
-        if (!catImageRef.current.src.endsWith(generatedCat)) catImageRef.current.src = generatedCat;
-        const clipRight = generatedCatClipRight(pose);
-        catImageRef.current.dataset.captureClipRight = `${clipRight}`;
-        catImageRef.current.style.clipPath = clipRight ? `inset(0 ${clipRight}% 0 0)` : "none";
-        catImageRef.current.style.left = `${((kx - cam) / VW) * 100}%`;
-        catImageRef.current.style.bottom = settledInBed ? "1%" : "6%";
-        catImageRef.current.style.filter = generatedCatFilter(L);
-      }
-      if (eyeImageRef.current) {
         const generatedEyes = generatedEyesFor(pose);
-        if (!eyeImageRef.current.src.endsWith(generatedEyes)) eyeImageRef.current.src = generatedEyes;
-        eyeImageRef.current.style.left = `${((kx - cam) / VW) * 100}%`;
-        eyeImageRef.current.style.bottom = settledInBed ? "1%" : "6%";
-        eyeImageRef.current.style.filter = generatedEyeFilter(L.eyes);
+        if (catImage.dataset.pose !== pose && catImage.dataset.requestedPose !== pose) {
+          catImage.dataset.requestedPose = pose;
+          void Promise.all([loadGeneratedImage(generatedCat), loadGeneratedImage(generatedEyes)]).then(() => {
+            if (stopped || catImage.dataset.requestedPose !== pose) return;
+            catImage.src = generatedCat;
+            eyeImage.src = generatedEyes;
+            catImage.dataset.pose = pose;
+            eyeImage.dataset.pose = pose;
+            delete catImage.dataset.requestedPose;
+          });
+        }
+        const left = `${((kx - cam) / VW) * 100}%`;
+        const bottom = settledInBed ? "1%" : "6%";
+        catImage.style.left = left;
+        catImage.style.bottom = bottom;
+        catImage.style.filter = generatedCatFilter(L);
+        eyeImage.style.left = left;
+        eyeImage.style.bottom = bottom;
+        eyeImage.style.filter = generatedEyeFilter(L.eyes);
       }
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
@@ -2767,6 +2786,7 @@ export function Cat({
     raf = requestAnimationFrame(frame);
 
     return () => {
+      stopped = true;
       cancelAnimationFrame(raf);
       surface.removeEventListener("pointermove", onMove);
       surface.removeEventListener("pointerleave", onLeave);
@@ -2868,7 +2888,7 @@ export function Cat({
       <img
         ref={catImageRef}
         src={generatedCatFor(initialPose)}
-        data-capture-clip-right={generatedCatClipRight(initialPose)}
+        data-pose={initialPose}
         alt=""
         aria-hidden="true"
         draggable={false}
@@ -2876,7 +2896,6 @@ export function Cat({
           position: "absolute", left: `${initialScene.catX * 100}%`, bottom: "6%",
           width: "43%", height: "auto", transform: "translateX(-50%)",
           imageRendering: "pixelated", pointerEvents: "none",
-          clipPath: generatedCatClipRight(initialPose) ? `inset(0 ${generatedCatClipRight(initialPose)}% 0 0)` : "none",
           filter: generatedCatFilter(look),
           transition: "left .45s var(--ease-spring), bottom .3s ease",
         }}
@@ -2884,6 +2903,7 @@ export function Cat({
       <img
         ref={eyeImageRef}
         src={generatedEyesFor(initialPose)}
+        data-pose={initialPose}
         alt=""
         aria-hidden="true"
         draggable={false}
