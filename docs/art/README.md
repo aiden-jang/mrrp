@@ -97,6 +97,26 @@ all nine poses. Its dimensions and alpha channel were verified before the cells 
 `packages/web/public/art/cat-eyes/`. Runtime color treatments cover green, amber, copper, blue, and
 grey while retaining a single aligned generated silhouette set.
 
+## Interaction overlay sheet v1
+
+File: `interaction-overlay-sheet-v1.png`
+
+Role: final generated source sheet for secrets, gifts, keepsakes, and small room reactions. Its twenty
+cells are bundled under `packages/web/public/art/interactions/` and enumerated in
+`packages/web/src/interactionArt.ts`.
+
+The sheet contains the leaf, bottle cap, moth, cake, yarn, treat, catnip, mouse, bubble, piano,
+shooting star, constellation, rainbow, aurora, window light, note, bird, steam, sparkles, and plant
+bloom. It was generated with the approved room and cat sheets as palette and pixel-grid references.
+
+The image model did not preserve clean alpha for this sheet after repeated extraction passes. The
+selected source therefore retains its solid black background and declares `screen` as its runtime
+blend mode; black contributes no light while the authored colored pixels remain visible. Do not draw
+these cells with normal blending unless they are given a verified alpha extraction first.
+
+This completes planned image generation for the Canvas-to-generated-art migration. Remaining work is
+runtime integration, positioning, animation, reduced-motion behavior, and visual QA.
+
 ## Room lighting study v1
 
 File: `room-lighting-study-v1.png`
