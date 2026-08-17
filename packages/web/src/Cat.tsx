@@ -2179,6 +2179,40 @@ export function Cat({
         }
       }
 
+      // ── mood materials ───────────────────────────────────────────────────
+      // The copy can say nine different things; the room should not answer all nine with the same
+      // pose plus a faster tail. These stay at floor level and use ordinary room objects, so they
+      // read as care and mischief rather than status effects.
+      if (sc.moodVisual === "warm-pool") {
+        const warmth = mixHex(sc.floorNear, "#f3c985", 0.62);
+        for (const [dy, width] of [[-1, 16], [0, 24], [1, 28], [2, 24], [3, 16]] as const) {
+          rect(kx - (width >> 1), ky + dy, width, 1, warmth);
+        }
+      } else if (sc.moodVisual === "throw") {
+        const edge = mixHex(sc.floorNear, "#765d82", 0.7);
+        const cloth = mixHex(sc.floorNear, "#b58ca4", 0.72);
+        rect(kx + 5, ky - 3, 11, 5, edge);
+        rect(kx + 4, ky - 2, 13, 3, cloth);
+        px(kx + 6, ky - 1, mixHex(cloth, sc.beamWarm, 0.25));
+        px(kx + 14, ky + 2, edge);
+      } else if (sc.moodVisual === "door-light" || sc.moodVisual === "exit-line") {
+        const glow = sc.moodVisual === "exit-line" ? "#fff0c4" : mixHex(sc.floorFar, "#ffd58f", 0.72);
+        rect(8, FLOOR, 8, 1, glow);
+        px(7, FLOOR + 1, glow); px(16, FLOOR + 1, glow);
+        if (sc.moodVisual === "door-light") {
+          px(10, FLOOR + 2, mixHex(sc.floorFar, glow, 0.55));
+          px(14, FLOOR + 2, mixHex(sc.floorFar, glow, 0.55));
+        }
+      } else if (sc.moodVisual === "floor-toys") {
+        // The tipped shelf mug already tells half the bored story. A tiny yarn ball and its loose
+        // thread make it clear she is waiting for somebody to participate in the other half.
+        const ballX = kx - 14;
+        rect(ballX - 2, ky - 2, 5, 4, INK);
+        rect(ballX - 1, ky - 3, 3, 6, "#9a718b");
+        px(ballX, ky - 2, "#d1a7bc");
+        for (const [dx, dy] of [[3, 1], [5, 2], [7, 2], [8, 1], [10, 1]] as const) px(ballX + dx, ky + dy, INK);
+      }
+
       // A three-step contact shadow from the v2 composition. The darkest row stays tight to her paws;
       // the softer rows spread sideways, so she feels planted without gaining a smooth blurry halo.
       const shadowX = kx - (sp.w >> 1);
@@ -2199,6 +2233,39 @@ export function Cat({
         const eyeY = y + sp.oy + eye.y;
         rect(faceX + eye.left, eyeY, eye.width, 1, INK);
         rect(faceX + eye.right, eyeY, eye.width, 1, INK);
+      }
+
+      // Two blankets, two different answers. Tired gets the folded throw beside her above; "done"
+      // gets tucked in, while stressed gets the visual weight of a small patchwork quilt. Neither
+      // covers her face or eyes, which remain the emotional center of the sprite.
+      if (sc.moodVisual === "blanket") {
+        const blanket = mixHex(sc.floorNear, "#9c7799", 0.72);
+        const hem = mixHex(blanket, INK, 0.22);
+        rect(kx - 7, y - 6, 15, 5, hem);
+        rect(kx - 6, y - 6, 13, 4, blanket);
+        for (const x0 of [kx - 5, kx - 1, kx + 3]) px(x0, y - 3, mixHex(blanket, sc.beamWarm, 0.24));
+      } else if (sc.moodVisual === "quilt") {
+        const rose = mixHex(sc.floorNear, "#c78591", 0.7);
+        const sage = mixHex(sc.floorNear, "#83966f", 0.68);
+        rect(kx - 7, y - 6, 15, 5, INK);
+        for (let row = 0; row < 4; row++) {
+          for (let col = 0; col < 13; col++) {
+            px(kx - 6 + col, y - 6 + row, (Math.floor(col / 3) + Math.floor(row / 2)) % 2 === 0 ? rose : sage);
+          }
+        }
+        px(kx - 7, y - 1, rose); px(kx + 7, y - 1, sage);
+      } else if (sc.moodVisual === "paper") {
+        // Harmless chaos. Reduced motion keeps the scraps where they land rather than deleting the
+        // joke, preserving an equivalent scene without animation.
+        for (let i = 0; i < 6; i++) {
+          const drift = reduce ? 0 : Math.round(Math.sin(t / 240 + i * 1.7) * 3);
+          const lift = reduce ? i % 3 : Math.round(Math.abs(Math.sin(t / 330 + i)) * 9);
+          const sx = kx - 18 + i * 7 + drift;
+          const sy = ky - 2 - lift - (i % 2) * 3;
+          const paper = i % 2 ? "#f6e8cc" : "#ead5d2";
+          rect(sx, sy, 3, 2, paper);
+          px(sx + (i % 2), sy + 1, mixHex(paper, INK, 0.2));
+        }
       }
 
       // The bubbles are drawn in front of her because they are targets, not ambient particles.

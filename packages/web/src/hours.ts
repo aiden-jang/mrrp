@@ -1,5 +1,5 @@
 import type { Clock, Mood } from "./types.js";
-import { RESPONSES } from "./moods.js";
+import { RESPONSES, type MoodVisual } from "./moods.js";
 import type { Pose } from "./sprites.js";
 
 export type LightPhase = "night" | "dawn" | "day" | "golden" | "evening";
@@ -60,6 +60,8 @@ export interface Scene {
    */
   inBed: boolean;
   sparkle: boolean;
+  /** Material response selected by the mood; null when the room is simply following the clock. */
+  moodVisual: MoodVisual | null;
 }
 
 /** Local fractional hour in an IANA zone, without pulling in a date library. */
@@ -209,6 +211,7 @@ export function sceneFor(
     // A mood that moves her somewhere else takes her out of the bed with it.
     inBed: inBed && !r?.catX,
     sparkle: r?.sparkle ?? false,
+    moodVisual: r?.visual ?? null,
   };
 
   if (!together) return scene;

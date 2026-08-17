@@ -899,9 +899,16 @@ function RoomPage({ id }: { id: string }) {
                   style={{
                     ...S.swatch,
                     background: l.cat.fur,
-                    boxShadow: `inset 0 -7px 0 ${l.cat.furDk}, inset 0 7px 0 ${l.cat.belly}`,
-                    outline: draft.look === l.id ? "2.5px solid var(--honey)" : "none",
-                    outlineOffset: 2,
+                    /*
+                     * Selection is drawn with a shadow, not an outline.
+                     *
+                     * An inline outline outranks any stylesheet rule, so using it for selection meant
+                     * the focus ring could never appear on the one row where you are actually
+                     * choosing something. Shadow is also the more honest channel: selection is part
+                     * of how the swatch looks, focus is the browser saying where the keyboard is.
+                     */
+                    boxShadow: `inset 0 -7px 0 ${l.cat.furDk}, inset 0 7px 0 ${l.cat.belly}`
+                      + (draft.look === l.id ? ", 0 0 0 2.5px var(--honey)" : ""),
                   }}
                 />
               ))}
@@ -919,8 +926,7 @@ function RoomPage({ id }: { id: string }) {
                     width: 26,
                     height: 26,
                     background: e.hex,
-                    outline: draft.eyes === e.id ? "2.5px solid var(--honey)" : "none",
-                    outlineOffset: 2,
+                    boxShadow: draft.eyes === e.id ? "0 0 0 2.5px var(--honey)" : "none",
                   }}
                 />
               ))}
