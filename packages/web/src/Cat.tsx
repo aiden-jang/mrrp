@@ -180,6 +180,8 @@ const GENERATED_ROOMS: Record<LightPhase, string> = {
 export const generatedRoomFor = (phase: LightPhase, raining = false): string =>
   raining ? "/art/room-rain-v1.png" : GENERATED_ROOMS[phase];
 
+export const generatedCatFor = (pose: Pose): string => `/art/cat/${pose}.png`;
+
 /*
  * Closed eyes are authored as lines, not as recolored open-eye blocks.
  *
@@ -312,6 +314,7 @@ export function Cat({
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const roomImageRef = useRef<HTMLImageElement>(null);
+  const catImageRef = useRef<HTMLImageElement>(null);
   const lookRef = useRef(look);
   const clockRef = useRef(clock);
   const moodRef = useRef(mood);
@@ -2041,6 +2044,15 @@ export function Cat({
                     : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
+      // The generated cat is the visible character layer. The legacy sprite still runs invisibly
+      // below it for exact hit geometry while interactions migrate to generated overlays.
+      if (catImageRef.current) {
+        const generatedCat = generatedCatFor(pose);
+        if (!catImageRef.current.src.endsWith(generatedCat)) catImageRef.current.src = generatedCat;
+        catImageRef.current.style.left = `${((kx - cam) / VW) * 100}%`;
+        catImageRef.current.style.bottom = settledInBed ? "1%" : "6%";
+      }
+
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
       const hop =
         Math.round(bounce.current * 3) +
@@ -2655,6 +2667,9 @@ export function Cat({
     };
   }, []);
 
+  const initialScene = sceneFor(clock, Date.now(), mood, together);
+  const initialPose = initialScene.pose ?? (initialScene.atDoor ? "stand" : initialScene.sleepy > 0.55 ? "loaf" : "sit");
+
   return (
     <div className="generated-room" style={{ position: "relative", width: "100%", height: "100%" }}>
       <img
@@ -2666,6 +2681,19 @@ export function Cat({
         style={{
           position: "absolute", inset: 0, width: "100%", height: "100%",
           objectFit: "cover", objectPosition: "center", imageRendering: "pixelated",
+        }}
+      />
+      <img
+        ref={catImageRef}
+        src={generatedCatFor(initialPose)}
+        alt=""
+        aria-hidden="true"
+        draggable={false}
+        style={{
+          position: "absolute", left: `${initialScene.catX * 100}%`, bottom: "6%",
+          width: "43%", height: "auto", transform: "translateX(-50%)",
+          imageRendering: "pixelated", pointerEvents: "none",
+          transition: "left .45s var(--ease-spring), bottom .3s ease",
         }}
       />
       <canvas
