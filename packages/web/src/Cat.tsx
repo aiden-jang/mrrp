@@ -5,15 +5,13 @@ import { fireflyAt, mothAt } from "./critters.js";
 import { play, playPianoNote } from "./sound.js";
 import { dreamOf, type Dream, type DreamContext, type DreamScene } from "./dreams.js";
 import { catCallCode } from "./secrets.js";
-import { moonPhase, moonPixelLit } from "./moon.js";
-import { seasonFor, seasonalPlantColors } from "./season.js";
 import { mouseRunAt } from "./mouse.js";
 import { BUBBLE_GAME_MS, bubbleMomentAt, bubbleSeeds, type BubbleSeed } from "./bubbles.js";
 import { PIANO_CODE, PIANO_MS, advancePawMelody, pianoKeyAt, pianoKeys } from "./piano.js";
 import { collectConstellationStar, constellationProgress, CONSTELLATION_KEYS, type ConstellationKey } from "./constellation.js";
 import type { DiscoveryKey } from "./discoveries.js";
 import { INTERACTION_ART, INTERACTION_BLEND_MODE, type InteractionArtKey } from "./interactionArt.js";
-import { BED, BIRD, BOX_BACK, BOX_FRONT, CAKE, DOOR, EK, DOOR_FRAMES, GIFT_CAP, GIFT_LEAF, GIFT_MOTH, MUG, MUG_DOWN, FRAME, FRAME_CAT, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
+import { BED, BOX_BACK, DOOR, EK, FRAME, MRRP, PLANT, POSES, SHELF, TAIL, WINDOW, type Pose, type Sprite } from "./sprites.js";
 
 /**
  * The room, drawn as pixel art at her local time of day.
@@ -49,8 +47,6 @@ const SUN_CATCHER_MS = 3200;
 const STAR_MS = 900;
 /** A double-tap at the night window leaves a tiny constellation to find for a moment. */
 const CONSTELLATION_MS = 6200;
-/** A sent light rises into the glass before it waits on the other person's side. */
-const WINDOW_LIGHT_SEND_MS = 1900;
 /** A leaf takes just long enough to fall that it reads as a small response, not an idle loop. */
 const LEAF_FALL_MS = 1200;
 /** Just enough time for a picture-frame glint to read, not enough to turn into decoration. */
@@ -645,9 +641,6 @@ export function Cat({
     const surface = interactionSurfaceRef.current!;
     let stopped = false;
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const lunar = moonPhase(new Date());
-    const season = seasonFor(new Date());
-    const seasonalPlant = seasonalPlantColors(season);
 
     const generatedImageLoads = new Map<string, Promise<void>>();
     const loadGeneratedImage = (src: string): Promise<void> => {
@@ -1233,15 +1226,6 @@ export function Cat({
     surface.addEventListener("pointercancel", onCancel);
     surface.addEventListener("keydown", onKey);
 
-    // Dust lives in the beam. Integer positions, because half a pixel of dust is a grey smudge.
-    // Offsets are relative to the shaft's centre at that height, so dust can never drift outside
-    // the light. Loose dust reads as stray pixels, which looks like a rendering fault.
-    const motes = Array.from({ length: 12 }, () => ({
-      dx: Math.floor(Math.random() * 15) - 7,
-      y: Math.random() * FLOOR,
-      sp: 0.04 + Math.random() * 0.06,
-    }));
-
     /*
      * Generated images own every visible pixel now. The old scene code still calculates interaction
      * geometry and animation state used by the DOM layers, but its drawing vocabulary is deliberately
@@ -1333,681 +1317,29 @@ export function Cat({
       }
       const beamX = Math.round(sc.beam * GW);
 
-      // ── room ──────────────────────────────────────────────────────────────
-      // Flat bands with a dithered seam, not a gradient. Bands are what make a room read as pixel
-      // art; a smooth ramp just reads as a photograph with large pixels.
-      rect(0, 0, GW, FLOOR - 9, sc.wallTop);
-      rect(0, FLOOR - 9, GW, 9, sc.wallBottom);
-      rect(0, FLOOR, GW, 10, sc.floorFar);
-      rect(0, FLOOR + 10, GW, GH - FLOOR - 10, sc.floorNear);
-
-      /*
-       * Quiet surface detail, taken from the v2 golden-hour study.
-       *
-       * These are fixed marks rather than random texture. Random pixels reshuffle every frame and
-       * make a calm room shimmer; a handful of authored clusters lets the plaster and boards feel
-       * touched without becoming visual noise.
-       */
-      const wallShade = mixHex(sc.wallBottom, INK, 0.08);
-      const wallLift = mixHex(sc.wallTop, sc.beamWarm, 0.12 + sc.sun * 0.08);
-      for (const [x, y, w] of [[4, 8, 5], [38, 17, 3], [48, 7, 6], [90, 27, 4]] as const) {
-        dither(x, y, w, 2, wallShade);
-      }
-      for (const [x, y] of [[12, 30], [34, 6], [52, 31], [96, 11]] as const) px(x, y, wallLift);
-      /*
-       * Skirting: one bright line where the wall meets the floor, to read as depth.
-       *
-       * Lifted out of the wall's own colour rather than painted a fixed near-white. One grid row is
-       * about eleven screen pixels once the room is scaled up, so a flat #fffdf6 was not a highlight,
-       * it was a white band lying across the room — brightest at midnight, when the rest of the room
-       * is lavender and nothing in it should be glowing. Now it brightens with the hour, the way every
-       * other surface here already does.
-       */
-      rect(0, FLOOR - 1, GW, 1, mixHex(sc.wallBottom, sc.beamWarm, 0.3 + sc.sun * 0.35));
-      rect(0, FLOOR, GW, 1, mixHex(sc.floorFar, INK, 0.14));
-      // Floorboards now have staggered joins and tiny highlights as well as perspective bands. The
-      // generated study made clear that material, not more furniture, was what the empty half lacked.
-      for (const by of [FLOOR + 9, FLOOR + 15, FLOOR + 23, FLOOR + 30]) rect(0, by, GW, 1, sc.floorFar);
-      const boardJoin = mixHex(sc.floorFar, INK, 0.16);
-      const boardGlint = mixHex(sc.floorNear, sc.beamWarm, 0.1 + sc.sun * 0.08);
-      for (const [x, y, h] of [[8, 49, 8], [31, 49, 8], [70, 49, 8], [18, 58, 5], [52, 58, 5], [86, 58, 5], [5, 64, 7], [40, 64, 7], [75, 64, 7], [25, 72, 8], [62, 72, 8]] as const) {
-        rect(x, y, 1, h, boardJoin);
-        px(x + 1, y + 1, boardGlint);
-      }
-
-      /*
-       * A low rug gives the cat a place in the composition without turning the room into a set.
-       * Pixel-rounded rows keep its silhouette soft; two quiet inner bands imply woven material.
-       */
-      const rugShadow = mixHex(sc.floorNear, INK, 0.25);
-      const rugEdge = mixHex(sc.floorNear, "#765367", 0.58);
-      const rugBody = mixHex(sc.floorNear, "#a8737e", 0.48);
-      const rugThread = mixHex(rugBody, sc.beamWarm, 0.16);
-      rect(35, FLOOR + 12, 40, 1, rugShadow);
-      rect(32, FLOOR + 13, 46, 13, rugEdge);
-      rect(34, FLOOR + 12, 42, 15, rugEdge);
-      rect(35, FLOOR + 13, 40, 13, rugBody);
-      dither(38, FLOOR + 16, 34, 1, rugThread);
-      dither(38, FLOOR + 22, 34, 1, rugThread, 1);
-      for (const x of [35, 40, 69, 74]) px(x, FLOOR + 27, rugEdge);
-
-
-      // ── light ─────────────────────────────────────────────────────────────
-      // A leaning shaft, solid down the middle and dithered at both edges so it fades off without
-      // needing a gradient.
-      // Solid fills from the lit palette. Glazing a translucent layer over dithered bands is what
-      // produced vertical streaks: every row composited slightly differently and the seams lined up.
-      // No `phase` here. Passing y made the parity (x + 2y), which depends on x alone, so the
-      // "checkerboard" edges came out as vertical stripes down the wall.
-      // The shaft pivots from a fixed window rather than sliding across the wall with the patch.
-      // A window that moves collides with the picture and the door, and windows do not move.
-      const beamCore = sc.lightPhase === "golden" ? 18 : sc.lightPhase === "dawn" ? 10 : 16;
-      if (sc.lightPhase !== "night") {
-        for (let y = 14; y < FLOOR; y++) {
-          const k = (y - 14) / (FLOOR - 14);
-          const cx = Math.round(WIN_CX + (beamX - WIN_CX) * k);
-          const half = beamCore >> 1;
-          rect(cx - half, y, beamCore, 1, sc.litWall);
-          dither(cx - half - 3, y, 3, 1, sc.litWall);
-          dither(cx + half, y, 3, 1, sc.litWall);
-          // Quarter density outside that, so the edge falls off in two steps rather than one.
-          for (const ox of [-half - 5, -half - 4, half + 2, half + 3]) {
-            if ((ox + y) % 4 === 0) px(cx + ox, y, sc.litWall);
-          }
-        }
-      }
-      // The pool of light on the boards. Its size is a shape problem, not a number: too short and it
-      // sits at her head height as two pale wings either side of her ears; too wide and a mood that
-      // moves her to the door leaves a big bright lens with nothing lying in it. Small solid core,
-      // generous dithered edge, reaching far enough down the boards to pass under her at rows 49-66.
-      const POOL = [
-        [1, 16], [2, 20], [3, 24], [4, 26], [5, 26], [6, 24], [7, 22], [8, 18], [9, 14],
-      ] as const;
-      const poolScale = sc.lightPhase === "golden" ? 1.14 : sc.lightPhase === "dawn" ? 0.72 : 1;
-      if (sc.lightPhase !== "night") {
-        for (const [dy, w] of POOL) {
-          const width = Math.round(w * poolScale);
-          rect(beamX - (width >> 1), FLOOR + dy, width, 1, sc.patch);
-        }
-      }
-      // The soft edge starts below her ear line. Dither running across the rows her ears occupy put a
-      // checkerboard fan either side of her face, and speckle next to the one thing you are meant to
-      // be looking at just reads as noise.
-      if (sc.lightPhase !== "night") {
-        const edgeWidth = Math.round(30 * poolScale);
-        dither(beamX - (edgeWidth >> 1), FLOOR + 5, edgeWidth, 9, sc.patch);
-      } else {
-        // A plug-in nightlight lives where the camera already rests when she sleeps. The shelf lamp
-        // can be off-screen beside the bed; this smaller pool keeps the default night room cared for.
-        const nightGlow = mixHex(sc.wallBottom, "#d79a62", 0.3);
-        for (const [dx, dy] of [[-6, -3], [-3, -6], [0, -7], [3, -6], [6, -3], [-4, -1], [4, -1]] as const) {
-          px(40 + dx, FLOOR - 3 + dy, nightGlow);
-        }
-        rect(36, FLOOR - 6, 9, 1, mixHex(sc.wallBottom, "#d79a62", 0.16));
-        rect(39, FLOOR - 4, 3, 3, INK);
-        px(40, FLOOR - 3, "#ffd598");
-      }
-
-      /** A y inside the window's glass, given a row offset from its top edge. */
-      const wy = (row: number) => 4 + 1 + row;
-
-      // A poked thing wobbles for half a second and settles. One decaying sine, shared by everything,
-      // because six bespoke animations would be six things to get subtly wrong and this reads as
-      // "it noticed you" either way.
-      const pk = poked.current;
-      const shake = (key: string): number => {
-        if (!pk || pk.key !== key) return 0;
-        const age = t - pk.at;
-        if (age < 0 || age > 620) return 0;
-        return Math.round(Math.sin(age / 30) * (1 - age / 620) * 2);
-      };
-      const floorTap = pk?.key === "floor" && t - pk.at < 420;
-
-      // Props AFTER the light. Drawn before it, the beam's dither punched holes through them.
-      /*
-       * The window at night.
-       *
-       * The glass used to be painted wall colour whenever the sun was down, so after dark the window
-       * stopped being a window and became a rectangle drawn on a wall. That is the state this app is in
-       * most of the time it is ever opened: the whole point of it is the two minutes before somebody
-       * falls asleep. The most-seen version of the room had the least in it.
-       */
-      const night = sc.lightPhase === "night";
-      const wx = WIN_X + shake("window");
+      // Generated layers consume the interaction state that used to be interleaved with room painting.
       const rainRemaining = plantTaps.current.rainUntil - t;
       const raining = rainRemaining > 0;
       const generatedRoom = generatedRoomFor(sc.lightPhase, raining);
       if (roomImageRef.current && !roomImageRef.current.src.endsWith(generatedRoom)) {
         roomImageRef.current.src = generatedRoom;
       }
-
-      // Curtain panels sit in front of the beam, so the light feels as though it came through an
-      // actual room rather than being painted directly onto the wall. Two folds are enough at this
-      // scale; more turns fabric into striping.
-      const curtainDark = mixHex(sc.wallBottom, "#66516f", 0.5);
-      const curtainLight = mixHex(curtainDark, sc.beamWarm, 0.12 + sc.sun * 0.16);
-      rect(wx - 3, 3, 2, 21, curtainDark);
-      rect(wx - 1, 3, 1, 20, curtainLight);
-      rect(wx + WINDOW.w, 3, 2, 21, curtainDark);
-      rect(wx + WINDOW.w + 2, 3, 1, 20, curtainLight);
-      const curtainHem = reduce ? 0 : Math.round(Math.sin(t / 2400));
-      px(wx - 2 + curtainHem, 24, curtainLight); px(wx + WINDOW.w + 1 - curtainHem, 24, curtainLight);
-      const glass = raining
-        ? mixHex(sc.wallTop, "#718aa1", 0.58)
-        : sc.lightPhase === "night"
-          ? "#2b3450"
-          : sc.lightPhase === "dawn"
-            ? "#c79aaa"
-            : sc.lightPhase === "golden"
-              ? "#d99672"
-              : sc.lightPhase === "evening"
-                ? "#685b7d"
-                : mixHex("#b7d8dc", sc.beamWarm, 0.2);
-      blit(WINDOW, wx, 4, { w: INK, h: glass });
-
-      // The window tells the time before the caption does. Each chapter gets one unmistakable
-      // landmark, kept inside the glass so the rest of the room stays quiet.
-      if (sc.lightPhase === "dawn") {
-        rect(wx + 1, wy(7), 7, 1, "#e9b39d");
-        rect(wx + 9, wy(7), 7, 1, "#e9b39d");
-        px(wx + 13, wy(5), "#f6d2ac"); px(wx + 14, wy(5), "#f6d2ac");
-      } else if (sc.lightPhase === "day") {
-        const cloud = mixHex(glass, "#fffdf2", 0.76);
-        rect(wx + 3, wy(3), 5, 1, cloud);
-        rect(wx + 5, wy(2), 3, 1, cloud);
-        px(wx + 8, wy(3), cloud);
-      } else if (sc.lightPhase === "golden") {
-        rect(wx + 1, wy(7), 7, 1, "#efb071");
-        rect(wx + 9, wy(7), 7, 1, "#efb071");
-        rect(wx + 12, wy(3), 2, 2, "#ffe0a0");
-      } else if (sc.lightPhase === "evening") {
-        rect(wx + 1, wy(7), 7, 1, "#b87879");
-        rect(wx + 9, wy(7), 7, 1, "#b87879");
-        px(wx + 13, wy(2), "#f7dfbd");
-      }
-
-      // Distant rooftops live only in the bottom of each pane. They give the window a world without
-      // competing with the moon, stars, bird, or anything the two people can leave for each other.
-      const skyline = night ? "#252a42" : mixHex(sc.wallBottom, "#6d5f72", 0.48);
-      rect(wx + 1, wy(8), 7, 1, skyline);
-      rect(wx + 2, wy(7), 2, 1, skyline);
-      rect(wx + 9, wy(8), 7, 1, skyline);
-      rect(wx + 12, wy(6), 3, 2, skyline);
-      if (night) {
-        // Three lived-in windows are enough to turn a silhouette into a neighborhood.
-        px(wx + 3, wy(7), "#e8bd72");
-        px(wx + 11, wy(7), "#d99d62");
-        px(wx + 14, wy(6), "#e8bd72");
-      }
-      // A proper sill, with one shadow row, grounds the window and makes the sunbeam's source read.
-      rect(wx - 1, 15, WINDOW.w + 2, 1, mixHex(sc.wallBottom, INK, 0.24));
-      rect(wx - 2, 16, WINDOW.w + 4, 1, mixHex(sc.wallBottom, "#a77a58", 0.42));
-      if (raining) {
-        rect(wx, 15, WINDOW.w, 1, mixHex(glass, "#dce7e6", 0.5));
-        px(wx + 3, 17, mixHex(sc.wallBottom, glass, 0.5));
-        px(wx + 12, 17, mixHex(sc.wallBottom, glass, 0.5));
-      }
-      // The view changes quietly with the calendar: petals, thick summer green, falling color, or
-      // a little snow caught on the sill. Static in the glass so seasonal atmosphere never becomes
-      // another idle animation competing with her.
-      if (season === "spring") {
-        px(wx + 3, wy(8), "#efb0ba"); px(wx + 13, wy(3), "#f5c5ca");
-      } else if (season === "summer") {
-        px(wx + 3, wy(8), "#7fa965"); px(wx + 4, wy(7), "#9bbb76"); px(wx + 13, wy(8), "#7fa965");
-      } else if (season === "autumn") {
-        px(wx + 3, wy(3), "#d88945"); px(wx + 13, wy(7), "#bd633b"); px(wx + 6, wy(8), "#e0a14d");
-      } else {
-        rect(wx + 1, wy(8), 7, 1, "#edf0e8"); rect(wx + 9, wy(8), 7, 1, "#edf0e8");
-        px(wx + 4, wy(3), "#f8faf4"); px(wx + 13, wy(5), "#f8faf4");
-      }
-      // A bird on the sill, hopping. Two positions on a slow alternation rather than a smooth
-      // slide, because a bird does not slide.
+      const night = sc.lightPhase === "night";
+      const wx = WIN_X;
       const birding = t - bird.current < BIRD_MS;
       const starAge = t - shootingStar.current;
       const stargazing = !reduce && night && starAge >= 0 && starAge < STAR_MS;
       const constellating = night && t < windowTaps.current.constellationUntil;
       const sunCatching = !reduce && !night && t < windowTaps.current.sunCatcherUntil;
       const aurora = !reduce && night && t < auroraUntil.current;
-      if (birding) {
-        const hop = Math.floor(t / 380) % 2;
-        blit(BIRD, wx + 4 + hop * 3, 16, { w: INK, b: "#8a6a48", o: "#e0a03f" });
-      }
-      if (night) {
-        // The moon is today's actual eighth of the lunar cycle. Five columns are enough to read
-        // waxing from waning while keeping it a room detail rather than turning the window into UI.
-        const moonRows = [[1, 3], [0, 4], [0, 4], [0, 4], [1, 3]] as const;
-        for (let my = 0; my < moonRows.length; my++) {
-          const [start, end] = moonRows[my]!;
-          for (let mx = start; mx <= end; mx++) {
-            if (moonPixelLit(lunar.index, mx)) px(wx + 2 + mx, wy(my + 1), "#f4e6b8");
-          }
-        }
-        // Stars, on their own slow twinkles so they never blink together.
-        for (const [sx, sy, ph] of [[12, 2, 0], [14, 6, 0.45], [10, 7, 0.8], [7, 8, 0.25]] as const) {
-          if (reduce || Math.sin(t / 900 + ph * 7) > -0.35) px(wx + sx, wy(sy), "#fff6dc");
-        }
-        // Tap the window at night and, if you are lucky enough to be looking, a star crosses the
-        // glass. It stays inside the pane rather than streaking across the room: this is a tiny
-        // discovery, not a new feature asking to be noticed.
-        if (stargazing) {
-          const p = starAge / STAR_MS;
-          const sx = Math.round(wx + 14 - p * 10);
-          const sy = Math.round(wy(1) + p * 7);
-          const a = 1 - p * 0.45;
-          px(sx, sy, `rgba(255,246,202,${a})`);
-          px(sx + 1, sy - 1, `rgba(255,235,170,${a * 0.8})`);
-          px(sx + 2, sy - 2, `rgba(255,226,150,${a * 0.45})`);
-          px(sx + 3, sy - 3, `rgba(255,226,150,${a * 0.2})`);
-        }
-        // A double-tap reveals a tiny drawn constellation, held just long enough to enjoy before
-        // it dissolves back into the ordinary night. The lines are intentionally sparse: at this
-        // scale an actual star map would be visual noise, while four joined points read as a secret.
-        if (constellating) {
-          const fade = Math.min(1, (windowTaps.current.constellationUntil - t) / 800);
-          const c = `rgba(255,239,180,${fade})`;
-          // On the full moon the same secret draws two ears and a tiny cat face. It is available
-          // for only one eighth of the month and never announced; the ordinary constellation stays.
-          const points = lunar.index === 4
-            ? [[7, 7], [6, 5], [8, 6], [10, 6], [12, 5], [11, 7], [9, 8]] as const
-            : [[4, 7], [7, 5], [10, 7], [13, 3]] as const;
-          for (const [sx, sy] of points) px(wx + sx, wy(sy), c);
-          const joins = lunar.index === 4
-            ? [[7, 6], [9, 6], [11, 6], [8, 8], [10, 8]] as const
-            : [[5, 7], [6, 6], [8, 5], [9, 6], [11, 6], [12, 4]] as const;
-          for (const [sx, sy] of joins) {
-            px(wx + sx, wy(sy), `rgba(255,226,150,${fade * 0.55})`);
-          }
-        }
-        // The code's reward is a soft aurora caught in the glass, rather than a loud full-screen
-        // effect. Two dithered ribbons move at different speeds so it feels like light outside,
-        // not coloured lines drawn on top of the room.
-        if (aurora) {
-          const fade = Math.min(1, (auroraUntil.current - t) / 900);
-          for (let row = 1; row < 9; row++) {
-            const drift = Math.round(Math.sin(t / 520 + row * 0.85) * 3);
-            const start = 3 + ((row + drift + 12) % 5);
-            const color = row % 2 === 0
-              ? `rgba(126,216,180,${fade * 0.7})`
-              : `rgba(173,141,230,${fade * 0.55})`;
-            for (let col = start; col < 15; col += 3) px(wx + col, wy(row), color);
-          }
-        }
-      }
-      // Unlike shooting stars and prisms, this one came from the other seat and stays in the pane
-      // until found. Five pixel-art points are enough to read as a deliberately brighter star in
-      // both daylight and night without adding a badge, label, or notification to the room.
-      if (windowLightRef.current) {
-        const pulse = 0.72 + Math.sin(t / 520) * 0.2;
-        const c = `rgba(255,226,139,${pulse})`;
-        const lx = wx + 12;
-        const ly = wy(5);
-        px(lx, ly, "#fff8d8");
-        px(lx - 1, ly, c); px(lx + 1, ly, c);
-        px(lx, ly - 1, c); px(lx, ly + 1, c);
-        if (Math.sin(t / 700) > 0.35) {
-          px(lx - 2, ly, `rgba(255,226,139,${pulse * 0.42})`);
-          px(lx + 2, ly, `rgba(255,226,139,${pulse * 0.42})`);
-        }
-      }
-      const lightTouchAge = t - windowLightTouchedAt.current;
-      if (!reduce && lightTouchAge >= 0 && lightTouchAge < WINDOW_LIGHT_SEND_MS) {
-        const p = lightTouchAge / WINDOW_LIGHT_SEND_MS;
-        const a = Math.sin(Math.min(1, p) * Math.PI) * 0.85;
-        const lx = wx + 4 + Math.round(p * 8);
-        const ly = wy(8) - Math.round(Math.sin(p * Math.PI) * 5);
-        px(lx, ly, `rgba(255,248,211,${a})`);
-        px(lx - 1, ly, `rgba(255,219,128,${a * 0.72})`);
-        px(lx + 1, ly, `rgba(255,219,128,${a * 0.72})`);
-        px(lx, ly - 1, `rgba(255,232,164,${a * 0.72})`);
-        px(lx, ly + 1, `rgba(255,232,164,${a * 0.72})`);
-      }
-
-      // Each permanent room detail found on this device leaves a quiet point in the glass. This is
-      // progress without a badge or menu: the room remembers because the room itself looks changed.
-      const keptStars = [[3, 7], [6, 3], [9, 7], [12, 3], [14, 7], [8, 5]] as const;
-      for (let index = 0; index < constellation.current.found.size; index++) {
-        const [sx, sy] = keptStars[index]!;
-        const glow = 0.58 + Math.sin(t / 720 + index * 1.7) * 0.18;
-        px(wx + sx, wy(sy), `rgba(255,232,166,${glow})`);
-      }
-
-      // A first touch sends its star into the room's sky. Reduced motion gets the destination point
-      // immediately, preserving the discovery without making the user watch it travel.
-      const starFlight = constellation.current.flight;
-      if (starFlight) {
-        const age = t - starFlight.startedAt;
-        if (age >= 0 && age < STAR_FLIGHT_MS) {
-          const raw = reduce ? 1 : age / STAR_FLIGHT_MS;
-          const p = 1 - Math.pow(1 - raw, 3);
-          const targetX = Math.max(cam + 12, Math.min(cam + VW - 12, catX.current ?? WIN_CX));
-          const x = Math.round(starFlight.fromX + (targetX - starFlight.fromX) * p);
-          const y = Math.round(starFlight.fromY + (9 - starFlight.fromY) * p - Math.sin(p * Math.PI) * 6);
-          const c = `rgba(255,236,177,${Math.min(1, 0.45 + p)})`;
-          px(x, y, "#fff9dc");
-          px(x - 1, y, c); px(x + 1, y, c); px(x, y - 1, c); px(x, y + 1, c);
-        }
-      }
-
-      // The sixth point joins into a cat above the room. Once earned, typing "stars" calls it back.
-      if (t < constellation.current.rewardUntil) {
-        const remaining = constellation.current.rewardUntil - t;
-        const fade = Math.min(1, (CONSTELLATION_REWARD_MS - remaining) / 700, remaining / 900);
-        const cx = Math.round(Math.max(cam + 12, Math.min(cam + VW - 12, catX.current ?? WIN_CX)));
-        const cy = 10;
-        const points = [[-8, 0], [-7, -4], [-3, -2], [0, -3], [3, -2], [7, -4], [8, 0], [6, 3], [3, 5], [0, 6], [-3, 5], [-6, 3], [-3, 1], [3, 1]] as const;
-        const joins = [[-7, -1], [-6, -2], [-5, -2], [-4, -2], [-2, -2], [-1, -3], [1, -3], [2, -2], [4, -2], [5, -2], [6, -2], [7, -1], [7, 1], [5, 4], [4, 4], [2, 5], [1, 5], [-1, 5], [-2, 5], [-4, 4], [-5, 4], [-7, 1]] as const;
-        for (const [dx, dy] of joins) px(cx + dx, cy + dy, `rgba(255,222,145,${fade * 0.38})`);
-        for (const [dx, dy] of points) px(cx + dx, cy + dy, `rgba(255,246,205,${fade})`);
-        px(cx - 2, cy + 1, `rgba(255,246,205,${fade})`);
-        px(cx + 2, cy + 1, `rgba(255,246,205,${fade})`);
-      }
-      // A pair of quick daytime taps gets more than the bird: it catches a little coloured light
-      // on the wall and boards. It lives in the sunbeam rather than becoming a screen-wide rainbow,
-      // so it still feels like something the window made, not a reward layer on top of the room.
-      if (sunCatching) {
-        const remaining = windowTaps.current.sunCatcherUntil - t;
-        const a = Math.min(1, remaining / 550) * 0.62;
-        const colors = [
-          `rgba(232,150,144,${a})`,
-          `rgba(236,191,104,${a})`,
-          `rgba(139,187,139,${a})`,
-          `rgba(137,164,215,${a})`,
-        ];
-        for (let i = 0; i < colors.length; i++) {
-          const x = WIN_CX - 8 + i * 5 + Math.round(Math.sin(t / 480 + i) * 1);
-          rect(x, 25 + i, 3, 1, colors[i]!);
-          px(x + 1, FLOOR + 8 + i * 2, colors[i]!);
-        }
-      }
-      // A tiny shower is the plant's hidden third-tap response. The drops stay inside the window:
-      // weather belongs outside, and a full-room overlay would turn a private discovery into UI.
       const rainbowing = !reduce && rainRemaining <= 0 && t < plantTaps.current.rainbowUntil;
       const plantBlooming = !reduce && t >= plantTaps.current.rainbowUntil && t < plantTaps.current.bloomUntil;
       const generatedMoth = reduce ? null : mothAt(t, beamX);
-      if (!reduce && rainRemaining > 0) {
-        const drift = Math.floor(t / 90);
-        const a = Math.min(1, rainRemaining / 750);
-        for (let i = 0; i < 8; i++) {
-          const rx = wx + 2 + ((i * 5 + drift) % 12);
-          const ry = wy(1) + ((i * 3 + Math.floor(t / 170)) % 8);
-          px(rx, ry, night ? `rgba(157,178,216,${a})` : `rgba(141,180,199,${a})`);
-          px(rx - 1, ry + 1, night ? `rgba(111,136,178,${a})` : `rgba(111,157,173,${a})`);
-        }
-        // A rare two-frame flash turns the secret shower into weather without lighting the whole
-        // room like an effect layer. It stays outside, behind the glass.
-        if (Math.floor(t / 1700) % 3 === 0 && t % 1700 < 90) {
-          px(wx + 11, wy(2), `rgba(255,248,210,${a})`);
-          px(wx + 10, wy(3), `rgba(255,248,210,${a})`);
-          px(wx + 11, wy(4), `rgba(255,248,210,${a})`);
-          px(wx + 10, wy(5), `rgba(255,248,210,${a})`);
-          px(wx + 9, wy(6), `rgba(255,248,210,${a * 0.7})`);
-          px(wx + 9, wy(7), `rgba(255,248,210,${a * 0.45})`);
-          px(wx + 8, wy(8), `rgba(255,248,210,${a * 0.25})`);
-        }
-      }
-      // A storm from the plant's third tap ends with a small rainbow held behind the same pane.
-      // It uses a U-shaped band rather than a smooth curve: one pixel per hue keeps it part of
-      // this room's visual language, and the short fade means the reward feels caught, not parked.
-      if (rainbowing) {
-        const a = Math.min(1, (plantTaps.current.rainbowUntil - t) / 500);
-        const colors = [
-          `rgba(232,137,122,${a})`,
-          `rgba(238,184,91,${a})`,
-          `rgba(125,181,119,${a})`,
-          `rgba(128,155,213,${a})`,
-        ];
-        for (let x = 2; x < 15; x++) {
-          const curve = Math.floor(Math.abs(x - 8) / 2);
-          colors.forEach((color, band) => px(wx + x, wy(1 + band + curve), color));
-        }
-      }
-      // At night one practical light keeps this from becoming the daytime room with its saturation
-      // turned down. The halo is dithered into the wall; the lamp itself stays smaller than the mug.
-      if (night) {
-        const lampGlow = mixHex(sc.wallBottom, "#d89b65", 0.28);
-        dither(79, FLOOR - 32, 20, 12, lampGlow);
-      }
-      // Small shelf shadow and two uneven books add depth without making the prop harder to hit.
-      rect(79, FLOOR - 23, 18, 2, mixHex(sc.wallBottom, INK, 0.14));
-      blit(SHELF, 80 + shake("shelf"), FLOOR - 24, { w: INK, d: "#8a6a48" });
-      rect(92 + shake("shelf"), FLOOR - 28, 2, 4, "#7d6b86");
-      rect(94 + shake("shelf"), FLOOR - 29, 2, 5, "#b87868");
-      if (night) {
-        rect(88, FLOOR - 30, 4, 1, INK);
-        rect(87, FLOOR - 29, 6, 2, "#d59461");
-        rect(89, FLOOR - 27, 2, 3, INK);
-        px(89, FLOOR - 29, "#ffd79a"); px(90, FLOOR - 29, "#ffd79a");
-      }
-      // The mug: on the shelf, or on its side on the boards under it. Same object either way, so
-      // it has to be recognisably the same drawing.
-      if (downRef.current) {
-        blit(MUG_DOWN, MUG_FLOOR_X, MUG_FLOOR_Y, { w: INK, c: "#cfe0e4", d: "#a9c2c8" });
-      } else {
-        blit(MUG, 84 + shake("shelf"), FLOOR - 29, { w: INK, c: "#cfe0e4", d: "#a9c2c8" });
-        // A shelf tap makes it clear the cup is still warm. The steam is a short local response,
-        // not a permanent animated accessory competing with the cat for attention.
-        const steamAge = t - mugSteamedAt.current;
-        if (!reduce && steamAge >= 0 && steamAge < MUG_STEAM_MS) {
-          const p = steamAge / MUG_STEAM_MS;
-          const a = (1 - p) * 0.55;
-          for (let i = 0; i < 2; i++) {
-            const sx = 87 + i * 3 + Math.round(Math.sin(t / 180 + i) * 1);
-            const sy = FLOOR - 31 - Math.round(p * 7) - i;
-            px(sx, sy, `rgba(255,253,235,${a})`);
-            px(sx + 1, sy - 1, `rgba(255,253,235,${a * 0.45})`);
-          }
-        }
-        // A second cup tap reads as someone staying with the moment. The warm glow hugs the shelf
-        // instead of tinting the room, so it feels like a small lamp found in an ordinary object.
-        const mugGlowRemaining = mugTaps.current.glowUntil - t;
-        if (!reduce && mugGlowRemaining > 0) {
-          const a = Math.min(1, mugGlowRemaining / 500);
-          for (const [dx, dy, opacity] of [[-2, -1, 0.18], [5, -2, 0.26], [8, 1, 0.14], [1, -4, 0.16]] as const) {
-            px(87 + dx, FLOOR - 28 + dy, `rgba(255,220,157,${a * opacity})`);
-          }
-        }
-      }
-      {
-        const prog = doorProg;
-        const dx = 6 + shake("door");
-        blit(DOOR_FRAMES[Math.round(prog)] ?? DOOR, dx, FLOOR - 16, {
-          w: INK,
-          f: sc.wallBottom,
-          d: "#8a6a48",
-          h: "#ffe9a8",
-          // Near-white, not merely warm. The first attempt used #ffdca6, which sits within a few
-          // percent of the daytime wall (#e6cfb2), so the opening blended into the plaster and the
-          // door read as still shut. An opening has to be the brightest thing on the wall or it is
-          // not an opening.
-          o: "#fff8e8",
-        });
-        // Light spilling across the boards, widening as it goes, keyed to how far open the door is.
-        // Dither rather than a solid wedge for the same reason the sun pool is dithered: a hard
-        // bright shape on floorboards reads as a rendering fault, not as light.
-        const ajar = prog / 3;
-        if (ajar > 0.05) {
-          const cxd = dx + 6;
-          // Solid core, dithered edge, same shape as the sun pool. All-dither read as dirt on the
-          // boards rather than as light; light needs a bright middle to be light.
-          for (let i = 0; i < 8; i++) {
-            const w = Math.round((5 + i * 1.6) * ajar);
-            if (w > 0) rect(cxd - (w >> 1), FLOOR + 1 + i, w, 1, "#fff1cf");
-          }
-          dither(cxd - 12, FLOOR + 4, 24, 7, "#fff1cf");
-        }
-      }
-      // Two quick door taps slip a tiny note under it. The note never becomes state or copy; it is
-      // just a pixel-paper surprise that crosses the threshold and is gone before it asks to mean
-      // anything. Start partly under the door, then let it glide to a visible board.
-      const noteRemaining = doorTaps.current.noteUntil - t;
-      if (!reduce && noteRemaining > 0) {
-        const p = 1 - noteRemaining / DOOR_NOTE_MS;
-        const nx = Math.round(8 + Math.min(1, p * 2.8) * 13);
-        const ny = FLOOR + 12;
-        const a = Math.min(1, noteRemaining / 500);
-        const paper = `rgba(255,248,223,${a})`;
-        rect(nx, ny, 6, 4, paper);
-        rect(nx, ny, 6, 1, INK);
-        rect(nx, ny + 3, 6, 1, INK);
-        px(nx, ny + 1, INK); px(nx + 5, ny + 2, INK);
-        px(nx + 2, ny + 1, `rgba(198,154,99,${a})`);
-      }
-      // The frame casts one blocky shadow, which is enough to lift it from the wall.
-      rect(18, 14, FRAME.w, FRAME.h, mixHex(sc.wallBottom, INK, 0.12));
-      if (framedRef.current) {
-        blit(FRAME_CAT, 16 + shake("frame"), 12, { w: INK, f: "#c69a63", h: "#cfe0e4", c: L.fur, e: INK, n: PINK });
-      } else {
-        blit(FRAME, 16 + shake("frame"), 12, { w: INK, f: "#c69a63", h: "#cfe0e4", g: "#e2926f" });
-      }
-      // Once her photo exists, the frame catches a little light when you tap it. There is no
-      // equivalent before the photo because a glint should reward something that actually happened
-      // in the room, not advertise a future interaction.
-      const glintAge = t - photoGlint.current;
-      if (!reduce && framedRef.current && glintAge >= 0 && glintAge < PHOTO_GLINT_MS) {
-        const p = glintAge / PHOTO_GLINT_MS;
-        const gx = Math.round(29 + p * 4);
-        const gy = Math.round(15 + p * 5);
-        const a = 1 - p;
-        px(gx, gy, `rgba(255,253,230,${a})`);
-        px(gx - 1, gy, `rgba(255,253,230,${a * 0.55})`);
-        px(gx + 1, gy, `rgba(255,253,230,${a * 0.55})`);
-        px(gx, gy - 1, `rgba(255,253,230,${a * 0.55})`);
-        px(gx, gy + 1, `rgba(255,253,230,${a * 0.55})`);
-      }
-      // The second quick tap keeps the frame's reward specific to a real shared action: a small
-      // cluster of warm pixels rises off the photo, then vanishes. It is memory-shaped, not an
-      // always-on heart effect, so the room stays calm until somebody revisits the portrait.
-      const memoryRemaining = photoTaps.current.memoryUntil - t;
-      if (!reduce && framedRef.current && memoryRemaining > 0) {
-        const p = 1 - memoryRemaining / PHOTO_MEMORY_MS;
-        const a = Math.min(1, memoryRemaining / 500);
-        for (let i = 0; i < 3; i++) {
-          const hx = 21 + i * 4 + Math.round(Math.sin(t / 260 + i) * 1);
-          const hy = 11 - Math.round(p * 9) + (i % 2);
-          const c = `rgba(240,174,180,${a * (0.8 - i * 0.12)})`;
-          px(hx, hy, c); px(hx + 2, hy, c); px(hx + 1, hy + 1, c); px(hx + 1, hy + 2, c);
-        }
-      }
-      // A hanging cutting balances the high left side of the room from the art study. It is scenery,
-      // not another secret: the permanent interactive plant remains on the floor at the right.
-      const hangingX = 48 + (!reduce ? Math.round(Math.sin(t / 1900)) : 0);
-      rect(49, 5, 1, 6, INK);
-      px(48, 11, INK); px(50, 11, INK);
-      rect(hangingX - 2, 12, 6, 3, "#a86f4f");
-      rect(hangingX - 1, 15, 4, 1, "#7d523d");
-      const hangingLeaf = mixHex(seasonalPlant.leaf, sc.wallTop, night ? 0.22 : 0.08);
-      for (const [dx, dy] of [[-4, -2], [-2, -4], [1, -5], [4, -3], [-5, 1], [5, 0], [-3, 3], [3, 4]] as const) {
-        px(hangingX + dx, 12 + dy, hangingLeaf);
-        px(hangingX + dx + (dx < 0 ? 1 : -1), 13 + dy, hangingLeaf);
-      }
-
-      blit(PLANT, 87 + shake("plant"), FLOOR - 13, { g: seasonalPlant.leaf, w: INK, d: "#b07a4e" });
-      if (season === "spring") {
-        px(91, FLOOR - 19, seasonalPlant.detail); px(95, FLOOR - 17, seasonalPlant.detail);
-      } else if (season === "winter") {
-        px(90, FLOOR - 18, seasonalPlant.detail); px(94, FLOOR - 19, seasonalPlant.detail);
-      }
-      // The weather sequence ends where it began: one fresh little flower on the plant. It fades
-      // away after a few seconds so the room never accumulates a permanent checklist of secrets.
-      if (plantBlooming) {
-        const a = Math.min(1, (plantTaps.current.bloomUntil - t) / 700);
-        const c = `rgba(236,151,169,${a})`;
-        px(93, FLOOR - 16, c); px(92, FLOOR - 15, c); px(94, FLOOR - 15, c); px(93, FLOOR - 14, "#e7c75f");
-      }
-      // A plant tap drops one leaf. It is intentionally a little easier to miss than the plant
-      // itself: the pleasure is in catching it, not in being prompted to make it happen.
-      const leafAge = t - fallingLeaf.current;
-      if (!reduce && leafAge >= 0 && leafAge < LEAF_FALL_MS) {
-        const p = leafAge / LEAF_FALL_MS;
-        const lx = Math.round(93 + Math.sin(p * Math.PI * 2) * 3);
-        const ly = Math.round(FLOOR - 16 + p * 22);
-        px(lx, ly, seasonalPlant.detail);
-        if (season !== "spring" && season !== "winter") {
-          px(lx + (p < 0.5 ? 1 : -1), ly + 1, seasonalPlant.leaf);
-        }
-      }
-      // Dusty rose, not the lavender it started as. Lavender was the only cool colour in a room of
-      // creams and browns, and at this size it stopped reading as a cat bed and started reading as
-      // a stray UI element that had landed on the floor.
-      rect(13, FLOOR + 23, 22, 2, mixHex(sc.floorNear, INK, 0.18));
-      blit(BED, 24 + shake("bed"), FLOOR + 22, { d: "#b07f76", f: "#d8a79c", b: "#c4918a" });
-
-      /*
-       * A cake, on the days the room has a birthday.
-       *
-       * Sat on the floor beside her bed rather than announced, like everything else in here: the line
-       * under the room already says what the day is, and a thing you notice is worth more than a thing
-       * you are told. Down in the front strip on purpose, since the middle band is where she sits and a
-       * cake behind the cat is a cake nobody sees. The flame holds still under reduced motion.
-       */
-      if (cakeRef.current) {
-        const flame = reduce || Math.sin(t / 260) > -0.4 ? "#ffca6b" : "#ffe6a8";
-        blit(CAKE, 42, FLOOR + 20, { d: "#e8d3b0", g: "#f0a6b4", r: flame });
-      }
-      // What she left, put down near the door rather than mid-floor: mid-floor is where she loafs, so
-      // the first version was drawn perfectly and then covered by the cat every single time.
-      const g0 = giftRef.current;
-      if (g0) {
-        const sp0 = g0 === "leaf" ? GIFT_LEAF : g0 === "cap" ? GIFT_CAP : GIFT_MOTH;
-        blit(sp0, 17, FLOOR + 16, { w: INK, g: "#7d9e63", r: "#5d7a46", m: "#b9b3a4", n: "#cbbfa6" });
-        const giftAge = t - giftGlint.current;
-        if (!reduce && giftAge >= 0 && giftAge < PHOTO_GLINT_MS) {
-          const p = giftAge / PHOTO_GLINT_MS;
-          const c = `rgba(255,242,184,${1 - p})`;
-          const gx = 20 + Math.round(p * 2);
-          const gy = FLOOR + 15 - Math.round(p * 3);
-          px(gx, gy, c); px(gx - 1, gy, c); px(gx + 1, gy, c); px(gx, gy - 1, c); px(gx, gy + 1, c);
-        }
-        // Two quick taps let the gift make a tiny wish: a few warmer specks find their way up,
-        // then the gift goes back to being a quiet thing left by the door.
-        const wishRemaining = giftTaps.current.wishUntil - t;
-        if (!reduce && wishRemaining > 0) {
-          const p = 1 - wishRemaining / GIFT_WISH_MS;
-          const a = Math.min(1, wishRemaining / 500);
-          for (let i = 0; i < 4; i++) {
-            const sx = 18 + i * 2 + Math.round(Math.sin(t / 230 + i) * 1);
-            const sy = FLOOR + 15 - Math.round(p * (8 + i));
-            px(sx, sy, `rgba(255,224,150,${a * (0.75 - i * 0.1)})`);
-          }
-        }
-      }
-      // The box, back half. Sits right of centre so it does not fight the bed or the sunbeam, and
-      // low enough on the boards to read as standing on them rather than floating.
       const boxHere = boxRef.current || t < secretBoxUntil.current;
       const inBox = boxHere && !sc.atDoor;
       const peeking = !reduce && boxHere && t < boxPeekUntil.current;
       const boxPlaying = !reduce && boxHere && t < boxTaps.current.playUntil;
-      if (boxHere) {
-        blit(BOX_BACK, BOX_X + shake("box"), BOX_Y, { w: INK, k: "#c69a63", s: "#a97f4d" });
-      }
-
-      if (!reduce) {
-        for (const m of motes) {
-          m.y -= m.sp;
-          if (m.y < 14) { m.y = FLOOR - 1; m.dx = Math.floor(Math.random() * 15) - 7; }
-          if (sc.sun > 0.25) {
-            const k = Math.max(0, (m.y - 14) / (FLOOR - 14));
-            const cx = Math.round(WIN_CX + (beamX - WIN_CX) * k);
-            px(cx + m.dx, Math.floor(m.y), sc.beamWarm);
-          }
-        }
-      }
-
-      // Touching every permanent detail is a hidden little room tour. Its reward borrows the room's
-      // own warm colors and leaves no badge or progress UI behind; the discovery is the keepsake.
       const roomPartyRemaining = roomTour.current.partyUntil - t;
-      if (!reduce && roomPartyRemaining > 0) {
-        const p = 1 - roomPartyRemaining / ROOM_TOUR_MS;
-        const a = Math.min(1, roomPartyRemaining / 650);
-        const colors = [[240, 174, 180], [255, 227, 155], [169, 207, 145], [174, 191, 232]] as const;
-        for (let i = 0; i < 10; i++) {
-          const sx = 8 + i * 9 + Math.round(Math.sin(t / 280 + i) * 2);
-          const sy = FLOOR + 24 - Math.round(((p + i * 0.13) % 1) * 40);
-          const [r, green, b] = colors[i % colors.length]!;
-          px(sx, sy, `rgba(${r},${green},${b},${a})`);
-          if (i % 3 === 0) px(sx + 1, sy, `rgba(${r},${green},${b},${a * 0.6})`);
-        }
-      }
 
       // ── her ───────────────────────────────────────────────────────────────
       // Zoomies. Rare and unannounced: first one somewhere in the first couple of minutes, then
@@ -2503,29 +1835,6 @@ export function Cat({
           px(hx + 1, hy + 3, c);
         }
       }
-      // The box, near wall. Drawn after her, which is the whole reason the box is two sprites: this
-      // is the line between a cat in a box and a cat standing behind one.
-      if (boxHere) {
-        blit(BOX_FRONT, BOX_X + shake("box"), BOX_Y + 3, { w: INK, k: "#d8ab72" });
-        if (boxPlaying) {
-          // Two paws hook over the rim while a few packing-paper flecks escape. The box front is
-          // already drawn over her body, so these four fur pixels are enough to read as peekaboo.
-          const bx = BOX_X + shake("box");
-          rect(bx + 4, BOX_Y + 3, 3, 2, L.fur);
-          rect(bx + 13, BOX_Y + 3, 3, 2, L.fur);
-          px(bx + 4, BOX_Y + 3, INK); px(bx + 6, BOX_Y + 3, INK);
-          px(bx + 13, BOX_Y + 3, INK); px(bx + 15, BOX_Y + 3, INK);
-          const remaining = boxTaps.current.playUntil - t;
-          const fade = Math.min(1, remaining / 450);
-          for (let i = 0; i < 5; i++) {
-            const phase = (t / 430 + i * 0.73) % 1;
-            const fx = bx + 2 + i * 4 + Math.round(Math.sin(t / 180 + i) * 2);
-            const fy = BOX_Y + 2 - Math.round(phase * 12);
-            px(fx, fy, `rgba(255,238,190,${fade * (1 - phase)})`);
-          }
-        }
-      }
-
       // The held-floor reward is only a blink of light on the boards. A literal beam would cut
       // through the room; the chase tells the rest of the story.
       if (laserPlaying && Math.floor(t / 110) % 2 === 0) {
@@ -2600,11 +1909,6 @@ export function Cat({
           if (i % 2 === 0) px(nx + 2, ny - 4, nc);
         }
       }
-      if (floorTap) {
-        const age = (t - pk!.at) / 420;
-        px(Math.round(ptr.x), FLOOR + 1, `rgba(255,239,183,${1 - age})`);
-      }
-
       // The moth, drawn before her so she can be in front of it, and so its position is known when
       // her eyes are drawn.
       const m = generatedMoth;
