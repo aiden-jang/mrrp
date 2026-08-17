@@ -165,9 +165,21 @@ const DYNAMIC_INTERACTION_ART: InteractionArtKey[] = [
 ];
 const GENERATED_EFFECTS = [
   "speech", "sleep", "purr", "dream", "laser", "firefly",
-  "music", "heart", "memory", "wish", "mug", "tour", "box", "door",
+  "music", "heart", "memory", "wish", "mug", "tour", "box", "door", "mood",
 ] as const;
 type GeneratedEffectKey = typeof GENERATED_EFFECTS[number];
+
+const MOOD_FLOURISH: Record<Mood, string> = {
+  good: "✦  ✧  ✦",
+  tired: "z  ·  z",
+  stressed: ")))  ♡  (((",
+  sad: "♡  ·  ♡",
+  lonely: "♡  mrrp  ♡",
+  bored: "·  ?  ·",
+  feral: "✦  !!  ✦",
+  done: "—  flop  —",
+  horny: "·  nope  →",
+};
 
 const GENERATED_ROOMS: Record<LightPhase, string> = {
   dawn: "/art/room-dawn-v1.png",
@@ -477,6 +489,7 @@ export function Cat({
   const catX = useRef<number | null>(null);
   const bounce = useRef(0);
   const lastNudge = useRef(nudge);
+  const moodResponseUntil = useRef(-1e9);
 
   useEffect(() => {
     if (!onProps) return;
@@ -609,6 +622,7 @@ export function Cat({
       lastNudge.current = nudge;
       bounce.current = 1;
       speakUntil.current = performance.now() + 1700;
+      moodResponseUntil.current = performance.now() + 2300;
     }
   }, [nudge]);
 
@@ -1442,8 +1456,15 @@ export function Cat({
         20,
       );
       const firefly = !reduce && sc.sun < 0.1 ? fireflyAt(t) : null;
-      placeGeneratedEffect("speech", (birding || t < speakUntil.current) && !reduce, kx + 10, ky - 24, birding ? "ek!" : "mrrp");
-      placeGeneratedEffect("purr", (petting.current || sc.purring || t < catTaps.current.chorusUntil) && !reduce, kx, ky - 17, ")))");
+      placeGeneratedEffect("speech", birding || t < speakUntil.current, kx + 10, ky - 24, birding ? "ek!" : "mrrp");
+      placeGeneratedEffect("purr", petting.current || sc.purring || t < catTaps.current.chorusUntil, kx, ky - 17, ")))");
+      placeGeneratedEffect(
+        "mood",
+        !!moodRef.current && t < moodResponseUntil.current,
+        kx,
+        ky - 28,
+        moodRef.current ? MOOD_FLOURISH[moodRef.current] : "",
+      );
       placeGeneratedEffect("dream", t < bedTaps.current.dreamUntil && !reduce, 26, FLOOR + 10, "✦  ✧  ✦");
       placeGeneratedEffect("laser", laserPlaying, laser.current.x, laser.current.y, "•");
       placeGeneratedEffect("firefly", !!firefly, firefly?.x ?? 0, (firefly?.y ?? 0) + 14, "✦");
@@ -1496,7 +1517,7 @@ export function Cat({
       const forced = eyesRef.current || nameCalled || mouseVisiting || bubblePlaying || bubbleRewarding || pianoPawing || pianoRewarding || (looking && !reduce) || doorRef.current !== null || musicPlaying || catnipActive || zooming || laserPlaying || yarnPlaying || treating || summoning || birding || stargazing || constellating || sunCatching || rainbowing || plantBlooming || peeking;
       const open = forced ? 1 : pet ? 0 : Math.max(sc.eyes, n);
       const awake = !slowBlinking && (forced || (open > 0.4 && !blink));
-      placeGeneratedEffect("sleep", sc.sleepy > 0.75 && !awake && !reduce, kx + 13, ky - 21, "z  z  z");
+      placeGeneratedEffect("sleep", sc.sleepy > 0.75 && !awake, kx + 13, ky - 21, "z  z  z");
       const posed = open > 0.4; // ignores the blink: her pose must not flicker with her eyelids
       // A door opening beats whatever she was doing. Perk is the ears-up, head-turned pose, and it
       // outranks the mood pose deliberately: a cat that stays loafed while a door swings open is a
@@ -1542,7 +1563,8 @@ export function Cat({
           });
         }
         const left = `${((kx - cam) / VW) * 100}%`;
-        const bottom = settledInBed ? "1%" : "6%";
+        const baseBottom = settledInBed ? 1 : 6;
+        const bottom = `${baseBottom + ((Math.round(bounce.current * 3)) / GH) * 100}%`;
         catImage.style.left = left;
         catImage.style.bottom = bottom;
         catImage.style.filter = generatedCatFilter(L);
@@ -1741,9 +1763,9 @@ export function Cat({
             position: "absolute", display: "none", transform: "translate(-50%, -50%)",
             pointerEvents: "none", zIndex: 3, whiteSpace: "nowrap",
             fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-            fontWeight: 800, fontSize: key === "laser" ? "20px" : key === "heart" ? "18px" : "clamp(10px, 1.8vw, 15px)",
+            fontWeight: 800, fontSize: key === "laser" ? "20px" : key === "heart" ? "18px" : key === "mood" ? "clamp(12px, 2.2vw, 18px)" : "clamp(10px, 1.8vw, 15px)",
             lineHeight: 1, letterSpacing: key === "sleep" ? ".12em" : 0,
-            color: key === "laser" ? "#ff6b6b" : key === "heart" ? "#ef8fa0" : key === "firefly" ? "#ffe68f" : "#fff3c2",
+            color: key === "laser" ? "#ff6b6b" : key === "heart" || key === "mood" ? "#ef8fa0" : key === "firefly" ? "#ffe68f" : "#fff3c2",
             textShadow: key === "laser" ? "0 0 5px #ff8f8f" : "0 1px 2px #4a3520, 0 0 6px rgba(255,230,143,.55)",
             ...(key === "speech" ? {
               padding: "5px 7px", color: "#4a3520", background: "#fffdf6",
