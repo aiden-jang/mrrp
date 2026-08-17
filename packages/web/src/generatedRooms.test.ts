@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generatedCatFor, generatedRoomFor } from "./Cat.js";
+import { generatedCatFilter, generatedCatFor, generatedRoomFor } from "./Cat.js";
 import type { LightPhase } from "./hours.js";
 import type { Pose } from "./sprites.js";
 
@@ -26,5 +26,14 @@ describe("generated runtime room states", () => {
       "/art/cat/play.png", "/art/cat/perk.png", "/art/cat/walk.png",
       "/art/cat/stretch.png", "/art/cat/pounce.png", "/art/cat/peek.png",
     ]);
+  });
+
+  it("keeps ginger unchanged and gives every other fur family a stable treatment", () => {
+    const cat = (fur: string) => ({ name: "Bean", fur, furDk: fur, belly: "#fff", eyes: "#7cb342", tabby: false });
+    expect(generatedCatFilter(cat("#e8963f"))).toBe("none");
+    const filters = ["#e8cfa8", "#9aa0a8", "#4b444a", "#f6f1e8", "#a4703f", "#3f3a40", "#e3a95f"]
+      .map((fur) => generatedCatFilter(cat(fur)));
+    expect(filters.every((filter) => filter !== "none")).toBe(true);
+    expect(new Set(filters).size).toBe(filters.length);
   });
 });

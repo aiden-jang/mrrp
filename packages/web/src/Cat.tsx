@@ -182,6 +182,20 @@ export const generatedRoomFor = (phase: LightPhase, raining = false): string =>
 
 export const generatedCatFor = (pose: Pose): string => `/art/cat/${pose}.png`;
 
+/** Palette treatments keep one locked generated silhouette set instead of generating 72 drifting cats. */
+export function generatedCatFilter(look: CatLook): string {
+  switch (look.fur.toLowerCase()) {
+    case "#e8cfa8": return "sepia(.2) saturate(.62) brightness(1.08)";
+    case "#9aa0a8": return "grayscale(.78) saturate(.45) brightness(.98) contrast(.92)";
+    case "#4b444a": return "grayscale(.9) saturate(.35) brightness(.58) contrast(1.18)";
+    case "#f6f1e8": return "grayscale(.86) saturate(.25) brightness(1.24) contrast(.84)";
+    case "#a4703f": return "sepia(.35) saturate(.82) brightness(.76) contrast(1.08)";
+    case "#3f3a40": return "grayscale(.95) saturate(.22) brightness(.54) contrast(1.28)";
+    case "#e3a95f": return "sepia(.18) saturate(.78) brightness(.94) contrast(1.04)";
+    default: return "none";
+  }
+}
+
 /*
  * Closed eyes are authored as lines, not as recolored open-eye blocks.
  *
@@ -2051,6 +2065,7 @@ export function Cat({
         if (!catImageRef.current.src.endsWith(generatedCat)) catImageRef.current.src = generatedCat;
         catImageRef.current.style.left = `${((kx - cam) / VW) * 100}%`;
         catImageRef.current.style.bottom = settledInBed ? "1%" : "6%";
+        catImageRef.current.style.filter = generatedCatFilter(L);
       }
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
@@ -2693,6 +2708,7 @@ export function Cat({
           position: "absolute", left: `${initialScene.catX * 100}%`, bottom: "6%",
           width: "43%", height: "auto", transform: "translateX(-50%)",
           imageRendering: "pixelated", pointerEvents: "none",
+          filter: generatedCatFilter(look),
           transition: "left .45s var(--ease-spring), bottom .3s ease",
         }}
       />
