@@ -2058,6 +2058,65 @@ export function Cat({
         e: awake ? L.eyes : "",
       };
 
+      /*
+       * A mood changes one small thing around her, not the weather and never the whole palette.
+       *
+       * The pose already carries most of the response; these floor-level details make the moods
+       * legible as authored little scenes when two poses happen to share a silhouette. They stay
+       * close to the cat and use room colours so they read as belongings, not status effects. The
+       * motion is optional decoration only: reduced motion keeps the same objects and meaning.
+       */
+      const activeMood = moodRef.current;
+      const moodLeft = kx - 13;
+      const moodRight = kx + 11;
+      if (activeMood === "sad") {
+        // A second cushion turns "sitting with you" into a place kept beside her.
+        rect(moodRight, FLOOR + 17, 8, 1, mixHex(sc.floorNear, INK, 0.2));
+        rect(moodRight - 1, FLOOR + 14, 10, 3, "#c99291");
+        rect(moodRight + 1, FLOOR + 13, 6, 1, "#ddb0a8");
+        px(moodRight + 1, FLOOR + 15, "#b77b7d");
+        px(moodRight + 6, FLOOR + 15, "#b77b7d");
+      } else if (activeMood === "stressed") {
+        // A little quilt edge under the loaf: weight and warmth, without darkening the room.
+        rect(moodLeft, FLOOR + 17, 28, 3, "#b68486");
+        dither(moodLeft + 2, FLOOR + 18, 24, 1, "#d5aaa0");
+        for (const x of [moodLeft + 2, moodLeft + 7, moodLeft + 20, moodLeft + 25]) {
+          px(x, FLOOR + 20, "#9d7077");
+        }
+      } else if (activeMood === "tired") {
+        // She brought the pillow; doing nothing was clearly the plan.
+        rect(moodRight, FLOOR + 16, 9, 2, "#d3aaa0");
+        rect(moodRight + 1, FLOOR + 14, 7, 4, "#e2c0b4");
+        px(moodRight + 1, FLOOR + 15, "#bc8d8b");
+        px(moodRight + 7, FLOOR + 16, "#bc8d8b");
+      } else if (activeMood === "bored") {
+        // The one thing from the shelf, safely unbroken and waiting beside the culprit.
+        rect(moodLeft + 2, FLOOR + 16, 6, 2, "#c8a77d");
+        rect(moodLeft + 1, FLOOR + 15, 2, 2, "#c8a77d");
+        px(moodLeft + 3, FLOOR + 15, "#ead5b1");
+        px(moodLeft + 8, FLOOR + 18, "#8fa172");
+        px(moodLeft + 9, FLOOR + 18, "#8fa172");
+      } else if (activeMood === "lonely") {
+        // Two shoes by the door: somebody can always come sit down again.
+        rect(7, FLOOR + 16, 5, 2, "#84646b");
+        px(8, FLOOR + 15, "#a47b7b");
+        rect(12, FLOOR + 17, 5, 2, "#6f5964");
+        px(13, FLOOR + 16, "#94737a");
+      } else if (activeMood === "feral") {
+        // The shelf's escaped sprig trembles only when motion is welcome.
+        const leafHop = reduce ? 0 : Math.round(Math.abs(Math.sin(t / 150)) * 2);
+        px(moodRight + 2, FLOOR + 17 - leafHop, "#6f925b");
+        px(moodRight + 3, FLOOR + 16 - leafHop, "#8cab69");
+        px(moodRight + 4, FLOOR + 17 - leafHop, "#5f824e");
+        px(moodRight + 1, FLOOR + 18 - leafHop, "#8f7657");
+      } else if (activeMood === "horny") {
+        // Her answer is the door; one politely abandoned toy underscores the exit.
+        rect(19, FLOOR + 17, 4, 3, "#b86f84");
+        px(18, FLOOR + 16, "#d995a5");
+        px(23, FLOOR + 20, "#8f596d");
+        px(24, FLOOR + 20, "#8f596d");
+      }
+
       // The keyboard treat sits on the boards until she reaches it, then leaves a few crumbs. It is
       // drawn before her so her paws can cover it instead of the snack floating over the sprite.
       if (treating) {
