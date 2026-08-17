@@ -172,7 +172,10 @@ const DYNAMIC_INTERACTION_ART: InteractionArtKey[] = [
   "leaf", "moth", "yarn", "treat", "catnip", "mouse", "piano", "bird", "steam",
   "shootingStar", "constellation", "rainbow", "aurora", "note", "sparkles", "bloom",
 ];
-const GENERATED_EFFECTS = ["speech", "sleep", "purr", "dream", "laser", "firefly"] as const;
+const GENERATED_EFFECTS = [
+  "speech", "sleep", "purr", "dream", "laser", "firefly",
+  "music", "heart", "memory", "wish", "mug", "tour", "box", "door",
+] as const;
 type GeneratedEffectKey = typeof GENERATED_EFFECTS[number];
 
 const GENERATED_ROOMS: Record<LightPhase, string> = {
@@ -2120,6 +2123,14 @@ export function Cat({
       placeGeneratedEffect("dream", t < bedTaps.current.dreamUntil && !reduce, 26, FLOOR + 10, "✦  ✧  ✦");
       placeGeneratedEffect("laser", laserPlaying, laser.current.x, laser.current.y, "•");
       placeGeneratedEffect("firefly", !!firefly, firefly?.x ?? 0, (firefly?.y ?? 0) + 14, "✦");
+      placeGeneratedEffect("music", musicPlaying, kx, ky - 22, "♪  ♫  ♪");
+      placeGeneratedEffect("heart", treating && treatProgress > 0.7 && !reduce, kx + 8, ky - 18, "♥");
+      placeGeneratedEffect("memory", framedRef.current && t < photoTaps.current.memoryUntil && !reduce, 21, 10, "✦  ♡  ✦");
+      placeGeneratedEffect("wish", !!giftRef.current && t < giftTaps.current.wishUntil && !reduce, 16, FLOOR + 5, "✧  ✦");
+      placeGeneratedEffect("mug", t < mugTaps.current.glowUntil && !reduce, 82, 25, "✦");
+      placeGeneratedEffect("tour", roomPartyRemaining > 0 && !reduce, GW / 2, 8, "✦   ✧   ✦   ✧   ✦");
+      placeGeneratedEffect("box", (boxPlaying || peeking) && !reduce, BOX_X + 2, BOX_Y - 5, "⌁");
+      placeGeneratedEffect("door", t < doorTaps.current.noteUntil && !reduce, 13, FLOOR - 16, "· · ·");
 
       const want = ptr.in ? Math.max(0, 1 - Math.hypot(ptr.x - kx, ptr.y - (ky - 8)) / 44) : 0;
       near.current += (want - near.current) * 0.07;
@@ -2171,7 +2182,7 @@ export function Cat({
       const stretching = !reduce && awake && sc.play < 0.5 && !inBox && Math.abs(wantX - kx) < 2 && stretchCycle < 1400;
       const pouncing = mouseChasing || laserPlaying;
       const walking = Math.abs(wantX - kx) > 3 && !zooming && !catnipping && !pouncing;
-      const pose: Pose = boxPlaying || peeking
+      const pose: Pose = inBox
         ? "peek"
         : stretching
           ? "stretch"
@@ -2957,9 +2968,9 @@ export function Cat({
             position: "absolute", display: "none", transform: "translate(-50%, -50%)",
             pointerEvents: "none", zIndex: 3, whiteSpace: "nowrap",
             fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-            fontWeight: 800, fontSize: key === "laser" ? "20px" : "clamp(10px, 1.8vw, 15px)",
+            fontWeight: 800, fontSize: key === "laser" ? "20px" : key === "heart" ? "18px" : "clamp(10px, 1.8vw, 15px)",
             lineHeight: 1, letterSpacing: key === "sleep" ? ".12em" : 0,
-            color: key === "laser" ? "#ff6b6b" : key === "firefly" ? "#ffe68f" : "#fff3c2",
+            color: key === "laser" ? "#ff6b6b" : key === "heart" ? "#ef8fa0" : key === "firefly" ? "#ffe68f" : "#fff3c2",
             textShadow: key === "laser" ? "0 0 5px #ff8f8f" : "0 1px 2px #4a3520, 0 0 6px rgba(255,230,143,.55)",
             ...(key === "speech" ? {
               padding: "5px 7px", color: "#4a3520", background: "#fffdf6",
