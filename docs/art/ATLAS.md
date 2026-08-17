@@ -1,18 +1,20 @@
-# Runtime art atlas contract
+# Runtime generated-art contract
 
-Generated art references are never loaded directly by the room. A frame enters the runtime only
-after its pixels are cleaned to the shared grid, separated from the reference background, and added
-to an atlas whose manifest passes `artAtlas.test.ts`.
+Generated room states and transparent overlays are bundled directly under
+`packages/web/public/art/`. Runtime modules map semantic state—light phase, weather, pose, eye color,
+keepsake, and interaction—to stable local asset paths.
 
-Each manifest records the source rectangle, logical anchor, optional semantic palette slots, and
-interaction hit region. Source rectangles and pixel ratios are integers so Canvas can render with
-nearest-neighbor sampling. Hit regions stay in the room's existing 100×80 coordinate system.
+The visible stack is:
 
-Replacement order:
+1. Time-of-day or rain room image
+2. Door and persistent furniture-state overlays
+3. Keepsakes and generated interaction effects
+4. Generated cat pose and its matching eye overlay
+5. Lightweight DOM reactions such as speech, sleep, music, and purr marks
+6. Transparent keyboard and pointer interaction surface
 
-1. Fixed architecture: wall trim, window frame, curtains, rug
-2. Furniture and keepsakes: bed, shelf, plant, frame, box, gifts
-3. Weather and secret overlays
-4. Cat poses, only after palette-slot replacement preserves fur, belly, and eye customization
+Cat and eye files are preloaded and swapped atomically so poses cannot mismatch during loading. All
+interactive placement and hit regions remain in the room's 100×80 logical coordinate system.
 
-If an atlas or frame is absent or fails validation, the code-rendered room remains the fallback.
+Postcard export walks the live stack in order and composites visible image and DOM-effect layers into
+an offscreen PNG. The offscreen canvas exists only for export; it is not a runtime renderer.
