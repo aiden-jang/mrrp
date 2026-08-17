@@ -18,9 +18,8 @@ import { BED, BIRD, BOX_BACK, BOX_FRONT, CAKE, DOOR, EK, DOOR_FRAMES, GIFT_CAP, 
 /**
  * The room, drawn as pixel art at her local time of day.
  *
- * Everything is placed on a fixed 100x80 grid and each logical pixel is painted as one aligned
- * rectangle. No offscreen buffer and no upscaling: resampling a small canvas upward is what leaves
- * you with pixels of two different sizes, and that reads as a mistake rather than a style.
+ * Interaction geometry stays on the room's original fixed 100x80 grid while generated image layers
+ * provide the visible room, cat, and effects.
  *
  * The light and the palette come from her clock. What she's doing comes from what she told the cat.
  */
@@ -260,7 +259,7 @@ export function Cat({
   onDream,
   collectionKey,
 }: {
-  /** What the room says in words. The canvas is otherwise silent to a screen reader. */
+  /** What the room says in words. The visual room is otherwise silent to a screen reader. */
   label: string;
   look: CatLook;
   clock: Clock;
@@ -328,9 +327,9 @@ export function Cat({
   onPoke?: () => void;
   /** Reported up so the other seat can be told. This stays ignorant of rooms and the network. */
   onFound?: (key: DiscoveryKey) => void;
-  /** Exposes a PNG capture of the rendered room without leaking the canvas out of this component. */
+  /** Exposes a PNG capture of the composited generated room. */
   onCapture?: (capture: () => Promise<Blob | null>) => void;
-  /** The furniture secrets were reachable only by hit-tested canvas taps, so two of the largest were
+  /** The furniture secrets were reachable only by hit-tested room taps, so two of the largest were
    *  impossible to find on a keyboard. */
   onProps?: (props: { key: string; label: string }[], poke: (key: string) => void) => void;
   /** Both of you have called her by name. She answers a little differently once that is true. */
@@ -342,7 +341,7 @@ export function Cat({
   /** Stable room id used only for this device's hidden constellation progress. */
   collectionKey?: string;
 }) {
-  const ref = useRef<HTMLCanvasElement>(null);
+  const interactionSurfaceRef = useRef<HTMLDivElement>(null);
   const roomRootRef = useRef<HTMLDivElement>(null);
   const roomImageRef = useRef<HTMLImageElement>(null);
   const catImageRef = useRef<HTMLImageElement>(null);
@@ -503,8 +502,8 @@ export function Cat({
 
   useEffect(() => {
     if (!onProps) return;
-    const cv = ref.current;
-    if (!cv) return;
+    const surface = interactionSurfaceRef.current;
+    if (!surface) return;
 
     /*
      * A synthetic pointer event, not a second code path: the furniture handler is ~180 lines that grows
@@ -515,7 +514,7 @@ export function Cat({
     const poke = (key: string): void => {
       const prop = PROPS.find((p) => p.key === key);
       if (!prop) return;
-      const rect = cv.getBoundingClientRect();
+      const rect = surface.getBoundingClientRect();
       const cx = prop.x + prop.sp.w / 2;
       const cy = prop.y + prop.sp.h / 2;
       const clientX = rect.left + ((cx - camRef.current) / VW) * rect.width;
@@ -530,13 +529,13 @@ export function Cat({
         isPrimary: true,
       };
       /*
-       * The pointer handler calls cv.focus() so a code can be typed after a tap. On a keyboard that drags
+       * The pointer handler focuses the surface so a code can be typed after a tap. On a keyboard that drags
        * focus out of the room list every time, making the six-object room tour a chore.
        */
       const before = document.activeElement as HTMLElement | null;
-      cv.dispatchEvent(new PointerEvent('pointerdown', init));
-      cv.dispatchEvent(new PointerEvent('pointerup', init));
-      if (before && before !== cv && document.activeElement === cv) before.focus({ preventScroll: true });
+      surface.dispatchEvent(new PointerEvent('pointerdown', init));
+      surface.dispatchEvent(new PointerEvent('pointerup', init));
+      if (before && before !== surface && document.activeElement === surface) before.focus({ preventScroll: true });
     };
 
     onProps(
@@ -620,7 +619,7 @@ export function Cat({
   }, [nudge]);
 
   useEffect(() => {
-    const cv = ref.current!;
+    const surface = interactionSurfaceRef.current!;
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const lunar = moonPhase(new Date());
     const season = seasonFor(new Date());
@@ -640,7 +639,7 @@ export function Cat({
     let roomCodeAt = 0;
     let typedRoomCode = "";
     const onMove = (e: PointerEvent) => {
-      const r = cv.getBoundingClientRect();
+      const r = surface.getBoundingClientRect();
       const nextX = cam + ((e.clientX - r.left) / r.width) * VW;
       const nextY = ((e.clientY - r.top) / r.height) * GH;
       if (Math.hypot(nextX - ptr.stillX, nextY - ptr.stillY) > 1.2) {
@@ -693,11 +692,11 @@ export function Cat({
      * pointer belong together.
      */
     const gridAt = (e: PointerEvent) => {
-      const r = cv.getBoundingClientRect();
+      const r = surface.getBoundingClientRect();
       return { x: cam + ((e.clientX - r.left) / r.width) * VW, y: ((e.clientY - r.top) / r.height) * GH };
     };
     const onDown = (e: PointerEvent) => {
-      cv.focus({ preventScroll: true });
+      surface.focus({ preventScroll: true });
       const { x, y } = gridAt(e);
       ptr.x = x; ptr.y = y; ptr.in = true;
       const game = bubbleGame.current;
@@ -1185,12 +1184,12 @@ export function Cat({
         typedRoomCode = "";
       }
     };
-    cv.addEventListener("pointermove", onMove);
-    cv.addEventListener("pointerleave", onLeave);
-    cv.addEventListener("pointerdown", onDown);
-    cv.addEventListener("pointerup", onUp);
-    cv.addEventListener("pointercancel", onCancel);
-    cv.addEventListener("keydown", onKey);
+    surface.addEventListener("pointermove", onMove);
+    surface.addEventListener("pointerleave", onLeave);
+    surface.addEventListener("pointerdown", onDown);
+    surface.addEventListener("pointerup", onUp);
+    surface.addEventListener("pointercancel", onCancel);
+    surface.addEventListener("keydown", onKey);
 
     // Dust lives in the beam. Integer positions, because half a pixel of dust is a grey smudge.
     // Offsets are relative to the shaft's centre at that height, so dust can never drift outside
@@ -1867,7 +1866,7 @@ export function Cat({
        * A cake, on the days the room has a birthday.
        *
        * Sat on the floor beside her bed rather than announced, like everything else in here: the line
-       * under the canvas already says what the day is, and a thing you notice is worth more than a thing
+       * under the room already says what the day is, and a thing you notice is worth more than a thing
        * you are told. Down in the front strip on purpose, since the middle band is where she sits and a
        * cake behind the cat is a cake nobody sees. The flame holds still under reduced motion.
        */
@@ -2079,7 +2078,7 @@ export function Cat({
       bounce.current = Math.max(0, bounce.current - 0.02);
 
       // Stay quietly beside her and she returns the cat version of a smile. The cursor has to be
-      // both close and still; merely passing over the canvas never triggers it, and moving away
+      // both close and still; merely passing over the room never triggers it, and moving away
       // resets the one-answer-per-stay latch.
       const quietAndClose = ptr.in && Math.hypot(ptr.x - kx, ptr.y - (ky - 8)) < 15;
       if (!quietAndClose) slowBlink.current.answered = false;
@@ -2682,7 +2681,7 @@ export function Cat({
          * What is in the cloud.
          *
          * A few pixels each, in the last and largest puff. Any more detail at this size reads as noise,
-         * and the line the room says under the canvas is where the dream is actually legible.
+         * and the line the room says underneath is where the dream is actually legible.
          */
         const sx = 18 + 2 * 4;
         const sy = FLOOR + 18 - Math.round(p * 12) - 4;
@@ -2759,12 +2758,12 @@ export function Cat({
 
     return () => {
       cancelAnimationFrame(raf);
-      cv.removeEventListener("pointermove", onMove);
-      cv.removeEventListener("pointerleave", onLeave);
-      cv.removeEventListener("pointerdown", onDown);
-      cv.removeEventListener("pointerup", onUp);
-      cv.removeEventListener("pointercancel", onCancel);
-      cv.removeEventListener("keydown", onKey);
+      surface.removeEventListener("pointermove", onMove);
+      surface.removeEventListener("pointerleave", onLeave);
+      surface.removeEventListener("pointerdown", onDown);
+      surface.removeEventListener("pointerup", onUp);
+      surface.removeEventListener("pointercancel", onCancel);
+      surface.removeEventListener("keydown", onKey);
     };
   }, []);
 
@@ -2884,10 +2883,8 @@ export function Cat({
           transition: "left .45s var(--ease-spring), bottom .3s ease",
         }}
       />
-      <canvas
-        ref={ref}
-        width={VW}
-        height={GH}
+      <div
+        ref={interactionSurfaceRef}
         role="img"
         tabIndex={0}
         aria-label={`${label} The room has quiet interactive details.`}
@@ -2895,7 +2892,7 @@ export function Cat({
           position: "absolute", inset: 0, display: "block", width: "100%", height: "100%",
           opacity: 0,
           // Holding to pet needs the browser to stop treating the drag as a scroll. Only his side holds,
-          // so everyone else keeps normal scrolling over the canvas.
+          // so everyone else keeps normal scrolling over the room.
           touchAction: role === "him" ? "none" : "manipulation",
           // The room responds to taps/presses; a grab hand promises a drag that does not exist.
           cursor: role ? "pointer" : "default",
