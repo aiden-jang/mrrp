@@ -161,6 +161,8 @@ const BOX_PLAY_MS = 2800;
 /** How long the cursor has to stay beside her before she answers with a slow blink. */
 const SLOW_BLINK_WAIT_MS = 1800;
 const SLOW_BLINK_MS = 850;
+/** How far the sun has to crawl off her before she can be bothered to move, in grid columns. */
+const LEAVING_WARMTH = 9;
 /** A small secret shower: long enough to notice through the glass, then gone. */
 const RAIN_MS = 6800;
 /** The brief bright thing that can follow the plant's hidden storm. */
@@ -444,7 +446,9 @@ export function Cat({
   /** Her name brings her to the middle for one small recognition moment. */
   const nameCallUntil = useRef(-1e9);
   /** A slow blink is one answer per quiet cursor stay, never an idle animation on a timer. */
-  const slowBlink = useRef({ until: -1e9, answered: false });
+  const slowBlink = useRef({ until: -1e9, answered: false, greeted: false });
+  /** The sunny spot she has settled on, held until the light has properly moved off it. */
+  const warmSpot = useRef<number | null>(null);
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
   const doorShutFrom = useRef({ at: 0, from: 0 });
   lookRef.current = look;
@@ -2042,6 +2046,24 @@ export function Cat({
       const yarnLap = (yarnProgress * 2) % 2;
       const yarnAcross = yarnLap <= 1 ? yarnLap : 2 - yarnLap;
       const yarnX = 13 + yarnAcross * (GW - 26);
+      /*
+       * She is slow to leave a warm patch.
+       *
+       * She tracked the beam exactly, which is not what cats do: they stay in the spot the sun has
+       * already left, for a while, because it is still warm. So she keeps the seat she took until
+       * the light has moved a good way off it, then gets up and takes the new one.
+       *
+       * Only while she is actually following the light. A mood, the bed, the door and every toy set
+       * her position on purpose, and making those laggy would read as her ignoring you.
+       */
+      const followingLight = Math.abs(sc.catX - sc.beam) < 0.001;
+      if (!followingLight) warmSpot.current = null;
+      const warmSeat = (target: number): number => {
+        const held = warmSpot.current;
+        if (held === null || Math.abs(target - held) > LEAVING_WARMTH) warmSpot.current = target;
+        return warmSpot.current ?? target;
+      };
+
       let wantX = nameCalled
         ? GW / 2
         : bubblePlaying
@@ -2064,17 +2086,18 @@ export function Cat({
                           ? BOX_X + 2
                           : nesting
                             ? 24
-                            : sc.catX * GW;
+                            : followingLight
+                              ? warmSeat(sc.catX * GW)
+                              : sc.catX * GW;
       /*
        * Keep her inside the room.
        *
-       * `blit` takes kx as the sprite's left edge, and nothing bounded it: she follows the sunbeam,
-       * the beam reaches 0.86 of the room at dusk, and a 26-wide stretch starting at column 86 in a
-       * 100-wide room runs twelve columns past the wall. The camera clamps to the walls too, so the
-       * overflow is not scrolled into view; she is simply cut in half at the right edge.
+       * Nothing bounded her: she follows the sunbeam, the beam reaches 0.86 of the room at dusk, and
+       * a pose reaching 17 columns right of kx runs past the wall. The camera clamps to the walls
+       * too, so the overflow is never scrolled into view; she is simply cut in half at the edge.
        *
-       * Bounded by the widest pose rather than the current one, because the tail and the floor
-       * effects are all placed from this same number and must not disagree with where she is drawn.
+       * One bound for every pose, not the current one, because the tail and the floor effects are
+       * placed from this same number and must not disagree with where she is drawn.
        */
       const bounded = (x: number) => Math.max(CAT_REACH_LEFT, Math.min(GW - CAT_REACH_RIGHT, x));
       wantX = bounded(wantX);
@@ -2113,6 +2136,21 @@ export function Cat({
         slowBlink.current.until = t + SLOW_BLINK_MS;
         play("purr");
       }
+      /*
+       * And one for the other person.
+       *
+       * A slow blink is what a cat does at somebody she trusts, and until now the only thing that
+       * earned one was a cursor holding still. The room already knows its most trusting moment, the
+       * two of them in it at once, and gave that a purr and a walk to the middle. It gets the blink
+       * as well now, once per arrival: `greeted` latches so a long visit is not a cat winking at a
+       * poll interval.
+       */
+      if (!togetherRef.current) slowBlink.current.greeted = false;
+      if (togetherRef.current && !slowBlink.current.greeted && t >= slowBlink.current.until) {
+        slowBlink.current.greeted = true;
+        slowBlink.current.until = t + SLOW_BLINK_MS;
+      }
+
       const slowBlinking = t < slowBlink.current.until;
 
       // Her eyes open on her own account (what you told her) or because you came close.
