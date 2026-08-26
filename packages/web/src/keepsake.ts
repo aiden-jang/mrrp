@@ -89,6 +89,25 @@ async function keepsakeFontReady(): Promise<void> {
   }
 }
 
+/** A small paw: four toes over a pad, on a 22-unit box with its top-left at (x, y). */
+function paw(g: CanvasRenderingContext2D, x: number, y: number, color: string): void {
+  g.save();
+  g.fillStyle = color;
+  const toe = (cx: number, cy: number, r: number) => {
+    g.beginPath();
+    g.ellipse(x + cx, y + cy, r, r * 1.15, 0, 0, Math.PI * 2);
+    g.fill();
+  };
+  toe(4, 5, 2.6);
+  toe(10, 3, 2.8);
+  toe(16, 5, 2.6);
+  toe(20.5, 10, 2.2);
+  g.beginPath();
+  g.ellipse(x + 11, y + 15, 7.5, 5.8, 0, 0, Math.PI * 2);
+  g.fill();
+  g.restore();
+}
+
 /** Turns the room capture into a shareable little print without uploading it anywhere. */
 export async function makeKeepsake(room: Blob, details: KeepsakeDetails): Promise<Blob | null> {
   const [image] = await Promise.all([loadImage(room), keepsakeFontReady()]);
@@ -121,7 +140,15 @@ export async function makeKeepsake(room: Blob, details: KeepsakeDetails): Promis
   g.textAlign = "right";
   g.fillStyle = "#c58c43";
   g.font = `700 32px ${KEEPSAKE_FONT}`;
-  g.fillText("mrrp  ·  ฅ", 1114, 1350);
+  /*
+   * The sign-off, with a drawn paw rather than a borrowed glyph.
+   *
+   * This was a Thai character standing in for a paw. Canvas text has no fallback chain the way the
+   * DOM does, so on a device whose resolved font lacks Thai it renders as a tofu box, on the one
+   * thing in this app made to be kept and shown to somebody.
+   */
+  g.fillText("mrrp", 1076, 1350);
+  paw(g, 1092, 1337, "#c58c43");
 
   return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
 }
