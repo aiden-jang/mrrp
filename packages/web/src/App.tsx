@@ -955,7 +955,8 @@ function RoomPage({ id }: { id: string }) {
             </div>
 
             <p style={S.fieldLabel}>eyes</p>
-            <div style={S.swatchRow}>
+            {/* One row, however many there are, so adding an eye colour cannot leave an orphan. */}
+            <div style={{ ...S.eyeRow, gridTemplateColumns: `repeat(${EYES.length}, 26px)` }}>
               {EYES.map((e) => (
                 <button
                   key={e.id}
@@ -973,21 +974,16 @@ function RoomPage({ id }: { id: string }) {
             </div>
 
             <p style={S.fieldLabel}>her timezone</p>
-            <select
-              style={S.input}
-              value={draft.tz}
-              onChange={(e) => setDraft((d) => ({ ...d!, tz: e.target.value }))}
-            >
+            <Select value={draft.tz} onChange={(e) => setDraft((d) => ({ ...d!, tz: e.target.value }))}>
               {timezones().map((z) => (
                 <option key={z} value={z}>
                   {z.replace(/_/g, " ")}
                 </option>
               ))}
-            </select>
+            </Select>
 
             <p style={S.fieldLabel}>usually home around</p>
-            <select
-              style={S.input}
+            <Select
               value={draft.homeHour}
               onChange={(e) => setDraft((d) => ({ ...d!, homeHour: Number(e.target.value) }))}
             >
@@ -996,7 +992,7 @@ function RoomPage({ id }: { id: string }) {
                   {h === 0 ? "midnight" : h < 12 ? `${h}am` : h === 12 ? "noon" : `${h - 12}pm`}
                 </option>
               ))}
-            </select>
+            </Select>
 
             {/*
              * Her notes, one per line. A textarea rather than add/remove fields: this gets written
@@ -1005,7 +1001,9 @@ function RoomPage({ id }: { id: string }) {
              */}
             <p style={S.fieldLabel}>her notes, one per line</p>
             <textarea
-              style={{ ...S.sayInput, minHeight: 150, fontSize: 14 }}
+              /* 16px, not 14: iOS zooms the whole page when you focus an input smaller than that,
+                 and this is the longest thing anybody types in here. */
+              style={{ ...S.sayInput, minHeight: 150 }}
               value={draft.notes}
               rows={8}
               placeholder="One a day, in your own words."
@@ -1021,7 +1019,7 @@ function RoomPage({ id }: { id: string }) {
              * shipped ones stay safely general and the register gets taught in the editor instead.
              * Collapsed, because it is needed once. */}
             <details style={{ marginTop: 8 }}>
-              <summary style={{ ...S.small, cursor: "pointer" }}>What makes a good one</summary>
+              <summary style={S.summary}>What makes a good one</summary>
               <div style={{ ...S.small, marginTop: 8, display: "grid", gap: 7 }}>
                 <p style={S.small}>
                   One small ordinary thing beats one big kind thing.{" "}
@@ -1497,6 +1495,35 @@ function moodTint(id: string, night: boolean, panel: string): string {
   return night ? mixHex(day, panel, 0.8) : day;
 }
 
+/*
+ * A select in the app's own material.
+ *
+ * The control already borrowed the border and the radius, but the caret came from the browser, so
+ * these two fields were visibly a different object from every input around them. The list a select
+ * opens still belongs to the OS and cannot be styled; the closed control is the part that is on the
+ * page all the time.
+ */
+function Select({
+  value,
+  onChange,
+  children,
+}: {
+  value: string | number;
+  onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <span style={S.selectWrap}>
+      <select style={S.select} value={value} onChange={onChange}>
+        {children}
+      </select>
+      <svg style={S.selectCaret} viewBox="0 0 10 6" aria-hidden focusable="false">
+        <path d="M1 1 L5 5 L9 1" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    </span>
+  );
+}
+
 export function isNightChrome(sun: number): boolean {
   return sun < NIGHT_BELOW;
 }
@@ -1736,7 +1763,9 @@ const S: Record<string, React.CSSProperties> = {
   sayBox: { margin: "16px 0 4px" },
   sayInput: {
     font: "inherit",
-    fontSize: 15.5,
+    // 16 is a floor, not a preference: iOS zooms the page when you focus anything smaller, and both
+    // things anybody types in this app are textareas carrying this style.
+    fontSize: 16,
     lineHeight: 1.5,
     width: "100%",
     resize: "none",
@@ -1814,14 +1843,24 @@ const S: Record<string, React.CSSProperties> = {
     border: "1px solid var(--line)",
     boxShadow: "0 6px 18px -12px rgba(120,84,44,.35)",
   },
+  // The panel's heading, against its field labels below. Both were --soft a point apart, so the whole
+  // panel read as one flat list with nothing saying which line was the title.
   panelTitle: {
-    fontSize: 13.5,
-    fontWeight: 500,
-    color: "var(--soft)",
-    margin: "0 0 9px",
+    fontSize: 15,
+    fontWeight: 600,
+    color: "var(--ink)",
+    margin: "0 0 11px",
   },
-  fieldLabel: { fontSize: 12.5, color: "var(--soft)", margin: "12px 0 6px" },
-  swatchRow: { display: "flex", flexWrap: "wrap", gap: 9 },
+  fieldLabel: { fontSize: 12.5, color: "var(--soft)", margin: "14px 0 6px" },
+  /*
+   * Grids with a fixed column count, not a wrapping row.
+   *
+   * Eight fur swatches wrapping at whatever fits put seven on one line and one alone underneath, on
+   * a phone. Four and four is two deliberate rows at every width. Same reasoning as the mood chips,
+   * which stopped wrapping for the same reason.
+   */
+  swatchRow: { display: "grid", gridTemplateColumns: "repeat(4, 34px)", gap: 9, justifyContent: "start" },
+  eyeRow: { display: "grid", gap: 9, justifyContent: "start" },
   swatch: {
     width: 34,
     height: 34,
@@ -1873,6 +1912,40 @@ const S: Record<string, React.CSSProperties> = {
     cursor: "pointer",
   },
   btnGo: { background: "var(--honey)", borderColor: "var(--honey)", color: "var(--on-honey)" },
+  /** A disclosure is a control, so it gets a control's target size rather than a line of text's. */
+  summary: {
+    fontSize: 13,
+    color: "var(--soft)",
+    lineHeight: 1.5,
+    cursor: "pointer",
+    minHeight: 24,
+    display: "flex",
+    alignItems: "center",
+  },
+  selectWrap: { position: "relative", display: "block" },
+  select: {
+    font: "inherit",
+    fontSize: 16,
+    width: "100%",
+    // The browser's caret is replaced by the drawn one, so leave it room and take the OS styling off.
+    padding: "11px 34px 11px 13px",
+    appearance: "none",
+    border: "1px solid var(--line)",
+    borderRadius: 14,
+    background: "var(--panel)",
+    color: "var(--ink)",
+    cursor: "pointer",
+  },
+  selectCaret: {
+    position: "absolute",
+    right: 13,
+    top: "50%",
+    marginTop: -3,
+    width: 10,
+    height: 6,
+    color: "var(--soft)",
+    pointerEvents: "none",
+  },
   input: {
     font: "inherit",
     fontSize: 16,
