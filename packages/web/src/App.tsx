@@ -457,6 +457,21 @@ function RoomPage({ id }: { id: string }) {
   const handleCaptureReady = useCallback((capture: () => Promise<Blob | null>) => {
     setCaptureRoom(() => capture);
   }, []);
+  /*
+   * Memoized, and it has to be.
+   *
+   * Cat's effect that reports the room's props lists this in its dependencies, and calling it sets
+   * state up here. An inline arrow gets a new identity on every render, so the effect re-ran, set
+   * state, re-rendered, and handed itself a new callback: React's "Maximum update depth exceeded",
+   * looping forever on the app's main screen. `onCapture` above already had the same shape and the
+   * same fix; this one was missed.
+   */
+  const handleRoomProps = useCallback(
+    (props: { key: string; label: string }[], poke: (key: string) => void) => {
+      setRoomProps({ props, poke });
+    },
+    [],
+  );
   /** Put the mug back. Either seat may, so this is not gated on being him. */
   const tidy = useCallback(async () => {
     const r = roomFromPath();
@@ -887,7 +902,7 @@ function RoomPage({ id }: { id: string }) {
               // Announced as a thing that happened in the room, not as an achievement unlocked.
               setFound(FOUND_ANNOUNCEMENTS[key] ?? "something in the room answered.");
             }}
-            onProps={(props, poke) => setRoomProps({ props, poke })}
+            onProps={handleRoomProps}
             /*
              * Everything she could be dreaming about, gathered here rather than in the canvas. Filter
              * by `found`, this device's own discoveries, or the dream hands somebody the answer to a
