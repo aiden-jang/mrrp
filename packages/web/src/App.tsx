@@ -912,6 +912,7 @@ function RoomPage({ id }: { id: string }) {
             framed={view.framed}
             doorOpenAt={doorOpenAt}
             box={view.box}
+            brought={view.brought}
             gift={view.gift}
             windowLight={view.windowLight}
             onWindowLight={() => void touchWindowLight()}

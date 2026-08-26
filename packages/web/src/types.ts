@@ -141,6 +141,12 @@ export interface RoomView {
   framed: boolean;
   /** Shared, not per-seat: a box only he could see would be a thing on his screen, not in the room. */
   box: boolean;
+  /**
+   * He brought her something, and it is still on the floor.
+   *
+   * Lasts her day, like the box, and for the same reason: nothing in this room may pile up on her.
+   */
+  brought: boolean;
   /** The mug is off the shelf. Either of them can put it back. */
   shelfDown: boolean;
   /** Something she left on the floor while he was away. His side only, cleared the moment he acts. */
