@@ -1223,7 +1223,23 @@ export function Cat({
     };
 
     let raf = 0;
+    /*
+     * Under reduced motion the room is a still picture, so it does not need sixty of them a second.
+     *
+     * Almost everything that moves is already switched off by `reduce`; what is left is the clock,
+     * which changes on the scale of minutes. Redrawing four times a second keeps that current and
+     * takes the repaint cost down by an order of magnitude on the phone this app lives on. The loop
+     * still runs, so a tap still gets a frame straight away.
+     */
+    const minFrameMs = reduce ? 250 : 0;
+    let lastFrame = -Infinity;
+
     const frame = (t: number) => {
+      if (t - lastFrame < minFrameMs) {
+        raf = requestAnimationFrame(frame);
+        return;
+      }
+      lastFrame = t;
       /*
        * How far open the door is, 0..3. Computed here rather than at the draw call because the camera
        * needs it too. Open fast, shut slow: the slow close is what gives her time to look at it.

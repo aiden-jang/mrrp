@@ -507,6 +507,7 @@ function RoomPage({ id }: { id: string }) {
         catName: view?.cat.name ?? "the cat",
         doing: currentScene?.doing ?? "keeping the room warm",
         together: view?.bothHereNow ?? false,
+        night: currentScene ? isNightChrome(currentScene.sun) : false,
       });
       if (!blob) throw new Error("postcard unavailable");
       const fileName = `${
@@ -865,6 +866,10 @@ function RoomPage({ id }: { id: string }) {
   return (
     <main style={{ ...S.page, ...roomTheme }}>
       <ChromeSync night={nightChrome} />
+      <DocTitle name={view.cat.name} />
+      {/* The room is the page, and it had no heading at all: the only one was the hidden <h2> over
+          the props list, which left a screen reader with an h2 and nothing above it. */}
+      <h1 style={S.srOnly}>{`${view.cat.name}'s room`}</h1>
       <SoundToggle />
       <div style={S.card}>
         <div style={S.stage}>
@@ -1502,13 +1507,13 @@ function RoomPage({ id }: { id: string }) {
           </details>
         )}
 
-        <div style={S.footer}>
+        <footer style={S.footer}>
           <p style={{ ...S.small, textAlign: "center" }}>
             Nothing in here needs keeping up with. No streaks, no history, and nothing kept except how you are
             right now.
           </p>
           <p style={S.credit}>made by aiden jang</p>
-        </div>
+        </footer>
       </div>
     </main>
   );
@@ -1551,6 +1556,23 @@ const ERROR_ON_DARK = "#d39a88";
  * scrollbars and any native control stay light. Its own component so the effect sits above no early
  * return, and so unmounting restores the daylight palette the door and recovery screens expect.
  */
+/*
+ * The tab's name, which was "mrrp" for every room forever.
+ *
+ * This app lives on a home screen and gets opened next to other things, and its whole subject is one
+ * specific cat. Naming her is what makes the tab, the history entry and the app switcher say whose
+ * room this is. Reset on unmount so the door is not titled after the last room you looked at.
+ */
+function DocTitle({ name }: { name: string }) {
+  useEffect(() => {
+    document.title = `${name} \u00b7 mrrp`;
+    return () => {
+      document.title = "mrrp";
+    };
+  }, [name]);
+  return null;
+}
+
 function ChromeSync({ night }: { night: boolean }) {
   useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]');
@@ -1720,10 +1742,18 @@ const S: Record<string, React.CSSProperties> = {
     whiteSpace: "nowrap",
     border: 0,
   },
+  /*
+   * Pinned to the column, not to the window.
+   *
+   * At `right: 12` it sat against the edge of the screen, which on a laptop left it about 430px away
+   * from the room it belongs to, floating in empty page. `left: 50%` plus half the column's max width
+   * keeps it beside the content at every size, and it falls back to the old corner on anything too
+   * narrow for the offset to fit.
+   */
   soundToggle: {
     position: "fixed",
     top: 12,
-    right: 12,
+    left: "min(calc(50% + 300px - 48px), calc(100vw - 48px))",
     zIndex: 20,
     width: 36,
     height: 36,
