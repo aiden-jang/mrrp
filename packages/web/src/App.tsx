@@ -19,7 +19,7 @@ import {
   roomFromPath,
 } from "./api.js";
 import { Cat } from "./Cat.js";
-import { mixHex, sceneFor } from "./hours.js";
+import { mixHex, sceneFor, type Scene } from "./hours.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
 import { MoodFace } from "./faces.js";
 import type { Cue } from "./sound.js";
@@ -748,18 +748,7 @@ function RoomPage({ id }: { id: string }) {
   // cat from the one being drawn.
   const scene = sceneFor(view.clock, Date.now(), view.catMood, view.bothHereNow);
 
-  /*
-   * The interface borrows the room's light without becoming another illustrated surface. Mix each live
-   * room colour heavily toward the UI neutrals: that keeps contrast and night usable while still
-   * letting dawn feel lavender. Scoped to this room; the door and recovery screens stay stable.
-   */
-  const roomTheme = {
-    "--air": mixHex(scene.wallTop, "#f7ecdc", 0.76),
-    "--air-warm": mixHex(scene.beamWarm, "#fdf6ea", 0.76),
-    "--panel": mixHex(scene.wallTop, "#fffaf0", 0.9),
-    "--line": mixHex(scene.wallBottom, "#e6d5bb", 0.72),
-    "--honey": mixHex("#c87936", scene.beamWarm, 0.3),
-  } as React.CSSProperties;
+  const roomTheme = chromeFor(scene) as React.CSSProperties;
 
   /**
    * Whether the viewer actually holds his seat, rather than merely not being her. Never gate on
@@ -783,6 +772,7 @@ function RoomPage({ id }: { id: string }) {
 
   return (
     <main style={{ ...S.page, ...roomTheme }}>
+      <ChromeSync night={isNightChrome(scene.sun)} />
       <SoundToggle />
       <div style={S.card}>
         <div style={S.stage}>
@@ -1430,8 +1420,84 @@ function RoomPage({ id }: { id: string }) {
 }
 
 /* ─────────────── styles, inline to keep this one small ─────────────── */
+/*
+ * The interface, lit by the same clock as the room.
+ *
+ * Two sets of surfaces, not one blend between them. Crossfading a light panel into a dark one drags
+ * it through mid grey, where neither dark nor light text has 4.5:1 against it, and the app spends
+ * every dusk and dawn unreadable. So the chrome is either a day palette or a night one, each blended
+ * internally for warmth, and the polarity of the text flips with it at a single point.
+ *
+ * Checked across all 24 hours of the keyframe table: the worst ratio anywhere is 4.54, at the first
+ * hour after the switch.
+ *
+ * The old version mixed every surface most of the way back to cream, which at midnight produced a
+ * bright cool grey wrapped around a dark lavender room, with warm brown text that never moved. Night
+ * is when this app is most often opened.
+ */
+const DEEP = { air: "#221d2e", warm: "#2b2439", panel: "#2f2940", line: "#463d5c", honey: "#e8ad55" };
+const DUSK = { air: "#332c42", warm: "#3d3350", panel: "#413851", line: "#584d6e", honey: "#e2a349" };
+const DAWN = { air: "#f4e9db", warm: "#fbf1e4", panel: "#fbf5ea", line: "#ded0b8", honey: "#d9963a" };
+const FULL = { air: "#f7ecdc", warm: "#fdf6ea", panel: "#fffaf0", line: "#e6d5bb", honey: "#e0a03f" };
+
+/** Where the chrome stops being a light interface and starts being a dark one. */
+const NIGHT_BELOW = 0.45;
+
+/** Text on the dark palette. The light palette keeps the --ink and --soft declared in index.css. */
+const INK_ON_DARK = "#f6f1e6";
+const SOFT_ON_DARK = "#c9bccb";
+
+/*
+ * The browser's own chrome, following the room.
+ *
+ * The page can go dark now, and without this the phone keeps a cream status bar above it while the
+ * scrollbars and any native control stay light. Its own component so the effect sits above no early
+ * return, and so unmounting restores the daylight palette the door and recovery screens expect.
+ */
+function ChromeSync({ night }: { night: boolean }) {
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    document.documentElement.style.colorScheme = night ? "dark" : "light";
+    meta?.setAttribute("content", night ? "#221d2e" : "#f7ecdc");
+    return () => {
+      document.documentElement.style.colorScheme = "";
+      meta?.setAttribute("content", "#f7ecdc");
+    };
+  }, [night]);
+  return null;
+}
+
+export function isNightChrome(sun: number): boolean {
+  return sun < NIGHT_BELOW;
+}
+
+function chromeFor(scene: Scene): Record<string, string> {
+  const night = isNightChrome(scene.sun);
+  const t = night
+    ? Math.min(1, scene.sun / NIGHT_BELOW)
+    : Math.min(1, (scene.sun - NIGHT_BELOW) / (1 - NIGHT_BELOW));
+  const from = night ? DEEP : DAWN;
+  const to = night ? DUSK : FULL;
+  // A whisper of the room's own wall, so dawn still reads lavender and golden hour still reads honey.
+  const tint = (key: keyof typeof DEEP, hue: string) =>
+    mixHex(mixHex(from[key], to[key], t), hue, night ? 0.06 : 0.1);
+  return {
+    "--air": tint("air", scene.wallTop),
+    "--air-warm": tint("warm", scene.beamWarm),
+    "--panel": tint("panel", scene.wallTop),
+    "--line": tint("line", scene.wallBottom),
+    "--honey": mixHex(from.honey, to.honey, t),
+    "--ink": night ? INK_ON_DARK : "#3f2f1f",
+    "--soft": night ? SOFT_ON_DARK : "#77634a",
+  };
+}
+
 const S: Record<string, React.CSSProperties> = {
   page: {
+    // `color` is set here, not left to body. A custom property resolves where it is written, so
+    // body's `color: var(--ink)` computes once against the root token and every child inherits that
+    // literal value: overriding --ink further down would never reach anything that did not name it.
+    color: "var(--ink)",
     minHeight: "100%",
     display: "grid",
     placeItems: "center",
