@@ -46,6 +46,8 @@
    */
   --soft: #77634a;
   --line: #e6d5bb;
+  /* The one warning colour, so it is themed with everything else rather than written inline. */
+  --error: #a4563d;
   --honey: #e0a03f;
   /*
    * What goes ON honey. Ink, never white.
@@ -55,8 +57,6 @@
    * keeps the honey bright, where darkening it far enough for white would turn it brown.
    */
   --on-honey: var(--ink);
-  --ginger: #e8963f;
-  --ginger-dk: #c9752a;
   --sans:
     Quicksand, ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", ui-sans-serif, -apple-system,
     system-ui, sans-serif;

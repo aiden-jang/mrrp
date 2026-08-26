@@ -239,6 +239,13 @@ function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[];
  * and a paintbox beside hand-authored pixel art looks like two different apps. Nothing dark or cold:
  * what she taps on a bad day should not look like a bad day.
  */
+/*
+ * The daylight tints. `moodTint` takes them somewhere dark when the room is.
+ *
+ * Note how close these are to each other: sad, done and tired differ by six across all three
+ * channels. That is on purpose and worth knowing before "improving" them. The tint is a whisper of
+ * warmth, not a code for which mood is which, and the label and the face do the identifying.
+ */
 const MOOD_TINT: Record<string, string> = {
   good: "#f8e3b8",
   tired: "#e7ddd0",
@@ -748,7 +755,9 @@ function RoomPage({ id }: { id: string }) {
   // cat from the one being drawn.
   const scene = sceneFor(view.clock, Date.now(), view.catMood, view.bothHereNow);
 
-  const roomTheme = chromeFor(scene) as React.CSSProperties;
+  const chrome = chromeFor(scene);
+  const roomTheme = chrome as React.CSSProperties;
+  const nightChrome = isNightChrome(scene.sun);
 
   /**
    * Whether the viewer actually holds his seat, rather than merely not being her. Never gate on
@@ -772,7 +781,7 @@ function RoomPage({ id }: { id: string }) {
 
   return (
     <main style={{ ...S.page, ...roomTheme }}>
-      <ChromeSync night={isNightChrome(scene.sun)} />
+      <ChromeSync night={nightChrome} />
       <SoundToggle />
       <div style={S.card}>
         <div style={S.stage}>
@@ -1073,7 +1082,7 @@ function RoomPage({ id }: { id: string }) {
               </>
             )}
 
-            {setupErr && <p style={{ ...S.small, color: "#a4563d", marginTop: 12 }}>{setupErr}</p>}
+            {setupErr && <p style={{ ...S.small, color: "var(--error)", marginTop: 12 }}>{setupErr}</p>}
 
             <div style={{ ...S.row, marginTop: 12 }}>
               <button style={S.btn} onClick={() => setSetup(false)}>
@@ -1096,7 +1105,9 @@ function RoomPage({ id }: { id: string }) {
         {view.bothHereNow && (
           <div style={S.together}>
             <p style={S.togetherMain}>You're both in here right now.</p>
-            <p style={{ ...S.small, color: "rgba(255,255,255,.85)", marginTop: 4 }}>
+            {/* The card is honey in every light, so this takes the same ink as the line above it.
+                No opacity: dimming it to 0.78 drops it to 3.7:1, and the size already separates them. */}
+            <p style={{ ...S.small, color: "var(--on-honey)", marginTop: 4 }}>
               {view.youAreHer
                 ? `Hold on ${view.cat.name} and he'll see it happen.`
                 : `Hold on ${view.cat.name}. She's right there.`}
@@ -1226,7 +1237,10 @@ function RoomPage({ id }: { id: string }) {
                     padding: "9px 8px",
                     ...(view.catMood === m.id
                       ? S.moodOn
-                      : { background: MOOD_TINT[m.id] ?? "var(--panel)", borderColor: "transparent" }),
+                      : {
+                          background: moodTint(m.id, nightChrome, chrome["--panel"]!),
+                          borderColor: "transparent",
+                        }),
                   }}
                   onClick={() => void tell(m.id)}
                 >
@@ -1323,7 +1337,7 @@ function RoomPage({ id }: { id: string }) {
                     spellCheck={false}
                     onChange={(e) => setClaimCode(e.target.value)}
                   />
-                  {claimErr && <p style={{ ...S.small, color: "#a4563d", marginTop: 8 }}>{claimErr}</p>}
+                  {claimErr && <p style={{ ...S.small, color: "var(--error)", marginTop: 8 }}>{claimErr}</p>}
                   <button
                     style={{ ...S.btn, ...S.btnGo, width: "100%", marginTop: 10 }}
                     disabled={claiming || claimCode.trim().length < 8}
@@ -1385,7 +1399,7 @@ function RoomPage({ id }: { id: string }) {
         )}
 
         {err && (
-          <p style={{ ...S.small, textAlign: "center", marginTop: 12, color: "#a4563d" }}>
+          <p style={{ ...S.small, textAlign: "center", marginTop: 12, color: "var(--error)" }}>
             {err} Trying again in a moment.
           </p>
         )}
@@ -1446,6 +1460,8 @@ const NIGHT_BELOW = 0.45;
 /** Text on the dark palette. The light palette keeps the --ink and --soft declared in index.css. */
 const INK_ON_DARK = "#f6f1e6";
 const SOFT_ON_DARK = "#c9bccb";
+/** Same hue and saturation as the daylight error, lifted until it clears 4.5 on the dark surfaces. */
+const ERROR_ON_DARK = "#d39a88";
 
 /*
  * The browser's own chrome, following the room.
@@ -1465,6 +1481,20 @@ function ChromeSync({ night }: { night: boolean }) {
     };
   }, [night]);
   return null;
+}
+
+/*
+ * A mood chip's background, for the room's current light.
+ *
+ * At night the daylight tints are pale enough to read as nine glowing pills on a dark page, and the
+ * light ink they carry sits on them at about 1.2:1, which is invisible. Mixed most of the way into
+ * the panel instead: the hues flatten, which costs nothing given how close they already are, and the
+ * chips end up better separated from the panel than the daylight ones are (1.7 against 1.3).
+ */
+function moodTint(id: string, night: boolean, panel: string): string {
+  const day = MOOD_TINT[id];
+  if (!day) return "var(--panel)";
+  return night ? mixHex(day, panel, 0.8) : day;
 }
 
 export function isNightChrome(sun: number): boolean {
@@ -1489,6 +1519,7 @@ function chromeFor(scene: Scene): Record<string, string> {
     "--honey": mixHex(from.honey, to.honey, t),
     "--ink": night ? INK_ON_DARK : "#3f2f1f",
     "--soft": night ? SOFT_ON_DARK : "#77634a",
+    "--error": night ? ERROR_ON_DARK : "#a4563d",
   };
 }
 
@@ -1561,7 +1592,9 @@ const S: Record<string, React.CSSProperties> = {
    * pulled right up under the line it belongs to.
    */
   footer: { marginTop: 28 },
-  credit: { fontSize: 11, color: "var(--soft)", opacity: 0.55, textAlign: "center", margin: "8px 0 0" },
+  /* No opacity. At 0.55 this sat at 1.66:1 on the page, which is not "quiet", it is unreadable.
+     11px against the lede's 15.5 is the whole hierarchy it needs. */
+  credit: { fontSize: 11, color: "var(--soft)", textAlign: "center", margin: "8px 0 0" },
   creditLink: { color: "inherit", textDecoration: "underline", textUnderlineOffset: 2 },
   /** The recovery-code disclosure, on his side. Closed by default: it is reassurance, not a task. */
   recovery: {
@@ -1592,7 +1625,6 @@ const S: Record<string, React.CSSProperties> = {
   hint: {
     fontSize: 12.5,
     color: "var(--soft)",
-    opacity: 0.8,
     textAlign: "center",
     margin: "6px 0 0",
   },
@@ -1623,7 +1655,7 @@ const S: Record<string, React.CSSProperties> = {
     lineHeight: 1.5,
     textWrap: "pretty",
   },
-  noticed: { fontSize: 12.5, color: "var(--soft)", textAlign: "center", margin: "10px 0 0", opacity: 0.85 },
+  noticed: { fontSize: 12.5, color: "var(--soft)", textAlign: "center", margin: "10px 0 0" },
   // A quiet panel, not a gold block. How she is appears on his side every single day, whereas the
   // two of you being in the room at the same moment happens rarely — and when it did, two identical
   // gold cards stacked on top of each other and the rare one lost. Only one of these should shout.
@@ -1659,7 +1691,7 @@ const S: Record<string, React.CSSProperties> = {
     margin: "14px 0 4px",
     padding: "14px 15px",
     borderRadius: 18,
-    background: "linear-gradient(145deg, #fffaf1, var(--panel))",
+    background: "linear-gradient(145deg, var(--air-warm), var(--panel))",
     border: "1px solid var(--line)",
     boxShadow: "0 10px 24px -17px rgba(120,84,44,.55)",
   },
