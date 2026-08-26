@@ -20,7 +20,15 @@
  * for every tab to close, which on a phone can be weeks.
  */
 const CACHE = "mrrp-v1";
-const SHELL = ["/", "/icon.svg", "/apple-touch-icon.png", "/manifest.webmanifest"];
+// The font is here rather than left to the cache-first rule below so a home-screen open on no signal
+// still gets the right typeface. Not content-hashed, so replacing the file needs a CACHE bump.
+const SHELL = [
+  "/",
+  "/icon.svg",
+  "/apple-touch-icon.png",
+  "/manifest.webmanifest",
+  "/fonts/quicksand-latin.woff2",
+];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(

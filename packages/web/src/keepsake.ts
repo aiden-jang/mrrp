@@ -71,9 +71,27 @@ async function loadImage(blob: Blob): Promise<CanvasImageSource> {
   });
 }
 
+/*
+ * The postcard's type, matching the app's.
+ *
+ * Canvas takes a font string and draws immediately; it will not wait for a webfont the way the DOM
+ * does, so an unloaded Quicksand silently falls back and the keepsake comes out in a different face
+ * from the room it was captured from. Waiting for the two weights it uses costs nothing after the
+ * first paint, since the page has already loaded them.
+ */
+const KEEPSAKE_FONT = 'Quicksand, ui-rounded, "SF Pro Rounded", system-ui, sans-serif';
+
+async function keepsakeFontReady(): Promise<void> {
+  try {
+    await Promise.all([document.fonts.load("600 42px Quicksand"), document.fonts.load("700 32px Quicksand")]);
+  } catch {
+    // An unavailable font is not a reason to refuse somebody their postcard.
+  }
+}
+
 /** Turns the room capture into a shareable little print without uploading it anywhere. */
 export async function makeKeepsake(room: Blob, details: KeepsakeDetails): Promise<Blob | null> {
-  const image = await loadImage(room);
+  const [image] = await Promise.all([loadImage(room), keepsakeFontReady()]);
   const canvas = document.createElement("canvas");
   canvas.width = 1200;
   canvas.height = 1420;
@@ -91,18 +109,18 @@ export async function makeKeepsake(room: Blob, details: KeepsakeDetails): Promis
   g.restore();
 
   g.fillStyle = "#4a3520";
-  g.font = "600 42px ui-rounded, system-ui, sans-serif";
+  g.font = `600 42px ${KEEPSAKE_FONT}`;
   wrappedLines(g, keepsakeCaption(details), 1028).forEach((line, index) => {
     g.fillText(line, 86, 1212 + index * 52);
   });
 
   g.fillStyle = "#907961";
-  g.font = "28px ui-rounded, system-ui, sans-serif";
+  g.font = `28px ${KEEPSAKE_FONT}`;
   g.fillText(keepsakeDate(details.capturedAt), 86, 1338);
 
   g.textAlign = "right";
   g.fillStyle = "#c58c43";
-  g.font = "700 32px ui-rounded, system-ui, sans-serif";
+  g.font = `700 32px ${KEEPSAKE_FONT}`;
   g.fillText("mrrp  ·  ฅ", 1114, 1350);
 
   return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
