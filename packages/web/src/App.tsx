@@ -160,10 +160,13 @@ function RecoveryCode({ code }: { code: string }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <p style={{ ...S.code, flex: 1 }}>{code}</p>
+      {/* The label carries the result, so a screen reader hears the copy happen. A live region for a
+          button whose own text changes would announce it twice. */}
       <button
         type="button"
         style={{ ...S.btn, flexShrink: 0, padding: "9px 11px", fontSize: FS.micro }}
         onClick={() => void copy()}
+        aria-label={copied ? "Recovery code copied" : "Copy the recovery code"}
       >
         {copied ? "Copied" : "Copy"}
       </button>
@@ -709,6 +712,22 @@ function RoomPage({ id }: { id: string }) {
     setSetup(true);
   };
 
+  /*
+   * Focus around the setup panel.
+   *
+   * Opening it unmounts the button that opened it, so focus fell to <body>: the panel arrived with no
+   * announcement and the next Tab started again from the top of the document. Closing it did the same
+   * in reverse. The panel takes focus on open, and the trigger takes it back on close.
+   */
+  const setupTrigger = useRef<HTMLButtonElement>(null);
+  const setupPanel = useRef<HTMLDivElement>(null);
+  const wasSetup = useRef(false);
+  useEffect(() => {
+    if (setup && !wasSetup.current) setupPanel.current?.focus();
+    if (!setup && wasSetup.current) setupTrigger.current?.focus();
+    wasSetup.current = setup;
+  }, [setup]);
+
   const saveSetup = async () => {
     if (!draft) return;
     const look = LOOKS.find((l) => l.id === draft.look)!;
@@ -932,9 +951,18 @@ function RoomPage({ id }: { id: string }) {
          * the two biggest secrets in the app cannot be found at all without a mouse. Activating one
          * runs the real interaction, so the room reacts exactly as it would to a tap.
          */}
+        {/* A way past the room's props. Seven of them sit in front of everything else on the page, so
+            without this a keyboard user tabs all seven on every visit before reaching anything they
+            can act on. Styled in index.css rather than here, because it has to appear on :focus. */}
         {roomProps && !setup && (
-          <div style={S.srOnly}>
-            <h2>things in the room</h2>
+          <a href="#room-actions" data-skip="">
+            Skip to what you can do
+          </a>
+        )}
+
+        {roomProps && !setup && (
+          <nav style={S.srOnly} aria-labelledby="room-things">
+            <h2 id="room-things">things in the room</h2>
             <ul>
               {roomProps.props.map((prop) => (
                 <li key={prop.key}>
@@ -944,7 +972,7 @@ function RoomPage({ id }: { id: string }) {
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
         )}
 
         {/* Anything the room does in response, spoken once. Polite so it never interrupts a reader. */}
@@ -958,6 +986,8 @@ function RoomPage({ id }: { id: string }) {
         <p style={S.doing}>
           {setup ? `Picking out ${view.cat.name}.` : `${view.cat.name} is ${scene.doing}.`}
         </p>
+
+        <span id="room-actions" tabIndex={-1} />
 
         {captureRoom && !setup && (
           <button style={S.quiet} onClick={() => void saveRoomImage()} disabled={imageStatus !== null}>
@@ -1006,7 +1036,8 @@ function RoomPage({ id }: { id: string }) {
         )}
 
         {iAmHim && setup && draft && (
-          <div style={S.panel}>
+          // tabIndex -1 so it can take focus on open without becoming a tab stop of its own.
+          <div style={S.panel} id="setup-panel" ref={setupPanel} tabIndex={-1} aria-label="Set up her cat">
             <p style={S.panelTitle}>her cat</p>
 
             <input
@@ -1214,7 +1245,14 @@ function RoomPage({ id }: { id: string }) {
               Send this link to the one person it's for. Whoever opens it second is the one the cat is.
             </p>
             {!setup && (
-              <button style={{ ...S.btn, width: "100%", marginTop: 12 }} onClick={openSetup}>
+              <button
+                ref={setupTrigger}
+                style={{ ...S.btn, width: "100%", marginTop: 12 }}
+                onClick={openSetup}
+                // No aria-controls: this button unmounts when the panel opens, so the id it named
+                // would not exist at the moment anything could follow it.
+                aria-expanded={setup}
+              >
                 Set up her cat first
               </button>
             )}

@@ -223,6 +223,37 @@ button:disabled {
   }
 }
 
+/*
+ * The skip link, off-screen until it takes focus.
+ *
+ * Not `display: none` and not inside the clipped screen-reader box: either would take it out of the
+ * focus order, which is the one thing it needs to be in.
+ */
+[data-skip] {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 30;
+  padding: 9px 13px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 13.5px;
+  text-decoration: none;
+}
+[data-skip]:focus {
+  left: 12px;
+  top: 12px;
+}
+
+/* The placeholder is the browser's colour otherwise, which is the one piece of text on the page that
+   would not come from the palette, and whose contrast nobody is managing. */
+::placeholder {
+  color: var(--soft);
+  opacity: 1;
+}
+
 /* Selection carries the app's own honey rather than the browser's blue, which is the one colour on
    the page that would come from Chrome. Ink on honey, the same pairing every honey surface uses. */
 ::selection {
