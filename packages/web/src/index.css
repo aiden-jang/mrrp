@@ -252,12 +252,25 @@ button:disabled {
   outline: none;
 }
 
+/*
+ * Reduced motion takes away the movement, not the meaning.
+ *
+ * This used to force `opacity: 1` and `transform: none` on every element, which is a blunter thing
+ * than it looks: opacity and transform are how elements are positioned and hidden, not only how they
+ * are animated. The status line under the buttons is held at opacity 0 when it has nothing to say,
+ * so forcing it visible left a stale "you petted her" on screen permanently, inside a live region.
+ *
+ * Collapsing the durations instead lands every animation on its final frame immediately, which is
+ * what somebody asking for less motion wants, and leaves layout alone.
+ */
 @media (prefers-reduced-motion: reduce) {
-  * {
-    animation: none !important;
-    transition: none !important;
-    opacity: 1 !important;
-    transform: none !important;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
   button:active:not(:disabled) {
     transform: none;

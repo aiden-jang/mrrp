@@ -3,7 +3,21 @@ export type KeepsakeDetails = {
   doing: string;
   together: boolean;
   capturedAt?: Date;
+  /** True when the room in the capture is dark. The card is printed to match. */
+  night?: boolean;
 };
+
+/*
+ * The card takes the room's light, like every other surface in the app.
+ *
+ * A cream card around a photograph of a dark lavender room reads as a picture pasted onto the wrong
+ * stationery. This is the one thing anybody keeps or sends on, so it should look like the room it
+ * came from rather than like the app's daytime palette.
+ */
+const CARD = {
+  day: { paper: "#fffaf1", caption: "#4a3520", date: "#907961", mark: "#c58c43" },
+  night: { paper: "#2b2439", caption: "#f6f1e6", date: "#c9bccb", mark: "#e8ad55" },
+} as const;
 
 export function keepsakeCaption({ catName, doing, together }: KeepsakeDetails): string {
   if (together) return `for a little while, you were both here with ${catName}.`;
@@ -117,7 +131,8 @@ export async function makeKeepsake(room: Blob, details: KeepsakeDetails): Promis
   const g = canvas.getContext("2d");
   if (!g) return null;
 
-  g.fillStyle = "#fffaf1";
+  const card = details.night ? CARD.night : CARD.day;
+  g.fillStyle = card.paper;
   g.fillRect(0, 0, canvas.width, canvas.height);
 
   g.save();
@@ -127,18 +142,18 @@ export async function makeKeepsake(room: Blob, details: KeepsakeDetails): Promis
   g.drawImage(image, 72, 72, 1056, 1056);
   g.restore();
 
-  g.fillStyle = "#4a3520";
+  g.fillStyle = card.caption;
   g.font = `600 42px ${KEEPSAKE_FONT}`;
   wrappedLines(g, keepsakeCaption(details), 1028).forEach((line, index) => {
     g.fillText(line, 86, 1212 + index * 52);
   });
 
-  g.fillStyle = "#907961";
+  g.fillStyle = card.date;
   g.font = `28px ${KEEPSAKE_FONT}`;
   g.fillText(keepsakeDate(details.capturedAt), 86, 1338);
 
   g.textAlign = "right";
-  g.fillStyle = "#c58c43";
+  g.fillStyle = card.mark;
   g.font = `700 32px ${KEEPSAKE_FONT}`;
   /*
    * The sign-off, with a drawn paw rather than a borrowed glyph.
@@ -148,7 +163,7 @@ export async function makeKeepsake(room: Blob, details: KeepsakeDetails): Promis
    * thing in this app made to be kept and shown to somebody.
    */
   g.fillText("mrrp", 1076, 1350);
-  paw(g, 1092, 1337, "#c58c43");
+  paw(g, 1092, 1337, card.mark);
 
   return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
 }

@@ -45,6 +45,25 @@
   </head>
   <body>
     <div id="root"></div>
+    <noscript
+      style="
+        display: block;
+        max-width: 34ch;
+        margin: 18vh auto;
+        padding: 0 24px;
+        text-align: center;
+        font:
+          16px/1.55 ui-rounded,
+          system-ui,
+          sans-serif;
+        color: #3f2f1f;
+      "
+    >
+      <!-- The room is drawn on a canvas, so there is no version of this that works without
+           JavaScript. Say so plainly rather than showing an empty cream page. -->
+      <p><strong>mrrp needs JavaScript.</strong></p>
+      <p>The cat is drawn a pixel at a time in the browser, so there is nothing to show without it.</p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
