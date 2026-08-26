@@ -191,7 +191,7 @@ button,
 select,
 [role="button"] {
   transition:
-    transform 0.18s var(--ease-bounce),
+    transform 0.2s var(--ease-bounce),
     filter 0.12s ease;
   touch-action: manipulation;
 }
@@ -221,6 +221,13 @@ button:disabled {
   a:hover {
     text-decoration-thickness: 2px;
   }
+}
+
+/* Selection carries the app's own honey rather than the browser's blue, which is the one colour on
+   the page that would come from Chrome. Ink on honey, the same pairing every honey surface uses. */
+::selection {
+  background: var(--honey);
+  color: var(--on-honey);
 }
 
 /*
@@ -254,5 +261,46 @@ button:disabled {
   }
   button:active:not(:disabled) {
     transform: none;
+  }
+}
+
+/*
+ * Printed, or in a mode that replaces the palette.
+ *
+ * The postcard exists because people want to keep these, so a print is a fallback rather than the
+ * intended route: drop the page's own light, keep the room and the words, and lose the chrome.
+ */
+@media print {
+  body,
+  main {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  button,
+  select,
+  summary,
+  [data-chrome] {
+    display: none !important;
+  }
+  canvas {
+    box-shadow: none !important;
+    border: 1px solid #999 !important;
+  }
+}
+
+/*
+ * Windows High Contrast and friends replace every colour here, including the ones carrying meaning.
+ * Borders survive that replacement where backgrounds do not, so the controls keep an outline that is
+ * invisible in the normal palette and load-bearing in this one.
+ */
+@media (forced-colors: active) {
+  button,
+  select,
+  input,
+  textarea {
+    border: 1px solid ButtonBorder;
+  }
+  :focus-visible {
+    outline: 2px solid Highlight;
   }
 }

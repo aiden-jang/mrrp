@@ -116,8 +116,24 @@ const square = (size) =>
   `<div style="width:${size}px;height:${size}px;background:#f7ecdc">` +
   `<svg width="${size}" height="${size}" viewBox="0 0 512 512" shape-rendering="crispEdges">${rects(28, 32, 40)}</svg></div>`;
 
+/*
+ * The maskable variant, drawn smaller.
+ *
+ * Android crops a maskable icon to whatever shape the launcher uses, and only the central 80% is
+ * guaranteed to survive: a circle of radius 204.8 about the centre. The normal icon's face runs from
+ * 32 to 480, which puts its ear corners about 311 out, so on any round or squircle mask the ears were
+ * being cut off. At cell 18 the face is 288 across and its corners sit at 203.6, just inside.
+ *
+ * Its own file rather than a smaller normal icon: everywhere that is not a launcher mask should keep
+ * the bigger drawing.
+ */
+const maskable = (size) =>
+  `<div style="width:${size}px;height:${size}px;background:#f7ecdc">` +
+  `<svg width="${size}" height="${size}" viewBox="0 0 512 512" shape-rendering="crispEdges">${rects(18, 112, 112)}</svg></div>`;
+
 shoot("icon-512.png", 512, 512, square(512));
 shoot("icon-192.png", 192, 192, square(192));
+shoot("icon-maskable-512.png", 512, 512, maskable(512));
 // iOS ignores transparency and applies its own mask, so this one keeps the warm background.
 shoot("apple-touch-icon.png", 180, 180, square(180));
 
@@ -154,7 +170,7 @@ writeFileSync(
       icons: [
         { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
         { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
-        { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+        { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         { src: "/icon.svg", sizes: "any", type: "image/svg+xml" },
       ],
     },

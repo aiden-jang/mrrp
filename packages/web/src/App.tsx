@@ -55,8 +55,74 @@ function SoundToggle() {
       aria-label={off ? "Turn sound on" : "Turn sound off"}
       style={S.soundToggle}
     >
-      {off ? "\u{1F507}" : "\u{1F50A}"}
+      <SpeakerMark off={off} />
     </button>
+  );
+}
+
+/*
+ * The speaker, drawn.
+ *
+ * This was 🔊 and 🔇: a full-colour raster glyph the reader's OS picks, sitting in the corner of an
+ * app where every other visible mark is authored, and changing shape entirely between an iPhone, an
+ * Android and a laptop. Same reasoning as the icon grid in scripts/icons.mjs. Two waves on, a slash
+ * off, on the same 16-unit box the rest of the drawing uses.
+ */
+function SpeakerMark({ off }: { off: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="15"
+      height="15"
+      aria-hidden
+      focusable="false"
+      style={{ display: "block" }}
+    >
+      <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 6.2h2.3L8.4 3.6v8.8L5.3 9.8H3z" fill="currentColor" stroke="currentColor" />
+        {off ? (
+          <path d="M11 6.2l3.2 3.6M14.2 6.2L11 9.8" />
+        ) : (
+          <>
+            <path d="M10.8 6.1a2.6 2.6 0 0 1 0 3.8" />
+            <path d="M12.7 4.4a5 5 0 0 1 0 7.2" />
+          </>
+        )}
+      </g>
+    </svg>
+  );
+}
+
+/*
+ * The mark against each line in the arrivals list.
+ *
+ * A filled dot for something she said, a small burst for something one of you found, a leaf for a
+ * keepsake, a plain dot for anything else. Drawn on the same 10-unit box so the column stays even
+ * whichever mark a row gets.
+ */
+function ArrivalMark({ kind }: { kind: string }) {
+  return (
+    <svg
+      viewBox="0 0 10 10"
+      width="10"
+      height="10"
+      aria-hidden
+      focusable="false"
+      style={{ display: "block" }}
+    >
+      {kind === "found" ? (
+        <g stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+          <path d="M5 1v2.4M5 6.6V9M1 5h2.4M6.6 5H9" />
+        </g>
+      ) : kind === "kept" ? (
+        <path
+          d="M5 1.4c2.4 0 3.6 1.4 3.6 3.4S7.2 8.6 5 8.6 1.4 6.8 1.4 4.8 2.6 1.4 5 1.4z"
+          fill="currentColor"
+        />
+      ) : (
+        <circle cx="5" cy="5" r={kind === "line" ? 2.6 : 1.6} fill="currentColor" />
+      )}
+    </svg>
   );
 }
 
@@ -96,7 +162,7 @@ function RecoveryCode({ code }: { code: string }) {
       <p style={{ ...S.code, flex: 1 }}>{code}</p>
       <button
         type="button"
-        style={{ ...S.btn, flexShrink: 0, padding: "9px 11px", fontSize: 12.5 }}
+        style={{ ...S.btn, flexShrink: 0, padding: "9px 11px", fontSize: FS.micro }}
         onClick={() => void copy()}
       >
         {copied ? "Copied" : "Copy"}
@@ -188,8 +254,10 @@ function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[];
       <ul style={S.arrivalList}>
         {items.map((item, index) => (
           <li key={`${item.kind}-${item.at}-${index}`} style={S.arrivalItem}>
+            {/* Drawn, not dingbats. ✦ ✧ ❧ come from whatever font resolves them, and ❧ in particular
+                is not in every face, so the list used to change character between devices. */}
             <span style={S.arrivalPaw} aria-hidden>
-              {item.kind === "line" ? "✦" : item.kind === "found" ? "✧" : item.kind === "kept" ? "❧" : "·"}
+              <ArrivalMark kind={item.kind} />
             </span>
             <span>
               {item.kind === "action" ? (
@@ -322,7 +390,7 @@ function Landing() {
           One of you is the cat. You make the room; whoever you send the link to becomes her. They tap how
           their day is going and she becomes that, so you know without having to ask.
         </p>
-        <p style={{ ...S.lede, margin: "0 auto 18px", fontSize: 14 }}>
+        <p style={{ ...S.lede, margin: "0 auto 18px", fontSize: FS.body }}>
           Then you turn up and sit with her. No accounts, no notifications, nothing to keep up with.
         </p>
         {/* In a browser tab this is an offer rather than a redirect, so the page you asked for is the
@@ -1550,6 +1618,45 @@ function chromeFor(scene: Scene): Record<string, string> {
   };
 }
 
+/*
+ * The scales. Five type steps, four radii, three elevations, three durations.
+ *
+ * There were fourteen distinct font sizes for thirty-six usages, several of them half a point apart,
+ * which is below the threshold anybody can see and above the threshold at which they drift. Same for
+ * six radii and three shadows in two different browns. Reach for a step here rather than a number.
+ */
+const FS = {
+  /** Credit lines, the day counter. */
+  micro: 12,
+  /** Captions, field labels, helper text. Most of the quiet copy in the app. */
+  small: 13.5,
+  /** Buttons, chips, list rows. */
+  body: 15,
+  /** Anything you type into. A floor, not a preference: iOS zooms below 16. */
+  field: 16,
+  /** The note, the arrival headline, anything meant to be read first. */
+  lead: 17.5,
+} as const;
+
+const RADIUS = { sm: 10, md: 14, lg: 18, pill: 999 } as const;
+
+/*
+ * How long things take. `settle` is everything that arrives; `crossfade` is the room's own light
+ * changing, which is slow on purpose and belongs to nothing else.
+ */
+const MOTION = {
+  settle: "0.42s var(--ease-spring)",
+  arrive: "0.42s var(--ease-bounce)",
+  crossfade: "0.9s ease",
+} as const;
+
+/** One brown, three heights. The tint was two different browns before. */
+const SHADOW = {
+  low: "0 6px 18px -12px rgba(120,84,44,.35)",
+  mid: "0 8px 22px -14px rgba(120,84,44,.4)",
+  high: "0 10px 24px -17px rgba(120,84,44,.55)",
+} as const;
+
 const S: Record<string, React.CSSProperties> = {
   page: {
     // `color` is set here, not left to body. A custom property resolves where it is written, so
@@ -1563,7 +1670,7 @@ const S: Record<string, React.CSSProperties> = {
     // least room for it, which is what pushed the landing page's button under the fold.
     padding: "clamp(14px, 3vmin, 28px) 18px clamp(24px, 5vmin, 48px)",
     background: "radial-gradient(120% 90% at 78% 6%, var(--air-warm) 0%, var(--air) 62%)",
-    transition: "background .9s ease",
+    transition: `background ${MOTION.crossfade}`,
   },
   /*
    * minWidth 0 + overflowWrap: a grid item defaults to min-width:auto, which is its min-content
@@ -1605,18 +1712,18 @@ const S: Record<string, React.CSSProperties> = {
     zIndex: 20,
     width: 36,
     height: 36,
-    borderRadius: 999,
+    borderRadius: RADIUS.pill,
     cursor: "pointer",
     display: "grid",
     placeItems: "center",
-    fontSize: 15,
+    fontSize: FS.body,
     lineHeight: 1,
     background: "var(--panel)",
     border: "1px solid var(--line)",
     color: "var(--soft)",
   },
-  lede: { fontSize: 15.5, color: "var(--soft)", maxWidth: "38ch", lineHeight: 1.55 },
-  small: { fontSize: 13, color: "var(--soft)", margin: 0, lineHeight: 1.5 },
+  lede: { fontSize: FS.body, color: "var(--soft)", maxWidth: "38ch", lineHeight: 1.55 },
+  small: { fontSize: FS.small, color: "var(--soft)", margin: 0, lineHeight: 1.5 },
   /**
    * The footer, as one block instead of two grey paragraphs and a floating byline.
    *
@@ -1628,36 +1735,36 @@ const S: Record<string, React.CSSProperties> = {
   footer: { marginTop: 28 },
   /* No opacity. At 0.55 this sat at 1.66:1 on the page, which is not "quiet", it is unreadable.
      11px against the lede's 15.5 is the whole hierarchy it needs. */
-  credit: { fontSize: 11, color: "var(--soft)", textAlign: "center", margin: "8px 0 0" },
+  credit: { fontSize: FS.micro, color: "var(--soft)", textAlign: "center", margin: "8px 0 0" },
   creditLink: { color: "inherit", textDecoration: "underline", textUnderlineOffset: 2 },
   /** The recovery-code disclosure, on his side. Closed by default: it is reassurance, not a task. */
   recovery: {
     marginTop: 18,
     padding: "10px 14px",
-    borderRadius: 14,
+    borderRadius: RADIUS.md,
     background: "var(--air)",
     border: "1px solid var(--line)",
   },
   recoverySummary: {
     cursor: "pointer",
-    fontSize: 13.5,
+    fontSize: FS.small,
     color: "var(--soft)",
   },
   code: {
     font: "inherit",
-    fontSize: 18,
+    fontSize: FS.lead,
     letterSpacing: ".08em",
     textAlign: "center",
     margin: 0,
     padding: "11px 13px",
-    borderRadius: 14,
+    borderRadius: RADIUS.md,
     background: "var(--air)",
     border: "1px dashed var(--line)",
     userSelect: "all",
   },
   /** Shown once, until the first touch. Small, centred, and never in the way. */
   hint: {
-    fontSize: 12.5,
+    fontSize: FS.micro,
     color: "var(--soft)",
     textAlign: "center",
     margin: "6px 0 0",
@@ -1671,7 +1778,7 @@ const S: Record<string, React.CSSProperties> = {
    */
   stage: { position: "relative", width: "100%", display: "grid", placeItems: "center" },
   doing: {
-    fontSize: 13.5,
+    fontSize: FS.small,
     color: "var(--soft)",
     textAlign: "center",
     margin: "14px 0 0",
@@ -1681,7 +1788,7 @@ const S: Record<string, React.CSSProperties> = {
   // A shade warmer and a touch larger than the discovery count: this is the room saying something, not
   // a footnote about it.
   remembers: {
-    fontSize: 13,
+    fontSize: FS.small,
     color: "var(--soft)",
     textAlign: "center",
     margin: "12px auto 0",
@@ -1689,22 +1796,22 @@ const S: Record<string, React.CSSProperties> = {
     lineHeight: 1.5,
     textWrap: "pretty",
   },
-  noticed: { fontSize: 12.5, color: "var(--soft)", textAlign: "center", margin: "10px 0 0" },
+  noticed: { fontSize: FS.micro, color: "var(--soft)", textAlign: "center", margin: "10px 0 0" },
   // A quiet panel, not a gold block. How she is appears on his side every single day, whereas the
   // two of you being in the room at the same moment happens rarely — and when it did, two identical
   // gold cards stacked on top of each other and the rare one lost. Only one of these should shout.
   theirs: {
-    animation: "rise .42s var(--ease-spring) both",
+    animation: `rise ${MOTION.settle} both`,
     margin: "14px 0 2px",
     padding: "13px 16px",
-    borderRadius: 18,
+    borderRadius: RADIUS.lg,
     background: "var(--panel)",
     border: "1px solid var(--line)",
     color: "var(--ink)",
   },
-  theirsMain: { fontSize: 16.5, lineHeight: 1.5, margin: 0 },
+  theirsMain: { fontSize: FS.lead, lineHeight: 1.5, margin: 0 },
   did: {
-    fontSize: 13,
+    fontSize: FS.small,
     textAlign: "center",
     color: "var(--soft)",
     margin: "12px 0 4px",
@@ -1712,36 +1819,36 @@ const S: Record<string, React.CSSProperties> = {
     minHeight: "1.2em",
   },
   together: {
-    animation: "arrive .5s var(--ease-bounce) both",
+    animation: `arrive ${MOTION.arrive} both`,
     margin: "14px 0 6px",
     padding: "13px 16px",
-    borderRadius: 18,
+    borderRadius: RADIUS.lg,
     background: "var(--honey)",
     color: "var(--on-honey)",
   },
-  togetherMain: { fontSize: 17, fontWeight: 700, margin: 0, lineHeight: 1.45 },
+  togetherMain: { fontSize: FS.lead, fontWeight: 700, margin: 0, lineHeight: 1.45 },
   arrival: {
-    animation: "arrive .5s var(--ease-bounce) both",
+    animation: `arrive ${MOTION.arrive} both`,
     margin: "14px 0 4px",
     padding: "14px 15px",
-    borderRadius: 18,
+    borderRadius: RADIUS.lg,
     background: "linear-gradient(145deg, var(--air-warm), var(--panel))",
     border: "1px solid var(--line)",
-    boxShadow: "0 10px 24px -17px rgba(120,84,44,.55)",
+    boxShadow: SHADOW.high,
   },
   arrivalTop: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 },
-  arrivalTitle: { fontSize: 15, fontWeight: 700, margin: 0, color: "var(--ink)" },
+  arrivalTitle: { fontSize: FS.body, fontWeight: 700, margin: 0, color: "var(--ink)" },
   arrivalClose: {
     width: 28,
     height: 28,
     flexShrink: 0,
-    borderRadius: 999,
+    borderRadius: RADIUS.pill,
     cursor: "pointer",
     border: "1px solid var(--line)",
     background: "var(--air)",
     color: "var(--soft)",
     font: "inherit",
-    fontSize: 17,
+    fontSize: FS.lead,
   },
   arrivalList: {
     display: "grid",
@@ -1755,22 +1862,22 @@ const S: Record<string, React.CSSProperties> = {
     display: "grid",
     gridTemplateColumns: "18px minmax(0, 1fr)",
     gap: 7,
-    fontSize: 14,
+    fontSize: FS.body,
     lineHeight: 1.45,
   },
-  arrivalPaw: { color: "var(--honey)", fontWeight: 800, textAlign: "center" },
-  arrivalWhen: { display: "block", marginTop: 1, color: "var(--soft)", fontSize: 11.5 },
+  arrivalPaw: { color: "var(--honey)", display: "flex", justifyContent: "center", paddingTop: 4 },
+  arrivalWhen: { display: "block", marginTop: 1, color: "var(--soft)", fontSize: FS.micro },
   sayBox: { margin: "16px 0 4px" },
   sayInput: {
     font: "inherit",
     // 16 is a floor, not a preference: iOS zooms the page when you focus anything smaller, and both
     // things anybody types in this app are textareas carrying this style.
-    fontSize: 16,
+    fontSize: FS.field,
     lineHeight: 1.5,
     width: "100%",
     resize: "none",
     padding: "11px 13px",
-    borderRadius: 14,
+    borderRadius: RADIUS.md,
     border: "1px solid var(--line)",
     background: "var(--panel)",
     color: "var(--ink)",
@@ -1782,21 +1889,21 @@ const S: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     margin: "16px 0 4px",
     padding: "12px 15px",
-    borderRadius: 16,
+    borderRadius: RADIUS.lg,
     background: "var(--panel)",
     border: "1px dashed var(--line)",
     color: "var(--ink)",
   },
   yourLineLabel: {
     display: "block",
-    fontSize: 13.5,
+    fontSize: FS.small,
     color: "var(--soft)",
     fontWeight: 500,
     marginBottom: 5,
   },
-  yourLineText: { display: "block", fontSize: 15.5, lineHeight: 1.5 },
+  yourLineText: { display: "block", fontSize: FS.body, lineHeight: 1.5 },
   came: {
-    fontSize: 13.5,
+    fontSize: FS.small,
     textAlign: "center",
     color: "var(--soft)",
     margin: "12px 0 0",
@@ -1805,7 +1912,7 @@ const S: Record<string, React.CSSProperties> = {
   // screens: they read as a field label on a form you have to fill in. This is somebody asking how
   // your day was, and it should sound like it.
   tellLabel: {
-    fontSize: 14,
+    fontSize: FS.body,
     fontWeight: 500,
     color: "var(--soft)",
     textAlign: "center",
@@ -1821,11 +1928,11 @@ const S: Record<string, React.CSSProperties> = {
   },
   mood: {
     font: "inherit",
-    fontSize: 14,
+    fontSize: FS.body,
     color: "var(--ink)",
     background: "var(--panel)",
     border: "1px solid var(--line)",
-    borderRadius: 999,
+    borderRadius: RADIUS.pill,
     padding: "8px 15px",
     cursor: "pointer",
   },
@@ -1838,20 +1945,20 @@ const S: Record<string, React.CSSProperties> = {
   panel: {
     margin: "16px 0 4px",
     padding: "15px 16px",
-    borderRadius: 18,
+    borderRadius: RADIUS.lg,
     background: "var(--panel)",
     border: "1px solid var(--line)",
-    boxShadow: "0 6px 18px -12px rgba(120,84,44,.35)",
+    boxShadow: SHADOW.low,
   },
   // The panel's heading, against its field labels below. Both were --soft a point apart, so the whole
   // panel read as one flat list with nothing saying which line was the title.
   panelTitle: {
-    fontSize: 15,
+    fontSize: FS.body,
     fontWeight: 600,
     color: "var(--ink)",
     margin: "0 0 11px",
   },
-  fieldLabel: { fontSize: 12.5, color: "var(--soft)", margin: "14px 0 6px" },
+  fieldLabel: { fontSize: FS.micro, color: "var(--soft)", margin: "14px 0 6px" },
   /*
    * Grids with a fixed column count, not a wrapping row.
    *
@@ -1864,14 +1971,14 @@ const S: Record<string, React.CSSProperties> = {
   swatch: {
     width: 34,
     height: 34,
-    borderRadius: 10,
+    borderRadius: RADIUS.sm,
     border: "1px solid var(--line)",
     cursor: "pointer",
     padding: 0,
   },
   quiet: {
     font: "inherit",
-    fontSize: 12.5,
+    fontSize: FS.micro,
     color: "var(--soft)",
     background: "none",
     border: "none",
@@ -1881,40 +1988,40 @@ const S: Record<string, React.CSSProperties> = {
     textDecoration: "underline",
   },
   note: {
-    animation: "arrive .5s var(--ease-bounce) both",
+    animation: `arrive ${MOTION.arrive} both`,
     margin: "14px 0 2px",
     padding: "15px 17px",
-    borderRadius: 18,
+    borderRadius: RADIUS.lg,
     background: "var(--panel)",
     border: "1px solid var(--line)",
-    boxShadow: "0 8px 22px -14px rgba(120,84,44,.4)",
+    boxShadow: SHADOW.mid,
   },
   noteFrom: {
-    fontSize: 13.5,
+    fontSize: FS.small,
     color: "var(--soft)",
     margin: "0 0 8px",
     fontWeight: 500,
   },
-  noteText: { fontSize: 16.5, lineHeight: 1.55, margin: 0 },
-  noteDay: { fontSize: 12, color: "var(--soft)", margin: "9px 0 0", textAlign: "right" },
+  noteText: { fontSize: FS.lead, lineHeight: 1.55, margin: 0 },
+  noteDay: { fontSize: FS.micro, color: "var(--soft)", margin: "9px 0 0", textAlign: "right" },
   news: { margin: "16px 2px 16px", textAlign: "center" },
-  newsMain: { fontSize: 17.5, margin: "12px 0 5px", lineHeight: 1.45, textAlign: "center" },
+  newsMain: { fontSize: FS.lead, margin: "12px 0 5px", lineHeight: 1.45, textAlign: "center" },
   row: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 },
   btn: {
     font: "inherit",
-    fontSize: 14,
+    fontSize: FS.body,
     fontWeight: 600,
     color: "var(--ink)",
     background: "var(--panel)",
     border: "1px solid var(--line)",
-    borderRadius: 14,
+    borderRadius: RADIUS.md,
     padding: "11px 12px",
     cursor: "pointer",
   },
   btnGo: { background: "var(--honey)", borderColor: "var(--honey)", color: "var(--on-honey)" },
   /** A disclosure is a control, so it gets a control's target size rather than a line of text's. */
   summary: {
-    fontSize: 13,
+    fontSize: FS.small,
     color: "var(--soft)",
     lineHeight: 1.5,
     cursor: "pointer",
@@ -1925,13 +2032,13 @@ const S: Record<string, React.CSSProperties> = {
   selectWrap: { position: "relative", display: "block" },
   select: {
     font: "inherit",
-    fontSize: 16,
+    fontSize: FS.field,
     width: "100%",
     // The browser's caret is replaced by the drawn one, so leave it room and take the OS styling off.
     padding: "11px 34px 11px 13px",
     appearance: "none",
     border: "1px solid var(--line)",
-    borderRadius: 14,
+    borderRadius: RADIUS.md,
     background: "var(--panel)",
     color: "var(--ink)",
     cursor: "pointer",
@@ -1948,11 +2055,11 @@ const S: Record<string, React.CSSProperties> = {
   },
   input: {
     font: "inherit",
-    fontSize: 16,
+    fontSize: FS.field,
     width: "100%",
     padding: "11px 13px",
     border: "1px solid var(--line)",
-    borderRadius: 14,
+    borderRadius: RADIUS.md,
     background: "var(--panel)",
     color: "var(--ink)",
   },
