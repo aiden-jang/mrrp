@@ -255,6 +255,8 @@ export function Cat({
   brought = false,
   brushed = false,
   satWith = false,
+  firstEver = false,
+  monthsOld = 0,
   gift = null,
   cake = false,
   windowLight = false,
@@ -308,6 +310,10 @@ export function Cat({
   brushed?: boolean;
   /** He sat with her today. */
   satWith?: boolean;
+  /** This seat has never opened the room before. */
+  firstEver?: boolean;
+  /** Whole months the room has been going. */
+  monthsOld?: number;
   /** Something she left on the floor. His side only; the room just draws whatever it's handed. */
   gift?: Gift | null;
   /** True on the room's own anniversary, and on its first week and month. Puts a cake on the floor. */
@@ -369,6 +375,10 @@ export function Cat({
   brushedRef.current = brushed;
   const satWithRef = useRef(satWith);
   satWithRef.current = satWith;
+  const monthsOldRef = useRef(monthsOld);
+  monthsOldRef.current = monthsOld;
+  const firstEverRef = useRef(firstEver);
+  firstEverRef.current = firstEver;
   const giftRef = useRef(gift);
   giftRef.current = gift;
   const cakeRef = useRef(cake);
@@ -1343,6 +1353,23 @@ export function Cat({
        */
       rect(0, FLOOR - 1, GW, 1, mixHex(sc.wallBottom, sc.beamWarm, 0.3 + sc.sun * 0.35));
       rect(0, FLOOR, GW, 1, mixHex(sc.floorFar, INK, 0.14));
+      /*
+       * Where the sun has been sitting for months, the boards have gone pale.
+       *
+       * Not the whole sweep of the beam, which is most of the floor and would just be a lighter room.
+       * The patch it rests on around the middle of the day is the part that actually takes the wear,
+       * so that is the part that fades.
+       *
+       * Capped at a year and drawn under everything else, so it reads as the boards themselves rather
+       * than as light lying on them. This is the one thing in the room that only time can do, and the
+       * only direction it goes is gently.
+       */
+      const bleach = Math.min(1, monthsOldRef.current / 12);
+      if (bleach > 0.02) {
+        const faded = mixHex(sc.floorNear, sc.beamWarm, bleach * 0.16);
+        rect(36, FLOOR + 4, 26, GH - FLOOR - 4, faded);
+      }
+
       // Staggered joins and small highlights, not just perspective bands: what the empty half of the
       // room lacks is material, not more furniture.
       for (const by of [FLOOR + 9, FLOOR + 15, FLOOR + 23, FLOOR + 30]) rect(0, by, GW, 1, sc.floorFar);
@@ -2198,7 +2225,17 @@ export function Cat({
        */
       const bounded = (x: number) => Math.max(CAT_REACH_LEFT, Math.min(GW - CAT_REACH_RIGHT, x));
       wantX = bounded(wantX);
-      if (catX.current === null) catX.current = wantX;
+      /*
+       * The first time, she comes in through the door.
+       *
+       * Everything else in this room is already in place when you open it, which is right: it is her
+       * room and she lives there. The exception is the very first time somebody opens it, when the
+       * room has no history to be in the middle of, and she should be arriving rather than found.
+       *
+       * Nothing new drives it. Starting her at the door column lets the walk she already does carry
+       * her to wherever the hour says she should be, and the door is swinging on first paint anyway.
+       */
+      if (catX.current === null) catX.current = firstEverRef.current ? 19 : wantX;
       // 0.012 took about 190 frames to cover a move, so more than three seconds of a cat inching across
       // the boards after a mood tap. It read as lag rather than as walking. 0.05 lands in well under a
       // second and still moves like a cat crossing a room rather than teleporting.

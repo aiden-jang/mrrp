@@ -571,6 +571,15 @@ export class Room extends DurableObject<Env> {
         ((await this.ctx.storage.get<number>("brushedDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
       satWith:
         ((await this.ctx.storage.get<number>("satWithDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
+      /*
+       * The one time she gets to arrive.
+       *
+       * `visits` is incremented before build() runs, so a seat's very first read arrives here as 1.
+       * Seats only: a stranger with the link does not get the room's first moment.
+       */
+      firstEver: seated && (people[me]?.visits ?? 0) <= 1,
+      /* Whole months, floored. The boards do not fade on a schedule anybody is watching. */
+      monthsOld: Math.max(0, Math.floor((Date.now() - startedAt) / (DAY_MS * 30))),
       // His only, and readable for as long as he holds the seat. Useless to anybody else: redeeming it
       // requires knowing it, and he is the only one it is ever sent to.
       recoveryCode: seated && !youAreHer ? await this.recoveryCode() : null,
