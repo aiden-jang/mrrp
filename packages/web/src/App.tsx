@@ -23,7 +23,7 @@ import { mixHex, sceneFor, type Scene } from "./hours.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
 import { MoodFace } from "./faces.js";
 import type { Cue } from "./sound.js";
-import { isMuted, play, setVoice, toggleMuted } from "./sound.js";
+import { buzz, isMuted, play, setVoice, toggleMuted } from "./sound.js";
 import { makeKeepsake } from "./keepsake.js";
 import { foundKeys, noticed } from "./discoveries.js";
 import { awayLine, milestoneLine, personalityLine } from "./remembers.js";
@@ -680,6 +680,9 @@ function RoomPage({ id }: { id: string }) {
   const act = async (a: Action) => {
     setNudge((v) => v + 1);
     play(ACTION_SOUND[a]);
+    // Both the button and the hold-to-pet gesture come through here, so this is the only place the
+    // two gestures that are actually touch need naming.
+    if (a === "pet" || a === "brush") buzz(a);
     try {
       setView(await doAct(id, a));
       // He gets one line back, phrased the way she'll read it, so the button does something visible.

@@ -468,6 +468,8 @@ export function Cat({
   const slowBlink = useRef({ until: -1e9, answered: false, greeted: false });
   /** The sunny spot she has settled on, held until the light has properly moved off it. */
   const warmSpot = useRef<number | null>(null);
+  /** When the rain wash needs asking for again. */
+  const rainHeard = useRef(-1e9);
   /** When the current yawn started, and when the next one is allowed. */
   const yawn = useRef({ at: -1e9, next: -1e9 });
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
@@ -1435,6 +1437,17 @@ export function Cat({
       const wx = WIN_X + shake("window");
       const rainRemaining = plantTaps.current.rainUntil - t;
       const raining = rainRemaining > 0;
+      /*
+       * And you can hear it.
+       *
+       * The cue runs 2.4s, so it is re-asked for a little before it ends and the wash never gaps.
+       * Stopped a beat early rather than at the last frame, so the tail fades out with the last of
+       * the rain on the glass instead of being cut off with it.
+       */
+      if (raining && !reduce && rainRemaining > 700 && t > rainHeard.current) {
+        rainHeard.current = t + 2100;
+        play("rain");
+      }
 
       // Curtain panels sit in front of the beam, so the light feels as though it came through an
       // actual room rather than being painted directly onto the wall. Two folds are enough at this
