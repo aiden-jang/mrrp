@@ -60,6 +60,8 @@ const GW = 100,
  * Crop, never scale: one logical pixel to one aligned rectangle is the rule the look depends on.
  */
 const VW = 80;
+/** The widest pose (STRETCH). Used to keep any pose from being drawn through the wall. */
+const CAT_MAX_W = 26;
 /** The window is bolted to the wall here. Only the light it throws moves. */
 const WIN_X = 60,
   WIN_CX = WIN_X + 8;
@@ -2033,7 +2035,7 @@ export function Cat({
       const yarnLap = (yarnProgress * 2) % 2;
       const yarnAcross = yarnLap <= 1 ? yarnLap : 2 - yarnLap;
       const yarnX = 13 + yarnAcross * (GW - 26);
-      const wantX = nameCalled
+      let wantX = nameCalled
         ? GW / 2
         : bubblePlaying
           ? bubbleTarget!.x
@@ -2056,6 +2058,19 @@ export function Cat({
                           : nesting
                             ? 24
                             : sc.catX * GW;
+      /*
+       * Keep her inside the room.
+       *
+       * `blit` takes kx as the sprite's left edge, and nothing bounded it: she follows the sunbeam,
+       * the beam reaches 0.86 of the room at dusk, and a 26-wide stretch starting at column 86 in a
+       * 100-wide room runs twelve columns past the wall. The camera clamps to the walls too, so the
+       * overflow is not scrolled into view; she is simply cut in half at the right edge.
+       *
+       * Bounded by the widest pose rather than the current one, because the tail and the floor
+       * effects are all placed from this same number and must not disagree with where she is drawn.
+       */
+      const bounded = (x: number) => Math.max(0, Math.min(GW - CAT_MAX_W, x));
+      wantX = bounded(wantX);
       if (catX.current === null) catX.current = wantX;
       // 0.012 took about 190 frames to cover a move, so more than three seconds of a cat inching across
       // the boards after a mood tap. It read as lag rather than as walking. 0.05 lands in well under a

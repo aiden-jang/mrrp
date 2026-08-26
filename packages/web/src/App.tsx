@@ -631,7 +631,7 @@ function RoomPage({ id }: { id: string }) {
         if (next.arrivals.length > 0) setArrivalCard(next.arrivals);
         setErr(null);
       } catch (e) {
-        setErr(e instanceof Error ? e.message : "Something went wrong.");
+        setErr(`${e instanceof Error ? e.message : "Something went wrong."} Trying again in a moment.`);
       }
     },
     [id],
@@ -689,7 +689,14 @@ function RoomPage({ id }: { id: string }) {
         setTimeout(() => setDid(null), 2600);
       }
     } catch {
-      /* she'll survive */
+      /*
+       * Say so. The bounce and the sound fire before the request, so a failed action looked exactly
+       * like a successful one: you would believe you had petted her and she would never know.
+       * Quiet, because the room's rule is not to announce things, but not silent, because this is
+       * the one case where quiet reads as done.
+       */
+      setErr("That didn't reach her. Try it again.");
+      setTimeout(() => setErr(null), 4000);
     }
   };
 
@@ -1522,9 +1529,11 @@ function RoomPage({ id }: { id: string }) {
           </>
         )}
 
+        {/* The whole sentence comes from whoever set it. "Trying again in a moment" used to be
+            appended here for every error, including the ones where nothing retries. */}
         {err && (
-          <p style={{ ...S.small, textAlign: "center", marginTop: 12, color: "var(--error)" }}>
-            {err} Trying again in a moment.
+          <p style={{ ...S.small, textAlign: "center", marginTop: 12, color: "var(--error)" }} role="status">
+            {err}
           </p>
         )}
 
