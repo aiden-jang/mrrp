@@ -305,7 +305,7 @@ function Landing() {
   return (
     <main style={S.page}>
       <div style={{ ...S.card, textAlign: "center" }}>
-        <div style={{ ...S.stage, marginBottom: 18 }}>
+        <div style={{ ...S.stage, marginBottom: 14 }}>
           <Cat
             label="A pixel cat asleep in a sunlit room."
             look={DOOR_CAT}
@@ -318,11 +318,11 @@ function Landing() {
         {/* Written for somebody who has never heard of this. "A cat that is her" made sense only if you
             already knew, which was fine while it had one user and is not any more. Says the mechanism
             first, because the mechanism is the charming part. */}
-        <p style={{ ...S.lede, margin: "0 auto 18px" }}>
+        <p style={{ ...S.lede, margin: "0 auto 14px" }}>
           One of you is the cat. You make the room; whoever you send the link to becomes her. They tap how
           their day is going and she becomes that, so you know without having to ask.
         </p>
-        <p style={{ ...S.lede, margin: "0 auto 22px", fontSize: 14 }}>
+        <p style={{ ...S.lede, margin: "0 auto 18px", fontSize: 14 }}>
           Then you turn up and sit with her. No accounts, no notifications, nothing to keep up with.
         </p>
         {/* In a browser tab this is an offer rather than a redirect, so the page you asked for is the
@@ -1532,7 +1532,9 @@ const S: Record<string, React.CSSProperties> = {
     minHeight: "100%",
     display: "grid",
     placeItems: "center",
-    padding: "28px 18px 48px",
+    // vmin, not vw: on a wide short laptop a vw-based pad is at its maximum exactly where there is
+    // least room for it, which is what pushed the landing page's button under the fold.
+    padding: "clamp(14px, 3vmin, 28px) 18px clamp(24px, 5vmin, 48px)",
     background: "radial-gradient(120% 90% at 78% 6%, var(--air-warm) 0%, var(--air) 62%)",
     transition: "background .9s ease",
   },
@@ -1545,8 +1547,13 @@ const S: Record<string, React.CSSProperties> = {
    * `anywhere` rather than `break-word` because break-word does not lower min-content, so the floor
    * would stay put. overflow-wrap inherits, so this covers every line of prose in the card.
    */
-  card: { width: "100%", maxWidth: 520, minWidth: 0, overflowWrap: "anywhere" },
-  h1: { fontSize: 40, margin: "0 0 8px", letterSpacing: "-0.02em", textAlign: "center" },
+  card: { width: "100%", maxWidth: 600, minWidth: 0, overflowWrap: "anywhere" },
+  h1: {
+    fontSize: "clamp(30px, 8vw, 44px)",
+    margin: "0 0 8px",
+    letterSpacing: "-0.02em",
+    textAlign: "center",
+  },
   /*
    * Available to a screen reader and to Tab, invisible on screen.
    *
