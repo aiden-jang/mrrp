@@ -216,7 +216,8 @@ export function setVoice(v: { pitch?: number; settled?: number }): void {
   if (v.settled !== undefined) settled = Math.max(0, Math.min(1, v.settled));
 }
 
-export type Cue = "purr" | "mrrp" | "chirp" | "brush" | "thump" | "shutter" | "settle" | "twinkle" | "jingle";
+export type Cue =
+  "purr" | "mrrp" | "chirp" | "brush" | "thump" | "shutter" | "settle" | "twinkle" | "jingle" | "rain";
 
 const CUES: Record<Cue, (g: { ctx: AudioContext; master: GainNode }, t: number) => void> = {
   /*
@@ -270,6 +271,18 @@ const CUES: Record<Cue, (g: { ctx: AudioContext; master: GainNode }, t: number) 
       wobbleDepth: 30,
       type: "sine",
     });
+  },
+
+  /*
+   * Rain on the glass, which was drawn and silent.
+   *
+   * A bandpass around 1.4k over the same noise the brush uses: high enough to be water on a window
+   * rather than wind, narrow enough not to hiss. Quiet on purpose. This plays under a room somebody
+   * is looking at in bed, and rain you have to notice is better than rain you have to tolerate.
+   */
+  rain: (g, t) => {
+    rumble(g, { at: t, dur: 2.4, gain: 0.05, filter: "bandpass", from: 1400, q: 0.6, attack: 0.5 });
+    rumble(g, { at: t, dur: 2.4, gain: 0.03, filter: "highpass", from: 2600, attack: 0.5 });
   },
 
   /* Shorter and higher than a mrrp. What she says when she notices, rather than when she greets. */
@@ -360,6 +373,25 @@ export function play(cue: Cue): void {
   if (at - (lastPlayed.get(cue) ?? -Infinity) < MIN_GAP_SECONDS) return;
   lastPlayed.set(cue, at);
   CUES[cue](g, at);
+}
+
+/*
+ * A short pulse in the hand, for the two gestures that are touch rather than tap.
+ *
+ * Only petting and brushing: those are the ones where your finger is on her for a while, and a phone
+ * that answers the touch is the closest this app gets to her being in the room. Everything else here
+ * is a button, and buzzing a button is a notification.
+ *
+ * Guarded, not assumed. iOS Safari has never implemented this, and some Android builds throw rather
+ * than return false when the page has no user activation.
+ */
+export function buzz(kind: "pet" | "brush"): void {
+  if (isMuted()) return;
+  try {
+    navigator.vibrate?.(kind === "pet" ? 12 : [8, 40, 8]);
+  } catch {
+    // A phone that will not buzz is not a problem worth reporting.
+  }
 }
 
 /** One of the five soft pentatonic notes under the hidden paw piano. */
