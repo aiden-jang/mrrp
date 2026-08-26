@@ -20,6 +20,7 @@ import type { DiscoveryKey } from "./discoveries.js";
 import {
   BED,
   BIRD,
+  BROUGHT,
   BOX_BACK,
   BOX_FRONT,
   CAKE,
@@ -250,6 +251,7 @@ export function Cat({
   framed = false,
   doorOpenAt = null,
   box = false,
+  brought = false,
   gift = null,
   cake = false,
   windowLight = false,
@@ -297,6 +299,8 @@ export function Cat({
    * here rather than on the server: it is a drawing decision, not shared state.
    */
   box?: boolean;
+  /** He brought her something today, and it is still on the floor. */
+  brought?: boolean;
   /** Something she left on the floor. His side only; the room just draws whatever it's handed. */
   gift?: Gift | null;
   /** True on the room's own anniversary, and on its first week and month. Puts a cake on the floor. */
@@ -352,6 +356,8 @@ export function Cat({
   doorRef.current = doorOpenAt;
   const boxRef = useRef(box);
   boxRef.current = box;
+  const broughtRef = useRef(brought);
+  broughtRef.current = brought;
   const giftRef = useRef(gift);
   giftRef.current = gift;
   const cakeRef = useRef(cake);
@@ -1930,6 +1936,20 @@ export function Cat({
         const flame = reduce || Math.sin(t / 260) > -0.4 ? "#ffca6b" : "#ffe6a8";
         blit(CAKE, 42, FLOOR + 20, { d: "#e8d3b0", g: "#f0a6b4", r: flame });
       }
+      /*
+       * What he brought her, down in the front strip.
+       *
+       * The same band the cake uses, because that is where a thing on the floor can actually be seen:
+       * the middle is where she loafs and the back is behind the sofa. Left of the cake and right of
+       * her own gift by the door, so the two directions of this are never a pile in one corner.
+       *
+       * On the bare boards, not the rug. By the wall it sat behind the box, which is the other thing
+       * he brings, and on the rug a dusty-pink bow on dusty-pink wool is not a bow at all.
+       */
+      if (broughtRef.current) {
+        blit(BROUGHT, 24, FLOOR + 22, { r: "#c26a80", h: "#f0b9c4" });
+      }
+
       // What she left, near the door rather than mid-floor: mid-floor is where she loafs, so anything
       // drawn there is covered by the cat.
       const g0 = giftRef.current;

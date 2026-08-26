@@ -548,6 +548,17 @@ export const BOX_FRONT = sprite(
 export const CAKE = sprite(["...r...", "...d...", ".ggggg.", "ddddddd", "ddddddd"], 0, 0);
 
 /**
+ * A small bow, for the thing he brings her.
+ *
+ * Deliberately not one of her gifts below. Hers are found objects: a leaf, a bottle cap, a moth she
+ * carried in. His is chosen, so it is the one object in the room that is obviously shop-bought, and
+ * it should not be mistakable for something the cat dragged home.
+ *
+ * `r` the ribbon, `h` its shine.
+ */
+export const BROUGHT = sprite([".r.r.", ".rhr.", ".r.r."], 0, 0);
+
+/**
  * The things she leaves on the floor while he's away. Tiny on purpose: a cat's gift is specific, not
  * impressive, and anything bigger or prettier reads as loot, which is a game mechanic.
  *

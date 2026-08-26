@@ -143,9 +143,18 @@ export class Room extends DurableObject<Env> {
      * It lasts her day and no longer: nothing in this room may pile up on her, or it becomes a room
      * she can fall behind on. Keyed to *her* local day, like the notes, so it clears when hers turns.
      */
-    if (action === "bring" && Math.random() < 1 / 3) {
+    if (action === "bring") {
       const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
-      await this.ctx.storage.put("boxDay", localDayNumber(Date.now(), clock.tz));
+      const today = localDayNumber(Date.now(), clock.tz);
+      /*
+       * Whatever he brought, it is in the room now.
+       *
+       * Two times in three this action left nothing at all: he pressed a button, she was told he had
+       * brought her something, and the room was exactly as it had been. A present that does not exist
+       * is a worse gesture than no present. The box is still the rare one; this is the ordinary one.
+       */
+      if (Math.random() < 1 / 3) await this.ctx.storage.put("boxDay", today);
+      else await this.ctx.storage.put("broughtDay", today);
     }
 
     /*
@@ -543,6 +552,8 @@ export class Room extends DurableObject<Env> {
       windowLight: seated && !!windowLight && windowLight.from !== me,
       // Only today's box. An older one is simply not reported, so it needs no cleanup pass.
       box: ((await this.ctx.storage.get<number>("boxDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
+      brought:
+        ((await this.ctx.storage.get<number>("broughtDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
       // His only, and readable for as long as he holds the seat. Useless to anybody else: redeeming it
       // requires knowing it, and he is the only one it is ever sent to.
       recoveryCode: seated && !youAreHer ? await this.recoveryCode() : null,
