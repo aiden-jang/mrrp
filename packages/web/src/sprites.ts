@@ -42,11 +42,9 @@ function sprite(rows: string[], ox: number, oy: number): Sprite {
 /**
  * Bread. The default, and the one she's in most of the time.
  *
- * The first version was a 24-wide rectangle with a cream rectangle inside it. However carefully the
- * pixels were shaded, it read as a toaster or a cat behind a cushion because the head, shoulders and
- * body all shared one box. The v2 silhouette gives the head its own taper, lets the shoulders widen
- * below the chin, and rounds the loaf back in again at the paws. The pale front still joins muzzle to
- * chest, but fur at both sides keeps it on the cat instead of turning it into a panel.
+ * Head, shoulders and body must not share one box, however carefully shaded: that reads as a toaster.
+ * The head tapers, the shoulders widen below the chin, and the loaf rounds back in at the paws. Keep
+ * fur at both sides of the pale front or it turns into a panel.
  */
 export const LOAF = sprite(
   [
@@ -127,18 +125,7 @@ export const STAND = sprite(
 );
 
 /** Her tail, drawn separately so it can move without redrawing her. */
-export const TAIL = sprite(
-  [
-    "wwww..",
-    "wffww.",
-    "wffffw",
-    ".wwffw",
-    "...wfw",
-    "....ww",
-  ],
-  0,
-  0,
-);
+export const TAIL = sprite(["wwww..", "wffww.", "wffffw", ".wwffw", "...wfw", "....ww"], 0, 0);
 
 /** Up on her back legs, one paw out. For the moods where she has opinions. */
 export const PLAY = sprite(
@@ -360,12 +347,7 @@ export const BED = sprite(
 
 /** A shelf, so the thing she knocks off has somewhere to have been. */
 export const SHELF = sprite(
-  [
-    "wwwwwwwwwwwwwwww",
-    "wddddddddddddddw",
-    "wwwwwwwwwwwwwwww",
-    "...ww......ww...",
-  ],
+  ["wwwwwwwwwwwwwwww", "wddddddddddddddw", "wwwwwwwwwwwwwwww", "...ww......ww..."],
   0,
   0,
 );
@@ -411,34 +393,23 @@ export const FRAME = sprite(
 );
 
 /**
- * The word, hand-set.
+ * The word, hand-set. Real letters rather than canvas fillText: at this scale antialiased text beside
+ * hand-placed pixels looks like a screenshot of two different programs.
  *
- * The app is named after a noise the cat had never once made. She says it now, in a bubble, whenever
- * anything happens to her. Real letters rather than canvas fillText: at this scale antialiased text
- * next to hand-placed pixels looks like a screenshot of two different programs.
- *
- * The m is five columns wide and the rest are three. My first cut made every glyph 3 wide, and a
- * three-column m has room for only two stems, so it came out as a passable capital pi and the word
- * read "nrrp". A letter with three stems needs five columns. One column of air between glyphs, 17
- * total, and the fourth row exists only for the descender on the p.
+ * The m is five columns and the rest are three. A three-column m has room for only two stems, so it
+ * comes out as a capital pi and the word reads "nrrp". One column of air between glyphs, 17 total,
+ * and the fourth row exists only for the descender on the p.
  */
 export const MRRP = sprite(
-  [
-    "wwwww.ww..ww..ww.",
-    "w.w.w.w...w...w.w",
-    "w.w.w.w...w...ww.",
-    "..............w..",
-  ],
+  ["wwwww.ww..ww..ww.", "w.w.w.w...w...w.w", "w.w.w.w...w...ww.", "..............w.."],
   0,
   0,
 );
 
 /**
- * The same frame with a photo of her in it, used once he has taken one.
- *
- * A separate sprite rather than an overdraw, so the picture is authored rather than assembled: the inner
- * area of FRAME is exactly 7x5, which is enough for ears, two eyes and a nose and not one pixel more.
- * `c` is her fur so the photo is of HER cat, whatever colour that is, and not a generic one.
+ * The same frame with a photo of her in it, used once he has taken one. A separate sprite rather than
+ * an overdraw, so the picture is authored: FRAME's inner area is exactly 7x5, enough for ears, two
+ * eyes and a nose and not one pixel more. `c` is her fur, so the photo is of HER cat.
  */
 export const FRAME_CAT = sprite(
   [
@@ -459,17 +430,12 @@ export const FRAME_CAT = sprite(
 );
 
 /**
- * The door, opening.
+ * The door, opening. Hinged left, handle right. The leaf foreshortens as it swings toward you, so it
+ * narrows from the right while staying attached at the left. The handle travels with the outer edge:
+ * that one pixel moving inward is what sells the rotation, and without it this reads as a shutter.
  *
- * Hinged on the left, because the handle is on the right. As it swings toward you the leaf is
- * foreshortened, so it narrows from the right while staying attached at the left, and the doorway
- * behind it is revealed in the gap. The handle travels with the leaf's outer edge: that one pixel
- * moving inward is what sells the rotation. Without it the door reads as a shutter sliding away.
- *
- * `o` is what's beyond the door, which is the whole point of opening it.
- *
- * Four frames rather than a computed transform. A rotated rectangle resampled onto this grid gives
- * you pixels of two different sizes, which is the one thing the entire look forbids.
+ * Four frames rather than a computed transform. Resampling a rotated rectangle onto this grid gives
+ * pixels of two different sizes, which is the one thing the look forbids. `o` is what lies beyond.
  */
 const DOOR_AJAR = sprite(
   [
@@ -544,14 +510,9 @@ const DOOR_WIDE = sprite(
 export const DOOR_FRAMES: Sprite[] = [DOOR, DOOR_AJAR, DOOR_HALF, DOOR_WIDE];
 
 /**
- * A cardboard box, in two halves so she can be inside it.
- *
- * The back (the far rim and the open flaps) is drawn before her, the front after, and she sits
- * between the two. That is the whole trick: a single box sprite either covers her completely or
- * floats in front of her, and neither reads as a cat in a box. Two halves and she is *in* it, with
- * her ears over the rim, which is the only version of this picture worth drawing.
- *
- * `k` is the cardboard, `s` its shaded inner wall, `w` the outline.
+ * A cardboard box, in two halves so she can be inside it. The back is drawn before her and the front
+ * after. A single box sprite either covers her completely or floats in front of her, and neither reads
+ * as a cat in a box. `k` is the cardboard, `s` its shaded inner wall, `w` the outline.
  */
 export const BOX_BACK = sprite(
   [
@@ -581,62 +542,22 @@ export const BOX_FRONT = sprite(
 );
 
 /*
- * A cake, for the room's own birthday.
- *
- * Seven pixels across, which is the widest a thing can be here without competing with the cat. `r` is
- * the candle flame and `g` the icing; both come from the palette the caller passes, like every other
- * sprite, so it recolours with the room rather than being three hardcoded browns.
+ * A cake, for the room's own birthday. Seven pixels across, the widest a thing can be here without
+ * competing with the cat. `r` is the candle flame, `g` the icing, both from the caller's palette.
  */
-export const CAKE = sprite(
-  [
-    "...r...",
-    "...d...",
-    ".ggggg.",
-    "ddddddd",
-    "ddddddd",
-  ],
-  0,
-  0,
-);
+export const CAKE = sprite(["...r...", "...d...", ".ggggg.", "ddddddd", "ddddddd"], 0, 0);
 
 /**
- * The things she leaves on the floor while he's away.
- *
- * Tiny on purpose. A cat's gift is not impressive, it is specific: the point is that she chose
- * to carry this particular worthless object to the middle of the room and put it down. Anything
- * bigger or prettier would read as loot, and loot is a game mechanic.
+ * The things she leaves on the floor while he's away. Tiny on purpose: a cat's gift is specific, not
+ * impressive, and anything bigger or prettier reads as loot, which is a game mechanic.
  *
  * `g` leaf green, `r` its rib, `m` metal, `n` moth wing, `w` outline.
  */
-export const GIFT_LEAF = sprite(
-  [
-    ".ggg.",
-    "grrrg",
-    ".ggg.",
-  ],
-  0,
-  0,
-);
+export const GIFT_LEAF = sprite([".ggg.", "grrrg", ".ggg."], 0, 0);
 
-export const GIFT_CAP = sprite(
-  [
-    ".www.",
-    "wmmmw",
-    ".www.",
-  ],
-  0,
-  0,
-);
+export const GIFT_CAP = sprite([".www.", "wmmmw", ".www."], 0, 0);
 
-export const GIFT_MOTH = sprite(
-  [
-    "n.w.n",
-    "nnwnn",
-    ".n.n.",
-  ],
-  0,
-  0,
-);
+export const GIFT_MOTH = sprite(["n.w.n", "nnwnn", ".n.n."], 0, 0);
 
 /**
  * The thing on the shelf. A small stoneware mug, which is the correct object for this: it is
@@ -644,48 +565,20 @@ export const GIFT_MOTH = sprite(
  *
  * `c` the glaze, `d` its shadow side, `w` outline.
  */
-export const MUG = sprite(
-  [
-    ".wwww.",
-    "wccccw",
-    "wcccdw",
-    "wcccdw",
-    ".wwww.",
-  ],
-  0,
-  0,
-);
+export const MUG = sprite([".wwww.", "wccccw", "wcccdw", "wcccdw", ".wwww."], 0, 0);
 
 /** On its side, where it landed. Same object, so it has to read as the same object. */
-export const MUG_DOWN = sprite(
-  [
-    "..wwww..",
-    ".wccccw.",
-    "wdccccdw",
-    ".wwwwww.",
-  ],
-  0,
-  0,
-);
+export const MUG_DOWN = sprite(["..wwww..", ".wccccw.", "wdccccdw", ".wwwwww."], 0, 0);
 
 /**
- * "ek ek ek", in the bubble, when there is a bird on the sill.
+ * "ek ek", in the bubble, when there is a bird on the sill. Written out rather than drawn as a mouth
+ * animation: at this size a moving jaw is two pixels flickering, which reads as a rendering fault.
  *
- * The stuttering chirr a cat makes at a bird through glass. Written out rather than drawn as a
- * mouth animation because at this size a moving jaw is two pixels flickering, which reads as a
- * rendering fault; anyone who has lived with a cat reads the letters instantly.
- *
- * "ek ek", not "ek ek ek": three of them needs about 32 columns and the bubble is 17. The first
- * attempt crammed three in anyway and rendered as blocks of noise, which is worse than saying
- * nothing, because noise in a speech bubble reads as a broken font rather than as a cat.
+ * Two, not three. Three needs about 32 columns and the bubble is 17, so they render as blocks of
+ * noise, which reads as a broken font rather than as a cat.
  */
 export const EK = sprite(
-  [
-    "www.w.w..www.w.w.",
-    "ww..ww...ww..ww..",
-    "www.w.w..www.w.w.",
-    ".................",
-  ],
+  ["www.w.w..www.w.w.", "ww..ww...ww..ww..", "www.w.w..www.w.w.", "................."],
   0,
   0,
 );
@@ -696,14 +589,4 @@ export const EK = sprite(
  * Side-on and tiny. The point is not the bird, it is her reaction to the bird, so it has to be
  * unmistakable in about six pixels and then get out of the way.
  */
-export const BIRD = sprite(
-  [
-    "..ww..",
-    ".wbbw.",
-    "wbbbbo",
-    ".wbbw.",
-    "..ww..",
-  ],
-  0,
-  0,
-);
+export const BIRD = sprite(["..ww..", ".wbbw.", "wbbbbo", ".wbbw.", "..ww.."], 0, 0);

@@ -32,7 +32,7 @@ export const MOODS: { id: Mood; label: string; said: string }[] = [
   { id: "stressed", label: "stressed", said: "stressed" },
   { id: "sad", label: "sad", said: "sad" },
   { id: "lonely", label: "lonely", said: "a bit lonely" },
-    { id: "bored", label: "bored", said: "bored" },
+  { id: "bored", label: "bored", said: "bored" },
   // Blunter registers, because six polite words is a thin vocabulary for a whole relationship.
   { id: "feral", label: "feral", said: "feeling feral" },
   { id: "done", label: "done", said: "completely done with today" },
@@ -97,11 +97,9 @@ export type Arrival =
   | { kind: "mood"; at: number; mood: Mood }
   | { kind: "line"; at: number; text: string }
   /*
-   * The other seat found one of the room's secrets.
-   *
-   * `what` is null unless you have found it too. Spoiling it would be worse than saying nothing: the
-   * pleasure of these is walking into one, and naming it hands over the answer to something you were
-   * going to enjoy discovering. Encoded in the type so a careless render cannot leak it.
+   * The other seat found one of the room's secrets. `what` is null unless you have found it too:
+   * naming it hands over the answer to something you were going to enjoy discovering. Encoded in the
+   * type so a careless render cannot leak it.
    */
   | { kind: "found"; at: number; what: DiscoveryKey | null }
   /** He took the thing she left on the floor. Her side only, and told once. */
@@ -123,10 +121,8 @@ export interface Personality {
 }
 
 /**
- * The room, from one seat.
- *
- * The cat is her, so her mood is what the cat looks like to both of you, and the two seats get
- * different halves of the app: she says how she is, he turns up.
+ * The room, from one seat. The cat is her, so her mood is what the cat looks like to both of you, and
+ * the two seats get different halves of the app: she says how she is, he turns up.
  */
 export interface RoomView {
   cat: Cat;
@@ -168,10 +164,8 @@ export interface RoomView {
   /** New things from the other seat since this person last opened the room. */
   arrivals: Arrival[];
   /**
-   * How many of the room's secrets the two of you have noticed between you.
-   *
-   * Deliberately not "n of m". The total is the spoiler: knowing there are fourteen turns a room you
-   * poke at into a list you complete.
+   * How many of the room's secrets the two of you have noticed between you. Deliberately not "n of m":
+   * the total is the spoiler, and it turns a room you poke at into a list you complete.
    */
   noticed: number;
   waitingForThem: boolean;

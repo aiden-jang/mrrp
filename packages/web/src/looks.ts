@@ -20,7 +20,11 @@ export const LOOKS: Look[] = [
   { id: "black", label: "black", cat: { fur: "#4b444a", furDk: "#332e33", belly: "#6c636a", tabby: false } },
   { id: "white", label: "white", cat: { fur: "#f6f1e8", furDk: "#d8cfc0", belly: "#fffdf8", tabby: false } },
   { id: "brown", label: "brown", cat: { fur: "#a4703f", furDk: "#7f5429", belly: "#f0dcc0", tabby: true } },
-  { id: "tuxedo", label: "tuxedo", cat: { fur: "#3f3a40", furDk: "#2b272c", belly: "#fbf7ef", tabby: false } },
+  {
+    id: "tuxedo",
+    label: "tuxedo",
+    cat: { fur: "#3f3a40", furDk: "#2b272c", belly: "#fbf7ef", tabby: false },
+  },
   { id: "calico", label: "calico", cat: { fur: "#e3a95f", furDk: "#6b5a4c", belly: "#fdf5e6", tabby: true } },
 ];
 
@@ -35,13 +39,24 @@ export const EYES: { id: string; label: string; hex: string }[] = [
 /** A short list first, then everything the browser knows, so the common case is one tap. */
 export function timezones(): string[] {
   const common = [
-    "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
-    "America/Toronto", "Europe/London", "Europe/Paris", "Europe/Berlin",
-    "Asia/Seoul", "Asia/Tokyo", "Asia/Shanghai", "Asia/Singapore", "Asia/Kolkata",
+    "America/New_York",
+    "America/Chicago",
+    "America/Denver",
+    "America/Los_Angeles",
+    "America/Toronto",
+    "Europe/London",
+    "Europe/Paris",
+    "Europe/Berlin",
+    "Asia/Seoul",
+    "Asia/Tokyo",
+    "Asia/Shanghai",
+    "Asia/Singapore",
+    "Asia/Kolkata",
     "Australia/Sydney",
   ];
-  const all = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] })
-    .supportedValuesOf?.("timeZone") ?? [];
+  const all =
+    (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf?.("timeZone") ??
+    [];
   const here = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const seen = new Set<string>();
   return [here, ...common, ...all].filter((z) => z && !seen.has(z) && seen.add(z));

@@ -105,5 +105,5 @@ export async function makeKeepsake(room: Blob, details: KeepsakeDetails): Promis
   g.font = "700 32px ui-rounded, system-ui, sans-serif";
   g.fillText("mrrp  ·  ฅ", 1114, 1350);
 
-  return new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+  return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
 }

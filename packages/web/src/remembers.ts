@@ -11,8 +11,10 @@ import type { Milestone, Personality } from "./types.js";
 /** No exclamation and no confetti word. The first week is the smallest of the three: it arrives while
  *  somebody is still deciding whether this is a thing they keep. */
 export function milestoneLine(milestone: Milestone, catName: string): string {
-  if (milestone.kind === "first-week") return `${catName} has been here a week. she has stopped checking the door.`;
-  if (milestone.kind === "first-month") return `a month of ${catName}. she sleeps in the sun like she owns it.`;
+  if (milestone.kind === "first-week")
+    return `${catName} has been here a week. she has stopped checking the door.`;
+  if (milestone.kind === "first-month")
+    return `a month of ${catName}. she sleeps in the sun like she owns it.`;
   if (milestone.years === 1) return `${catName} has been here a year today. same cat, same window.`;
   return `${milestone.years} years of ${catName} today. she has not once thanked either of you.`;
 }

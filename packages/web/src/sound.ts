@@ -1,15 +1,13 @@
 /*
  * A very small cat, synthesized.
  *
- * Everything here is oscillators and filtered noise built at runtime, so the whole voice costs no
- * download and no cache. That is partly a budget decision and mostly a correctness one: a cat that
- * needs a 200 KB sample to purr is silent on the first visit, which is exactly the visit where
- * somebody is deciding whether this room is worth coming back to.
+ * Oscillators and filtered noise built at runtime, so the voice costs no download. A cat that needs a
+ * 200 KB sample to purr is silent on the first visit, which is the visit where somebody decides
+ * whether this room is worth coming back to.
  *
- * A purr is not a note, so none of this is musical. A real purr is a ~25 Hz amplitude modulation of
- * a broadband rumble — the pitch you think you hear is the flutter rate, not a fundamental. The
- * fundamental itself sits near 25 Hz, which a phone speaker physically cannot reproduce, so this
- * modulates filtered noise instead and the flutter survives the speaker intact.
+ * A purr is not a note. It is a ~25 Hz amplitude modulation of a broadband rumble, so the pitch you
+ * think you hear is the flutter rate. The fundamental is below what a phone speaker can reproduce,
+ * which is why this modulates filtered noise: the flutter survives the speaker intact.
  */
 
 const MUTE_KEY = "mrrp.muted.v1";
@@ -64,11 +62,9 @@ function graph(): { ctx: AudioContext; master: GainNode } | null {
 }
 
 /**
- * Build the graph on the first gesture anywhere.
- *
- * She reacts to things that aren't gestures: the other person arriving, the room going from one of
- * you to both. iOS only resumes an audio context inside a gesture, so without this the sounds that
- * matter most are the ones that get dropped.
+ * Build the graph on the first gesture anywhere. She reacts to things that aren't gestures, like the
+ * other person arriving, and iOS only resumes an audio context inside one, so without this the sounds
+ * that matter most are the ones that get dropped.
  */
 export function primeOnFirstGesture(): void {
   const events = ["pointerdown", "keydown", "touchstart"] as const;
@@ -80,11 +76,8 @@ export function primeOnFirstGesture(): void {
 }
 
 /**
- * Two seconds of brown noise, generated once and reused.
- *
- * Brown rather than white because white noise is all treble and reads as radio static; integrating
- * it tilts the spectrum down into something that sounds like an animal and a hairbrush rather than
- * a broken speaker.
+ * Two seconds of brown noise, generated once and reused. Brown rather than white: white is all treble
+ * and reads as radio static, and tilting the spectrum down sounds like an animal and a hairbrush.
  */
 function noiseBuffer(ac: AudioContext): AudioBuffer {
   if (noise) return noise;
@@ -210,14 +203,42 @@ const CUES: Record<Cue, (g: { ctx: AudioContext; master: GainNode }, t: number) 
    * volume is a machine and a purr that fades is an animal deciding you're staying a while.
    */
   purr: (g, t) => {
-    rumble(g, { at: t, dur: 2.2, gain: 0.3, filter: "lowpass", from: 380, q: 0.7, flutter: 26, flutterDepth: 0.5, attack: 0.35 });
-    rumble(g, { at: t, dur: 2.2, gain: 0.12, filter: "lowpass", from: 140, q: 0.5, flutter: 26, flutterDepth: 0.45, attack: 0.35 });
+    rumble(g, {
+      at: t,
+      dur: 2.2,
+      gain: 0.3,
+      filter: "lowpass",
+      from: 380,
+      q: 0.7,
+      flutter: 26,
+      flutterDepth: 0.5,
+      attack: 0.35,
+    });
+    rumble(g, {
+      at: t,
+      dur: 2.2,
+      gain: 0.12,
+      filter: "lowpass",
+      from: 140,
+      q: 0.5,
+      flutter: 26,
+      flutterDepth: 0.45,
+      attack: 0.35,
+    });
   },
 
   /* The greeting: up and back down in under a fifth of a second, with a fast trill on top. */
   mrrp: (g, t) => {
     voice(g, { at: t, dur: 0.19, gain: 0.16, sweep: [430, 720, 600], wobble: 42, wobbleDepth: 26 });
-    voice(g, { at: t, dur: 0.19, gain: 0.05, sweep: [860, 1440, 1200], wobble: 42, wobbleDepth: 30, type: "sine" });
+    voice(g, {
+      at: t,
+      dur: 0.19,
+      gain: 0.05,
+      sweep: [860, 1440, 1200],
+      wobble: 42,
+      wobbleDepth: 30,
+      type: "sine",
+    });
   },
 
   /* Shorter and higher than a mrrp. What she says when she notices, rather than when she greets. */
@@ -248,7 +269,17 @@ const CUES: Record<Cue, (g: { ctx: AudioContext; master: GainNode }, t: number) 
 
   /* Her settling against you: a short purr with no attack to speak of. */
   settle: (g, t) => {
-    rumble(g, { at: t, dur: 1.1, gain: 0.2, filter: "lowpass", from: 320, q: 0.7, flutter: 24, flutterDepth: 0.55, attack: 0.25 });
+    rumble(g, {
+      at: t,
+      dur: 1.1,
+      gain: 0.2,
+      filter: "lowpass",
+      from: 320,
+      q: 0.7,
+      flutter: 24,
+      flutterDepth: 0.55,
+      attack: 0.25,
+    });
   },
 
   /* Three tiny glassy notes for a secret being accepted. It stays shorter and quieter than her
@@ -277,14 +308,10 @@ const MIN_GAP_SECONDS = 0.35;
 const lastPlayed = new Map<Cue, number>();
 
 /*
- * Schedule slightly ahead of now, never at now.
- *
- * The audio thread has already rendered up to currentTime by the time this runs, so a note booked
- * for exactly currentTime lands in the past and the hardware skips whatever it missed. That doesn't
- * silence the cue, which is why it's easy to miss: it eats the attack and you get the tail. Traced
- * on a cold context, a mrrp produced nothing for 100ms and then appeared already decaying, while a
- * chirp scheduled the same way was fine, purely because it happened to be second. 20ms is under the
- * threshold where a delay is perceptible and comfortably clears one render quantum.
+ * Schedule slightly ahead of now, never at now. The audio thread has already rendered up to
+ * currentTime, so a note booked for exactly currentTime lands in the past and the hardware skips what
+ * it missed. It does not silence the cue, which is why it is easy to miss: it eats the attack and you
+ * get the tail. 20ms is imperceptible and clears one render quantum.
  */
 const LOOKAHEAD_SECONDS = 0.02;
 

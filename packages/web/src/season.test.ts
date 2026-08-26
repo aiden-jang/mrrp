@@ -12,8 +12,9 @@ describe("seasonFor", () => {
   });
 
   it("gives every season a distinct plant palette", () => {
-    const colors = (["spring", "summer", "autumn", "winter"] as const)
-      .map(season => seasonalPlantColors(season).leaf);
+    const colors = (["spring", "summer", "autumn", "winter"] as const).map(
+      (season) => seasonalPlantColors(season).leaf,
+    );
     expect(new Set(colors).size).toBe(4);
   });
 });

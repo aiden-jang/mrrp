@@ -6,7 +6,11 @@ import "./index.css";
 
 primeOnFirstGesture();
 
-createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);
 
 /*
  * Registered after paint, and never in dev.

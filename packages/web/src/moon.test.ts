@@ -14,8 +14,8 @@ describe("moonPhase", () => {
 
 describe("moonPixelLit", () => {
   it("grows from the right and wanes toward the left", () => {
-    expect([0, 1, 2, 3, 4].filter(x => moonPixelLit(1, x))).toEqual([4]);
-    expect([0, 1, 2, 3, 4].filter(x => moonPixelLit(4, x))).toEqual([0, 1, 2, 3, 4]);
-    expect([0, 1, 2, 3, 4].filter(x => moonPixelLit(7, x))).toEqual([0]);
+    expect([0, 1, 2, 3, 4].filter((x) => moonPixelLit(1, x))).toEqual([4]);
+    expect([0, 1, 2, 3, 4].filter((x) => moonPixelLit(4, x))).toEqual([0, 1, 2, 3, 4]);
+    expect([0, 1, 2, 3, 4].filter((x) => moonPixelLit(7, x))).toEqual([0]);
   });
 });

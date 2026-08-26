@@ -16,8 +16,13 @@ import { sceneFor, hourIn, lightPhaseAt } from "../src/hours.js";
 
 const ALL_SPRITES: [string, Sprite][] = [
   ...Object.entries(POSES),
-  ["tail", TAIL], ["bed", BED], ["door", DOOR],
-  ["frame", FRAME], ["plant", PLANT], ["shelf", SHELF], ["window", WINDOW],
+  ["tail", TAIL],
+  ["bed", BED],
+  ["door", DOOR],
+  ["frame", FRAME],
+  ["plant", PLANT],
+  ["shelf", SHELF],
+  ["window", WINDOW],
   ["mrrp", MRRP],
 ];
 
@@ -44,8 +49,7 @@ describe("every mood has a face", () => {
 
 describe("the word she says", () => {
   /** Columns of the given row that have ink in them. */
-  const inked = (row: number): number[] =>
-    [...MRRP.rows[row]!].flatMap((c, i) => (c === "w" ? [i] : []));
+  const inked = (row: number): number[] => [...MRRP.rows[row]!].flatMap((c, i) => (c === "w" ? [i] : []));
 
   it("gives the m a five-column box, which is what three stems needs", () => {
     // Written the obvious way first, as `inked(1).filter(x => x < 5)`, this passed on the broken
@@ -102,22 +106,43 @@ describe("sprites", () => {
 
   it("keeps the same facial landmarks across every pose", () => {
     for (const [name, sp] of Object.entries(POSES)) {
-      const eyeColumns = [...new Set(sp.rows.flatMap((row) => [...row].flatMap((ch, x) => ch === "e" ? [x] : [])))].sort((a, b) => a - b);
-      const highlightColumns = [...new Set(sp.rows.flatMap((row) => [...row].flatMap((ch, x) => ch === "h" ? [x] : [])))].sort((a, b) => a - b);
+      const eyeColumns = [
+        ...new Set(sp.rows.flatMap((row) => [...row].flatMap((ch, x) => (ch === "e" ? [x] : [])))),
+      ].sort((a, b) => a - b);
+      const highlightColumns = [
+        ...new Set(sp.rows.flatMap((row) => [...row].flatMap((ch, x) => (ch === "h" ? [x] : [])))),
+      ].sort((a, b) => a - b);
       expect(eyeColumns, `${name} eye columns`).toEqual([5, 6, 11, 12]);
       expect(highlightColumns, `${name} highlight columns`).toEqual([5, 11]);
-      expect(sp.rows.some((row) => row.includes("nn")), `${name} nose`).toBe(true);
+      expect(
+        sp.rows.some((row) => row.includes("nn")),
+        `${name} nose`,
+      ).toBe(true);
     }
   });
 
   it("has authored silhouettes for movement instead of sliding a standing cat", () => {
     expect(Object.keys(POSES)).toEqual([
-      "loaf", "sit", "stand", "play", "perk", "walk", "stretch", "pounce", "peek",
+      "loaf",
+      "sit",
+      "stand",
+      "play",
+      "perk",
+      "walk",
+      "stretch",
+      "pounce",
+      "peek",
     ]);
     expect(POSES.stretch.w).toBeGreaterThan(POSES.sit.w);
     expect(POSES.pounce.h).toBeLessThan(POSES.sit.h);
     expect(POSES.peek.h).toBeLessThan(POSES.sit.h);
-    expect(new Set(["walk", "stretch", "pounce", "peek"].map((pose) => POSES[pose as keyof typeof POSES].rows.join("\n"))).size).toBe(4);
+    expect(
+      new Set(
+        ["walk", "stretch", "pounce", "peek"].map((pose) =>
+          POSES[pose as keyof typeof POSES].rows.join("\n"),
+        ),
+      ).size,
+    ).toBe(4);
   });
 });
 
@@ -167,8 +192,7 @@ describe("moods", () => {
 
 describe("her clock", () => {
   const at = (h: number) => Date.UTC(2026, 0, 15, h, 0, 0);
-  const scene = (h: number, mood: Mood | null = null) =>
-    sceneFor({ tz: "UTC", homeHour: 18 }, at(h), mood);
+  const scene = (h: number, mood: Mood | null = null) => sceneFor({ tz: "UTC", homeHour: 18 }, at(h), mood);
 
   it("reads the local hour in her zone, not the server's", () => {
     expect(hourIn("UTC", at(9))).toBeCloseTo(9, 5);
@@ -184,7 +208,12 @@ describe("her clock", () => {
 
   it("gives each part of the day an authored lighting chapter", () => {
     expect([2, 6, 12, 18, 21, 23].map(lightPhaseAt)).toEqual([
-      "night", "dawn", "day", "golden", "evening", "night",
+      "night",
+      "dawn",
+      "day",
+      "golden",
+      "evening",
+      "night",
     ]);
     expect(scene(6).lightPhase).toBe("dawn");
     expect(scene(18).lightPhase).toBe("golden");
@@ -222,7 +251,16 @@ describe("her clock", () => {
     const hex = /^#[0-9a-f]{6}$/i;
     for (let h = 0; h < 24; h += 0.25) {
       const s = scene(h);
-      for (const c of [s.wallTop, s.wallBottom, s.floorNear, s.floorFar, s.beamWarm, s.litWall, s.litFloor, s.patch]) {
+      for (const c of [
+        s.wallTop,
+        s.wallBottom,
+        s.floorNear,
+        s.floorFar,
+        s.beamWarm,
+        s.litWall,
+        s.litFloor,
+        s.patch,
+      ]) {
         expect(c, `hour ${h}`).toMatch(hex);
       }
       expect(s.sun).toBeGreaterThanOrEqual(0);
@@ -264,6 +302,7 @@ describe("the setup form", () => {
     expect(zs.length).toBeGreaterThan(10);
     expect(new Set(zs).size).toBe(zs.length);
     expect(zs[0]).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone);
-    for (const z of zs.slice(0, 20)) expect(() => new Intl.DateTimeFormat("en", { timeZone: z })).not.toThrow();
+    for (const z of zs.slice(0, 20))
+      expect(() => new Intl.DateTimeFormat("en", { timeZone: z })).not.toThrow();
   });
 });

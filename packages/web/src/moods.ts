@@ -43,15 +43,14 @@ export interface Response {
   visual: MoodVisual;
 }
 
-export type MoodVisual = "spark" | "throw" | "quilt" | "warm-pool" | "door-light" | "floor-toys" | "paper" | "blanket" | "exit-line";
+export type MoodVisual =
+  "spark" | "throw" | "quilt" | "warm-pool" | "door-light" | "floor-toys" | "paper" | "blanket" | "exit-line";
 
 export const RESPONSES: Record<Mood, Response> = {
   /*
-   * The three blunt ones.
-   *
-   * "feral" and "done" follow the rule: the room gets livelier or closer, never darker. "horny" breaks it
-   * on purpose, because it is a joke rather than a low mood, and the funniest available answer is that the
-   * cat wants no part of this and is leaving. An absent cat is a colder room; being the punchline earns it.
+   * The three blunt ones. "feral" and "done" follow the rule above. "horny" breaks it on purpose: it is
+   * a joke rather than a low mood, and the funniest answer is a cat that wants no part of this and
+   * leaves. An absent cat is a colder room, which being the punchline earns.
    */
   feral: {
     visual: "paper",

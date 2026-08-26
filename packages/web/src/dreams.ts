@@ -75,7 +75,8 @@ export function dreamOf(context: DreamContext, seed: number): Dream {
     if (from) candidates.push(from);
   }
   if (context.trait && FROM_TRAIT[context.trait]) candidates.push(FROM_TRAIT[context.trait]!);
-  if (context.framed) candidates.push({ scene: "sun", line: "a bright square of light, and somebody holding still." });
+  if (context.framed)
+    candidates.push({ scene: "sun", line: "a bright square of light, and somebody holding still." });
 
   const pool = candidates.length > 0 ? dedupe(candidates) : PLAIN;
   return pool[Math.abs(Math.trunc(seed)) % pool.length]!;

@@ -4,25 +4,25 @@
 /** Mirrors the worker's allowlist, which is the one that actually decides. An array, not just a union,
  *  so the keys exist at runtime. */
 export const DISCOVERY_KEYS = [
-  'constellation',
-  'roomTour',
-  'piano',
-  'bubbles',
-  'aurora',
-  'mrrp',
-  'summon',
-  'herName',
-  'box',
-  'yarn',
-  'treat',
-  'catnip',
-  'music',
-  'mouse',
+  "constellation",
+  "roomTour",
+  "piano",
+  "bubbles",
+  "aurora",
+  "mrrp",
+  "summon",
+  "herName",
+  "box",
+  "yarn",
+  "treat",
+  "catnip",
+  "music",
+  "mouse",
 ] as const;
 
 export type DiscoveryKey = (typeof DISCOVERY_KEYS)[number];
 
-const STORAGE_KEY = 'mrrp:found';
+const STORAGE_KEY = "mrrp:found";
 
 /**
  * Reported keys, remembered per device rather than asked of the server.
@@ -34,7 +34,7 @@ function alreadySent(): Set<string> {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const parsed: unknown = raw ? JSON.parse(raw) : [];
-    return new Set(Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : []);
+    return new Set(Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : []);
   } catch {
     // Private mode, or somebody put junk in the key. Re-reporting is harmless.
     return new Set();
@@ -73,8 +73,8 @@ export function noticed(roomId: string | null, me: string, key: DiscoveryKey): v
   remember(sent);
 
   void fetch(`/api/room/${roomId}/found`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    method: "POST",
+    headers: { "content-type": "application/json" },
     body: JSON.stringify({ me, key }),
     // The tab is often closing right after a secret fires (found it, screenshotted it, left).
     keepalive: true,

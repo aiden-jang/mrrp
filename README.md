@@ -26,10 +26,10 @@ a shared pet can be neglected it becomes a chore, and a chore is the opposite of
 **2. The cat never mirrors a low mood, it answers it.** Sad brings her over and she stays.
 Stressed and she sits on you and won't move. A cat that gets sad when you're sad is a cat you
 protect by lying to, so on the days it matters you'd tap "good" and the feature would be dead.
-Low moods make the room *warmer and closer*, never darker. See `packages/web/src/moods.ts`.
+Low moods make the room _warmer and closer_, never darker. See `packages/web/src/moods.ts`.
 
 **3. You only ever see what the other person did.** Your own actions are never echoed back at
-you, because that's just a log. And the room only says somebody *came in* after you spoke,
+you, because that's just a log. And the room only says somebody _came in_ after you spoke,
 never that they saw it, because "they saw it and did nothing" is worse to know than nothing.
 
 **4. The room does things; the app doesn't announce them.** A banner reading "you're both here"
@@ -40,13 +40,14 @@ first and written in text only if it still needs saying.
 
 ## Where things are
 
-| file | what |
-|---|---|
-| `worker/src/room.ts` | the Durable Object. One per room, two seats, no alarms, no sockets |
-| `worker/src/notes.ts` | the default notes, used until a room writes its own |
-| `web/src/sprites.ts` | the cat, hand-authored pixel grids |
-| `web/src/hours.ts` | her clock: light, palette, where she lies, keyframed by hand |
-| `web/src/moods.ts` | what the cat does about what you told it |
+| file                  | what                                                               |
+| --------------------- | ------------------------------------------------------------------ |
+| `worker/src/room.ts`  | the Durable Object. One per room, two seats, no alarms, no sockets |
+| `worker/src/notes.ts` | the default notes, used until a room writes its own                |
+| `web/src/sprites.ts`  | the cat, hand-authored pixel grids                                 |
+| `web/src/Cat.tsx`     | the room, drawn one aligned rectangle per logical pixel            |
+| `web/src/hours.ts`    | her clock: light, palette, where she lies, keyframed by hand       |
+| `web/src/moods.ts`    | what the cat does about what you told it                           |
 
 ## Before you send it
 
@@ -89,6 +90,11 @@ Glazing alpha over dithered bands is what produced vertical streaks the first ti
 `dither()` takes an optional `phase`. Do not pass `y` to it: the parity becomes `x + 2y`, which
 depends on `x` alone, and your checkerboard silently becomes vertical stripes.
 
+The coordinate tables carry `// prettier-ignore`: the star fields, the light pool, the moon rows, the
+palette keyframes in `hours.ts`, the mood faces in `faces.tsx`. Those are grids you read by column,
+and one entry per line destroys the thing they exist to show. Everything else is Prettier's, checked
+in CI, at 110 columns to match how the code was already written.
+
 ## Seats
 
 A room has exactly two seats, assigned by arrival order and never reassigned. He makes the room,
@@ -99,18 +105,18 @@ That last part is enforced, not assumed. A third person with the link gets no no
 both in here", and a 403 on anything that writes. All of it lives in the Durable Object rather
 than the UI, because a rule enforced in the browser is a rule anyone can turn off.
 
-| endpoint | who | notes |
-|---|---|---|
-| `GET /api/room/:id` | anyone | seats the first two callers. Only her read advances the note |
-| `POST .../tell` | her only | her mood, one of six |
-| `POST .../say` | her only | one line back, 140 chars, empty clears it |
-| `POST .../act` | him only | pet, brush, bring, sit, photo |
-| `POST .../shelf` | either seat | puts the mug back. The one write both of them may make |
-| `POST .../dress`, `.../clock` | him only | 403 otherwise |
-| `POST .../notes` | him only | this room's notes, one per entry; empty restores the defaults |
-| `POST .../window-light` | either seat | leave one glint in the window, or collect the other person's |
-| `POST .../release` | him only | frees her seat so a new device can be her |
-| `POST .../recover` | his code | takes the first seat back on a new device |
+| endpoint                      | who         | notes                                                         |
+| ----------------------------- | ----------- | ------------------------------------------------------------- |
+| `GET /api/room/:id`           | anyone      | seats the first two callers. Only her read advances the note  |
+| `POST .../tell`               | her only    | her mood, one of six                                          |
+| `POST .../say`                | her only    | one line back, 140 chars, empty clears it                     |
+| `POST .../act`                | him only    | pet, brush, bring, sit, photo                                 |
+| `POST .../shelf`              | either seat | puts the mug back. The one write both of them may make        |
+| `POST .../dress`, `.../clock` | him only    | 403 otherwise                                                 |
+| `POST .../notes`              | him only    | this room's notes, one per entry; empty restores the defaults |
+| `POST .../window-light`       | either seat | leave one glint in the window, or collect the other person's  |
+| `POST .../release`            | him only    | frees her seat so a new device can be her                     |
+| `POST .../recover`            | his code    | takes the first seat back on a new device                     |
 
 ### When she loses her phone
 
@@ -126,7 +132,7 @@ Her mood resets, which is correct, because a mood is how you are now and the new
 
 His own seat recovers differently, because the link alone can't prove anyone is him: the room mints a
 one-off **recovery code** on first use and shows it to him and nobody else. `POST .../recover` with it
-takes the first seat back on a new device. It's stored in plaintext deliberately — its entire power is
+takes the first seat back on a new device. It's stored in plaintext deliberately: its entire power is
 "become the first seat of this room", and anyone who can read that storage already has the room, the
 notes and both names, so hashing would buy nothing and cost him the ability to look it up again from
 a device he still has. Ambiguous characters are left out so it survives being read aloud.
@@ -138,7 +144,7 @@ local day, so a day she doesn't visit is not a note she never sees.
 ## Tests
 
 ```bash
-pnpm check       # typecheck, lint, then 292 tests: 144 web, 148 worker
+pnpm check       # typecheck, lint, then 304 tests: 156 web, 148 worker
 ```
 
 `lint` exists for one rule. owewell shipped a `useEffect` below a component's early returns, so the
@@ -192,8 +198,8 @@ sprite is a manual job and there's no tooling for it. I'd build a tiny editor be
 
 ## Deploying
 
-Merging to `main` deploys. The workflow runs typecheck, lint, build and tests first, and only then
-deploys, so a red suite cannot ship. It needs a Workers-scoped `CLOUDFLARE_API_TOKEN` secret on
+Merging to `main` deploys. The workflow runs typecheck, lint, a formatting check, build and tests
+first, and only then deploys, so a red suite cannot ship. It needs a Workers-scoped `CLOUDFLARE_API_TOKEN` secret on
 the repo.
 
 ```bash

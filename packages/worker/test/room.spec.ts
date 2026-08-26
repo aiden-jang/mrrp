@@ -499,7 +499,7 @@ describe("presence", () => {
     await post("act", { me: HIM, action: "sit" });
 
     const returned = await view(HER);
-    expect(returned.arrivals.map((item) => item.kind === "action" ? item.action : item.kind)).toEqual([
+    expect(returned.arrivals.map((item) => (item.kind === "action" ? item.action : item.kind))).toEqual([
       "sit",
       "brush",
     ]);
@@ -965,16 +965,12 @@ describe("what the room works out from having been used a while", () => {
 
   // Forty-five round trips through workerd, which is over the default 5s and reads as a logic failure
   // when it trips. The test is worth its own timeout rather than a smaller number: the number IS the test.
-  it(
-    "keeps counting past the length of the visit log",
-    async () => {
-      // The log holds forty. The whole point of the separate tally is that the forty-first still counts.
-      await settled();
-      await acted("brush", 45);
-      expect((await view(HIM)).personality).toEqual({ trait: "brushed", count: 45 });
-    },
-    30_000,
-  );
+  it("keeps counting past the length of the visit log", async () => {
+    // The log holds forty. The whole point of the separate tally is that the forty-first still counts.
+    await settled();
+    await acted("brush", 45);
+    expect((await view(HIM)).personality).toEqual({ trait: "brushed", count: 45 });
+  }, 30_000);
 
   it("says nothing when he does a bit of everything", async () => {
     await settled();

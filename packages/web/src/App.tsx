@@ -1,7 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Action, Arrival, Mood, RoomView } from "./types.js";
 import { ACTIONS, MOODS } from "./types.js";
-import { doAct, doClock, doDress, doNotes, doRecover, doRelease, doSay, doTell, doTidy, doWindowLight, fetchRoom, lastRoom, myName, newRoomId, roomFromPath } from "./api.js";
+import {
+  doAct,
+  doClock,
+  doDress,
+  doNotes,
+  doRecover,
+  doRelease,
+  doSay,
+  doTell,
+  doTidy,
+  doWindowLight,
+  fetchRoom,
+  lastRoom,
+  myName,
+  newRoomId,
+  roomFromPath,
+} from "./api.js";
 import { Cat } from "./Cat.js";
 import { mixHex, sceneFor } from "./hours.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
@@ -90,27 +106,25 @@ function RecoveryCode({ code }: { code: string }) {
 }
 
 /**
- * What to say out loud when a secret fires.
- *
- * The visual reward is the whole payoff for most of these, so without a spoken equivalent somebody using a
- * screen reader does the work of finding a secret and is told nothing. Phrased as observations of the room
- * rather than confirmations, for the same reason the room itself never says "unlocked".
+ * What to say out loud when a secret fires. The visual reward is the whole payoff, so without this a
+ * screen reader user does the work of finding one and is told nothing. Phrased as observations of the
+ * room rather than confirmations, for the same reason the room never says "unlocked".
  */
 export const FOUND_ANNOUNCEMENTS: Record<string, string> = {
-  constellation: 'the stars in the window have all come out.',
-  roomTour: 'the whole room is awake at once.',
-  piano: 'the floorboards are playing notes.',
-  bubbles: 'bubbles are drifting through the room.',
-  aurora: 'lights are moving across the window.',
-  mrrp: 'she is purring.',
-  summon: 'she has come over.',
-  herName: 'she knows her own name.',
-  box: 'a box has turned up.',
-  yarn: 'there is yarn on the floor now.',
-  treat: 'she has found a treat.',
-  catnip: 'the catnip has arrived.',
-  music: 'music is playing.',
-  mouse: 'a mouse just ran along the wall.',
+  constellation: "the stars in the window have all come out.",
+  roomTour: "the whole room is awake at once.",
+  piano: "the floorboards are playing notes.",
+  bubbles: "bubbles are drifting through the room.",
+  aurora: "lights are moving across the window.",
+  mrrp: "she is purring.",
+  summon: "she has come over.",
+  herName: "she knows her own name.",
+  box: "a box has turned up.",
+  yarn: "there is yarn on the floor now.",
+  treat: "she has found a treat.",
+  catnip: "the catnip has arrived.",
+  music: "music is playing.",
+  mouse: "a mouse just ran along the wall.",
 };
 
 /** "this morning", "yesterday evening" — warmer and vaguer than a timestamp, which is the point. */
@@ -137,11 +151,9 @@ const GIFT_NAMES: Record<string, string> = {
 };
 
 /*
- * What to call a secret the other person found.
- *
- * Only reachable when the viewer has found it too, because the server sends `what: null` otherwise.
- * These are the shared-memory version of the name, phrased as a thing that happened in the room
- * rather than a feature that has a label: "the piano in the floorboards", not "piano easter egg".
+ * What to call a secret the other person found. Only reachable when the viewer has found it too, since
+ * the server sends `what: null` otherwise. Phrased as a thing that happened in the room rather than a
+ * feature with a label: "the piano in the floorboards", not "piano easter egg".
  */
 const FOUND_NAMES: Record<string, string> = {
   constellation: "the stars in the window",
@@ -169,7 +181,9 @@ function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[];
           <p style={S.arrivalTitle}>the room kept this for you</p>
           <p style={{ ...S.small, marginTop: 2 }}>It waited here until you looked in.</p>
         </div>
-        <button type="button" onClick={onClose} style={S.arrivalClose} aria-label="Put away arrival card">×</button>
+        <button type="button" onClick={onClose} style={S.arrivalClose} aria-label="Put away arrival card">
+          ×
+        </button>
       </div>
       <ul style={S.arrivalList}>
         {items.map((item, index) => (
@@ -179,23 +193,35 @@ function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[];
             </span>
             <span>
               {item.kind === "action" ? (
-                <><b>{name}</b> {pastTense(item.action)}.</>
+                <>
+                  <b>{name}</b> {pastTense(item.action)}.
+                </>
               ) : item.kind === "mood" ? (
-                <><b>{name}</b> said she was {MOODS.find((m) => m.id === item.mood)?.said ?? item.mood}.</>
+                <>
+                  <b>{name}</b> said she was {MOODS.find((m) => m.id === item.mood)?.said ?? item.mood}.
+                </>
               ) : item.kind === "found" ? (
                 item.what ? (
-                  <><b>{name}</b> found {FOUND_NAMES[item.what] ?? "something in here"} too.</>
+                  <>
+                    <b>{name}</b> found {FOUND_NAMES[item.what] ?? "something in here"} too.
+                  </>
                 ) : (
                   /* Unnamed on purpose: there is something in here he has not walked into yet, and
                      telling him what it is would spend the best part of it for him. */
-                  <><b>{name}</b> found something in here you haven&apos;t seen yet.</>
+                  <>
+                    <b>{name}</b> found something in here you haven&apos;t seen yet.
+                  </>
                 )
               ) : item.kind === "kept" ? (
                 /* The one arrival that closes a loop rather than reporting a new thing: she left it,
                    he took it, and this is the only way she finds out. */
-                <><b>{name}</b> took the {GIFT_NAMES[item.gift] ?? "thing"} you left.</>
+                <>
+                  <b>{name}</b> took the {GIFT_NAMES[item.gift] ?? "thing"} you left.
+                </>
               ) : (
-                <><b>{name}</b> left: “{item.text}”</>
+                <>
+                  <b>{name}</b> left: “{item.text}”
+                </>
               )}
               <small style={S.arrivalWhen}>{whenish(item.at)}</small>
             </span>
@@ -207,13 +233,11 @@ function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[];
 }
 
 /**
- * A tint per mood, because six identical grey pills was the least cute thing on the page and this
- * is the one control she actually touches.
+ * A tint per mood, for the one control she actually touches.
  *
- * Kept very low saturation and all in the room's family of creams, clays and roses. Six saturated
- * chips would read as a paintbox, and a paintbox next to hand-authored pixel art looks like two
- * different apps. Nothing here is dark or cold: what she taps on a bad day should not look like a
- * bad day, which is the same rule the room follows in moods.ts.
+ * Very low saturation, all in the room's creams, clays and roses. Saturated chips read as a paintbox,
+ * and a paintbox beside hand-authored pixel art looks like two different apps. Nothing dark or cold:
+ * what she taps on a bad day should not look like a bad day.
  */
 const MOOD_TINT: Record<string, string> = {
   good: "#f8e3b8",
@@ -234,26 +258,20 @@ export function App() {
 }
 
 /**
- * Launched from a home screen icon rather than opened in a browser.
- *
- * Used to decide whether the front door should send you straight back to your room. Doing that in a
- * normal browser tab would be hijacking: you typed the address, you should get the page. Doing it from
- * the installed icon is the only correct behaviour, because the icon means "my cat", not "this website".
+ * Launched from a home screen icon rather than opened in a browser, which decides whether the front
+ * door sends you straight to your room. In a normal tab that would be hijacking: you typed the address,
+ * you should get the page. From the installed icon it is the only correct behaviour.
  */
 const installed = () =>
   matchMedia("(display-mode: standalone)").matches ||
   (navigator as unknown as { standalone?: boolean }).standalone === true;
 
 /**
- * The cat the front door shows, before anybody has made a room.
+ * The cat the front door shows, before anybody has made a room. She explains this app faster than a
+ * sentence can. Ginger tabby, which is what a new room ships with, so the door is not advertising a
+ * cat you then have to go and build.
  *
- * She is the entire product, and the landing page used to be a heading, an input and a button: the
- * one thing that explains this app in less time than a sentence was the one thing not on the page.
- * Ginger tabby because that is what a new room ships with, so the door is not advertising a cat you
- * then have to go and build.
- *
- * The viewer's own timezone, so she is doing whatever fits the hour where they actually are. Reading
- * "asleep in the best spot" at 2am is a better introduction than any tagline.
+ * The viewer's own timezone, so she is doing whatever fits the hour where they are.
  */
 const DOOR_CAT = { name: "Bean", ...LOOKS[0]!.cat, eyes: EYES[0]!.hex };
 const DOOR_CLOCK = {
@@ -281,15 +299,21 @@ function Landing() {
     <main style={S.page}>
       <div style={{ ...S.card, textAlign: "center" }}>
         <div style={{ ...S.stage, marginBottom: 18 }}>
-          <Cat label="A pixel cat asleep in a sunlit room." look={DOOR_CAT} clock={DOOR_CLOCK} mood={null} nudge={0} />
+          <Cat
+            label="A pixel cat asleep in a sunlit room."
+            look={DOOR_CAT}
+            clock={DOOR_CLOCK}
+            mood={null}
+            nudge={0}
+          />
         </div>
         <h1 style={S.h1}>mrrp</h1>
         {/* Written for somebody who has never heard of this. "A cat that is her" made sense only if you
             already knew, which was fine while it had one user and is not any more. Says the mechanism
             first, because the mechanism is the charming part. */}
         <p style={{ ...S.lede, margin: "0 auto 18px" }}>
-          One of you is the cat. You make the room; whoever you send the link to becomes her.
-          They tap how their day is going and she becomes that, so you know without having to ask.
+          One of you is the cat. You make the room; whoever you send the link to becomes her. They tap how
+          their day is going and she becomes that, so you know without having to ask.
         </p>
         <p style={{ ...S.lede, margin: "0 auto 22px", fontSize: 14 }}>
           Then you turn up and sit with her. No accounts, no notifications, nothing to keep up with.
@@ -304,9 +328,7 @@ function Landing() {
             Back to the room
           </button>
         )}
-        {back && (
-          <p style={{ ...S.small, marginBottom: 14 }}>Or start another one for somebody else.</p>
-        )}
+        {back && <p style={{ ...S.small, marginBottom: 14 }}>Or start another one for somebody else.</p>}
         <input
           style={S.input}
           value={name}
@@ -334,7 +356,7 @@ function Landing() {
             and a link pointing away from a note she is reading turns a signature into a byline with a
             call to action, which is the one thing this app has refused to be all along. */}
         <p style={S.credit}>
-          made by{' '}
+          made by{" "}
           <a href="https://aidenjang.com" target="_blank" rel="noopener noreferrer" style={S.creditLink}>
             aiden jang
           </a>
@@ -354,7 +376,7 @@ function RoomPage({ id }: { id: string }) {
     poke: (key: string) => void;
   } | null>(null);
   /** What just happened, for anybody who cannot see the room react. */
-  const [found, setFound] = useState('');
+  const [found, setFound] = useState("");
   const [imageStatus, setImageStatus] = useState<"saving" | "shared" | "saved" | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const handleCaptureReady = useCallback((capture: () => Promise<Blob | null>) => {
@@ -390,16 +412,19 @@ function RoomPage({ id }: { id: string }) {
     try {
       const roomBlob = await captureRoom();
       if (!roomBlob) throw new Error("capture unavailable");
-      const currentScene = view
-        ? sceneFor(view.clock, Date.now(), view.catMood, view.bothHereNow)
-        : null;
+      const currentScene = view ? sceneFor(view.clock, Date.now(), view.catMood, view.bothHereNow) : null;
       const blob = await makeKeepsake(roomBlob, {
         catName: view?.cat.name ?? "the cat",
         doing: currentScene?.doing ?? "keeping the room warm",
         together: view?.bothHereNow ?? false,
       });
       if (!blob) throw new Error("postcard unavailable");
-      const fileName = `${view?.cat.name?.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") || "mrrp"}-postcard.png`;
+      const fileName = `${
+        view?.cat.name
+          ?.trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-") || "mrrp"
+      }-postcard.png`;
       const file = new File([blob], fileName, { type: "image/png" });
       const share = navigator as Navigator & { canShare?: (data?: ShareData) => boolean };
       // Sharing the actual image feels right on a phone (Messages, WhatsApp, etc.). `canShare` is
@@ -438,11 +463,9 @@ function RoomPage({ id }: { id: string }) {
   const youArrived = useRef(false);
 
   /*
-   * The door swings on an arrival: yours on first paint, theirs on the edge into presence.
-   *
-   * Opening only for them meant the feature almost never fired, since both of you have to be here
-   * at once and it has to land inside a poll. Theirs watches the edge rather than the value because
-   * `themHereNow` stays true for a whole visit, and a door held open that long is a broken door.
+   * The door swings on an arrival: yours on first paint, theirs on the edge into presence. Opening
+   * only for them almost never fires, since both of you have to be here at once inside one poll.
+   * Watch the edge, not the value: `themHereNow` stays true for a whole visit.
    */
   useEffect(() => {
     if (!view || youArrived.current) return;
@@ -466,12 +489,9 @@ function RoomPage({ id }: { id: string }) {
   const [nudge, setNudge] = useState(0);
 
   /*
-   * She says mrrp the moment it becomes both of you.
-   *
-   * Reusing `nudge` rather than adding a second channel: it already means "something happened, react
-   * to it", and it gives the bounce and the bubble together, which is a cat noticing rather than a
-   * cat that changed pose. Fires on the edge only, so a long visit with both of you in it does not
-   * become a cat chanting at a poll interval.
+   * She says mrrp the moment it becomes both of you. Reuses `nudge` rather than adding a channel: it
+   * already means "something happened, react to it" and gives the bounce and bubble together. Edge
+   * only, or a long visit becomes a cat chanting at the poll interval.
    */
   const wasTogether = useRef<boolean | null>(null);
   useEffect(() => {
@@ -480,7 +500,7 @@ function RoomPage({ id }: { id: string }) {
     wasTogether.current = now;
     if (prev === null || !now || prev) return;
     play("mrrp");
-    setNudge(v => v + 1);
+    setNudge((v) => v + 1);
   }, [view?.bothHereNow]);
 
   const [asking, setAsking] = useState(!myName.get());
@@ -498,30 +518,39 @@ function RoomPage({ id }: { id: string }) {
   const [claimErr, setClaimErr] = useState<string | null>(null);
   const [savingSetup, setSavingSetup] = useState(false);
   const [setupErr, setSetupErr] = useState<string | null>(null);
-  const [draft, setDraft] = useState<{ name: string; look: string; eyes: string; tz: string; homeHour: number; notes: string } | null>(null);
+  const [draft, setDraft] = useState<{
+    name: string;
+    look: string;
+    eyes: string;
+    tz: string;
+    homeHour: number;
+    notes: string;
+  } | null>(null);
 
-  const load = useCallback(async (n?: string | null) => {
-    try {
-      const next = await fetchRoom(id, n ?? myName.get());
-      setView(next);
-      // Polls return an empty list after the server advances this seat's last-seen marker. Keep the
-      // postcard on screen until the person puts it away, rather than flashing it for 15 seconds.
-      if (next.arrivals.length > 0) setArrivalCard(next.arrivals);
-      setErr(null);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Something went wrong.");
-    }
-  }, [id]);
+  const load = useCallback(
+    async (n?: string | null) => {
+      try {
+        const next = await fetchRoom(id, n ?? myName.get());
+        setView(next);
+        // Polls return an empty list after the server advances this seat's last-seen marker. Keep the
+        // postcard on screen until the person puts it away, rather than flashing it for 15 seconds.
+        if (next.arrivals.length > 0) setArrivalCard(next.arrivals);
+        setErr(null);
+      } catch (e) {
+        setErr(e instanceof Error ? e.message : "Something went wrong.");
+      }
+    },
+    [id],
+  );
 
-  useEffect(() => { if (!asking) void load(); }, [asking, load]);
+  useEffect(() => {
+    if (!asking) void load();
+  }, [asking, load]);
 
   /*
-   * Retry quickly while there is nothing on screen.
-   *
-   * A failed first load used to leave "Something went wrong" sitting there until the 45 second poll came
-   * round, which on a phone waking up on a weak connection is the normal case, not the rare one. Once the
-   * room has loaded once this stops: from then on a dropped request is a quiet line at the bottom and the
-   * slow poll is the right cadence.
+   * Retry quickly while there is nothing on screen. A failed first load otherwise leaves "Something
+   * went wrong" sitting there until the slow poll comes round, which on a phone on a weak connection
+   * is the normal case. Stops once the room has loaded: after that a dropped request is a quiet line.
    */
   useEffect(() => {
     if (asking || view || !err) return;
@@ -532,24 +561,26 @@ function RoomPage({ id }: { id: string }) {
   // No socket: the room is asynchronous by design, so a quiet poll is enough to turn "was here" into
   // "is here" while the tab is open.
   //
-  // It skips hidden tabs, which matters more than it looks: a phone left on this page overnight was
-  // ~1,900 Durable Object requests rendering a sleeping cat to a screen nobody was looking at. One
-  // fetch on becoming visible again covers everything the missed ticks would have.
+  // Skip hidden tabs. A phone left on this page overnight is ~1,900 Durable Object requests rendering
+  // a sleeping cat to a screen nobody is looking at; one fetch on becoming visible covers it.
   useEffect(() => {
     if (asking) return;
     /*
-     * 15s while the tab is visible, not 45.
-     *
-     * 45s was right when the room only had to notice a mood eventually. It stopped being right the
-     * moment the door started swinging on arrival: a door is a promise that something is happening
-     * *now*, and one that opens three quarters of a minute after somebody walked in reads as broken
-     * rather than late. The hidden-tab check already stops a backgrounded tab polling at all, so
-     * this costs one Durable Object read every fifteen seconds from a tab someone is looking at.
+     * 15s while the tab is visible. The door is a promise that something is happening *now*, and one
+     * that opens three quarters of a minute after somebody walked in reads as broken rather than late.
+     * The hidden-tab check above means this only costs a read from a tab someone is looking at.
      */
-    const tick = setInterval(() => { if (!document.hidden) void load(); }, 15_000);
-    const onShow = () => { if (!document.hidden) void load(); };
+    const tick = setInterval(() => {
+      if (!document.hidden) void load();
+    }, 15_000);
+    const onShow = () => {
+      if (!document.hidden) void load();
+    };
     document.addEventListener("visibilitychange", onShow);
-    return () => { clearInterval(tick); document.removeEventListener("visibilitychange", onShow); };
+    return () => {
+      clearInterval(tick);
+      document.removeEventListener("visibilitychange", onShow);
+    };
   }, [asking, load]);
 
   const act = async (a: Action) => {
@@ -563,16 +594,23 @@ function RoomPage({ id }: { id: string }) {
         setDid(said);
         setTimeout(() => setDid(null), 2600);
       }
-    } catch { /* she'll survive */ }
+    } catch {
+      /* she'll survive */
+    }
   };
 
   /** Opening the panel seeds the draft from whatever the room already has. */
   const openSetup = () => {
     if (!view) return;
-    const look = LOOKS.find((l) => l.cat.fur.toLowerCase() === view.cat.fur.toLowerCase())?.id ?? LOOKS[0]!.id;
+    const look =
+      LOOKS.find((l) => l.cat.fur.toLowerCase() === view.cat.fur.toLowerCase())?.id ?? LOOKS[0]!.id;
     const eyes = EYES.find((e) => e.hex.toLowerCase() === view.cat.eyes.toLowerCase())?.id ?? EYES[0]!.id;
     setDraft({
-      name: view.cat.name, look, eyes, tz: view.clock.tz, homeHour: view.clock.homeHour,
+      name: view.cat.name,
+      look,
+      eyes,
+      tz: view.clock.tz,
+      homeHour: view.clock.homeHour,
       // Seeded from whatever the room runs on, which for an untouched room is the defaults. Editing
       // from a real starting point is far easier than facing an empty box.
       notes: (view.yourNotes ?? []).join("\n"),
@@ -603,15 +641,16 @@ function RoomPage({ id }: { id: string }) {
     try {
       setView(await doSay(id, line));
       setLineOpen(false);
-    } catch { /* she'll survive */ }
+    } catch {
+      /* she'll survive */
+    }
     setSaving(false);
   };
 
   /**
-   * Optimistic on purpose. The chip used to stay unlit until the round trip came back, so on anything
-   * slower than a desk connection tapping a mood felt like it had not registered: no highlight, no
-   * label change, and a cat that only started moving once the response landed. The mood is hers and
-   * the server never rejects a valid one, so showing it immediately is honest.
+   * Optimistic on purpose. Waiting for the round trip means that on anything slower than a desk
+   * connection, tapping a mood feels like it did not register. The mood is hers and the server never
+   * rejects a valid one, so showing it immediately is honest.
    */
   const tell = async (m: Mood) => {
     setNudge((v) => v + 1);
@@ -653,14 +692,25 @@ function RoomPage({ id }: { id: string }) {
           <h1 style={S.h1}>mrrp</h1>
           <p style={{ ...S.lede, margin: "0 auto 20px" }}>Someone made you a cat.</p>
           <input
-            style={S.input} value={name} maxLength={24} placeholder="your name"
+            style={S.input}
+            value={name}
+            maxLength={24}
+            placeholder="your name"
             onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && name.trim()) { myName.set(name.trim()); setAsking(false); } }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && name.trim()) {
+                myName.set(name.trim());
+                setAsking(false);
+              }
+            }}
           />
           <button
             style={{ ...S.btn, ...S.btnGo, width: "100%", marginTop: 10 }}
             disabled={!name.trim()}
-            onClick={() => { myName.set(name.trim()); setAsking(false); }}
+            onClick={() => {
+              myName.set(name.trim());
+              setAsking(false);
+            }}
           >
             Go in
           </button>
@@ -679,7 +729,13 @@ function RoomPage({ id }: { id: string }) {
               she sees standing on a train with no signal, and an empty page with an error on it is a
               worse thing to be handed than a sleeping cat and a promise to keep trying. */}
           <div style={S.stage}>
-            <Cat label="A pixel cat asleep in a sunlit room." look={DOOR_CAT} clock={DOOR_CLOCK} mood={null} nudge={0} />
+            <Cat
+              label="A pixel cat asleep in a sunlit room."
+              look={DOOR_CAT}
+              clock={DOOR_CLOCK}
+              mood={null}
+              nudge={0}
+            />
           </div>
           <p style={{ ...S.small, marginTop: 16 }}>{err ?? "opening the door quietly…"}</p>
         </div>
@@ -693,11 +749,9 @@ function RoomPage({ id }: { id: string }) {
   const scene = sceneFor(view.clock, Date.now(), view.catMood, view.bothHereNow);
 
   /*
-   * The interface borrows the room's light without becoming another illustrated surface.
-   *
-   * Mixing each live room colour heavily toward the established UI neutrals preserves contrast and
-   * keeps night usable, while still letting dawn feel lavender and golden hour feel honey-warm. The
-   * variables are scoped to this room only; the door and recovery screens keep their stable palette.
+   * The interface borrows the room's light without becoming another illustrated surface. Mix each live
+   * room colour heavily toward the UI neutrals: that keeps contrast and night usable while still
+   * letting dawn feel lavender. Scoped to this room; the door and recovery screens stay stable.
    */
   const roomTheme = {
     "--air": mixHex(scene.wallTop, "#f7ecdc", 0.76),
@@ -708,26 +762,24 @@ function RoomPage({ id }: { id: string }) {
   } as React.CSSProperties;
 
   /**
-   * Whether the viewer actually holds his seat, rather than merely not being her.
-   *
-   * `!view.youAreHer` is true for a third person with the link, so gating on it handed spectators his
-   * entire control surface: the four action buttons, and a setup panel that previewed a recoloured cat
-   * live and then failed on Save with a 403 reported in small text at the bottom of a long panel. It
-   * looked exactly like "changing the colour does nothing". The Worker was right to refuse; the UI was
-   * wrong to offer.
+   * Whether the viewer actually holds his seat, rather than merely not being her. Never gate on
+   * `!view.youAreHer`: that is true for a third person with the link, and it hands spectators his
+   * whole control surface, which then 403s on save. Offering a control that cannot work is its own
+   * kind of broken, separate from the server refusing it.
    */
   const iAmHim = view.you !== null && !view.youAreHer;
 
   // While the panel is open the canvas shows the draft, so choosing a cat is a thing you watch
   // happen rather than a form you submit and hope about.
-  const previewLook = setup && draft
-    ? {
-        ...view.cat,
-        name: draft.name.trim() || "Bean",
-        ...LOOKS.find((l) => l.id === draft.look)!.cat,
-        eyes: EYES.find((e) => e.id === draft.eyes)!.hex,
-      }
-    : view.cat;
+  const previewLook =
+    setup && draft
+      ? {
+          ...view.cat,
+          name: draft.name.trim() || "Bean",
+          ...LOOKS.find((l) => l.id === draft.look)!.cat,
+          eyes: EYES.find((e) => e.id === draft.eyes)!.hex,
+        }
+      : view.cat;
 
   return (
     <main style={{ ...S.page, ...roomTheme }}>
@@ -758,20 +810,21 @@ function RoomPage({ id }: { id: string }) {
             /* The banner says you're both here; this is her doing something about it. */
             together={view.bothHereNow}
             onPet={() => void act("pet")}
-            onPoke={() => { play("mrrp"); setNudge((v) => v + 1); }}
+            onPoke={() => {
+              play("mrrp");
+              setNudge((v) => v + 1);
+            }}
             /* Fire and forget. The canvas calls this mid-frame, so nothing here may await or throw. */
             onFound={(key) => {
               noticed(id, myToken(), key);
               // Announced as a thing that happened in the room, not as an achievement unlocked.
-              setFound(FOUND_ANNOUNCEMENTS[key] ?? 'something in the room answered.');
+              setFound(FOUND_ANNOUNCEMENTS[key] ?? "something in the room answered.");
             }}
             onProps={(props, poke) => setRoomProps({ props, poke })}
             /*
-             * Everything she could be dreaming about, gathered here rather than in the canvas.
-             *
-             * `found` is this device's own discoveries: the dream may only mention a secret the person
-             * looking has already walked into, or it hands them the answer to the thing they were going
-             * to enjoy finding.
+             * Everything she could be dreaming about, gathered here rather than in the canvas. Filter
+             * by `found`, this device's own discoveries, or the dream hands somebody the answer to a
+             * secret they were going to enjoy finding.
              */
             dreamContext={{
               found: foundKeys(),
@@ -785,17 +838,13 @@ function RoomPage({ id }: { id: string }) {
             bothCalledHer={view.bothCalledHer}
             onCapture={handleCaptureReady}
           />
-
         </div>
 
         {/*
-          * The room, reachable without a pointer.
-          *
-          * Visually hidden and fully focusable. Every one of these was tap-only, which meant the two
-          * biggest secrets in the app (the stars and the room tour) could not be found at all without a
-          * mouse or a screen to touch. Activating one runs the real interaction, so the room reacts
-          * exactly as it would to a tap.
-          */}
+         * The room, reachable without a pointer. Visually hidden and fully focusable; without these
+         * the two biggest secrets in the app cannot be found at all without a mouse. Activating one
+         * runs the real interaction, so the room reacts exactly as it would to a tap.
+         */}
         {roomProps && !setup && (
           <div style={S.srOnly}>
             <h2>things in the room</h2>
@@ -825,36 +874,32 @@ function RoomPage({ id }: { id: string }) {
 
         {captureRoom && !setup && (
           <button style={S.quiet} onClick={() => void saveRoomImage()} disabled={imageStatus !== null}>
-            {imageStatus === "saving" ? "Making postcard…" : imageStatus === "shared" ? "Postcard shared" : imageStatus === "saved" ? "Postcard saved" : "Make a postcard"}
+            {imageStatus === "saving"
+              ? "Making postcard…"
+              : imageStatus === "shared"
+                ? "Postcard shared"
+                : imageStatus === "saved"
+                  ? "Postcard saved"
+                  : "Make a postcard"}
           </button>
         )}
 
         {/*
-          * What the two of you have turned up in here.
-          *
-          * A count and nothing else. No total, no list, no progress bar: the moment it says "3 of 14"
-          * the room stops being a room somebody poked at and becomes a thing to finish, and the point
-          * of hiding a piano under the floorboards is that nobody told you it was there.
-          *
-          * Only from two onwards. At one it reads as a score for the thing you just did, which is the
-          * opposite of the tone, and at zero it would advertise that there is anything to find.
-          */}
+         * What the two of you have turned up in here. A count and nothing else: no total, no list,
+         * no progress bar. The moment it says "3 of 14" the room becomes a thing to finish.
+         *
+         * Only from two onwards. At one it reads as a score for what you just did, and at zero it
+         * advertises that there is anything to find.
+         */}
         {!setup && view.noticed >= 2 && (iAmHim || view.youAreHer) && (
-          <p style={S.noticed}>
-            Between you, you have noticed {view.noticed} things in here.
-          </p>
+          <p style={S.noticed}>Between you, you have noticed {view.noticed} things in here.</p>
         )}
 
         {/*
-          * The two things the room worked out from having been used for a while.
-          *
-          * Above the discovery count and below the room itself, because both are about the room rather
-          * than about anything you just did. The milestone is first on the rare day there is one: it is
-          * the only line in here that is about a date, and burying it under a personality would read as
-          * an afterthought.
-          *
-          * Neither is shown to a spectator. A stranger with the link is not part of the year.
-          */}
+         * The two things the room worked out from having been used for a while. The milestone goes
+         * first on the rare day there is one: it is the only line here about a date, and burying it
+         * would read as an afterthought. Neither is shown to a spectator, who is not part of the year.
+         */}
         {!setup && view.milestone && (iAmHim || view.youAreHer) && (
           <p style={S.remembers}>{milestoneLine(view.milestone, view.cat.name)}</p>
         )}
@@ -870,9 +915,7 @@ function RoomPage({ id }: { id: string }) {
             the first touch rather than nagging, and it is never shown to a spectator, who has nothing
             to touch. */}
         {!setup && nudge === 0 && (iAmHim || view.youAreHer) && (
-          <p style={S.hint}>
-            {iAmHim ? `Hold on ${view.cat.name} to pet her` : `Tap ${view.cat.name}`}
-          </p>
+          <p style={S.hint}>{iAmHim ? `Hold on ${view.cat.name} to pet her` : `Tap ${view.cat.name}`}</p>
         )}
 
         {iAmHim && setup && draft && (
@@ -900,15 +943,13 @@ function RoomPage({ id }: { id: string }) {
                     ...S.swatch,
                     background: l.cat.fur,
                     /*
-                     * Selection is drawn with a shadow, not an outline.
-                     *
-                     * An inline outline outranks any stylesheet rule, so using it for selection meant
-                     * the focus ring could never appear on the one row where you are actually
-                     * choosing something. Shadow is also the more honest channel: selection is part
-                     * of how the swatch looks, focus is the browser saying where the keyboard is.
+                     * Selection is drawn with a shadow, never an outline. An inline outline outranks
+                     * any stylesheet rule, so the focus ring could never appear on the one row where
+                     * you are actually choosing something.
                      */
-                    boxShadow: `inset 0 -7px 0 ${l.cat.furDk}, inset 0 7px 0 ${l.cat.belly}`
-                      + (draft.look === l.id ? ", 0 0 0 2.5px var(--honey)" : ""),
+                    boxShadow:
+                      `inset 0 -7px 0 ${l.cat.furDk}, inset 0 7px 0 ${l.cat.belly}` +
+                      (draft.look === l.id ? ", 0 0 0 2.5px var(--honey)" : ""),
                   }}
                 />
               ))}
@@ -939,7 +980,9 @@ function RoomPage({ id }: { id: string }) {
               onChange={(e) => setDraft((d) => ({ ...d!, tz: e.target.value }))}
             >
               {timezones().map((z) => (
-                <option key={z} value={z}>{z.replace(/_/g, " ")}</option>
+                <option key={z} value={z}>
+                  {z.replace(/_/g, " ")}
+                </option>
               ))}
             </select>
 
@@ -957,12 +1000,10 @@ function RoomPage({ id }: { id: string }) {
             </select>
 
             {/*
-              * Her notes, one per line.
-              *
-              * A textarea rather than a list of fields with add and remove buttons: this gets written
-              * once, probably pasted in from somewhere else, and thirty separate inputs would be thirty
-              * things to tab through. Blank lines are dropped server-side, so pasting messy text is fine.
-              */}
+             * Her notes, one per line. A textarea rather than add/remove fields: this gets written
+             * once and probably pasted in, and thirty inputs would be thirty things to tab through.
+             * Blank lines are dropped server-side, so pasting messy text is fine.
+             */}
             <p style={S.fieldLabel}>her notes, one per line</p>
             <textarea
               style={{ ...S.sayInput, minHeight: 150, fontSize: 14 }}
@@ -972,21 +1013,21 @@ function RoomPage({ id }: { id: string }) {
               onChange={(e) => setDraft((d) => ({ ...d!, notes: e.target.value }))}
             />
             <p style={{ ...S.small, marginTop: 6 }}>
-              {draft.notes.split("\n").filter((l) => l.trim()).length} notes. She gets one a day and
-              the last one stays. Leave this empty to use the ones it came with.
+              {draft.notes.split("\n").filter((l) => l.trim()).length} notes. She gets one a day and the last
+              one stays. Leave this empty to use the ones it came with.
             </p>
 
             {/* The advice belongs here, next to the box, not in the notes themselves. A default that
-              * sounds specific but is not true for whoever reads it lands as a form letter, so the
-              * shipped ones stay safely general and the register gets taught in the editor instead.
-              * Collapsed, because it is needed once. */}
+             * sounds specific but is not true for whoever reads it lands as a form letter, so the
+             * shipped ones stay safely general and the register gets taught in the editor instead.
+             * Collapsed, because it is needed once. */}
             <details style={{ marginTop: 8 }}>
               <summary style={{ ...S.small, cursor: "pointer" }}>What makes a good one</summary>
               <div style={{ ...S.small, marginTop: 8, display: "grid", gap: 7 }}>
                 <p style={S.small}>
-                  One small ordinary thing beats one big kind thing. <i>You fell asleep before the film
-                  ended again</i> lands harder than <i>you are wonderful</i>, because only you could have
-                  written the first one.
+                  One small ordinary thing beats one big kind thing.{" "}
+                  <i>You fell asleep before the film ended again</i> lands harder than{" "}
+                  <i>you are wonderful</i>, because only you could have written the first one.
                 </p>
                 <p style={S.small}>Shapes that work:</p>
                 <p style={{ ...S.small, paddingLeft: 12 }}>
@@ -996,23 +1037,26 @@ function RoomPage({ id }: { id: string }) {
                   Something you have not said out loud. <i>I was nervous the whole first month.</i>
                 </p>
                 <p style={{ ...S.small, paddingLeft: 12 }}>
-                  Something with no point to it. <i>The bakery on the corner has moved. I am upset about
-                  it and I know you will be too.</i>
+                  Something with no point to it.{" "}
+                  <i>The bakery on the corner has moved. I am upset about it and I know you will be too.</i>
                 </p>
                 <p style={S.small}>
-                  Put the one you would find hardest to say near the end. She reaches it, and by then it
-                  has had a few weeks to be true.
+                  Put the one you would find hardest to say near the end. She reaches it, and by then it has
+                  had a few weeks to be true.
                 </p>
               </div>
             </details>
 
             {/* What she will actually see, in the real card, as you type.
-              *
-              * Thirty lines went into a plain textarea with no idea how any of them would land, and that
-              * card is the whole product: the difference between a line that works and one that does not
-              * is mostly how it sits at that width, in that type, under his name. */}
+             *
+             * Thirty lines went into a plain textarea with no idea how any of them would land, and that
+             * card is the whole product: the difference between a line that works and one that does not
+             * is mostly how it sits at that width, in that type, under his name. */}
             {(() => {
-              const first = draft.notes.split("\n").map((l) => l.trim()).find(Boolean);
+              const first = draft.notes
+                .split("\n")
+                .map((l) => l.trim())
+                .find(Boolean);
               if (!first) return null;
               return (
                 <>
@@ -1032,8 +1076,8 @@ function RoomPage({ id }: { id: string }) {
               <>
                 <p style={{ ...S.fieldLabel, marginTop: 14 }}>recovery code</p>
                 <p style={{ ...S.small, marginBottom: 6 }}>
-                  Save this somewhere that is not this phone. It is the only way to get your side of the
-                  room back if you lose it.
+                  Save this somewhere that is not this phone. It is the only way to get your side of the room
+                  back if you lose it.
                 </p>
                 <RecoveryCode code={view.recoveryCode} />
               </>
@@ -1042,8 +1086,14 @@ function RoomPage({ id }: { id: string }) {
             {setupErr && <p style={{ ...S.small, color: "#a4563d", marginTop: 12 }}>{setupErr}</p>}
 
             <div style={{ ...S.row, marginTop: 12 }}>
-              <button style={S.btn} onClick={() => setSetup(false)}>Cancel</button>
-              <button style={{ ...S.btn, ...S.btnGo }} disabled={savingSetup} onClick={() => void saveSetup()}>
+              <button style={S.btn} onClick={() => setSetup(false)}>
+                Cancel
+              </button>
+              <button
+                style={{ ...S.btn, ...S.btnGo }}
+                disabled={savingSetup}
+                onClick={() => void saveSetup()}
+              >
                 {savingSetup ? "Saving..." : "Save"}
               </button>
             </div>
@@ -1111,18 +1161,20 @@ function RoomPage({ id }: { id: string }) {
             {/* The banner above already says you're both in here, in bigger type. Saying it twice
                 on the same screen reads as a bug rather than as warmth. */}
             {view.bothHereNow ? null : view.themHereNow ? (
-              <p style={S.came}><b>{view.them}</b> is in here right now.</p>
+              <p style={S.came}>
+                <b>{view.them}</b> is in here right now.
+              </p>
             ) : last ? (
               <p style={S.came}>
                 <b>{view.them}</b> {pastTense(last.action)}, {whenish(last.at)}.
               </p>
             ) : view.themLastAt ? (
-              <p style={S.came}><b>{view.them}</b> looked in {whenish(view.themLastAt)}.</p>
+              <p style={S.came}>
+                <b>{view.them}</b> looked in {whenish(view.themLastAt)}.
+              </p>
             ) : null}
 
-            {view.theyCameAfter && !view.themHereNow && (
-              <p style={S.came}>He came in after you said that.</p>
-            )}
+            {view.theyCameAfter && !view.themHereNow && <p style={S.came}>He came in after you said that.</p>}
 
             {/* Her sentence. Before this the app was one-directional: he wrote thirty notes and she
                 had six words to answer with. */}
@@ -1138,19 +1190,33 @@ function RoomPage({ id }: { id: string }) {
                   style={S.sayInput}
                 />
                 <div style={{ ...S.row, marginTop: 8 }}>
-                  <button style={S.btn} onClick={() => setLineOpen(false)}>Never mind</button>
+                  <button style={S.btn} onClick={() => setLineOpen(false)}>
+                    Never mind
+                  </button>
                   <button style={{ ...S.btn, ...S.btnGo }} disabled={saving} onClick={() => void say()}>
                     {saving ? "Leaving it..." : "Leave it"}
                   </button>
                 </div>
               </div>
             ) : view.herLine ? (
-              <button style={S.yourLine} onClick={() => { setLine(view.herLine!.text); setLineOpen(true); }}>
+              <button
+                style={S.yourLine}
+                onClick={() => {
+                  setLine(view.herLine!.text);
+                  setLineOpen(true);
+                }}
+              >
                 <span style={S.yourLineLabel}>you left him this</span>
                 <span style={S.yourLineText}>{view.herLine.text}</span>
               </button>
             ) : (
-              <button style={S.quiet} onClick={() => { setLine(""); setLineOpen(true); }}>
+              <button
+                style={S.quiet}
+                onClick={() => {
+                  setLine("");
+                  setLineOpen(true);
+                }}
+              >
                 Leave {view.them ?? "him"} a line
               </button>
             )}
@@ -1185,19 +1251,23 @@ function RoomPage({ id }: { id: string }) {
         ) : (
           /* ── his side: he finds out how she is, and does something about it ── */
           <>
-            {iAmHim && <div style={S.theirs}>
-              <p style={S.theirsMain}>
-                {view.catMood ? (
-                  <>
-                    <b>{view.them}</b> is {MOODS.find((m) => m.id === view.catMood)?.said}
-                    {view.catMoodAt ? `, ${whenish(view.catMoodAt)}` : ""}.
-                  </>
-                ) : (
-                  <><b>{view.them}</b> hasn't said how she is yet today.</>
-                )}
-              </p>
-              <p style={{ ...S.small, marginTop: 4 }}>Go and be in there. That's all it takes.</p>
-            </div>}
+            {iAmHim && (
+              <div style={S.theirs}>
+                <p style={S.theirsMain}>
+                  {view.catMood ? (
+                    <>
+                      <b>{view.them}</b> is {MOODS.find((m) => m.id === view.catMood)?.said}
+                      {view.catMoodAt ? `, ${whenish(view.catMoodAt)}` : ""}.
+                    </>
+                  ) : (
+                    <>
+                      <b>{view.them}</b> hasn't said how she is yet today.
+                    </>
+                  )}
+                </p>
+                <p style={{ ...S.small, marginTop: 4 }}>Go and be in there. That's all it takes.</p>
+              </div>
+            )}
 
             {/* Above the buttons, deliberately. She wrote him a sentence; the buttons are things he
                 can do any time. Having her words sit underneath four controls got the priority exactly
@@ -1213,7 +1283,9 @@ function RoomPage({ id }: { id: string }) {
             {iAmHim && (
               <div style={{ ...S.row, marginTop: 14 }}>
                 {ACTIONS.map((a) => (
-                  <button key={a.id} style={S.btn} onClick={() => void act(a.id)}>{a.label}</button>
+                  <button key={a.id} style={S.btn} onClick={() => void act(a.id)}>
+                    {a.label}
+                  </button>
                 ))}
               </div>
             )}
@@ -1236,14 +1308,10 @@ function RoomPage({ id }: { id: string }) {
             )}
 
             {/*
-              * Somebody who only has the link.
-              *
-              * The whole of his side was rendering for them: her mood, four buttons that 403, and a
-              * "change how she looks" link that opened nothing once the panel itself was gated. I fixed
-              * the panel and the petting and thought that was the end of it, which it was not. Offering
-              * controls that cannot work is its own kind of broken, separate from whether the server
-              * refuses them.
-              */}
+             * Somebody who only has the link. They get none of his side: not her mood, not the
+             * action buttons, not the link to the setup panel. Gate every one of them, not just the
+             * panel, or they are offered controls that 403.
+             */}
             {!iAmHim && (
               <>
                 <p style={{ ...S.small, textAlign: "center", marginTop: 16 }}>
@@ -1289,15 +1357,19 @@ function RoomPage({ id }: { id: string }) {
 
             {/* The only recovery this app has, so it has to be findable, and it evicts her current
                 device, so it asks first. Kept quiet and last: it matters on one day out of a year. */}
-            {iAmHim && !setup && !view.waitingForThem && (
-              releasing ? (
+            {iAmHim &&
+              !setup &&
+              !view.waitingForThem &&
+              (releasing ? (
                 <div style={{ ...S.panel, marginTop: 14 }}>
                   <p style={{ ...S.small, color: "var(--ink)" }}>
-                    This frees her seat, and whoever opens the link next becomes the cat. Send it to her
-                    again afterwards. She keeps her place in the notes and the line she left you.
+                    This frees her seat, and whoever opens the link next becomes the cat. Send it to her again
+                    afterwards. She keeps her place in the notes and the line she left you.
                   </p>
                   <div style={{ ...S.row, marginTop: 12 }}>
-                    <button style={S.btn} onClick={() => setReleasing(false)}>Never mind</button>
+                    <button style={S.btn} onClick={() => setReleasing(false)}>
+                      Never mind
+                    </button>
                     <button
                       style={{ ...S.btn, ...S.btnGo }}
                       onClick={async () => {
@@ -1318,8 +1390,7 @@ function RoomPage({ id }: { id: string }) {
                 <button style={S.quiet} onClick={() => setReleasing(true)}>
                   {view.them ?? "She"} got a new phone
                 </button>
-              )
-            )}
+              ))}
           </>
         )}
 
@@ -1339,8 +1410,8 @@ function RoomPage({ id }: { id: string }) {
           <details style={S.recovery}>
             <summary style={S.recoverySummary}>show my recovery code</summary>
             <p style={{ ...S.small, marginTop: 8 }}>
-              The only way to get your side of the room back on a new phone. Keep it somewhere that
-              is not this phone.
+              The only way to get your side of the room back on a new phone. Keep it somewhere that is not
+              this phone.
             </p>
             <RecoveryCode code={view.recoveryCode} />
           </details>
@@ -1348,8 +1419,8 @@ function RoomPage({ id }: { id: string }) {
 
         <div style={S.footer}>
           <p style={{ ...S.small, textAlign: "center" }}>
-            Nothing in here needs keeping up with. No streaks, no history, and nothing kept except how
-            you are right now.
+            Nothing in here needs keeping up with. No streaks, no history, and nothing kept except how you are
+            right now.
           </p>
           <p style={S.credit}>made by aiden jang</p>
         </div>
@@ -1361,7 +1432,10 @@ function RoomPage({ id }: { id: string }) {
 /* ─────────────── styles, inline to keep this one small ─────────────── */
 const S: Record<string, React.CSSProperties> = {
   page: {
-    minHeight: "100%", display: "grid", placeItems: "center", padding: "28px 18px 48px",
+    minHeight: "100%",
+    display: "grid",
+    placeItems: "center",
+    padding: "28px 18px 48px",
     background: "radial-gradient(120% 90% at 78% 6%, var(--air-warm) 0%, var(--air) 62%)",
     transition: "background .9s ease",
   },
@@ -1383,14 +1457,32 @@ const S: Record<string, React.CSSProperties> = {
    * tree and the focus order along with it, which is the exact opposite of the point.
    */
   srOnly: {
-    position: "absolute", width: 1, height: 1, padding: 0, margin: -1,
-    overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap", border: 0,
+    position: "absolute",
+    width: 1,
+    height: 1,
+    padding: 0,
+    margin: -1,
+    overflow: "hidden",
+    clip: "rect(0 0 0 0)",
+    whiteSpace: "nowrap",
+    border: 0,
   },
   soundToggle: {
-    position: "fixed", top: 12, right: 12, zIndex: 20,
-    width: 36, height: 36, borderRadius: 999, cursor: "pointer",
-    display: "grid", placeItems: "center", fontSize: 15, lineHeight: 1,
-    background: "var(--panel)", border: "1px solid var(--line)", color: "var(--soft)",
+    position: "fixed",
+    top: 12,
+    right: 12,
+    zIndex: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 999,
+    cursor: "pointer",
+    display: "grid",
+    placeItems: "center",
+    fontSize: 15,
+    lineHeight: 1,
+    background: "var(--panel)",
+    border: "1px solid var(--line)",
+    color: "var(--soft)",
   },
   lede: { fontSize: 15.5, color: "var(--soft)", maxWidth: "38ch", lineHeight: 1.55 },
   small: { fontSize: 13, color: "var(--soft)", margin: 0, lineHeight: 1.5 },
@@ -1407,28 +1499,55 @@ const S: Record<string, React.CSSProperties> = {
   creditLink: { color: "inherit", textDecoration: "underline", textUnderlineOffset: 2 },
   /** The recovery-code disclosure, on his side. Closed by default: it is reassurance, not a task. */
   recovery: {
-    marginTop: 18, padding: "10px 14px", borderRadius: 14,
-    background: "var(--air)", border: "1px solid var(--line)",
+    marginTop: 18,
+    padding: "10px 14px",
+    borderRadius: 14,
+    background: "var(--air)",
+    border: "1px solid var(--line)",
   },
   recoverySummary: {
-    cursor: "pointer", fontSize: 13.5, color: "var(--soft)",
+    cursor: "pointer",
+    fontSize: 13.5,
+    color: "var(--soft)",
   },
   code: {
-    font: "inherit", fontSize: 18, letterSpacing: ".08em", textAlign: "center", margin: 0,
-    padding: "11px 13px", borderRadius: 14, background: "var(--air)",
-    border: "1px dashed var(--line)", userSelect: "all",
+    font: "inherit",
+    fontSize: 18,
+    letterSpacing: ".08em",
+    textAlign: "center",
+    margin: 0,
+    padding: "11px 13px",
+    borderRadius: 14,
+    background: "var(--air)",
+    border: "1px dashed var(--line)",
+    userSelect: "all",
   },
   /** Shown once, until the first touch. Small, centred, and never in the way. */
   hint: {
-    fontSize: 12.5, color: "var(--soft)", opacity: 0.8, textAlign: "center", margin: "6px 0 0",
+    fontSize: 12.5,
+    color: "var(--soft)",
+    opacity: 0.8,
+    textAlign: "center",
+    margin: "6px 0 0",
   },
   stage: {
-    position: "relative", width: "100%", aspectRatio: "80 / 80" /* VW x GH: the pixels must stay square */, borderRadius: 26, overflow: "hidden",
+    position: "relative",
+    width: "100%",
+    aspectRatio: "80 / 80" /* VW x GH: the pixels must stay square */,
+    borderRadius: 26,
+    overflow: "hidden",
     background: "#efdcc2",
     border: "1px solid rgba(95,65,43,.12)",
-    boxShadow: "0 1px 0 rgba(255,255,255,.72) inset, 0 24px 56px -25px rgba(82,53,34,.58), 0 8px 22px -18px rgba(82,53,34,.35)",
+    boxShadow:
+      "0 1px 0 rgba(255,255,255,.72) inset, 0 24px 56px -25px rgba(82,53,34,.58), 0 8px 22px -18px rgba(82,53,34,.35)",
   },
-  doing: { fontSize: 13.5, color: "var(--soft)", textAlign: "center", margin: "14px 0 0", fontStyle: "italic" },
+  doing: {
+    fontSize: 13.5,
+    color: "var(--soft)",
+    textAlign: "center",
+    margin: "14px 0 0",
+    fontStyle: "italic",
+  },
   // Quieter than `doing` and not italic: a fact about the two of them, not something the cat is doing.
   // A shade warmer and a touch larger than the discovery count: this is the room saying something, not
   // a footnote about it.
@@ -1447,98 +1566,188 @@ const S: Record<string, React.CSSProperties> = {
   // gold cards stacked on top of each other and the rare one lost. Only one of these should shout.
   theirs: {
     animation: "rise .42s var(--ease-spring) both",
-    margin: "14px 0 2px", padding: "13px 16px", borderRadius: 18,
-    background: "var(--panel)", border: "1px solid var(--line)", color: "var(--ink)",
+    margin: "14px 0 2px",
+    padding: "13px 16px",
+    borderRadius: 18,
+    background: "var(--panel)",
+    border: "1px solid var(--line)",
+    color: "var(--ink)",
   },
   theirsMain: { fontSize: 16.5, lineHeight: 1.5, margin: 0 },
   did: {
-    fontSize: 13, textAlign: "center", color: "var(--soft)", margin: "12px 0 4px",
-    transition: "opacity .25s ease", minHeight: "1.2em",
+    fontSize: 13,
+    textAlign: "center",
+    color: "var(--soft)",
+    margin: "12px 0 4px",
+    transition: "opacity .25s ease",
+    minHeight: "1.2em",
   },
   together: {
     animation: "arrive .5s var(--ease-bounce) both",
-    margin: "14px 0 6px", padding: "13px 16px", borderRadius: 18,
-    background: "var(--honey)", color: "#fff",
+    margin: "14px 0 6px",
+    padding: "13px 16px",
+    borderRadius: 18,
+    background: "var(--honey)",
+    color: "#fff",
   },
   togetherMain: { fontSize: 17, fontWeight: 700, margin: 0, lineHeight: 1.45 },
   arrival: {
     animation: "arrive .5s var(--ease-bounce) both",
-    margin: "14px 0 4px", padding: "14px 15px", borderRadius: 18,
+    margin: "14px 0 4px",
+    padding: "14px 15px",
+    borderRadius: 18,
     background: "linear-gradient(145deg, #fffaf1, var(--panel))",
-    border: "1px solid var(--line)", boxShadow: "0 10px 24px -17px rgba(120,84,44,.55)",
+    border: "1px solid var(--line)",
+    boxShadow: "0 10px 24px -17px rgba(120,84,44,.55)",
   },
   arrivalTop: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 },
   arrivalTitle: { fontSize: 15, fontWeight: 700, margin: 0, color: "var(--ink)" },
   arrivalClose: {
-    width: 28, height: 28, flexShrink: 0, borderRadius: 999, cursor: "pointer",
-    border: "1px solid var(--line)", background: "var(--air)", color: "var(--soft)", font: "inherit", fontSize: 17,
+    width: 28,
+    height: 28,
+    flexShrink: 0,
+    borderRadius: 999,
+    cursor: "pointer",
+    border: "1px solid var(--line)",
+    background: "var(--air)",
+    color: "var(--soft)",
+    font: "inherit",
+    fontSize: 17,
   },
-  arrivalList: { display: "grid", gap: 9, listStyle: "none", padding: "11px 0 0", margin: "10px 0 0", borderTop: "1px solid var(--line)" },
-  arrivalItem: { display: "grid", gridTemplateColumns: "18px minmax(0, 1fr)", gap: 7, fontSize: 14, lineHeight: 1.45 },
+  arrivalList: {
+    display: "grid",
+    gap: 9,
+    listStyle: "none",
+    padding: "11px 0 0",
+    margin: "10px 0 0",
+    borderTop: "1px solid var(--line)",
+  },
+  arrivalItem: {
+    display: "grid",
+    gridTemplateColumns: "18px minmax(0, 1fr)",
+    gap: 7,
+    fontSize: 14,
+    lineHeight: 1.45,
+  },
   arrivalPaw: { color: "var(--honey)", fontWeight: 800, textAlign: "center" },
   arrivalWhen: { display: "block", marginTop: 1, color: "var(--soft)", fontSize: 11.5 },
   sayBox: { margin: "16px 0 4px" },
   sayInput: {
-    font: "inherit", fontSize: 15.5, lineHeight: 1.5, width: "100%", resize: "none",
-    padding: "11px 13px", borderRadius: 14, border: "1px solid var(--line)",
-    background: "var(--panel)", color: "var(--ink)",
+    font: "inherit",
+    fontSize: 15.5,
+    lineHeight: 1.5,
+    width: "100%",
+    resize: "none",
+    padding: "11px 13px",
+    borderRadius: 14,
+    border: "1px solid var(--line)",
+    background: "var(--panel)",
+    color: "var(--ink)",
   },
   yourLine: {
-    font: "inherit", textAlign: "left", width: "100%", cursor: "pointer",
-    margin: "16px 0 4px", padding: "12px 15px", borderRadius: 16,
-    background: "var(--panel)", border: "1px dashed var(--line)", color: "var(--ink)",
+    font: "inherit",
+    textAlign: "left",
+    width: "100%",
+    cursor: "pointer",
+    margin: "16px 0 4px",
+    padding: "12px 15px",
+    borderRadius: 16,
+    background: "var(--panel)",
+    border: "1px dashed var(--line)",
+    color: "var(--ink)",
   },
   yourLineLabel: {
-    display: "block", fontSize: 13.5, color: "var(--soft)", fontWeight: 500, marginBottom: 5,
+    display: "block",
+    fontSize: 13.5,
+    color: "var(--soft)",
+    fontWeight: 500,
+    marginBottom: 5,
   },
   yourLineText: { display: "block", fontSize: 15.5, lineHeight: 1.5 },
   came: {
-    fontSize: 13.5, textAlign: "center", color: "var(--soft)", margin: "12px 0 0",
+    fontSize: 13.5,
+    textAlign: "center",
+    color: "var(--soft)",
+    margin: "12px 0 0",
   },
   // Sentence case, not letterspaced caps. Caps are the house style of dashboards and settings
   // screens: they read as a field label on a form you have to fill in. This is somebody asking how
   // your day was, and it should sound like it.
   tellLabel: {
-    fontSize: 14, fontWeight: 500,
-    color: "var(--soft)", textAlign: "center", margin: "18px 0 8px",
+    fontSize: 14,
+    fontWeight: 500,
+    color: "var(--soft)",
+    textAlign: "center",
+    margin: "18px 0 8px",
   },
   // A 3x3 grid rather than a wrapping flex row. With nine chips, wrap left a single orphan on the last
   // line, and an odd one out at the bottom of a mood picker reads as an afterthought.
   moodRow: {
-    display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 7,
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: 7,
     marginBottom: 14,
   },
   mood: {
-    font: "inherit", fontSize: 14, color: "var(--ink)", background: "var(--panel)",
-    border: "1px solid var(--line)", borderRadius: 999, padding: "8px 15px", cursor: "pointer",
+    font: "inherit",
+    fontSize: 14,
+    color: "var(--ink)",
+    background: "var(--panel)",
+    border: "1px solid var(--line)",
+    borderRadius: 999,
+    padding: "8px 15px",
+    cursor: "pointer",
   },
   moodOn: { background: "var(--honey)", borderColor: "var(--honey)", color: "#fff", fontWeight: 600 },
   panel: {
-    margin: "16px 0 4px", padding: "15px 16px", borderRadius: 18,
-    background: "var(--panel)", border: "1px solid var(--line)",
+    margin: "16px 0 4px",
+    padding: "15px 16px",
+    borderRadius: 18,
+    background: "var(--panel)",
+    border: "1px solid var(--line)",
     boxShadow: "0 6px 18px -12px rgba(120,84,44,.35)",
   },
   panelTitle: {
-    fontSize: 13.5, fontWeight: 500, color: "var(--soft)", margin: "0 0 9px",
+    fontSize: 13.5,
+    fontWeight: 500,
+    color: "var(--soft)",
+    margin: "0 0 9px",
   },
   fieldLabel: { fontSize: 12.5, color: "var(--soft)", margin: "12px 0 6px" },
   swatchRow: { display: "flex", flexWrap: "wrap", gap: 9 },
   swatch: {
-    width: 34, height: 34, borderRadius: 10, border: "1px solid var(--line)",
-    cursor: "pointer", padding: 0,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    border: "1px solid var(--line)",
+    cursor: "pointer",
+    padding: 0,
   },
   quiet: {
-    font: "inherit", fontSize: 12.5, color: "var(--soft)", background: "none", border: "none",
-    cursor: "pointer", display: "block", margin: "14px auto 0", textDecoration: "underline",
+    font: "inherit",
+    fontSize: 12.5,
+    color: "var(--soft)",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    display: "block",
+    margin: "14px auto 0",
+    textDecoration: "underline",
   },
   note: {
     animation: "arrive .5s var(--ease-bounce) both",
-    margin: "14px 0 2px", padding: "15px 17px", borderRadius: 18,
-    background: "var(--panel)", border: "1px solid var(--line)",
+    margin: "14px 0 2px",
+    padding: "15px 17px",
+    borderRadius: 18,
+    background: "var(--panel)",
+    border: "1px solid var(--line)",
     boxShadow: "0 8px 22px -14px rgba(120,84,44,.4)",
   },
   noteFrom: {
-    fontSize: 13.5, color: "var(--soft)", margin: "0 0 8px", fontWeight: 500,
+    fontSize: 13.5,
+    color: "var(--soft)",
+    margin: "0 0 8px",
+    fontWeight: 500,
   },
   noteText: { fontSize: 16.5, lineHeight: 1.55, margin: 0 },
   noteDay: { fontSize: 12, color: "var(--soft)", margin: "9px 0 0", textAlign: "right" },
@@ -1546,12 +1755,25 @@ const S: Record<string, React.CSSProperties> = {
   newsMain: { fontSize: 17.5, margin: "12px 0 5px", lineHeight: 1.45, textAlign: "center" },
   row: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 },
   btn: {
-    font: "inherit", fontSize: 14, fontWeight: 600, color: "var(--ink)", background: "var(--panel)",
-    border: "1px solid var(--line)", borderRadius: 14, padding: "11px 12px", cursor: "pointer",
+    font: "inherit",
+    fontSize: 14,
+    fontWeight: 600,
+    color: "var(--ink)",
+    background: "var(--panel)",
+    border: "1px solid var(--line)",
+    borderRadius: 14,
+    padding: "11px 12px",
+    cursor: "pointer",
   },
   btnGo: { background: "var(--honey)", borderColor: "var(--honey)", color: "#fff" },
   input: {
-    font: "inherit", fontSize: 16, width: "100%", padding: "11px 13px",
-    border: "1px solid var(--line)", borderRadius: 14, background: "var(--panel)", color: "var(--ink)",
+    font: "inherit",
+    fontSize: 16,
+    width: "100%",
+    padding: "11px 13px",
+    border: "1px solid var(--line)",
+    borderRadius: 14,
+    background: "var(--panel)",
+    color: "var(--ink)",
   },
 };

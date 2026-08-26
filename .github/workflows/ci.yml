@@ -22,6 +22,7 @@ jobs:
       # react-hooks/rules-of-hooks is why this step exists. A hook below an early return is invisible
       # to typecheck, build and tests, and it took every group page in owewell down in production.
       - run: pnpm lint
+      - run: pnpm exec prettier --check .
       - run: pnpm build
       - run: pnpm test
 

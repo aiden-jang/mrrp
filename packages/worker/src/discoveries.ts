@@ -8,20 +8,20 @@
 
 /** Allowlisted, not trusted from the request: anybody with the link could otherwise post junk keys. */
 export const DISCOVERY_KEYS = [
-  'constellation',
-  'roomTour',
-  'piano',
-  'bubbles',
-  'aurora',
-  'mrrp',
-  'summon',
-  'herName',
-  'box',
-  'yarn',
-  'treat',
-  'catnip',
-  'music',
-  'mouse',
+  "constellation",
+  "roomTour",
+  "piano",
+  "bubbles",
+  "aurora",
+  "mrrp",
+  "summon",
+  "herName",
+  "box",
+  "yarn",
+  "treat",
+  "catnip",
+  "music",
+  "mouse",
 ] as const;
 
 export type DiscoveryKey = (typeof DISCOVERY_KEYS)[number];
@@ -30,7 +30,7 @@ export type DiscoveryKey = (typeof DISCOVERY_KEYS)[number];
 export type FoundLedger = Record<string, Record<string, number>>;
 
 export function isDiscoveryKey(value: unknown): value is DiscoveryKey {
-  return typeof value === 'string' && (DISCOVERY_KEYS as readonly string[]).includes(value);
+  return typeof value === "string" && (DISCOVERY_KEYS as readonly string[]).includes(value);
 }
 
 /** Keeps the first time, never re-stamps: a re-stamp resurfaces it as an arrival on the other side

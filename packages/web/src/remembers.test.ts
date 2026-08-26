@@ -23,13 +23,15 @@ describe("the room's voice", () => {
   it("never congratulates anybody", () => {
     // The vocabulary of every app that turned a nice thing into a chore. Word-bounded where the word is a
     // substring of an innocent one: "earned" lives inside "learned", which is a sentence this file wants.
-    const wrong = /congrat|achiev|unlock|milestone|streak|\blevel\b|\bbadge\b|reward|\bearned\b|well done|keep it up/i;
+    const wrong =
+      /congrat|achiev|unlock|milestone|streak|\blevel\b|\bbadge\b|reward|\bearned\b|well done|keep it up/i;
     for (const line of allLines()) expect(line, line).not.toMatch(wrong);
   });
 
   it("never implies anything owed", () => {
     // "you should", "don't forget", "it has been a while" are all the same sentence underneath.
-    const wrong = /should|don't forget|do not forget|remember to|it has been a while|you haven't|you have not/i;
+    const wrong =
+      /should|don't forget|do not forget|remember to|it has been a while|you haven't|you have not/i;
     for (const line of allLines()) expect(line, line).not.toMatch(wrong);
   });
 

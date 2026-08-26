@@ -35,7 +35,11 @@ export function fireflyAt(t: number): Firefly | null {
   const cycle = ((t % 76_000) + 76_000) % 76_000;
   if (cycle >= 15_000) return null;
   const k = cycle / 15_000;
-  return { x: 50 + Math.sin(k * Math.PI * 4) * 15, y: 37 + Math.cos(k * Math.PI * 3) * 6, presence: Math.sin(k * Math.PI) };
+  return {
+    x: 50 + Math.sin(k * Math.PI * 4) * 15,
+    y: 37 + Math.cos(k * Math.PI * 3) * 6,
+    presence: Math.sin(k * Math.PI),
+  };
 }
 
 /**

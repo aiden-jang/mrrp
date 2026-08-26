@@ -16,11 +16,18 @@ const storageKey = (roomKey: string) => `mrrp:constellation:${roomKey}`;
 function validKeys(value: unknown): ConstellationKey[] {
   if (!Array.isArray(value)) return [];
   const allowed = new Set<string>(CONSTELLATION_KEYS);
-  return [...new Set(value.filter((item): item is ConstellationKey => typeof item === "string" && allowed.has(item)))];
+  return [
+    ...new Set(
+      value.filter((item): item is ConstellationKey => typeof item === "string" && allowed.has(item)),
+    ),
+  ];
 }
 
 /** Local-only progress: a room keeps its discoveries without adding identity or server state. */
-export function constellationProgress(roomKey: string, storage: StorageLike = localStorage): ConstellationProgress {
+export function constellationProgress(
+  roomKey: string,
+  storage: StorageLike = localStorage,
+): ConstellationProgress {
   try {
     const parsed = JSON.parse(storage.getItem(storageKey(roomKey)) ?? "null") as { found?: unknown } | null;
     const found = validKeys(parsed?.found);
