@@ -18,13 +18,26 @@ const ctx = (over: Partial<DreamContext> = {}): DreamContext => ({
 });
 
 const ALL_KEYS: DiscoveryKey[] = [
-  "constellation", "roomTour", "piano", "bubbles", "aurora", "mrrp",
-  "summon", "herName", "box", "yarn", "treat", "catnip", "music", "mouse",
+  "constellation",
+  "roomTour",
+  "piano",
+  "bubbles",
+  "aurora",
+  "mrrp",
+  "summon",
+  "herName",
+  "box",
+  "yarn",
+  "treat",
+  "catnip",
+  "music",
+  "mouse",
 ];
 
 /** Every line the module can produce for a given context, across seeds. */
-const linesFor = (context: DreamContext): string[] =>
-  [...new Set(Array.from({ length: 40 }, (_, seed) => dreamOf(context, seed).line))];
+const linesFor = (context: DreamContext): string[] => [
+  ...new Set(Array.from({ length: 40 }, (_, seed) => dreamOf(context, seed).line)),
+];
 
 describe("the spoiler rule", () => {
   /*
@@ -41,12 +54,12 @@ describe("the spoiler rule", () => {
   });
 
   it("dreams about one only once it has been found", () => {
-    expect(linesFor(ctx({ found: ["piano"] })).join(' ')).toMatch(/piano/i);
-    expect(linesFor(ctx({ found: ["mouse"] })).join(' ')).toMatch(/mouse/i);
+    expect(linesFor(ctx({ found: ["piano"] })).join(" ")).toMatch(/piano/i);
+    expect(linesFor(ctx({ found: ["mouse"] })).join(" ")).toMatch(/mouse/i);
   });
 
   it("leaks nothing when one secret is found and the others are not", () => {
-    const lines = linesFor(ctx({ found: ["mouse"] })).join(' ');
+    const lines = linesFor(ctx({ found: ["mouse"] })).join(" ");
     expect(lines).toMatch(/mouse/i);
     expect(lines).not.toMatch(/piano|star/i);
   });
@@ -55,7 +68,7 @@ describe("the spoiler rule", () => {
     // Rather than the handful with pictures: a key added later must not become dreamable by default.
     for (const key of ALL_KEYS) {
       const without = ALL_KEYS.filter((other) => other !== key);
-      const lines = linesFor(ctx({ found: without })).join(' ');
+      const lines = linesFor(ctx({ found: without })).join(" ");
       const own = linesFor(ctx({ found: [key] }));
       // Anything unique to `key` must not show up when only the others are found.
       for (const line of own) {
@@ -66,9 +79,9 @@ describe("the spoiler rule", () => {
     }
   });
 
-  it('treats a box in the room as visible, not as a secret', () => {
+  it("treats a box in the room as visible, not as a secret", () => {
     // It is physically there for both of them, so dreaming it gives nothing away.
-    expect(linesFor(ctx({ hasBox: true })).join(' ')).toMatch(/box/i);
+    expect(linesFor(ctx({ hasBox: true })).join(" ")).toMatch(/box/i);
   });
 });
 
@@ -81,12 +94,12 @@ describe("what she dreams about", () => {
 
   it("prefers what actually happened over the generic ones", () => {
     const lines = linesFor(ctx({ recent: ["brush"] }));
-    expect(lines.join(' ')).toMatch(/brushed/);
-    expect(lines.join(' ')).not.toMatch(/a fish, probably/);
+    expect(lines.join(" ")).toMatch(/brushed/);
+    expect(lines.join(" ")).not.toMatch(/a fish, probably/);
   });
 
   it("uses what she has come to expect when nothing happened lately", () => {
-    expect(linesFor(ctx({ trait: "fed" })).join(' ')).toMatch(/food/);
+    expect(linesFor(ctx({ trait: "fed" })).join(" ")).toMatch(/food/);
   });
 
   it("varies between naps rather than showing one picture forever", () => {

@@ -73,11 +73,9 @@ function isLeapYear(y: number): boolean {
 /* ------------------------------------------------------------------ personality */
 
 /**
- * How much of the history has to point one way before it means anything.
- *
- * Twelve is roughly a month of somebody dropping in, which is the point at which a habit is a habit rather
- * than a week where they happened to use one button. Below it she has no trait at all, which is correct: a
- * cat with a personality on day two is a character sheet, not a cat.
+ * How much of the history has to point one way before it means anything. Twelve is roughly a month of
+ * dropping in, which is where a habit stops being a week of using one button. Below it she has no
+ * trait: a cat with a personality on day two is a character sheet, not a cat.
  */
 export const TRAIT_MINIMUM = 12;
 

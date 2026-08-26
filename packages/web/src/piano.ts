@@ -26,19 +26,23 @@ export function pianoKeys(center: number): PianoKey[] {
 }
 
 export function pianoKeyAt(keys: PianoKey[], x: number, y: number): number | null {
-  const key = keys.find(item => x >= item.x && x < item.x + item.width && y >= item.y && y < item.y + item.height);
+  const key = keys.find(
+    (item) => x >= item.x && x < item.x + item.width && y >= item.y && y < item.y + item.height,
+  );
   return key?.index ?? null;
 }
 
 export function advancePawMelody(history: number[], next: number): { history: number[]; complete: boolean } {
   const candidate = [...history, next].slice(-PAW_MELODY.length);
-  const complete = candidate.length === PAW_MELODY.length && candidate.every((note, index) => note === PAW_MELODY[index]);
+  const complete =
+    candidate.length === PAW_MELODY.length && candidate.every((note, index) => note === PAW_MELODY[index]);
   if (complete) return { history: [], complete: true };
 
   // Keep the longest suffix that is also the beginning of the melody, so 0,1,0,1,2… still works.
   for (let length = Math.min(candidate.length, PAW_MELODY.length - 1); length > 0; length--) {
     const suffix = candidate.slice(-length);
-    if (suffix.every((note, index) => note === PAW_MELODY[index])) return { history: suffix, complete: false };
+    if (suffix.every((note, index) => note === PAW_MELODY[index]))
+      return { history: suffix, complete: false };
   }
   return { history: [], complete: false };
 }

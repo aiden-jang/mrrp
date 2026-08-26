@@ -32,7 +32,7 @@ describe("the moth", () => {
     let seen = 0;
     const step = 250;
     for (let t = 0; t < MOTH_CYCLE_MS * 4; t += step) if (mothAt(t, BEAM)) seen++;
-    const share = seen / (MOTH_CYCLE_MS * 4 / step);
+    const share = seen / ((MOTH_CYCLE_MS * 4) / step);
     expect(share).toBeGreaterThan(0.12);
     expect(share).toBeLessThan(0.24);
   });

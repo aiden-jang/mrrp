@@ -67,7 +67,8 @@ function rects(cell, ox = 0, oy = 0) {
   for (let y = 0; y < N; y++) {
     for (let x = 0; x < N; x++) {
       const c = P[FACE[y][x]];
-      if (c) out += `<rect x="${ox + x * cell}" y="${oy + y * cell}" width="${cell}" height="${cell}" fill="${c}"/>`;
+      if (c)
+        out += `<rect x="${ox + x * cell}" y="${oy + y * cell}" width="${cell}" height="${cell}" fill="${c}"/>`;
     }
   }
   return out;
@@ -86,14 +87,19 @@ writeFileSync(resolve(PUBLIC, "icon.svg"), svg);
 /** Render one HTML file to a PNG of the given size. */
 function shoot(name, w, h, body) {
   const html = resolve(PUBLIC, `.${name}.html`);
-  writeFileSync(html, `<!doctype html><meta charset="utf-8"><style>
+  writeFileSync(
+    html,
+    `<!doctype html><meta charset="utf-8"><style>
     html,body{margin:0;padding:0;width:${w}px;height:${h}px;overflow:hidden}
-  </style>${body}`);
+  </style>${body}`,
+  );
   try {
     execFileSync(
       CHROME,
       [
-        "--headless", "--disable-gpu", "--hide-scrollbars",
+        "--headless",
+        "--disable-gpu",
+        "--hide-scrollbars",
         `--window-size=${w},${h}`,
         `--screenshot=${resolve(PUBLIC, name)}`,
         `file://${html}`,

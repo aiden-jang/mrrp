@@ -11,13 +11,15 @@
     "dev:web": "pnpm --filter @mrrp/web dev",
     "deploy": "pnpm --filter @mrrp/worker deploy",
     "test": "pnpm -r test",
-    "check": "pnpm -r typecheck && pnpm lint && pnpm -r test"
+    "check": "pnpm -r typecheck && pnpm lint && pnpm -r test",
+    "format": "prettier --write ."
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",
     "eslint": "^8.57.1",
     "eslint-plugin-react-hooks": "^4.6.2",
+    "prettier": "^3.4.2",
     "typescript": "^5.7.2"
   }
 }

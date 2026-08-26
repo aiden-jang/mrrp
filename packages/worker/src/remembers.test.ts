@@ -126,7 +126,10 @@ describe("what she comes to expect", () => {
   });
 
   it("emerges once there is enough history", () => {
-    expect(personalityFrom({ pet: TRAIT_MINIMUM }, SETTLED)).toEqual({ trait: "petted", count: TRAIT_MINIMUM });
+    expect(personalityFrom({ pet: TRAIT_MINIMUM }, SETTLED)).toEqual({
+      trait: "petted",
+      count: TRAIT_MINIMUM,
+    });
   });
 
   it("names the thing that actually dominates", () => {
@@ -160,7 +163,9 @@ describe("what she comes to expect", () => {
   // The log keeps forty visits, so counting it directly lets the trait drift. The eightieth pet still
   // counts once the first forty are trimmed.
   it("keeps counting past the length of the visit log", () => {
-    const seeded = tallyFrom(Array.from({ length: 40 }, (_, i) => ({ at: i, who: "him", action: "sit" as const })));
+    const seeded = tallyFrom(
+      Array.from({ length: 40 }, (_, i) => ({ at: i, who: "him", action: "sit" as const })),
+    );
     expect(seeded).toEqual({ sit: 40 });
     const later = { ...seeded, sit: seeded.sit! + 40, photo: 6 };
     expect(personalityFrom(later, SETTLED)?.count).toBe(80);

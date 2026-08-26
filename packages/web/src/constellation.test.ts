@@ -5,7 +5,9 @@ function memoryStorage(seed: Record<string, string> = {}) {
   const values = new Map(Object.entries(seed));
   return {
     getItem: (key: string) => values.get(key) ?? null,
-    setItem: (key: string, value: string) => { values.set(key, value); },
+    setItem: (key: string, value: string) => {
+      values.set(key, value);
+    },
   };
 }
 

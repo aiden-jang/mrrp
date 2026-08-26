@@ -90,10 +90,9 @@ app.post("/api/room/:id/notes", async (c) => {
 });
 
 /**
- * Take his seat back on a new device, with the room's recovery code.
- *
- * The counterpart to /release: she can be restored because he can free her seat, and this is the only
- * way he can be restored, since there is nobody who could vouch for him.
+ * Take his seat back on a new device, with the room's recovery code. The counterpart to /release: she
+ * can be restored because he can free her seat, and this is the only way he can be, since there is
+ * nobody who could vouch for him.
  */
 app.post("/api/room/:id/recover", async (c) => {
   const id = c.req.param("id");
@@ -107,11 +106,9 @@ app.post("/api/room/:id/recover", async (c) => {
 });
 
 /*
- * "I found the thing."
- *
- * Reported by the client the first time a secret fires on that device, so it is chatty by nature:
- * the DO answers ok for a key it already knew rather than making the client track what the server
- * has. Unknown keys are refused, because the allowlist lives on this side.
+ * "I found the thing." Reported by the client the first time a secret fires on that device, so it is
+ * chatty by nature: the DO answers ok for a key it already knew rather than making the client track
+ * what the server has. Unknown keys are refused, since the allowlist lives on this side.
  */
 app.post("/api/room/:id/found", async (c) => {
   const id = c.req.param("id");
@@ -144,12 +141,8 @@ app.post("/api/room/:id/window-light", async (c) => {
 });
 
 /**
- * Free her seat, so a new phone can be her.
- *
- * The only recovery this app has. A seat is a random token in localStorage, so clearing browser data
- * or changing device otherwise loses it forever, and with two seats and no way to release one the room
- * would be permanently stuck with nobody able to be the cat.
- *
+ * Free her seat, so a new phone can be her. A seat is a random token in localStorage, so clearing
+ * browser data otherwise loses it forever and leaves the room with nobody able to be the cat.
  * His to call, checked in the Durable Object rather than here.
  */
 app.post("/api/room/:id/release", async (c) => {
@@ -183,7 +176,10 @@ app.post("/api/room/:id/clock", async (c) => {
     }
   }
   const homeHour =
-    typeof body.homeHour === "number" && Number.isInteger(body.homeHour) && body.homeHour >= 0 && body.homeHour <= 23
+    typeof body.homeHour === "number" &&
+    Number.isInteger(body.homeHour) &&
+    body.homeHour >= 0 &&
+    body.homeHour <= 23
       ? body.homeHour
       : undefined;
 

@@ -9,6 +9,26 @@ The first approved reference is
 [`docs/art/golden-hour-room-concept-v1.png`](docs/art/golden-hour-room-concept-v1.png). It is a target
 for warmth, depth, material detail, and environmental storytelling. It is not a drop-in game asset.
 
+## Status
+
+**Phase 1 shipped.** The room in `packages/web/src/Cat.tsx` is the authored Canvas renderer, enriched
+with wall texture, floorboard depth, the rug, window architecture and a focal shadow. Everything after
+that is still a plan.
+
+**Phases 2 and 3 were built as generated layers, and reverted.** The migration went all the way: six
+generated room states, nine cat poses with recolorable eye overlays, a DOM interaction surface
+replacing the canvas, and postcard capture compositing the image layers. It was then reverted in two
+steps, `dc479fc` and `cad4481`, back to the authored renderer.
+
+Read that before starting Phase 2 again. What went wrong was not the pipeline, which worked. It was
+that a generated room is a picture of a room, and this app is two people watching a cat notice things.
+Every interaction had to be re-aligned to artwork that no longer knew where the furniture was, the
+poses drifted between frames, and the result was richer and deader. The cute has to be authored,
+because authored is what makes it specific to her.
+
+The phases below are kept as written. If they are picked up again, the constraint the revert added is
+that nothing may own visible pixels unless it also knows the hit geometry.
+
 ## What must survive
 
 - The ginger cat, cream face and belly, dark brown outline, and tiny expressive face
@@ -86,6 +106,8 @@ Stopping point:
 `feat: establish Mrrp's richer golden-hour art direction`
 
 ## Phase 2: asset pipeline
+
+Attempted and reverted; see Status above.
 
 - Add layered PNG or WebP sprite-atlas support alongside the current grid sprites.
 - Load atlases once with `ImageBitmap` and use nearest-neighbor rendering.

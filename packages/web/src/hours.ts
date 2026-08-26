@@ -7,11 +7,9 @@ export type LightPhase = "night" | "dawn" | "day" | "golden" | "evening";
 /**
  * What the room looks like at a given moment of HER day.
  *
- * Nothing here is simulated or generated. Every value is a hand-picked keyframe at an hour that
- * means something (first light, mid-afternoon nap, the hour she gets home, late night) and the
- * in-between is a straight interpolation. That's on purpose: a room whose light is computed from a
- * solar model looks correct and feels like nothing. A room where somebody decided 3pm should be the
- * warmest moment of the day feels like somebody decided it.
+ * Nothing here is simulated. Every value is a hand-picked keyframe at an hour that means something,
+ * and the in-between is straight interpolation. A room whose light comes from a solar model looks
+ * correct and feels like nothing; one where somebody decided 3pm is the warmest hour feels decided.
  */
 
 export interface Scene {
@@ -52,11 +50,8 @@ export interface Scene {
   /** Which pose to draw her in, if what she was told calls for a specific one. */
   pose: Pose | null;
   /**
-   * She's actually in her bed.
-   *
-   * The bed used to be scenery she never touched, and the copy was already lying about it: at night
-   * the room says "curled up for the night" while she loafed on bare boards in the middle of the
-   * floor. She follows the sunbeam all day, and then at night there was nowhere for her to go.
+   * She's actually in her bed. She follows the sunbeam all day, so without this there is nowhere for
+   * her to go at night, and the copy says "curled up for the night" over a cat on bare boards.
    */
   inBed: boolean;
   sparkle: boolean;
@@ -89,12 +84,17 @@ export function lightPhaseAt(hour: number): LightPhase {
 
 export function mixHex(a: string, b: string, t: number): string {
   const n = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
-  const [ar, ag, ab] = n(a), [br, bg, bb] = n(b);
-  const c = (x: number, y: number) => Math.round(lerp(x, y, t)).toString(16).padStart(2, "0");
+  const [ar, ag, ab] = n(a),
+    [br, bg, bb] = n(b);
+  const c = (x: number, y: number) =>
+    Math.round(lerp(x, y, t))
+      .toString(16)
+      .padStart(2, "0");
   return `#${c(ar!, br!)}${c(ag!, bg!)}${c(ab!, bb!)}`;
 }
 
 /** Keyframes. Hour, then the look of the room at that hour. */
+// prettier-ignore
 const KEYS: { h: number; sun: number; beam: number; wall: string; wall2: string; floor: string; floor2: string; warm: string }[] = [
   { h: 0,  sun: 0.00, beam: 0.30, wall: "#4a4560", wall2: "#3e3a52", floor: "#3b3548", floor2: "#4a4258", warm: "#8f9bd6" },
   { h: 5,  sun: 0.04, beam: 0.18, wall: "#6b6178", wall2: "#5a5168", floor: "#514863", floor2: "#615675", warm: "#b7a9d8" },
@@ -108,7 +108,8 @@ const KEYS: { h: number; sun: number; beam: number; wall: string; wall2: string;
 ];
 
 /** Her afternoon nap, and the hour before you're home. Both hand-set, both the point. */
-const NAP_FROM = 13, NAP_TO = 16;
+const NAP_FROM = 13,
+  NAP_TO = 16;
 
 /** Her bed's centre as a fraction of the 100-wide room. The bed spans grid 13..33. */
 const BED_X = 0.23;
@@ -126,23 +127,17 @@ function doingAt(hour: number, atDoor: boolean, sleepy: number, homeHour: number
 }
 
 /**
- * The room at a moment of her day.
- *
- * Three inputs, ranked: `together` beats mood beats the clock. All three only ever move the CAT.
- * The light belongs to the clock alone, so a low mood can make the room closer and warmer but never
- * darker, and two people being in a room does not move the sun.
+ * The room at a moment of her day. Three inputs, ranked: `together` beats mood beats the clock, and
+ * all three only ever move the CAT. The light belongs to the clock alone, so a low mood can make the
+ * room closer and warmer but never darker.
  */
-export function sceneFor(
-  clock: Clock,
-  at = Date.now(),
-  mood: Mood | null = null,
-  together = false,
-): Scene {
+export function sceneFor(clock: Clock, at = Date.now(), mood: Mood | null = null, together = false): Scene {
   const hour = hourIn(clock.tz, at);
 
   let i = 0;
   while (i < KEYS.length - 2 && hour >= KEYS[i + 1]!.h) i++;
-  const a = KEYS[i]!, b = KEYS[i + 1]!;
+  const a = KEYS[i]!,
+    b = KEYS[i + 1]!;
   const t = (hour - a.h) / (b.h - a.h);
 
   const sun = lerp(a.sun, b.sun, t);
@@ -165,11 +160,9 @@ export function sceneFor(
 
   const napping = hour >= NAP_FROM && hour < NAP_TO;
   /*
-   * Bed hours: properly asleep before five, and curled up once the evening has gone quiet.
-   *
-   * Not simply "the sun is down". The 5-7am window is "awake before anyone, watching the window",
-   * which is a cat that got up, and the hour before you are home is spent at the door. Both are
-   * dark and neither is bed.
+   * Bed hours: properly asleep before five, curled up once the evening has gone quiet. Not simply "the
+   * sun is down": 5-7am is awake and watching the window, and the hour before you are home is spent
+   * at the door. Both are dark and neither is bed.
    */
   const inBed = !atDoor && (hour < 5 || hour >= 21);
   // Cats are awake at dawn whatever the light is doing, and the copy says she's watching the window,
@@ -192,13 +185,12 @@ export function sceneFor(
     litWall: mixHex(wall, warm, wallLight),
     litFloor: mixHex(floor2, warm, floorLight),
     patch: mixHex(floor2, warm, patchLight),
-    // She follows the light, except when she's waiting for you, which beats the light, except when
-    // you've told her something, which beats both.
-    // Once she has been told something, that outranks the clock. Otherwise "bored" could still put
-    // her at the door because it happens to be nearly home time, and the copy would be describing a
-    // cat that isn't there.
+    // She follows the light, unless she is waiting for you, unless you have told her something.
+    // Being told outranks the clock, or "bored" still puts her at the door near home time and the
+    // copy describes a cat that isn't there.
     // BED_X centres her on the cushion; see BED in sprites.ts, which sits at grid 13..33.
-    catX: r?.catX ?? (inBed ? BED_X : r ? (sun > 0.15 ? beam : 0.42) : atDoor ? 0.19 : sun > 0.15 ? beam : 0.42),
+    catX:
+      r?.catX ?? (inBed ? BED_X : r ? (sun > 0.15 ? beam : 0.42) : atDoor ? 0.19 : sun > 0.15 ? beam : 0.42),
     sleepy: r?.sleepy ?? sleepy,
     atDoor: r ? r.catX === 0.19 : atDoor,
     // What she's doing about what you said outranks the time of day. It's the more specific fact.
