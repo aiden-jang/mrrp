@@ -163,6 +163,8 @@ const SLOW_BLINK_WAIT_MS = 1800;
 const SLOW_BLINK_MS = 850;
 /** How far the sun has to crawl off her before she can be bothered to move, in grid columns. */
 const LEAVING_WARMTH = 9;
+/** How far she lies from the sunbeam in summer. Beside it, not across the room from it. */
+const SUMMER_SHADE = 16;
 /** A small secret shower: long enough to notice through the glass, then gone. */
 const RAIN_MS = 6800;
 /** The brief bright thing that can follow the plant's hidden storm. */
@@ -226,6 +228,17 @@ const CLOSED_EYES: Record<Pose, { y: number; left: number; right: number; width:
   pounce: { y: 7, left: 5, right: 11, width: 2 },
   peek: { y: 7, left: 5, right: 11, width: 2 },
 };
+
+/*
+ * An open jaw, drawn over her closed mouth.
+ *
+ * A yawn does not need a new cat: her mouth is three cells on row 9 of every pose, so widening it
+ * and putting a tongue in it is the whole drawing. Same approach as the closed eyes above, and for
+ * the same reason: authoring the feature beats swapping a whole sprite for one moment.
+ */
+const YAWN = { y: 9, x: 6, w: 5 };
+/** How long the jaw stays open. Long enough to catch, short enough to miss. */
+const YAWN_MS = 900;
 
 export function Cat({
   label,
@@ -449,6 +462,8 @@ export function Cat({
   const slowBlink = useRef({ until: -1e9, answered: false, greeted: false });
   /** The sunny spot she has settled on, held until the light has properly moved off it. */
   const warmSpot = useRef<number | null>(null);
+  /** When the current yawn started, and when the next one is allowed. */
+  const yawn = useRef({ at: -1e9, next: -1e9 });
   /** Where the swing had got to when the door was told to shut, so the close eases from there. */
   const doorShutFrom = useRef({ at: 0, from: 0 });
   lookRef.current = look;
@@ -2058,10 +2073,21 @@ export function Cat({
        */
       const followingLight = Math.abs(sc.catX - sc.beam) < 0.001;
       if (!followingLight) warmSpot.current = null;
+      /*
+       * In summer she wants the floor, not the sun.
+       *
+       * A cat chases the warm patch for most of the year and lies deliberately beside it in August,
+       * on the cool boards, which is the same instinct pointed the other way. Off to the shaded side
+       * rather than a random offset: the shade is whichever side is further from the window.
+       *
+       * The room already changes with the season in the window and the plant. This is the first time
+       * the season changes what she does.
+       */
+      const shade = season === "summer" ? (sc.beam > 0.5 ? -SUMMER_SHADE : SUMMER_SHADE) : 0;
       const warmSeat = (target: number): number => {
         const held = warmSpot.current;
         if (held === null || Math.abs(target - held) > LEAVING_WARMTH) warmSpot.current = target;
-        return warmSpot.current ?? target;
+        return (warmSpot.current ?? target) + shade;
       };
 
       let wantX = nameCalled
@@ -2514,6 +2540,30 @@ export function Cat({
           if (edge >= 0) px(kx + sp.ox + edge, y + sp.oy + j, rim);
         }
       }
+      /*
+       * A yawn, now and then, when she is awake but heavy-eyed.
+       *
+       * Not tied to waking up, because nothing in this room wakes crisply: her eyes open on the hour
+       * and on the cursor, both of which drift rather than switch, so an edge would either fire
+       * constantly or never. A drowsy cat yawns on her own schedule anyway. Rare and unannounced,
+       * like the zoomies, and off entirely for anyone who asked for less motion.
+       *
+       * A band, not a floor. Below it she is wide awake and has no reason to; above it the line under
+       * the room is calling her deeply asleep, and a yawn under that caption reads as a fault.
+       */
+      if (!reduce && awake && sc.sleepy > 0.25 && sc.sleepy < 0.75 && t > yawn.current.next) {
+        yawn.current.at = t;
+        yawn.current.next = t + 42000 + Math.random() * 48000;
+      }
+      const yawning = t - yawn.current.at < YAWN_MS;
+      if (yawning && awake) {
+        const faceX = kx + sp.ox;
+        const jawY = y + sp.oy + YAWN.y;
+        rect(faceX + YAWN.x, jawY, YAWN.w, 1, INK);
+        rect(faceX + YAWN.x + 1, jawY + 1, YAWN.w - 2, 1, INK);
+        px(faceX + YAWN.x + 2, jawY + 1, PINK);
+      }
+
       if (!awake) {
         const eye = CLOSED_EYES[pose];
         const faceX = kx + sp.ox;
