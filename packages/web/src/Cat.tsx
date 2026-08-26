@@ -163,6 +163,8 @@ const BOX_PLAY_MS = 2800;
 /** How long the cursor has to stay beside her before she answers with a slow blink. */
 const SLOW_BLINK_WAIT_MS = 1800;
 const SLOW_BLINK_MS = 850;
+/** How long a paw print stays on the boards. */
+const STEP_FADE_MS = 4200;
 /** How far the sun has to crawl off her before she can be bothered to move, in grid columns. */
 const LEAVING_WARMTH = 9;
 /** How far she lies from the sunbeam in summer. Beside it, not across the room from it. */
@@ -379,6 +381,10 @@ export function Cat({
   monthsOldRef.current = monthsOld;
   const firstEverRef = useRef(firstEver);
   firstEverRef.current = firstEver;
+  /** Where she has put her feet lately, oldest first. Cleared as they fade. */
+  const steps = useRef<{ x: number; at: number }[]>([]);
+  /** The last column a print was laid at, so one is laid per few columns rather than per frame. */
+  const steppedFrom = useRef<number | null>(null);
   const giftRef = useRef(gift);
   giftRef.current = gift;
   const cakeRef = useRef(cake);
@@ -1943,6 +1949,34 @@ export function Cat({
       }
 
       blit(PLANT, 87 + shake("plant"), FLOOR - 13, { g: seasonalPlant.leaf, w: INK, d: "#b07a4e" });
+
+      /*
+       * And it has been growing.
+       *
+       * The other thing in this room that only time can do, alongside the boards going pale. Authored
+       * in two steps rather than scaled, because scaling a sprite is the one thing the whole look
+       * forbids: these are new fronds, put where new fronds go, not a bigger copy of the old plant.
+       *
+       * Three months for the first pair and eight for the second, so it is a thing you notice having
+       * happened rather than a thing you can watch happen.
+       */
+      const grown = monthsOldRef.current;
+      if (grown >= 3) {
+        const px2 = (x: number, y: number) => px(x + shake("plant"), y, seasonalPlant.leaf);
+        px2(84, FLOOR - 20);
+        px2(85, FLOOR - 19);
+        px2(94, FLOOR - 21);
+        px2(93, FLOOR - 20);
+      }
+      if (grown >= 8) {
+        const px2 = (x: number, y: number) => px(x + shake("plant"), y, seasonalPlant.leaf);
+        px2(82, FLOOR - 17);
+        px2(83, FLOOR - 18);
+        px2(96, FLOOR - 18);
+        px2(95, FLOOR - 19);
+        px2(89, FLOOR - 24);
+        px2(90, FLOOR - 23);
+      }
       if (season === "spring") {
         px(91, FLOOR - 19, seasonalPlant.detail);
         px(95, FLOOR - 17, seasonalPlant.detail);
@@ -2241,6 +2275,25 @@ export function Cat({
       // second and still moves like a cat crossing a room rather than teleporting.
       catX.current += (wantX - catX.current) * (catnipping || zooming || mouseChasing ? 0.4 : 0.05);
       const kx = Math.round(catX.current);
+
+      /*
+       * She leaves prints where she has actually walked.
+       *
+       * Only while she is crossing the room: a cat asleep in one spot for three hours should not be
+       * standing in a puddle of her own footprints. Dropped every few columns rather than every
+       * frame, which is the difference between a trail and a smear, and faded out over a few seconds
+       * so the floor is never a record of where she has been all day.
+       */
+      if (!reduce) {
+        // The first frame only remembers where she is standing. A print is laid once she leaves it,
+        // never for simply being somewhere.
+        if (steppedFrom.current === null) steppedFrom.current = kx;
+        else if (Math.abs(kx - steppedFrom.current) >= 4) {
+          steps.current.push({ x: kx, at: t });
+          steppedFrom.current = kx;
+        }
+      }
+      steps.current = steps.current.filter((p) => t - p.at < STEP_FADE_MS);
       /*
        * In the bed she sits lower. The floor has perspective, so things drawn further down are nearer:
        * her feet land at FLOOR+19 and the cushion is at FLOOR+24. Move her forward as well as across
@@ -2587,6 +2640,20 @@ export function Cat({
         px(ballX, ky - 2, "#d1a7bc");
         // prettier-ignore
         for (const [dx, dy] of [[3, 1], [5, 2], [7, 2], [8, 1], [10, 1]] as const) px(ballX + dx, ky + dy, INK);
+      }
+
+      /*
+       * The prints themselves, a shade darker than the boards under them.
+       *
+       * Two toes apiece is the whole drawing: at this scale a full paw is a blob, and a blob on the
+       * floor reads as a stain rather than a step.
+       */
+      for (const step of steps.current) {
+        const life = 1 - (t - step.at) / STEP_FADE_MS;
+        if (life <= 0) continue;
+        const ink = mixHex(sc.floorNear, INK, 0.1 * life);
+        px(step.x - 2, ky + 2, ink);
+        px(step.x + 2, ky + 2, ink);
       }
 
       /*

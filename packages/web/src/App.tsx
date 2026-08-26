@@ -1385,7 +1385,7 @@ function RoomPage({ id }: { id: string }) {
                   }}
                   onClick={() => void tell(m.id)}
                 >
-                  <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
                     <MoodFace mood={m.id} color="var(--ink)" />
                     {m.label}
                   </span>
@@ -2046,7 +2046,15 @@ const S: Record<string, React.CSSProperties> = {
   },
   mood: {
     font: "inherit",
-    fontSize: FS.body,
+    /*
+     * Shrinks on a narrow phone, and never wraps.
+     *
+     * Three columns of a fixed 15px put "stressed" on two lines inside its own pill at 320px, which
+     * is the width of the smallest phone anybody still opens this on. The face beside it costs about
+     * seventeen more, and that was the difference.
+     */
+    fontSize: "clamp(13px, 3.9vw, 15px)",
+    whiteSpace: "nowrap",
     color: "var(--ink)",
     background: "var(--panel)",
     border: "1px solid var(--line)",
