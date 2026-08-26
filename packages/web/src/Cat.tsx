@@ -60,8 +60,15 @@ const GW = 100,
  * Crop, never scale: one logical pixel to one aligned rectangle is the rule the look depends on.
  */
 const VW = 80;
-/** The widest pose (STRETCH). Used to keep any pose from being drawn through the wall. */
-const CAT_MAX_W = 26;
+/*
+ * How far any pose reaches either side of kx.
+ *
+ * kx is her anchor, not her left edge: every pose carries a negative `ox` that places the drawing
+ * around it, and STRETCH is not centred at all (ox -9, w 26), so she reaches 17 columns right and
+ * only 10 left. Taken from the sprites so a new pose cannot quietly walk her through a wall.
+ */
+const CAT_REACH_LEFT = Math.max(...Object.values(POSES).map((p) => -p.ox));
+const CAT_REACH_RIGHT = Math.max(...Object.values(POSES).map((p) => p.ox + p.w));
 /** The window is bolted to the wall here. Only the light it throws moves. */
 const WIN_X = 60,
   WIN_CX = WIN_X + 8;
@@ -2069,7 +2076,7 @@ export function Cat({
        * Bounded by the widest pose rather than the current one, because the tail and the floor
        * effects are all placed from this same number and must not disagree with where she is drawn.
        */
-      const bounded = (x: number) => Math.max(0, Math.min(GW - CAT_MAX_W, x));
+      const bounded = (x: number) => Math.max(CAT_REACH_LEFT, Math.min(GW - CAT_REACH_RIGHT, x));
       wantX = bounded(wantX);
       if (catX.current === null) catX.current = wantX;
       // 0.012 took about 190 frames to cover a move, so more than three seconds of a cat inching across
@@ -2212,11 +2219,36 @@ export function Cat({
       const y = ky + breathe - hop - peekLift;
       catBox.current = { x0: kx + sp.ox, y0: y + sp.oy, x1: kx + sp.ox + sp.w, y1: y + sp.oy + sp.h };
 
+      /*
+       * How much of her is standing in the light, 0..1.
+       *
+       * The room has had lit variants of every surface since the beginning (litWall, litFloor,
+       * patch) and she has never had one: a cat sitting in the middle of a golden-hour sunbeam was
+       * painted in exactly the colours she wears at midnight. Measured against the widest row of the
+       * floor pool, which is where the light actually lands.
+       */
+      const poolHalf = (26 * poolScale) / 2;
+      const litSpan =
+        sc.lightPhase === "night"
+          ? 0
+          : Math.max(
+              0,
+              Math.min(kx + sp.ox + sp.w, beamX + poolHalf) - Math.max(kx + sp.ox, beamX - poolHalf),
+            );
+      /*
+       * Kept low on purpose. The room's rule is that she is its highest-contrast object, and mixing
+       * a ginger cat far toward a near-white beam turns her into part of the wall. The rim below is
+       * what says "she is in the light"; this only has to stop her looking cut out and pasted on.
+       */
+      const warmth = (litSpan / sp.w) * sc.sun * 0.24;
+      /** Her own colours, carried toward the light she is sitting in. Outline and eyes stay hers. */
+      const sunlit = (c: string) => (warmth > 0.01 ? mixHex(c, sc.beamWarm, warmth) : c);
+
       const pal: Record<string, string> = {
         w: INK,
-        f: L.fur,
-        d: L.furDk,
-        b: L.belly,
+        f: sunlit(L.fur),
+        d: sunlit(L.furDk),
+        b: sunlit(L.belly),
         p: PINK,
         n: PINK,
         m: INK,
@@ -2385,12 +2417,24 @@ export function Cat({
         for (const [dx, dy] of [[3, 1], [5, 2], [7, 2], [8, 1], [10, 1]] as const) px(ballX + dx, ky + dy, INK);
       }
 
-      // A three-step contact shadow from the v2 composition. The darkest row stays tight to her paws;
-      // the softer rows spread sideways, so she feels planted without gaining a smooth blurry halo.
+      /*
+       * A three-step contact shadow that knows where the light is.
+       *
+       * It used to be three rows of fixed `rgba(74,53,32,…)`: the same warm brown and the same shape
+       * at every hour, including midnight, when it sat on a lavender floor. Now it takes the floor's
+       * own colour, and leans with the shaft.
+       *
+       * The lean comes from how far the beam has travelled from the window, which is the app's own
+       * measure of how low the sun is: overhead at midday, thrown far across the boards at golden
+       * hour. The darkest row stays tight to her paws so she still reads as planted, and the softer
+       * rows carry the lean, which is what makes the light feel like it has a direction.
+       */
+      const lean = (beamX - WIN_CX) / GW;
+      const cast = Math.round(lean * 7 * Math.min(1, sc.sun * 1.4));
       const shadowX = kx - (sp.w >> 1);
-      rect(shadowX + 1, ky + 1, sp.w - 2, 1, "rgba(74,53,32,.12)");
-      rect(shadowX + 3, ky + 2, sp.w - 6, 1, "rgba(74,53,32,.22)");
-      rect(shadowX + 6, ky + 3, sp.w - 12, 1, "rgba(74,53,32,.14)");
+      rect(shadowX + 1, ky + 1, sp.w - 2, 1, mixHex(sc.floorNear, INK, 0.1));
+      rect(shadowX + 3 + Math.round(cast * 0.5), ky + 2, sp.w - 6, 1, mixHex(sc.floorNear, INK, 0.2));
+      rect(shadowX + 6 + cast, ky + 3, sp.w - 12, 1, mixHex(sc.floorNear, INK, 0.12));
 
       const wag = reduce ? 0 : Math.round(Math.sin(t / (620 - sc.play * 380)) * (1 + sc.play * 2 + n));
       // Tucked against her flank. A one-pixel gap here reads as a detached tail, which is worse
@@ -2400,6 +2444,38 @@ export function Cat({
       const tailY = pose === "loaf" ? y - 4 : pose === "perk" ? y - 9 : y - 6;
       if (pose !== "peek") blit(TAIL, pose === "stand" ? kx - 12 : tailX, tailY + wag, pal, pose === "stand");
       blit(sp, kx, y, pal);
+
+      /*
+       * One pixel of the window's light down the edge that faces it.
+       *
+       * This is the whole difference between a cat drawn on top of a room and a cat sitting in one.
+       * The side to light is the side the shaft arrives from: the beam starts at the window and lands
+       * at beamX, so when it has travelled right the light is coming from her left, and the other way
+       * round. Walks each row and lights the first solid cell from that side, so it follows her
+       * silhouette rather than boxing her.
+       */
+      if (warmth > 0.06) {
+        const rimOnLeft = beamX > WIN_CX;
+        const rim = mixHex(sc.beamWarm, WHITE, 0.4);
+        for (let j = 0; j < sp.h; j++) {
+          const row = sp.rows[j]!;
+          let edge = -1;
+          if (rimOnLeft) {
+            for (let i = 0; i < sp.w; i++)
+              if (row[i] !== ".") {
+                edge = i;
+                break;
+              }
+          } else {
+            for (let i = sp.w - 1; i >= 0; i--)
+              if (row[i] !== ".") {
+                edge = i;
+                break;
+              }
+          }
+          if (edge >= 0) px(kx + sp.ox + edge, y + sp.oy + j, rim);
+        }
+      }
       if (!awake) {
         const eye = CLOSED_EYES[pose];
         const faceX = kx + sp.ox;
