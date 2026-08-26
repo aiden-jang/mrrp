@@ -564,9 +564,29 @@ export function Cat({
      * the canvas's own size and reading it back would feed the ResizeObserver its own output.
      */
     const box = cv.parentElement;
+    let refit = 0;
     const fit = () => {
+      cancelAnimationFrame(refit);
       const d = Math.min(2, devicePixelRatio || 1);
-      const avail = box ? box.clientWidth : cv.getBoundingClientRect().width;
+      const wide = box ? box.clientWidth : cv.getBoundingClientRect().width;
+      /*
+       * Bounded by the height of the window as well as the width of the column.
+       *
+       * The room is square, so on a short wide screen giving it the whole column pushes the caption,
+       * the note and everything else below the fold: the landing page ran to 995px inside a 720px
+       * window. On a phone the width always wins and this never binds.
+       *
+       * Either measurement can be zero, in a hidden tab or before the first layout. Keep the size the
+       * room already has rather than collapsing it to one pixel per cell, and ask again on the next
+       * frame: rAF is paused while the tab is hidden, so this retries exactly when there is a real
+       * layout to measure, without needing to guess which event announces it.
+       */
+      const cap = innerHeight > 0 ? innerHeight * 0.62 : Infinity;
+      const avail = Math.min(wide > 0 ? wide : Infinity, cap);
+      if (!Number.isFinite(avail) || avail < VW) {
+        refit = requestAnimationFrame(fit);
+        return;
+      }
       s = Math.max(1, Math.floor((avail * d) / VW));
       cv.width = VW * s;
       cv.height = GH * s;
@@ -576,6 +596,8 @@ export function Cat({
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(box ?? cv);
+    // The parent's width does not change when only the window's height does.
+    addEventListener("resize", fit);
 
     const ptr = {
       x: GW / 2,
@@ -2875,6 +2897,8 @@ export function Cat({
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      cancelAnimationFrame(refit);
+      removeEventListener("resize", fit);
       cv.removeEventListener("pointermove", onMove);
       cv.removeEventListener("pointerleave", onLeave);
       cv.removeEventListener("pointerdown", onDown);
