@@ -1241,7 +1241,7 @@ function RoomPage({ id }: { id: string }) {
                   onClick={() => void tell(m.id)}
                 >
                   <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                    <MoodFace mood={m.id} color={view.catMood === m.id ? "#fff" : "var(--ink)"} />
+                    <MoodFace mood={m.id} color="var(--ink)" />
                     {m.label}
                   </span>
                 </button>
@@ -1530,17 +1530,14 @@ const S: Record<string, React.CSSProperties> = {
     textAlign: "center",
     margin: "6px 0 0",
   },
-  stage: {
-    position: "relative",
-    width: "100%",
-    aspectRatio: "80 / 80" /* VW x GH: the pixels must stay square */,
-    borderRadius: 26,
-    overflow: "hidden",
-    background: "#efdcc2",
-    border: "1px solid rgba(95,65,43,.12)",
-    boxShadow:
-      "0 1px 0 rgba(255,255,255,.72) inset, 0 24px 56px -25px rgba(82,53,34,.58), 0 8px 22px -18px rgba(82,53,34,.35)",
-  },
+  /*
+   * A centring box, and nothing else to look at.
+   *
+   * The canvas sizes itself to a whole number of device pixels per logical pixel, so it is usually a
+   * little narrower than the column. The frame moved onto the canvas with it: anything drawn here
+   * would show as a band down either side of the room.
+   */
+  stage: { position: "relative", width: "100%", display: "grid", placeItems: "center" },
   doing: {
     fontSize: 13.5,
     color: "var(--soft)",
@@ -1588,7 +1585,7 @@ const S: Record<string, React.CSSProperties> = {
     padding: "13px 16px",
     borderRadius: 18,
     background: "var(--honey)",
-    color: "#fff",
+    color: "var(--on-honey)",
   },
   togetherMain: { fontSize: 17, fontWeight: 700, margin: 0, lineHeight: 1.45 },
   arrival: {
@@ -1698,7 +1695,12 @@ const S: Record<string, React.CSSProperties> = {
     padding: "8px 15px",
     cursor: "pointer",
   },
-  moodOn: { background: "var(--honey)", borderColor: "var(--honey)", color: "#fff", fontWeight: 600 },
+  moodOn: {
+    background: "var(--honey)",
+    borderColor: "var(--honey)",
+    color: "var(--on-honey)",
+    fontWeight: 600,
+  },
   panel: {
     margin: "16px 0 4px",
     padding: "15px 16px",
@@ -1765,7 +1767,7 @@ const S: Record<string, React.CSSProperties> = {
     padding: "11px 12px",
     cursor: "pointer",
   },
-  btnGo: { background: "var(--honey)", borderColor: "var(--honey)", color: "#fff" },
+  btnGo: { background: "var(--honey)", borderColor: "var(--honey)", color: "var(--on-honey)" },
   input: {
     font: "inherit",
     fontSize: 16,

@@ -1,15 +1,64 @@
+/*
+ * Quicksand, self-hosted, as a variable font.
+ *
+ * The stack named Quicksand for a long time and never loaded it, so it only ever resolved on Apple
+ * devices, where `ui-rounded` and SF Pro Rounded exist. Everywhere else a cat app rendered in Roboto
+ * or Segoe. This app is two people looking at the same thing, so it is worth 28KB for them to see
+ * the same one: Quicksand goes first in the stack, ahead of the Apple faces, rather than being a
+ * fallback only non-Apple devices reach.
+ *
+ * One variable file per subset covers 400 to 700. `swap` because the copy matters more than the
+ * face, and the latin-ext range only downloads for a name that needs it.
+ */
+@font-face {
+  font-family: "Quicksand";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/quicksand-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Quicksand";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/quicksand-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 :root {
   --air: #f7ecdc;
   --air-warm: #fdf6ea;
   --panel: #fffaf0;
   --ink: #3f2f1f;
-  --soft: #8a7256;
+  /*
+   * Muted text: the lede, every caption, the field labels, the line under the room.
+   *
+   * This carries real prose, not decoration, so it has to clear 4.5:1 on both surfaces it sits on.
+   * Same hue and saturation as before, walked down in lightness until it passes: 5.50 on --panel and
+   * 4.90 on --air, and 4.74 at golden hour, which is the darkest daylight the room reaches. Still far
+   * lighter than --ink (12.3 on panel), so the two tiers stay distinguishable.
+   */
+  --soft: #77634a;
   --line: #e6d5bb;
   --honey: #e0a03f;
+  /*
+   * What goes ON honey. Ink, never white.
+   *
+   * White on this amber is 2.27:1, and it carries the primary button, the selected mood chip and the
+   * "you're both here" card, none of which are large enough to use the 3:1 bar. Ink is 5.66:1 and
+   * keeps the honey bright, where darkening it far enough for white would turn it brown.
+   */
+  --on-honey: var(--ink);
   --ginger: #e8963f;
   --ginger-dk: #c9752a;
   --sans:
-    ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", Quicksand, ui-sans-serif, -apple-system,
+    Quicksand, ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", ui-sans-serif, -apple-system,
     system-ui, sans-serif;
 
   /*

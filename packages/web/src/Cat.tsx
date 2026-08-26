@@ -544,20 +544,38 @@ export function Cat({
     const season = seasonFor(new Date());
     const seasonalPlant = seasonalPlantColors(season);
 
-    /** Size of one logical pixel, in device pixels. Recomputed on resize. */
+    /** Size of one logical pixel, in device pixels. Always a whole number. */
     let s = 5;
     /** The view's left edge, in grid columns. Recomputed once per frame from where she is. */
     let cam = 0;
+
+    /*
+     * One logical pixel must be a whole number of device pixels, or the room is drawn at two
+     * different pixel sizes at once.
+     *
+     * The draw helpers snap each cell to the device grid, so nothing blurs, but a fractional `s`
+     * makes consecutive cells round to different widths: at s = 8.425 the floorboards come out 8
+     * and 9 device pixels wide alternating. That is the one thing this whole look forbids, and it
+     * happened at almost every viewport width, because filling the container only lands on a whole
+     * number when the container is an exact multiple of VW.
+     *
+     * So the canvas takes the largest whole-pixel size that fits and gives back the remainder, at
+     * most VW/d css px. Measured from the parent rather than from the canvas, because this writes
+     * the canvas's own size and reading it back would feed the ResizeObserver its own output.
+     */
+    const box = cv.parentElement;
     const fit = () => {
-      const r = cv.getBoundingClientRect();
       const d = Math.min(2, devicePixelRatio || 1);
-      cv.width = Math.max(VW, Math.round(r.width * d));
-      cv.height = Math.max(GH, Math.round(r.height * d));
-      s = cv.width / VW;
+      const avail = box ? box.clientWidth : cv.getBoundingClientRect().width;
+      s = Math.max(1, Math.floor((avail * d) / VW));
+      cv.width = VW * s;
+      cv.height = GH * s;
+      cv.style.width = `${cv.width / d}px`;
+      cv.style.height = `${cv.height / d}px`;
     };
     fit();
     const ro = new ResizeObserver(fit);
-    ro.observe(cv);
+    ro.observe(box ?? cv);
 
     const ptr = {
       x: GW / 2,
@@ -2874,8 +2892,12 @@ export function Cat({
       aria-label={`${label} The room has quiet interactive details.`}
       style={{
         display: "block",
-        width: "100%",
-        height: "100%",
+        // Size is set in device pixels by fit(); the frame lives here rather than on the parent so
+        // the parent can be a plain centring box with nothing to show in the leftover margin.
+        borderRadius: 26,
+        border: "1px solid rgba(95,65,43,.12)",
+        boxShadow:
+          "0 1px 0 rgba(255,255,255,.72) inset, 0 24px 56px -25px rgba(82,53,34,.58), 0 8px 22px -18px rgba(82,53,34,.35)",
         imageRendering: "pixelated",
         // Holding to pet needs the browser to stop treating the drag as a scroll. Only his side holds,
         // so everyone else keeps normal scrolling over the canvas.
