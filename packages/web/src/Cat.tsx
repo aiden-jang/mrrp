@@ -863,8 +863,11 @@ export function Cat({
           taps.count = now - taps.last < 1400 ? taps.count + 1 : 1;
           taps.last = now;
           // The first tap gets a shooting star. The second, quick enough to mean somebody is still
-          // looking, joins the little lights in the glass into a constellation. It is a discovery,
-          // not a permanent decoration or a thing the other person needs a notification about.
+          // looking, joins the little lights in the glass into a constellation.
+          //
+          // Not a discovery in the DISCOVERY_KEYS sense, despite the name: nothing is recorded and
+          // the other person is never told. It belongs with the bird and the shooting star above,
+          // which are deliberately unshared. The recorded `constellation` is the separate star hunt.
           if (taps.count >= 2) {
             taps.constellationUntil = now + CONSTELLATION_MS;
             taps.count = 0;
