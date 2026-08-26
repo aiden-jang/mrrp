@@ -142,6 +142,10 @@ export interface RoomView {
   brushed: boolean;
   /** He sat with her, and the dent he left in the cushion has not gone cold yet. */
   satWith: boolean;
+  /** This seat has never opened the room before. The one time she gets to arrive. */
+  firstEver: boolean;
+  /** Whole months the room has been going. Drives how sun-bleached the boards are. */
+  monthsOld: number;
   /** The mug is off the shelf. Either of them can put it back. */
   shelfDown: boolean;
   /** Something she left on the floor while he was away. His side only, cleared the moment he acts. */
