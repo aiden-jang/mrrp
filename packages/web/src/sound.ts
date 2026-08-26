@@ -195,6 +195,27 @@ function voice(
   osc.stop(o.at + o.dur + 0.05);
 }
 
+/*
+ * Whose cat is talking, and how she is.
+ *
+ * Every room used to sound identical: `play("mrrp")` took no arguments, so a small white cat and a
+ * big black one had the same voice. `pitch` comes from her coat, authored in looks.ts. `settled`
+ * comes from her mood, and only the purr uses it, because a purr is the one sound whose speed says
+ * something about how an animal feels rather than which animal it is.
+ *
+ * Module state rather than a parameter on every call: the room sets this once when it knows which
+ * cat it is drawing, and every cue after that is hers.
+ */
+let pitch = 1;
+let settled = 0.5;
+
+/** Called by the room whenever the cat or her mood changes. */
+export function setVoice(v: { pitch?: number; settled?: number }): void {
+  // Clamped: a stray value here does not make a cat, it makes a kettle.
+  if (v.pitch !== undefined) pitch = Math.max(0.85, Math.min(1.2, v.pitch));
+  if (v.settled !== undefined) settled = Math.max(0, Math.min(1, v.settled));
+}
+
 export type Cue = "purr" | "mrrp" | "chirp" | "brush" | "thump" | "shutter" | "settle" | "twinkle" | "jingle";
 
 const CUES: Record<Cue, (g: { ctx: AudioContext; master: GainNode }, t: number) => void> = {
@@ -203,25 +224,34 @@ const CUES: Record<Cue, (g: { ctx: AudioContext; master: GainNode }, t: number) 
    * volume is a machine and a purr that fades is an animal deciding you're staying a while.
    */
   purr: (g, t) => {
+    /*
+     * The flutter rate is how she is.
+     *
+     * A real purr sits near 25 Hz, and it slows when a cat is heavy-eyed and quickens when she is
+     * pleased. Everything else about the sound stays put: this is the same purr, at the speed of the
+     * mood she was told about, not a different noise per feeling.
+     */
+    const flutter = 26 - settled * 6;
+    const dur = 2.2 + settled * 0.6;
     rumble(g, {
       at: t,
-      dur: 2.2,
+      dur,
       gain: 0.3,
       filter: "lowpass",
       from: 380,
       q: 0.7,
-      flutter: 26,
+      flutter,
       flutterDepth: 0.5,
       attack: 0.35,
     });
     rumble(g, {
       at: t,
-      dur: 2.2,
+      dur,
       gain: 0.12,
       filter: "lowpass",
       from: 140,
       q: 0.5,
-      flutter: 26,
+      flutter,
       flutterDepth: 0.45,
       attack: 0.35,
     });
@@ -229,12 +259,13 @@ const CUES: Record<Cue, (g: { ctx: AudioContext; master: GainNode }, t: number) 
 
   /* The greeting: up and back down in under a fifth of a second, with a fast trill on top. */
   mrrp: (g, t) => {
-    voice(g, { at: t, dur: 0.19, gain: 0.16, sweep: [430, 720, 600], wobble: 42, wobbleDepth: 26 });
+    const p = (f: number[]) => f.map((x) => x * pitch);
+    voice(g, { at: t, dur: 0.19, gain: 0.16, sweep: p([430, 720, 600]), wobble: 42, wobbleDepth: 26 });
     voice(g, {
       at: t,
       dur: 0.19,
       gain: 0.05,
-      sweep: [860, 1440, 1200],
+      sweep: p([860, 1440, 1200]),
       wobble: 42,
       wobbleDepth: 30,
       type: "sine",
@@ -243,7 +274,14 @@ const CUES: Record<Cue, (g: { ctx: AudioContext; master: GainNode }, t: number) 
 
   /* Shorter and higher than a mrrp. What she says when she notices, rather than when she greets. */
   chirp: (g, t) => {
-    voice(g, { at: t, dur: 0.11, gain: 0.13, sweep: [620, 980], wobble: 55, wobbleDepth: 34 });
+    voice(g, {
+      at: t,
+      dur: 0.11,
+      gain: 0.13,
+      sweep: [620 * pitch, 980 * pitch],
+      wobble: 55,
+      wobbleDepth: 34,
+    });
   },
 
   /* Bristles, not a cat: a bandpass sweeping down, twice, at the speed of a hand. Gains here look
