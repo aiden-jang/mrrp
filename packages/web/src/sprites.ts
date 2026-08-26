@@ -559,6 +559,14 @@ export const CAKE = sprite(["...r...", "...d...", ".ggggg.", "ddddddd", "ddddddd
 export const BROUGHT = sprite([".r.r.", ".rhr.", ".r.r."], 0, 0);
 
 /**
+ * A tuft of her, left on the rug after a brush.
+ *
+ * Three rows of nothing much, which is the correct amount of drawing for cat hair. `f` takes her own
+ * fur colour at the call site, so what is on the rug is always what is on the cat.
+ */
+export const TUFT = sprite(["f.f", ".ff", "f.f"], 0, 0);
+
+/**
  * The things she leaves on the floor while he's away. Tiny on purpose: a cat's gift is specific, not
  * impressive, and anything bigger or prettier reads as loot, which is a game mechanic.
  *

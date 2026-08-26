@@ -147,6 +147,10 @@ export interface RoomView {
    * Lasts her day, like the box, and for the same reason: nothing in this room may pile up on her.
    */
   brought: boolean;
+  /** He brushed her, and there is a tuft of it on the rug. Her day, like everything else he leaves. */
+  brushed: boolean;
+  /** He sat with her, and the dent he left in the cushion has not gone cold yet. */
+  satWith: boolean;
   /** The mug is off the shelf. Either of them can put it back. */
   shelfDown: boolean;
   /** Something she left on the floor while he was away. His side only, cleared the moment he acts. */

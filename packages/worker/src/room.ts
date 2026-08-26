@@ -158,6 +158,19 @@ export class Room extends DurableObject<Env> {
     }
 
     /*
+     * The other two things he does that used to leave nothing.
+     *
+     * Brushing played a sound and changed the room in no way at all; sitting with her put a second
+     * cushion beside her and took it away again the moment he closed the tab. Both last her day, for
+     * the same reason the box does, and both are things she finds rather than things she is told.
+     */
+    if (action === "brush" || action === "sit") {
+      const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
+      const key = action === "brush" ? "brushedDay" : "satWithDay";
+      await this.ctx.storage.put(key, localDayNumber(Date.now(), clock.tz));
+    }
+
+    /*
      * Touching anything counts as picking it up. Gone from the floor, and never a keepsake he can
      * re-read, which would make it an inbox. One timestamp is kept, so she can be told once that the
      * thing she left was taken.
@@ -554,6 +567,10 @@ export class Room extends DurableObject<Env> {
       box: ((await this.ctx.storage.get<number>("boxDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
       brought:
         ((await this.ctx.storage.get<number>("broughtDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
+      brushed:
+        ((await this.ctx.storage.get<number>("brushedDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
+      satWith:
+        ((await this.ctx.storage.get<number>("satWithDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
       // His only, and readable for as long as he holds the seat. Useless to anybody else: redeeming it
       // requires knowing it, and he is the only one it is ever sent to.
       recoveryCode: seated && !youAreHer ? await this.recoveryCode() : null,
