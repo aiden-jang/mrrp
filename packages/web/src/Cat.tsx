@@ -39,6 +39,7 @@ import {
   POSES,
   SHELF,
   TAIL,
+  TUFT,
   WINDOW,
   type Pose,
   type Sprite,
@@ -252,6 +253,8 @@ export function Cat({
   doorOpenAt = null,
   box = false,
   brought = false,
+  brushed = false,
+  satWith = false,
   gift = null,
   cake = false,
   windowLight = false,
@@ -301,6 +304,10 @@ export function Cat({
   box?: boolean;
   /** He brought her something today, and it is still on the floor. */
   brought?: boolean;
+  /** He brushed her today. */
+  brushed?: boolean;
+  /** He sat with her today. */
+  satWith?: boolean;
   /** Something she left on the floor. His side only; the room just draws whatever it's handed. */
   gift?: Gift | null;
   /** True on the room's own anniversary, and on its first week and month. Puts a cake on the floor. */
@@ -358,6 +365,10 @@ export function Cat({
   boxRef.current = box;
   const broughtRef = useRef(brought);
   broughtRef.current = brought;
+  const brushedRef = useRef(brushed);
+  brushedRef.current = brushed;
+  const satWithRef = useRef(satWith);
+  satWithRef.current = satWith;
   const giftRef = useRef(gift);
   giftRef.current = gift;
   const cakeRef = useRef(cake);
@@ -1952,15 +1963,42 @@ export function Cat({
       /*
        * What he brought her, down in the front strip.
        *
-       * The same band the cake uses, because that is where a thing on the floor can actually be seen:
-       * the middle is where she loafs and the back is behind the sofa. Left of the cake and right of
-       * her own gift by the door, so the two directions of this are never a pile in one corner.
+       * Left on her bed, which spans columns 13 to 33: somewhere she will actually find it, and the
+       * one surface in the room that is hers. Clear of her own gift by the door at 17, so the two
+       * directions of this never pile up in one corner.
        *
-       * On the bare boards, not the rug. By the wall it sat behind the box, which is the other thing
-       * he brings, and on the rug a dusty-pink bow on dusty-pink wool is not a bow at all.
+       * By the wall it sat behind the box, which is the other thing he brings, and out on the rug a
+       * dusty-pink bow on dusty-pink wool is not a bow at all.
        */
       if (broughtRef.current) {
         blit(BROUGHT, 24, FLOOR + 22, { r: "#c26a80", h: "#f0b9c4" });
+      }
+
+      /*
+       * A tuft of her on the rug, from being brushed.
+       *
+       * Out on the rug rather than on her bed, because fur ends up where it is walked, and because
+       * her bed already holds whatever he brought her. Her own fur colour, lightened a shade: loose
+       * hair catches more light than hair still on a cat.
+       */
+      if (brushedRef.current) {
+        blit(TUFT, 48, FLOOR + 22, { f: mixHex(L.fur, "#ffffff", 0.25) });
+      }
+
+      /*
+       * The dent he left, beside her bed.
+       *
+       * Sitting with her already puts a cushion down while he is here and takes it away the moment he
+       * closes the tab, which is the opposite of the point: the whole idea is a place kept. This is
+       * the floor still holding his shape after he has gone, and it lasts her day like everything
+       * else he leaves.
+       */
+      if (satWithRef.current) {
+        const dent = mixHex(sc.floorNear, INK, 0.13);
+        const dentLip = mixHex(sc.floorNear, sc.beamWarm, 0.16);
+        rect(36, FLOOR + 21, 9, 1, dentLip);
+        rect(35, FLOOR + 22, 11, 2, dent);
+        rect(36, FLOOR + 24, 9, 1, dent);
       }
 
       // What she left, near the door rather than mid-floor: mid-floor is where she loafs, so anything
