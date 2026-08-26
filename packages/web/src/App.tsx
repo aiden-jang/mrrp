@@ -896,7 +896,7 @@ function RoomPage({ id }: { id: string }) {
   return (
     <main style={{ ...S.page, ...roomTheme }}>
       <ChromeSync night={nightChrome} />
-      <VoiceSync fur={view.cat.fur} sleepy={scene.sleepy} />
+      <VoiceSync fur={view.cat.fur} />
       <DocTitle name={view.cat.name} />
       {/* The room is the page, and it had no heading at all: the only one was the hidden <h2> over
           the props list, which left a screen reader with an h2 and nothing above it. */}
@@ -1633,16 +1633,19 @@ function DocTitle({ name }: { name: string }) {
 /*
  * She sounds like her own cat.
  *
- * Pitch is authored per coat in looks.ts; `settled` is how heavy-eyed her mood makes her, and only
- * the purr listens to it. Its own component for the same reason ChromeSync is: this sits below the
- * room's early returns, and a hook there runs in a different order on different renders.
+ * Pitch only. How settled she is belongs to the canvas, which is the one place that knows both the
+ * hour and whether somebody is holding on her right now, and two writers to one number would have
+ * them undoing each other every frame.
+ *
+ * Its own component for the same reason ChromeSync is: this sits below the room's early returns, and
+ * a hook there runs in a different order on different renders.
  */
-function VoiceSync({ fur, sleepy }: { fur: string; sleepy: number }) {
+function VoiceSync({ fur }: { fur: string }) {
   // Matched by fur colour, not by look id: the room stores the colours, not which swatch was tapped.
   const voice = LOOKS.find((l) => l.cat.fur.toLowerCase() === fur.toLowerCase())?.voice ?? 1;
   useEffect(() => {
-    setVoice({ pitch: voice, settled: sleepy });
-  }, [voice, sleepy]);
+    setVoice({ pitch: voice });
+  }, [voice]);
   return null;
 }
 

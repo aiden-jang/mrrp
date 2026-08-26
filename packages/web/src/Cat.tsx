@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import type { Cat as CatLook, Clock, Gift, Mood } from "./types.js";
 import { mixHex, sceneFor } from "./hours.js";
 import { fireflyAt, mothAt } from "./critters.js";
-import { play, playPianoNote } from "./sound.js";
+import { play, playPianoNote, setVoice } from "./sound.js";
 import { dreamOf, type Dream, type DreamContext, type DreamScene } from "./dreams.js";
 import { catCallCode } from "./secrets.js";
 import { moonPhase, moonPixelLit } from "./moon.js";
@@ -519,6 +519,10 @@ export function Cat({
 
   /** True while he is holding on her. Owned here rather than by the caller, see the pointer setup. */
   const petting = useRef(false);
+  /** How far into it she is, 0 to 1. Rises while he holds on and falls back when he lets go. */
+  const petDepth = useRef(0);
+  /** The last settledness handed to the synth, so it is only told when the number actually moves. */
+  const toldVoice = useRef(-1);
   /** Her box in grid space, refreshed every frame, so a tap can be tested against where she actually is. */
   const catBox = useRef<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
   /** The live camera pan, recorded per frame so a synthetic tap can be aimed in screen space. */
@@ -2308,6 +2312,24 @@ export function Cat({
       const pet = petting.current;
       bounce.current = Math.max(0, bounce.current - 0.02);
 
+      /*
+       * The longer he holds on, the further she goes under.
+       *
+       * Petting was a boolean: she purred exactly as hard at four seconds as at one, which is not how
+       * any of this works. Roughly three seconds to settle and a slower climb back out, because a cat
+       * takes longer to stop purring than to start.
+       *
+       * Fed to the synth as her settledness, which slows the purr's flutter. She owns that number
+       * outright rather than sharing it with her mood: hers is the floor, and being petted is only
+       * ever more settled than whatever the hour had her at.
+       */
+      petDepth.current = Math.max(0, Math.min(1, petDepth.current + (pet ? 0.006 : -0.003)));
+      const settledNow = Math.max(sc.sleepy, petDepth.current);
+      if (Math.abs(settledNow - toldVoice.current) > 0.04) {
+        toldVoice.current = settledNow;
+        setVoice({ settled: settledNow });
+      }
+
       // Stay quietly beside her and she returns the cat version of a smile. The cursor has to be
       // both close and still; merely passing over the canvas never triggers it, and moving away
       // resets the one-answer-per-stay latch.
@@ -3216,7 +3238,8 @@ export function Cat({
 
       // Purring, shown rather than written: small marks rising off her.
       if (pet || sc.purring || slowBlinking) {
-        const a = pet || slowBlinking ? 0.8 : 0.42;
+        // Deeper in, more of them: the marks are the only visible half of a purr that is mostly sound.
+        const a = pet ? 0.7 + petDepth.current * 0.3 : slowBlinking ? 0.8 : 0.42;
         // Clamped inside her silhouette rather than a flat +10. The poses are different widths, and on
         // the narrow standing pose (the one a low mood puts at the door) a fixed offset put the marks
         // out in mid-air beside her, where they read as three stray pixels on the wall rather than as
