@@ -1,0 +1,627 @@
+/*
+ * The room's chrome. The canvas is not styled from here; see Cat.tsx.
+ *
+ * These were 62 entries of inline `React.CSSProperties` in App.tsx. Inline styles cannot express a
+ * pseudo-class or a media query, which is why the focus ring, the hover states, `::selection` and
+ * `::placeholder` all had to be written as global element selectors in index.css and apply to every
+ * button on the page whether or not that was wanted. Anything scoped to one component belongs here.
+ *
+ * Two rules that were free in an object and are not free in a stylesheet:
+ *
+ *   - Order is precedence. `.btnGo` and `.moodOn` only work because they come after `.btn` and
+ *     `.mood`; spreading `{...btn, ...btnGo}` used to say that explicitly. Keep overrides below what
+ *     they override.
+ *   - The tokens still come from index.css and the live room theme is still set inline on <main>, so
+ *     every `var(--…)` in here follows the hour exactly as it did before.
+ */
+
+.page {
+  /*
+   * `color` is set here, not left to body. A custom property resolves where it is written, so
+   * body's `color: var(--ink)` computes once against the root token and every child inherits that
+   * literal value: overriding --ink further down would never reach anything that did not name it.
+   */
+  color: var(--ink);
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  /*
+   * vmin, not vw: on a wide short laptop a vw-based pad is at its maximum exactly where there is
+   * least room for it, which is what pushed the landing page's button under the fold.
+   */
+  padding: clamp(14px, 3vmin, 28px) 18px clamp(24px, 5vmin, 48px);
+  background: radial-gradient(120% 90% at 78% 6%, var(--air-warm) 0%, var(--air) 62%);
+  transition: background 0.9s ease;
+}
+
+/*
+ * minWidth 0 + overflowWrap: a grid item defaults to min-width:auto, which is its min-content
+ * width, and that silently outranks both width:100% and maxWidth. One unbroken 90-character line
+ * she left him (a pasted link fits inside the 140-char limit) set that floor to ~900px, so the
+ * card ignored its own max width and the whole room scrolled sideways on a phone.
+ *
+ * `anywhere` rather than `break-word` because break-word does not lower min-content, so the floor
+ * would stay put. overflow-wrap inherits, so this covers every line of prose in the card.
+ */
+.card {
+  width: 100%;
+  max-width: 600px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.h1 {
+  font-size: clamp(30px, 8vw, 44px);
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+  text-align: center;
+}
+
+/*
+ * Available to a screen reader and to Tab, invisible on screen.
+ *
+ * Not display:none and not visibility:hidden, either of which would take it out of the accessibility
+ * tree and the focus order along with it, which is the exact opposite of the point.
+ */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/*
+ * Pinned to the column, not to the window.
+ *
+ * At `right: 12` it sat against the edge of the screen, which on a laptop left it about 430px away
+ * from the room it belongs to, floating in empty page. `left: 50%` plus half the column's max width
+ * keeps it beside the content at every size, and it falls back to the old corner on anything too
+ * narrow for the offset to fit.
+ */
+.soundToggle {
+  position: fixed;
+  top: 12px;
+  left: min(calc(50% + 300px - 48px), calc(100vw - 48px));
+  z-index: 20;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  line-height: 1;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--soft);
+}
+
+.lede {
+  font-size: 15px;
+  color: var(--soft);
+  max-width: 38ch;
+  line-height: 1.55;
+}
+
+.small {
+  font-size: 13.5px;
+  color: var(--soft);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/**
+ * The footer, as one block instead of two grey paragraphs and a floating byline.
+ *
+ * No rule above it. What read as awkward was the credit sitting 22px below a three-line grey
+ * paragraph at almost the same weight: two separate quiet things competing to be last, so neither
+ * looked deliberate. Grouped, with the space outside the group rather than inside it, and the credit
+ * pulled right up under the line it belongs to.
+ */
+.footer {
+  margin-top: 28px;
+}
+
+/* No opacity. At 0.55 this sat at 1.66:1 on the page, which is not "quiet", it is unreadable.
+ 11px against the lede's 15.5 is the whole hierarchy it needs. */
+.credit {
+  font-size: 12px;
+  color: var(--soft);
+  text-align: center;
+  margin: 8px 0 0;
+}
+
+.creditLink {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/** The recovery-code disclosure, on his side. Closed by default: it is reassurance, not a task. */
+.recovery {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--air);
+  border: 1px solid var(--line);
+}
+
+.recoverySummary {
+  cursor: pointer;
+  font-size: 13.5px;
+  color: var(--soft);
+}
+
+.code {
+  font: inherit;
+  font-size: 17.5px;
+  letter-spacing: 0.08em;
+  text-align: center;
+  margin: 0;
+  padding: 11px 13px;
+  border-radius: 14px;
+  background: var(--air);
+  border: 1px dashed var(--line);
+  user-select: all;
+}
+
+/** Shown once, until the first touch. Small, centred, and never in the way. */
+.hint {
+  font-size: 12px;
+  color: var(--soft);
+  text-align: center;
+  margin: 6px 0 0;
+}
+
+/*
+ * A centring box, and nothing else to look at.
+ *
+ * The canvas sizes itself to a whole number of device pixels per logical pixel, so it is usually a
+ * little narrower than the column. The frame moved onto the canvas with it: anything drawn here
+ * would show as a band down either side of the room.
+ */
+.stage {
+  position: relative;
+  width: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.doing {
+  font-size: 13.5px;
+  color: var(--soft);
+  text-align: center;
+  margin: 14px 0 0;
+  font-style: italic;
+}
+
+/*
+   * Quieter than `doing` and not italic: a fact about the two of them, not something the cat is doing.
+   * A shade warmer and a touch larger than the discovery count: this is the room saying something, not
+   * a footnote about it.
+   */
+.remembers {
+  font-size: 13.5px;
+  color: var(--soft);
+  text-align: center;
+  margin: 12px auto 0;
+  max-width: 340px;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.noticed {
+  font-size: 12px;
+  color: var(--soft);
+  text-align: center;
+  margin: 10px 0 0;
+}
+
+/*
+   * A quiet panel, not a gold block. How she is appears on his side every single day, whereas the
+   * two of you being in the room at the same moment happens rarely — and when it did, two identical
+   * gold cards stacked on top of each other and the rare one lost. Only one of these should shout.
+   */
+.theirs {
+  animation: rise 0.42s var(--ease-spring) both;
+  margin: 14px 0 2px;
+  padding: 13px 16px;
+  border-radius: 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.theirsMain {
+  font-size: 17.5px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.did {
+  font-size: 13.5px;
+  text-align: center;
+  color: var(--soft);
+  margin: 12px 0 4px;
+  transition: opacity 0.25s ease;
+  min-height: 1.2em;
+}
+
+.together {
+  animation: arrive 0.42s var(--ease-bounce) both;
+  margin: 14px 0 6px;
+  padding: 13px 16px;
+  border-radius: 18px;
+  background: var(--honey);
+  color: var(--on-honey);
+}
+
+.togetherMain {
+  font-size: 17.5px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.arrival {
+  animation: arrive 0.42s var(--ease-bounce) both;
+  margin: 14px 0 4px;
+  padding: 14px 15px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, var(--air-warm), var(--panel));
+  border: 1px solid var(--line);
+  box-shadow: 0 10px 24px -17px rgba(120, 84, 44, 0.55);
+}
+
+.arrivalTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.arrivalTitle {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--ink);
+}
+
+.arrivalClose {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: var(--air);
+  color: var(--soft);
+  font: inherit;
+  font-size: 17.5px;
+}
+
+.arrivalList {
+  display: grid;
+  gap: 9px;
+  list-style: none;
+  padding: 11px 0 0;
+  margin: 10px 0 0;
+  border-top: 1px solid var(--line);
+}
+
+.arrivalItem {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 7px;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.arrivalPaw {
+  color: var(--honey);
+  display: flex;
+  justify-content: center;
+  padding-top: 4px;
+}
+
+.arrivalWhen {
+  display: block;
+  margin-top: 1px;
+  color: var(--soft);
+  font-size: 12px;
+}
+
+.sayBox {
+  margin: 16px 0 4px;
+}
+
+.sayInput {
+  font: inherit;
+  /*
+   * 16 is a floor, not a preference: iOS zooms the page when you focus anything smaller, and both
+   * things anybody types in this app are textareas carrying this style.
+   */
+  font-size: 16px;
+  line-height: 1.5;
+  width: 100%;
+  resize: none;
+  padding: 11px 13px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.yourLine {
+  font: inherit;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  margin: 16px 0 4px;
+  padding: 12px 15px;
+  border-radius: 18px;
+  background: var(--panel);
+  border: 1px dashed var(--line);
+  color: var(--ink);
+}
+
+.yourLineLabel {
+  display: block;
+  font-size: 13.5px;
+  color: var(--soft);
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.yourLineText {
+  display: block;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.came {
+  font-size: 13.5px;
+  text-align: center;
+  color: var(--soft);
+  margin: 12px 0 0;
+}
+
+/*
+   * Sentence case, not letterspaced caps. Caps are the house style of dashboards and settings
+   * screens: they read as a field label on a form you have to fill in. This is somebody asking how
+   * your day was, and it should sound like it.
+   */
+.tellLabel {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--soft);
+  text-align: center;
+  margin: 18px 0 8px;
+}
+
+/*
+   * A 3x3 grid rather than a wrapping flex row. With nine chips, wrap left a single orphan on the last
+   * line, and an odd one out at the bottom of a mood picker reads as an afterthought.
+   */
+.moodRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  margin-bottom: 14px;
+}
+
+.mood {
+  font: inherit;
+  /*
+   * Shrinks on a narrow phone, and never wraps.
+   *
+   * Three columns of a fixed 15px put "stressed" on two lines inside its own pill at 320px, which
+   * is the width of the smallest phone anybody still opens this on. The face beside it costs about
+   * seventeen more, and that was the difference.
+   */
+  font-size: clamp(13px, 3.9vw, 15px);
+  white-space: nowrap;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 15px;
+  cursor: pointer;
+}
+
+.moodOn {
+  background: var(--honey);
+  border-color: var(--honey);
+  color: var(--on-honey);
+  font-weight: 600;
+}
+
+.panel {
+  margin: 16px 0 4px;
+  padding: 15px 16px;
+  border-radius: 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 6px 18px -12px rgba(120, 84, 44, 0.35);
+}
+
+/*
+   * The panel's heading, against its field labels below. Both were --soft a point apart, so the whole
+   * panel read as one flat list with nothing saying which line was the title.
+   */
+.panelTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 11px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  color: var(--soft);
+  margin: 14px 0 6px;
+}
+
+/*
+ * Grids with a fixed column count, not a wrapping row.
+ *
+ * Eight fur swatches wrapping at whatever fits put seven on one line and one alone underneath, on
+ * a phone. Four and four is two deliberate rows at every width. Same reasoning as the mood chips,
+ * which stopped wrapping for the same reason.
+ */
+.swatchRow {
+  display: grid;
+  grid-template-columns: repeat(4, 34px);
+  gap: 9px;
+  justify-content: start;
+}
+
+.eyeRow {
+  display: grid;
+  gap: 9px;
+  justify-content: start;
+}
+
+.swatch {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  padding: 0;
+}
+
+.quiet {
+  font: inherit;
+  font-size: 12px;
+  color: var(--soft);
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: block;
+  margin: 14px auto 0;
+  text-decoration: underline;
+}
+
+.note {
+  animation: arrive 0.42s var(--ease-bounce) both;
+  margin: 14px 0 2px;
+  padding: 15px 17px;
+  border-radius: 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 22px -14px rgba(120, 84, 44, 0.4);
+}
+
+.noteFrom {
+  font-size: 13.5px;
+  color: var(--soft);
+  margin: 0 0 8px;
+  font-weight: 500;
+}
+
+.noteText {
+  font-size: 17.5px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.noteDay {
+  font-size: 12px;
+  color: var(--soft);
+  margin: 9px 0 0;
+  text-align: right;
+}
+
+.news {
+  margin: 16px 2px 16px;
+  text-align: center;
+}
+
+.newsMain {
+  font-size: 17.5px;
+  margin: 12px 0 5px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.btn {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 11px 12px;
+  cursor: pointer;
+}
+
+.btnGo {
+  background: var(--honey);
+  border-color: var(--honey);
+  color: var(--on-honey);
+}
+
+/** A disclosure is a control, so it gets a control's target size rather than a line of text's. */
+.summary {
+  font-size: 13.5px;
+  color: var(--soft);
+  line-height: 1.5;
+  cursor: pointer;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+}
+
+.selectWrap {
+  position: relative;
+  display: block;
+}
+
+.select {
+  font: inherit;
+  font-size: 16px;
+  width: 100%;
+  /* The browser's caret is replaced by the drawn one, so leave it room and take the OS styling off. */
+  padding: 11px 34px 11px 13px;
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.selectCaret {
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  margin-top: -3px;
+  width: 10px;
+  height: 6px;
+  color: var(--soft);
+  pointer-events: none;
+}
+
+.input {
+  font: inherit;
+  font-size: 16px;
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  color: var(--ink);
+}
