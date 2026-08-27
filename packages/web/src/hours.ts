@@ -1,6 +1,7 @@
 import type { Clock, Mood } from "./types.js";
 import { RESPONSES, type MoodVisual } from "./moods.js";
 import type { Pose } from "./sprites.js";
+import { seasonFor } from "./season.js";
 
 export type LightPhase = "night" | "dawn" | "day" | "golden" | "evening";
 
@@ -114,14 +115,27 @@ const NAP_FROM = 13,
 /** Her bed's centre as a fraction of the 100-wide room. The bed spans grid 13..33. */
 const BED_X = 0.23;
 
-function doingAt(hour: number, atDoor: boolean, sleepy: number, homeHour: number): string {
+/*
+ * What the line under the room says she is doing.
+ *
+ * Two of these describe a cat following the sun, and in summer she does the opposite: she lies beside
+ * the beam on the cool boards, which is the same instinct pointed the other way. The copy has to
+ * agree with where she is actually drawn, or the room is telling you something you can see is untrue.
+ */
+function doingAt(hour: number, atDoor: boolean, sleepy: number, homeHour: number, summer: boolean): string {
   if (atDoor) return "waiting by the door";
   if (hour < 5) return "asleep, and dreaming about something";
   if (hour < 7) return "awake before anyone, watching the window";
   if (hour < 11) return "in the first bit of sun";
-  if (hour >= NAP_FROM && hour < NAP_TO) return "deeply asleep in the best spot in the room";
+  if (hour >= NAP_FROM && hour < NAP_TO) {
+    return summer
+      ? "asleep on the cool boards, out of the sun"
+      : "deeply asleep in the best spot in the room";
+  }
   if (hour < 13) return "loafing";
-  if (hour < homeHour) return "moving with the sunbeam, one patch at a time";
+  if (hour < homeHour) {
+    return summer ? "lying just beside the sunbeam" : "moving with the sunbeam, one patch at a time";
+  }
   if (hour < 21) return "settled, now that everyone's in";
   return sleepy > 0.6 ? "curled up for the night" : "doing one last lap of the room";
 }
@@ -194,7 +208,7 @@ export function sceneFor(clock: Clock, at = Date.now(), mood: Mood | null = null
     sleepy: r?.sleepy ?? sleepy,
     atDoor: r ? r.catX === 0.19 : atDoor,
     // What she's doing about what you said outranks the time of day. It's the more specific fact.
-    doing: r?.doing ?? doingAt(hour, atDoor, sleepy, clock.homeHour),
+    doing: r?.doing ?? doingAt(hour, atDoor, sleepy, clock.homeHour, seasonFor(new Date(at)) === "summer"),
     snug: r?.snug ?? 0,
     play: r?.play ?? 0,
     purring: r?.purring ?? false,
