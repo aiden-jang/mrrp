@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { Action, Mood } from "./types.js";
+import type { Tally } from "./remembers.js";
 import type { Env } from "./env.js";
 
 export { Room } from "./room.js";
@@ -50,6 +51,48 @@ app.post("/api/room/:id/say", async (c) => {
     return c.json({ error: "bad request" }, 400);
   }
   return c.json(await room(c.env, id).say(body.me, body.text));
+});
+
+/**
+ * Fast-forward a room, so the states that take months can be looked at in a minute.
+ *
+ * Gated on DEV_TOOLS, which lives in `.dev.vars`: read by `wrangler dev`, never uploaded by
+ * `wrangler deploy`, and already gitignored. The first attempt checked the hostname instead, on the
+ * reasoning that this Worker has one custom-domain route and no workers.dev address. That gate does
+ * not work: `wrangler dev` rewrites the request URL to the configured route, so the local Worker sees
+ * mrrp.aidenjang.com exactly as production does and the check cannot tell them apart.
+ *
+ * Holding a seat is required on top of that, inside the Durable Object. Everything it writes is
+ * reachable by ordinary use given enough months; nothing here puts a room into a state a real room
+ * could not be in.
+ */
+app.post("/api/room/:id/age", async (c) => {
+  if (c.env.DEV_TOOLS !== "on") return c.json({ error: "not found" }, 404);
+
+  const id = c.req.param("id");
+  if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
+  const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  const me = typeof body.me === "string" ? body.me : "";
+  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+
+  const count = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : undefined);
+  const rawTally = (body.tally ?? null) as Record<string, unknown> | null;
+  const tally: Tally | undefined = rawTally
+    ? Object.fromEntries(
+        VALID.filter((action) => count(rawTally[action]) !== undefined).map((action) => [
+          action,
+          Math.floor(rawTally[action] as number),
+        ]),
+      )
+    : undefined;
+
+  return c.json(
+    await room(c.env, id).age(me, {
+      days: count(body.days),
+      tally,
+      noteIdx: count(body.noteIdx),
+    }),
+  );
 });
 
 /**

@@ -16,6 +16,27 @@ browser talks to one origin the way production does.
 In production the Worker serves the built assets itself, so if you run the Worker alone you are
 looking at the last `pnpm --filter @mrrp/web build` rather than your working tree.
 
+### Looking at an old room
+
+Most of what this app does happens on a scale you cannot sit through: her personality takes weeks,
+the boards do not fade for a year, and the worn patch on the rug waits for both. Fast-forward a room
+instead.
+
+```bash
+echo 'DEV_TOOLS=on' > packages/worker/.dev.vars   # untracked, and the whole gate
+curl -X POST localhost:8787/api/room/<id>/age \
+  -H 'content-type: application/json' \
+  -d '{"me":"<your token>","days":400,"tally":{"pet":120,"sit":22},"noteIdx":29}'
+```
+
+`me` is the `mrrp:me` value in that browser's localStorage, and you have to hold a seat in the room.
+`days` moves the room's age, `tally` gives her a personality, `noteIdx` jumps her through the notes.
+Without `.dev.vars` the route is a 404, which is why it is safe to have deployed: `wrangler deploy`
+never uploads that file.
+
+Everything it writes is a state an ordinary room reaches on its own eventually. Nothing here can put
+a room somewhere a real one could not be.
+
 ## The four rules
 
 These are design constraints, not preferences. Each one is load-bearing.

@@ -462,6 +462,39 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
+  /**
+   * Fast-forward this room, for looking at states that otherwise take months to reach.
+   *
+   * Everything interesting about this app happens on a scale nobody can sit through: the personality
+   * line needs weeks of history, the boards do not fade for a year, and her spot and the worn patch
+   * on the rug are both gated behind the same thing. All of it was unlookable-at, which meant it was
+   * unreviewable, which meant it shipped on the strength of arithmetic alone.
+   *
+   * The room's age is not a stored key. It is the earliest `firstSeen` across the seats, so ageing a
+   * room means moving those, which is also why this cannot be done from outside the Durable Object.
+   *
+   * Reachable on localhost only; see the route.
+   */
+  async age(me: string, want: { days?: number; tally?: Tally; noteIdx?: number }): Promise<RoomView> {
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    const { him, her } = this.roles(people);
+    if (me !== him && me !== her) return this.build(me, people);
+
+    if (want.days !== undefined) {
+      const start = Date.now() - Math.max(0, want.days) * DAY_MS;
+      for (const person of Object.values(people)) person.firstSeen = start;
+      await this.ctx.storage.put("people", people);
+    }
+    if (want.tally) await this.ctx.storage.put("tally", want.tally);
+    if (want.noteIdx !== undefined) {
+      const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
+      await this.ctx.storage.put("noteIdx", Math.max(0, want.noteIdx));
+      // Or her very next read rolls it forward again and the index you asked for lasts one frame.
+      await this.ctx.storage.put("noteReadDay", localDayNumber(Date.now(), clock.tz));
+    }
+    return this.build(me, people);
+  }
+
   /** Set whose day the room runs on: her timezone, and when she's usually home. His to set. */
   async setClock(me: string, clock: Partial<Clock>): Promise<boolean> {
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
