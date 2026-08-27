@@ -210,6 +210,34 @@ const ROOM_RESERVE = 270;
 /** However tall the window, the room never takes the whole of it. */
 const ROOM_MAX_SHARE = 0.78;
 
+/**
+ * Where her collar sits, per pose, as offsets from the pixel she is drawn at.
+ *
+ * The band goes on the row of plain fur between her mouth and the pale front of her chest, which in
+ * every grid in sprites.ts is the row after the last one holding a muzzle cell. Read off the grids
+ * with a script rather than eyeballed: a row out and the collar becomes a second mouth, which is
+ * exactly what the first attempt looked like. `stretch` and `peek` are placed by hand, because in one
+ * her neck runs into a body four times longer than it and in the other it is behind a box.
+ *
+ * Full shoulder width, not a short strip. A band that stops short of both edges reads as something on
+ * her face; one that runs to the outline reads as something she is wearing.
+ */
+// prettier-ignore
+const COLLAR: Record<Pose, { dx: number; w: number; dy: number; tag: number }> = {
+  loaf:    { dx: -8, w: 12, dy: -7, tag: -2 },
+  sit:     { dx: -6, w: 12, dy: -9, tag:  0 },
+  stand:   { dx: -6, w: 12, dy: -7, tag:  0 },
+  play:    { dx: -7, w: 12, dy: -9, tag: -1 },
+  perk:    { dx: -6, w: 12, dy: -9, tag:  0 },
+  walk:    { dx: -6, w: 12, dy: -7, tag:  0 },
+  stretch: { dx: -6, w: 12, dy: -5, tag:  0 },
+  pounce:  { dx: -7, w: 12, dy: -6, tag: -1 },
+  peek:    { dx: -4, w:  8, dy: -2, tag:  0 },
+};
+/** Deep enough not to rhyme with her nose, and a tag in the room's own honey. */
+const COLLAR_BAND = "#9c5468";
+const COLLAR_TAG = "#e8ad55";
+
 /** Middle of the door leaf, for anything that needs to look at it. */
 const DOOR_CENTRE = 12;
 /** One swipe: long enough to read as a lunge, short enough that she is back to loafing. */
@@ -438,6 +466,22 @@ export function Cat({
   monthsOldRef.current = monthsOld;
   const firstEverRef = useRef(firstEver);
   firstEverRef.current = firstEver;
+
+  /*
+   * Her one arrival, out loud.
+   *
+   * The server only ever reports this true on a seat's very first read, so the latch here is belt and
+   * braces against a re-render rather than against a second visit. Deliberately not `mrrp`: the point
+   * of the sound is that you hear it once and then never again in this room.
+   */
+  const saidHello = useRef(false);
+  useEffect(() => {
+    if (!firstEver || saidHello.current) return;
+    saidHello.current = true;
+    play("hello");
+    bounce.current = 1;
+    speakUntil.current = performance.now() + 2000;
+  }, [firstEver]);
   /** Where she has put her feet lately, oldest first. Cleared as they fade. */
   const steps = useRef<{ x: number; at: number }[]>([]);
   /** The last column a print was laid at, so one is laid per few columns rather than per frame. */
@@ -2852,6 +2896,26 @@ export function Cat({
       const tailY = pose === "loaf" ? y - 4 : pose === "perk" ? y - 9 : y - 6;
       if (pose !== "peek") blit(TAIL, pose === "stand" ? kx - 12 : tailX, tailY + wag, pal, pose === "stand");
       blit(sp, kx, y, pal);
+
+      /*
+       * The collar, once both of you have called her by name.
+       *
+       * That flag has existed for a while and the only thing it did was give a summons a one-in-three
+       * chance of working, behind a secret most people never find. So the one piece of state in the
+       * room that needs both of them was also the one nobody could see. This is the visible half: it
+       * turns up without ceremony and then it is simply always there.
+       *
+       * Anchors measured off the sprite grids, not guessed: every pose puts her mouth on the same row
+       * and the row under it is the top of her chest, which is where a collar sits. Sunlit with the
+       * rest of her, or a cat in a sunbeam wears a collar from a different room.
+       */
+      if (bothCalledRef.current) {
+        const c = COLLAR[pose];
+        rect(kx + c.dx, y + c.dy, c.w, 1, sunlit(COLLAR_BAND));
+        // On the band, not hanging below it. Below, the tag lands on her pale chest on some coats and
+        // on ginger fur on others, and it disappears into both; against the berry it always reads.
+        px(kx + c.tag, y + c.dy, sunlit(COLLAR_TAG));
+      }
 
       /*
        * One pixel of the window's light down the edge that faces it.

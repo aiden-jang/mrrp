@@ -227,7 +227,8 @@ export type Cue =
   | "twinkle"
   | "jingle"
   | "rain"
-  | "glint";
+  | "glint"
+  | "hello";
 
 const CUES: Record<Cue, (g: { ctx: AudioContext; master: GainNode }, t: number) => void> = {
   /*
@@ -281,6 +282,31 @@ const CUES: Record<Cue, (g: { ctx: AudioContext; master: GainNode }, t: number) 
       wobbleDepth: 30,
       type: "sine",
     });
+  },
+
+  /*
+   * The one she only ever makes once.
+   *
+   * A room has exactly one first moment and it was silent: `firstEver` put her by the door and that
+   * was the whole of it. Three notes rather than mrrp's two, climbing and then holding, so it is
+   * audibly not the greeting she gives every other day. Nothing else in here plays it, and after the
+   * first read of a room nothing ever will again.
+   */
+  hello: (g, t) => {
+    const p = (f: number[]) => f.map((x) => x * pitch);
+    voice(g, { at: t, dur: 0.14, gain: 0.13, sweep: p([390, 560]), wobble: 30, wobbleDepth: 16 });
+    voice(g, { at: t + 0.11, dur: 0.16, gain: 0.14, sweep: p([620, 780]), wobble: 34, wobbleDepth: 18 });
+    voice(g, {
+      at: t + 0.25,
+      dur: 0.42,
+      gain: 0.12,
+      sweep: p([820, 900, 840]),
+      wobble: 26,
+      wobbleDepth: 22,
+    });
+    // A quiet upper voice on the last note only, which is what makes it read as pleased rather than
+    // as a longer mrrp.
+    voice(g, { at: t + 0.25, dur: 0.42, gain: 0.04, sweep: p([1640, 1800, 1680]), type: "sine" });
   },
 
   /*
