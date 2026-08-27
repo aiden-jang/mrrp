@@ -2,11 +2,9 @@ import { describe, expect, it } from "vitest";
 import { BLANK, cellAt, DOODLE_CELLS, DOODLE_INK, isBlank, withCell } from "./doodle.js";
 
 describe("the shape of a drawing", () => {
-  /*
-   * The worker validates against a literal 35 rather than importing this, because validation that
-   * imports its bound from the thing being validated is not validation. This is the tripwire: change
-   * the grid and this fails, which is the reminder to change the regex in the worker too.
-   */
+  // The worker checks against a literal 35 rather than importing this, because validation that
+  // imports its own bound is not validation. This test is the tripwire: change the grid and it fails,
+  // which is the reminder to change the worker's regex too.
   it("is thirty-five cells, which is what the worker's regex allows", () => {
     expect(DOODLE_CELLS).toBe(35);
     expect(BLANK).toHaveLength(35);
@@ -33,7 +31,6 @@ describe("painting a cell", () => {
 });
 
 describe("an empty sheet", () => {
-  // A blank one is a delete rather than a stored square of nothing, so the frame goes back to its fish.
   it("is blank whether it was never drawn on or rubbed out again", () => {
     expect(isBlank(BLANK)).toBe(true);
     expect(isBlank(withCell(withCell(BLANK, 1, 1, 3), 1, 1, 0))).toBe(true);

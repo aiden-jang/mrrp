@@ -1,24 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { noticed, resetSessionCache } from "./discoveries.js";
 
-/*
- * The reporter is called from inside the canvas animation loop, so the only behaviour that really
- * matters is that it stays quiet. A secret whose visual lasts six seconds is being re-triggered on
- * every frame it is checked, and one request per frame would be a few hundred posts for one piano.
- */
-
 const ROOM = "abcdef";
 const ME = "me-token";
 
 let fetchMock: ReturnType<typeof vi.fn>;
 
-/*
- * A localStorage of our own.
- *
- * These tests run in node, where there is no DOM, and the rest of this package's suite is pure logic
- * so there is no jsdom to lean on. Pulling one in for a nine-line stub would be the wrong trade: the
- * only browser API this module touches is get/set on one key.
- */
 function fakeStorage(overrides: Partial<Storage> = {}): Storage {
   const map = new Map<string, string>();
   return {
@@ -67,7 +54,7 @@ describe("reporting a discovery", () => {
 
   it("stays quiet across a reload, because the device remembers", () => {
     noticed(ROOM, ME, "piano");
-    resetSessionCache(); // a fresh page, same localStorage
+    resetSessionCache();
     noticed(ROOM, ME, "piano");
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
@@ -86,8 +73,6 @@ describe("reporting a discovery", () => {
     fetchMock.mockImplementation(async () => {
       throw new Error("offline");
     });
-    // Nothing a person could do with "we could not record that you found the mouse", and it must not
-    // become an unhandled rejection either.
     expect(() => noticed(ROOM, ME, "mouse")).not.toThrow();
     await Promise.resolve();
   });
@@ -98,8 +83,6 @@ describe("reporting a discovery", () => {
     };
     vi.stubGlobal("localStorage", fakeStorage({ getItem: boom, setItem: boom }));
 
-    // Private-mode Safari throws rather than no-ops. Losing the dedupe is acceptable; losing the
-    // secret is not.
     expect(() => noticed(ROOM, ME, "yarn")).not.toThrow();
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
