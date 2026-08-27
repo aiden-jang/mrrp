@@ -582,6 +582,20 @@ export class Room extends DurableObject<Env> {
     }
 
     /*
+     * Her mood, for the day she said it and no longer.
+     *
+     * It used to be cleared in exactly one place: when her seat was released. So a "stressed" tapped
+     * three weeks ago was still drawing a stressed cat three weeks later, under a line that offers
+     * "hasn't said how she is yet today" as its own alternative. Every other thing in this room that
+     * means today is keyed to her local day; this was the one that was not.
+     *
+     * Derived from the timestamp rather than stored as a day number, so it is right for the moods
+     * already in storage and there is no second copy of the same fact to keep in step.
+     *
+     * The arrival card is deliberately not gated this way: that is a record of what happened while
+     * you were out, and it stays true after midnight in a way a current feeling does not.
+     */
+    /*
      * Her mood, to the two of them and nobody else.
      *
      * It used to go to whoever was looking, on the grounds that the cat is her. But the cat is also
@@ -590,7 +604,9 @@ export class Room extends DurableObject<Env> {
      * thing she leaves in here is gated on the seat; a tapped mood is a shorter sentence, not a
      * different kind of one. Spectators get the cat the clock alone would give them.
      */
-    const catTold = seated && her ? (moods[her] ?? null) : null;
+    const told = seated && her ? (moods[her] ?? null) : null;
+    const catTold =
+      told && localDayNumber(told.at, clock.tz) === localDayNumber(Date.now(), clock.tz) ? told : null;
     const note = await this.noteFor(clock, youAreHer, !waitingForThem);
 
     return {

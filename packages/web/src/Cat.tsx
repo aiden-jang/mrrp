@@ -241,6 +241,11 @@ const COLLAR: Record<Pose, { dx: number; w: number; dy: number; tag: number }> =
 const COLLAR_BAND = "#9c5468";
 const COLLAR_TAG = "#e8ad55";
 
+/** Middle of the frame on the wall. FRAME is blitted at 16 and is 13 across. */
+const FRAME_CENTRE = 22;
+/** Long enough to read as looking at it, short enough not to be a stare. */
+const GLANCE_MS = 2600;
+
 /** Middle of the door leaf, for anything that needs to look at it. */
 const DOOR_CENTRE = 12;
 /** One swipe: long enough to read as a lunge, short enough that she is back to loafing. */
@@ -726,6 +731,25 @@ export function Cat({
    * Arrivals get a chirp and a bounce; this gets neither on purpose. A cat watching a shut door is
    * the entire beat, and any sound on top of it turns going away into an event.
    */
+  /*
+   * She looks up when the picture changes.
+   *
+   * Fires for a drawing either of you put there: yours is the answer to hanging it, theirs is her
+   * noticing it before you have. Skips the value the room loads with, or she would glance at the
+   * same picture every time anybody opened the door. Silent, because hanging one already makes a
+   * sound and two noises for one action is just noise.
+   */
+  const seenDoodle = useRef<string | null | undefined>(undefined);
+  const glanceUntil = useRef(0);
+  useEffect(() => {
+    const first = seenDoodle.current === undefined;
+    const changed = seenDoodle.current !== doodle;
+    seenDoodle.current = doodle;
+    if (first || !changed || doodle === null) return;
+    glanceUntil.current = performance.now() + GLANCE_MS;
+    lookAt.current = { x: FRAME_CENTRE, until: glanceUntil.current };
+  }, [doodle]);
+
   /** One go per visit, so she is not batting at it for the whole eighteen seconds. */
   const mothSwipe = useRef({ visit: -1, at: -Infinity });
   const reserveRef = useRef(reserveBelow);
@@ -2665,6 +2689,7 @@ export function Cat({
           // Outlasts the swing, which is the only thing separating a departure from an arrival: after
           // one she settles the moment the door shuts, after the other she is still sitting up.
           t < watchDoorUntil.current ||
+          t < glanceUntil.current ||
           birding ||
           stargazing ||
           constellating ||
