@@ -152,9 +152,11 @@ app.post("/api/room/:id/notes", async (c) => {
 });
 
 /**
- * Take his seat back on a new device, with the room's recovery code. The counterpart to /release: she
- * can be restored because he can free her seat, and this is the only way he can be, since there is
- * nobody who could vouch for him.
+ * Take a seat back on a new device, with that seat's recovery code.
+ *
+ * One box for both of them. His was always the only code, on the reasoning that she could be restored
+ * because he can free her seat: true, but it left her needing him to notice, and left her with nothing
+ * at all if he is the one who is away. The Room decides which seat a code belongs to.
  */
 app.post("/api/room/:id/recover", async (c) => {
   const id = c.req.param("id");
@@ -163,7 +165,7 @@ app.post("/api/room/:id/recover", async (c) => {
   const me = typeof body.me === "string" ? body.me : "";
   const code = typeof body.code === "string" ? body.code : "";
   if (me.length < 8 || code.length < 8) return c.json({ error: "bad request" }, 400);
-  const ok = await room(c.env, id).recoverHisSeat(me, code);
+  const ok = await room(c.env, id).recoverSeat(me, code);
   return ok ? c.json({ ok: true }) : c.json({ error: "that code does not match" }, 403);
 });
 

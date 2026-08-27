@@ -391,11 +391,15 @@ describe("the photo on the wall", () => {
 describe("taking his seat back", () => {
   const NEWPHONE = "hisnewphonehis";
 
-  it("gives the code to him and to nobody else", async () => {
+  it("gives each of them their own code, and a spectator none", async () => {
     await seat();
-    const code = (await view(HIM)).recoveryCode;
-    expect(code).toMatch(/^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$/);
-    expect((await view(HER)).recoveryCode).toBeNull();
+    const his = (await view(HIM)).recoveryCode;
+    const hers = (await view(HER)).recoveryCode;
+    const shape = /^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$/;
+    expect(his).toMatch(shape);
+    expect(hers).toMatch(shape);
+    // Two seats, two codes. One shared code could not say which seat was being claimed.
+    expect(his).not.toBe(hers);
     await view(STRANGER);
     expect((await view(STRANGER)).recoveryCode).toBeNull();
   });
@@ -1165,5 +1169,89 @@ describe("fast-forwarding a room", () => {
     await seat();
     await post("age", { me: STRANGER, days: 400 });
     expect((await view(HIM)).monthsOld).toBe(0);
+  });
+});
+
+/*
+ * Taking her seat back.
+ *
+ * His seat always had a code and hers did not, so a lost phone meant waiting for him to notice, free
+ * her seat and send the link again. Hers carries more than his ever did, so the interesting part is
+ * not the swap: it is what survives it.
+ */
+describe("taking her seat back", () => {
+  const NEW_PHONE = "hernewphone1234";
+
+  it("puts her back in her own seat, not his", async () => {
+    await seat();
+    const code = (await view(HER)).recoveryCode!;
+
+    expect((await post("recover", { me: NEW_PHONE, code })).status).toBe(200);
+    const back = await view(NEW_PHONE);
+    expect(back.youAreHer).toBe(true);
+    expect((await view(HIM)).youAreHer).toBe(false);
+  });
+
+  it("brings how she is with her, so the room does not forget overnight", async () => {
+    await seat();
+    await post("tell", { me: HER, mood: "tired" });
+    const code = (await view(HER)).recoveryCode!;
+
+    await post("recover", { me: NEW_PHONE, code });
+    expect((await view(HIM)).catMood).toBe("tired");
+  });
+
+  it("keeps what he did for her, which is logged against the seat", async () => {
+    await seat();
+    await post("act", { me: HIM, action: "brush" });
+    const code = (await view(HER)).recoveryCode!;
+
+    await post("recover", { me: NEW_PHONE, code });
+    expect((await view(NEW_PHONE)).theirRecent.map((v) => v.action)).toContain("brush");
+  });
+
+  it("keeps the collar, which needs both of them on record", async () => {
+    await seat();
+    await post("found", { me: HIM, key: "herName" });
+    await post("found", { me: HER, key: "herName" });
+    const code = (await view(HER)).recoveryCode!;
+
+    await post("recover", { me: NEW_PHONE, code });
+    expect((await view(NEW_PHONE)).bothCalledHer).toBe(true);
+    expect((await view(HIM)).bothCalledHer).toBe(true);
+  });
+
+  it("will not let him redeem it and end up holding both seats", async () => {
+    await seat();
+    const code = (await view(HER)).recoveryCode!;
+
+    expect((await post("recover", { me: HIM, code })).status).toBe(403);
+    expect((await view(HER)).youAreHer).toBe(true);
+  });
+
+  it("will not let her redeem his and leave the room with no cat", async () => {
+    await seat();
+    const code = (await view(HIM)).recoveryCode!;
+
+    expect((await post("recover", { me: HER, code })).status).toBe(403);
+    expect((await view(HIM)).youAreHer).toBe(false);
+  });
+
+  it("stops working once he has freed her seat", async () => {
+    await seat();
+    const code = (await view(HER)).recoveryCode!;
+    await post("release", { me: HIM });
+
+    // Otherwise the device he just evicted walks back in with the code it still has.
+    expect((await post("recover", { me: NEW_PHONE, code })).status).toBe(403);
+  });
+
+  it("gives the next person to hold her seat a different code", async () => {
+    await seat();
+    const first = (await view(HER)).recoveryCode!;
+    await post("release", { me: HIM });
+    await view(NEW_PHONE, "Bea");
+
+    expect((await view(NEW_PHONE)).recoveryCode).not.toBe(first);
   });
 });
