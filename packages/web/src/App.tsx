@@ -5,6 +5,7 @@ import {
   doAct,
   doClock,
   doDress,
+  doDraw,
   doNotes,
   doRecover,
   doRelease,
@@ -28,6 +29,17 @@ import type { Cue } from "./sound.js";
 import { buzz, isMuted, play, setVoice, toggleMuted } from "./sound.js";
 import s from "./App.module.css";
 import { makeKeepsake } from "./keepsake.js";
+import {
+  BLANK,
+  cellAt,
+  DOODLE_CELLS,
+  DOODLE_H,
+  DOODLE_INK,
+  DOODLE_NAMES,
+  DOODLE_W,
+  isBlank,
+  withCell,
+} from "./doodle.js";
 import { faviconFor } from "./favicon.js";
 import { foundKeys, noticed } from "./discoveries.js";
 import { awayLine, milestoneLine, personalityLine } from "./remembers.js";
@@ -712,6 +724,19 @@ function RoomPage({ id }: { id: string }) {
   const [name, setName] = useState("");
   const [shareResult, setShareResult] = useState<"copied" | "shared" | null>(null);
   const [did, setDid] = useState<string | null>(null);
+  const [drawing, setDrawing] = useState(false);
+  const hangUp = async (cells: string) => {
+    setDrawing(true);
+    try {
+      setView(await doDraw(id, cells));
+      play("settle");
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't hang that up.");
+    } finally {
+      setDrawing(false);
+    }
+  };
+
   const [line, setLine] = useState("");
   const [lineOpen, setLineOpen] = useState(false);
 
@@ -1105,6 +1130,7 @@ function RoomPage({ id }: { id: string }) {
             nudge={nudge}
             eyesOpen={setup}
             framed={view.framed}
+            doodle={view.doodle?.cells ?? null}
             doorOpenAt={doorOpenAt}
             watchDoorAt={watchDoorAt}
             staying={staying && (iAmHim || view.youAreHer)}
@@ -1605,6 +1631,8 @@ function RoomPage({ id }: { id: string }) {
               </button>
             )}
 
+            <FrameSheet current={view.doodle} saving={drawing} onSave={(c) => void hangUp(c)} />
+
             <p className={s.tellLabel}>
               {view.catMood
                 ? `still ${MOODS.find((m) => m.id === view.catMood)?.label}?`
@@ -1687,6 +1715,8 @@ function RoomPage({ id }: { id: string }) {
                 {did ? `She'll see that you ${did}.` : "\u00a0"}
               </p>
             )}
+
+            {iAmHim && <FrameSheet current={view.doodle} saving={drawing} onSave={(c) => void hangUp(c)} />}
 
             {iAmHim && view.noteDay && (
               <p className={s.small} style={{ textAlign: "center" }}>
@@ -1908,6 +1938,150 @@ function FaviconSync({ cat }: { cat: CatLook }) {
     };
   }, [fur, furDk, belly, eyes, tabby]);
   return null;
+}
+
+/*
+ * The seven-by-five sheet, and the frame it goes in.
+ *
+ * Both seats get one. Every other object in the room is touchable by both of them, and it also gives
+ * him the only thing his side has never had: a way to say something now, rather than in a note he
+ * wrote weeks ago. It is not a message box. It is an object you leave on a wall, which is the same
+ * grammar as the mug and the light in the window.
+ */
+function FrameSheet({
+  current,
+  saving,
+  onSave,
+}: {
+  current: { cells: string; mine: boolean } | null;
+  saving: boolean;
+  onSave: (cells: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [sheet, setSheet] = useState(BLANK);
+  const [ink, setInk] = useState(1);
+  // Held down means keep painting: tapping thirty-five cells one at a time to draw a line is the
+  // difference between a toy and a chore.
+  const painting = useRef(false);
+  useEffect(() => {
+    const up = () => (painting.current = false);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+    return () => {
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+    };
+  }, []);
+
+  if (!open) {
+    return (
+      <button
+        className={current ? s.sheetPeek : s.quiet}
+        onClick={() => {
+          setSheet(current?.cells ?? BLANK);
+          setInk(1);
+          setOpen(true);
+        }}
+      >
+        {current ? (
+          <>
+            <span className={s.sheetPeekLabel}>{current.mine ? "you put this up" : "on the wall"}</span>
+            <Sheet cells={current.cells} />
+          </>
+        ) : (
+          "Draw something for the frame"
+        )}
+      </button>
+    );
+  }
+
+  const paint = (x: number, y: number) => setSheet((c) => withCell(c, x, y, ink));
+
+  return (
+    <div className={s.panel}>
+      <p className={s.panelTitle}>for the frame</p>
+      <div
+        className={s.sheetGrid}
+        role="group"
+        aria-label={`Drawing, ${DOODLE_W} by ${DOODLE_H}`}
+        style={{ gridTemplateColumns: `repeat(${DOODLE_W}, 1fr)` }}
+      >
+        {Array.from({ length: DOODLE_CELLS }, (_, i) => {
+          const x = i % DOODLE_W;
+          const y = Math.floor(i / DOODLE_W);
+          const at = cellAt(sheet, x, y);
+          return (
+            <button
+              key={i}
+              className={s.sheetCell}
+              style={{ background: DOODLE_INK[at] || "transparent" }}
+              aria-label={`Row ${y + 1}, column ${x + 1}: ${DOODLE_NAMES[at]}`}
+              onPointerDown={(e) => {
+                // Without releasing the capture, every later pointerenter goes to this one cell and
+                // dragging paints a single square.
+                e.currentTarget.releasePointerCapture?.(e.pointerId);
+                painting.current = true;
+                paint(x, y);
+              }}
+              onPointerEnter={() => painting.current && paint(x, y)}
+              // Also on click, or the grid is mouse-and-finger only: Enter and Space on a button
+              // raise a click and never a pointerdown. Painting the same cell twice costs nothing.
+              onClick={() => paint(x, y)}
+            />
+          );
+        })}
+      </div>
+
+      <div className={s.inkRow}>
+        {DOODLE_INK.map((hex, i) => (
+          <button
+            key={i}
+            className={s.inkDot}
+            aria-label={DOODLE_NAMES[i]}
+            aria-pressed={ink === i}
+            title={DOODLE_NAMES[i]}
+            style={{
+              background: hex || "var(--panel)",
+              boxShadow: ink === i ? "0 0 0 2.5px var(--honey)" : "inset 0 0 0 1px var(--line)",
+            }}
+            onClick={() => setInk(i)}
+          />
+        ))}
+      </div>
+
+      <div className={s.row} style={{ marginTop: 12 }}>
+        <button className={s.btn} onClick={() => setOpen(false)}>
+          Never mind
+        </button>
+        <button
+          className={`${s.btn} ${s.btnGo}`}
+          disabled={saving}
+          onClick={() => {
+            onSave(sheet);
+            setOpen(false);
+          }}
+        >
+          {isBlank(sheet) && current ? "Take it down" : "Hang it up"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** The drawing at a readable size, for the button that opens the editor. */
+function Sheet({ cells }: { cells: string }) {
+  return (
+    <span className={s.sheetMini} style={{ gridTemplateColumns: `repeat(${DOODLE_W}, 1fr)` }} aria-hidden>
+      {Array.from({ length: DOODLE_CELLS }, (_, i) => (
+        <span
+          key={i}
+          style={{
+            background: DOODLE_INK[cellAt(cells, i % DOODLE_W, Math.floor(i / DOODLE_W))] || "transparent",
+          }}
+        />
+      ))}
+    </span>
+  );
 }
 
 function DocTitle({ name }: { name: string }) {

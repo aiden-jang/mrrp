@@ -6,6 +6,8 @@ export { Room } from "./room.js";
 
 const app = new Hono<{ Bindings: Env }>();
 const ROOM_RE = /^[a-z0-9]{6,24}$/;
+/** Seven by five cells, each an index into a five-colour palette. Nothing else is a drawing. */
+const DOODLE_RE = /^[0-4]{35}$/;
 const VALID: Action[] = ["pet", "brush", "bring", "sit", "photo"];
 const VALID_MOODS: Mood[] = ["good", "tired", "stressed", "sad", "lonely", "bored", "feral", "done", "horny"];
 
@@ -48,6 +50,22 @@ app.post("/api/room/:id/say", async (c) => {
     return c.json({ error: "bad request" }, 400);
   }
   return c.json(await room(c.env, id).say(body.me, body.text));
+});
+
+/**
+ * Put a drawing in the frame. Either seat.
+ *
+ * The shape is checked here and again in the Room. Thirty-five characters of "0" to "4" is the whole
+ * grammar, so anything that is not exactly that never reaches storage and never reaches a canvas.
+ */
+app.post("/api/room/:id/draw", async (c) => {
+  const id = c.req.param("id");
+  const body = (await c.req.json().catch(() => null)) as { me?: string; cells?: unknown } | null;
+  const cells = body?.cells;
+  if (!ROOM_RE.test(id) || !body?.me || typeof cells !== "string" || !DOODLE_RE.test(cells)) {
+    return c.json({ error: "bad request" }, 400);
+  }
+  return c.json(await room(c.env, id).draw(body.me, cells));
 });
 
 /** Set her name and colours. His to set, and the Room re-checks that. */

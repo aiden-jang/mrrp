@@ -184,6 +184,16 @@ export async function doWindowLight(id: string): Promise<RoomView> {
 }
 
 /** Leave him a line. Hers only; empty text clears it. */
+export async function doDraw(id: string, cells: string): Promise<RoomView> {
+  const r = await fetch(`/api/room/${id}/draw`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ me: myToken(), cells }),
+  });
+  if (!r.ok) throw new Error("Couldn't hang that up.");
+  return r.json() as Promise<RoomView>;
+}
+
 export async function doSay(id: string, text: string): Promise<RoomView> {
   const r = await fetch(`/api/room/${id}/say`, {
     method: "POST",
