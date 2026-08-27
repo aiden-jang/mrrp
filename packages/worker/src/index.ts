@@ -228,8 +228,9 @@ app.post("/api/room/:id/shelf", async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as { me?: unknown };
   const me = typeof body.me === "string" ? body.me : "";
   if (me.length < 8) return c.json({ error: "bad request" }, 400);
-  const ok = await room(c.env, id).putBack(me);
-  return ok ? c.json({ ok: true }) : c.json({ error: "not yours to tidy" }, 403);
+  const done = await room(c.env, id).putBack(me);
+  // `again` means she was watching you do it. The client waits a beat and then plays it.
+  return done ? c.json({ ok: true, again: done === "again" }) : c.json({ error: "not yours to tidy" }, 403);
 });
 
 /** Leave a light in the window, or collect the one the other person left. Either seat, never a spectator. */

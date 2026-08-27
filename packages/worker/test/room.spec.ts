@@ -767,16 +767,25 @@ describe("the thing she knocks off the shelf", () => {
       expect((await view(HIM)).shelfDown).toBe(true);
     };
 
+    /*
+     * Putting it back no longer means it stays up: one time in three she knocks it straight off
+     * again while you are standing there. So the room's answer, not `false`, is what the mug should
+     * agree with.
+     */
+    const putBack = async (me: string) => {
+      const r = await post("shelf", { me });
+      expect(r.status).toBe(200);
+      const { again } = (await r.json()) as { again: boolean };
+      expect((await view(HIM)).shelfDown).toBe(again);
+    };
+
     await knock();
     expect((await post("shelf", { me: "strangerstranger" })).status).toBe(403);
     expect((await view(HIM)).shelfDown).toBe(true);
 
-    expect((await post("shelf", { me: HER })).status).toBe(200);
-    expect((await view(HIM)).shelfDown).toBe(false);
-
+    await putBack(HER);
     await knock();
-    expect((await post("shelf", { me: HIM })).status).toBe(200);
-    expect((await view(HIM)).shelfDown).toBe(false);
+    await putBack(HIM);
   });
 });
 
@@ -1326,5 +1335,20 @@ describe("a seat tied to an account", () => {
     // Signing in no longer finds it, and her own device still holds it.
     expect((await inRoom((r) => r.view(NEW_PHONE, "x", ME))).youAreHer).toBe(false);
     expect((await inRoom((r) => r.view(HER, "Bea"))).youAreHer).toBe(true);
+  });
+});
+
+describe("putting the mug back", () => {
+  /*
+   * Whether she knocks it off again is a coin the room tosses, so what is worth pinning is not the
+   * odds but that the answer and the room never disagree. The client shows the mug going back up and
+   * then falling, and it takes the room's word for which of those happened.
+   */
+  it("always agrees with itself about where the mug ended up", async () => {
+    await seat();
+    for (let i = 0; i < 25; i++) {
+      const said = (await (await post("shelf", { me: HIM })).json()) as { again: boolean };
+      expect((await view(HIM)).shelfDown).toBe(said.again);
+    }
   });
 });

@@ -420,6 +420,8 @@ const STAY_MS = 180_000;
 
 /** What the room says when nobody is signed in, and the one error worth acting on rather than showing. */
 const SIGNED_OUT = "Sign in first.";
+/** Long enough for the mug to look like it is staying up there, short enough to still be one gesture. */
+const MUG_AGAIN_MS = 1400;
 /** Survives the round trip to the login page, which is a full navigation away and back. */
 const FINISH_LINK = "mrrp:finish-link";
 
@@ -582,8 +584,22 @@ function RoomPage({ id }: { id: string }) {
     const r = roomFromPath();
     if (!r) return;
     try {
-      await doTidy(r);
-      setView(await fetchRoom(r));
+      const { again } = await doTidy(r);
+      /*
+       * On the shelf first, always. The room already put it back on the floor if she was going to,
+       * but showing that instantly would look like the tap failed rather than like she did it.
+       * A beat of the mug sitting there is the whole gag: you did it, and then she undid it.
+       */
+      if (!again) {
+        setView(await fetchRoom(r));
+        return;
+      }
+      setView((v) => (v ? { ...v, shelfDown: false } : v));
+      window.setTimeout(() => {
+        play("thump");
+        setMugFell(Date.now());
+        void fetchRoom(r).then(setView);
+      }, MUG_AGAIN_MS);
     } catch {
       // A failed tidy is not worth an error banner. The mug is still on the floor; tap it again.
     }
@@ -788,6 +804,7 @@ function RoomPage({ id }: { id: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wantsLink, id]);
 
+  const [mugFell, setMugFell] = useState<number | null>(null);
   const [drawing, setDrawing] = useState(false);
   const hangUp = async (cells: string) => {
     setDrawing(true);
@@ -1228,6 +1245,7 @@ function RoomPage({ id }: { id: string }) {
             onWindowLight={() => void touchWindowLight()}
             shelfDown={view.shelfDown}
             onTidy={() => void tidy()}
+            mugFell={mugFell}
             /* Holding on her is petting, the one gesture that isn't a button. She gets a poke instead:
                she IS the cat, so petting herself would be nonsense and telling him she did it would be
                worse, but a tap that gets a mrrp back costs nothing. Local only, nobody told. A spectator

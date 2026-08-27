@@ -250,12 +250,25 @@ export class Room extends DurableObject<Env> {
    * cat is not a gesture one performs for the other, and letting only him do it would turn a shared
    * room into his room that she visits. Spectators cannot rearrange their furniture.
    */
-  async putBack(me: string): Promise<boolean> {
+  async putBack(me: string): Promise<false | "tidy" | "again"> {
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     const { him, her } = this.roles(people);
     if (me !== him && me !== her) return false;
     await this.ctx.storage.put("shelfDown", false);
-    return true;
+
+    /*
+     * And sometimes she puts it straight back on the floor.
+     *
+     * She has always knocked it off between visits, so the only half of this anybody ever saw was the
+     * mess. This is the other half, and it only lands while somebody is standing there, which means
+     * the room has to decide it now rather than on her next read.
+     *
+     * One in three. Every time would make tidying up pointless, which is a different joke and not a
+     * funny one, and leaving the room tidy has to stay possible.
+     */
+    const again = Math.random() < 1 / 3;
+    if (again) await this.ctx.storage.put("shelfDown", true);
+    return again ? "again" : "tidy";
   }
 
   /**
