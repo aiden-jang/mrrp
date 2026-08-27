@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Action, Arrival, Mood, RoomView } from "./types.js";
+import type { Action, Arrival, Cat as CatLook, Mood, RoomView } from "./types.js";
 import { ACTIONS, MOODS } from "./types.js";
 import {
   doAct,
@@ -13,6 +13,7 @@ import {
   doTidy,
   doWindowLight,
   fetchRoom,
+  lastCat,
   lastRoom,
   myName,
   newRoomId,
@@ -26,6 +27,7 @@ import type { Cue } from "./sound.js";
 import { buzz, isMuted, play, setVoice, toggleMuted } from "./sound.js";
 import s from "./App.module.css";
 import { makeKeepsake } from "./keepsake.js";
+import { faviconFor } from "./favicon.js";
 import { foundKeys, noticed } from "./discoveries.js";
 import { awayLine, milestoneLine, personalityLine } from "./remembers.js";
 import { myToken } from "./api.js";
@@ -567,12 +569,14 @@ function RoomPage({ id }: { id: string }) {
         day: view?.note?.day ?? view?.noteDay ?? undefined,
       });
       if (!blob) throw new Error("postcard unavailable");
-      const fileName = `${
+      const slug =
         view?.cat.name
           ?.trim()
           .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-") || "mrrp"
-      }-postcard.png`;
+          .replace(/[^a-z0-9]+/g, "-") || "mrrp";
+      // Dated, because every card used to save as the same name and the second one became
+      // "bean-postcard (1)". A keepsake should sort next to the others, not queue behind them.
+      const fileName = `${slug}-${new Date().toISOString().slice(0, 10)}.png`;
       const file = new File([blob], fileName, { type: "image/png" });
       const share = navigator as Navigator & { canShare?: (data?: ShareData) => boolean };
       // Sharing the actual image feels right on a phone (Messages, WhatsApp, etc.). `canShare` is
@@ -708,6 +712,7 @@ function RoomPage({ id }: { id: string }) {
       try {
         const next = await fetchRoom(id, n ?? myName.get());
         setView(next);
+        lastCat.set(id, next.cat);
         // Polls return an empty list after the server advances this seat's last-seen marker. Keep the
         // postcard on screen until the person puts it away, rather than flashing it for 15 seconds.
         if (next.arrivals.length > 0) setArrivalCard(next.arrivals);
@@ -901,6 +906,10 @@ function RoomPage({ id }: { id: string }) {
 
   // Both screens below stand at the door rather than in a room, and neither can call a hook of its own.
   const door = useDoorScene();
+  // Her clock is on the server, so the offline room still runs on the viewer's. Her coat is not, and
+  // showing the door's ginger stranger was the room forgetting whose it was at the worst moment.
+  const remembered = lastCat.get(id);
+  const knownCat = remembered ?? DOOR_CAT;
 
   if (asking) {
     return (
@@ -946,14 +955,22 @@ function RoomPage({ id }: { id: string }) {
     return (
       <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
         <ChromeSync night={isNightChrome(door.sun)} />
+        {/* Only once this device has actually seen the room. Titling a stranger's failed first load
+            after the door's demo cat would be naming a cat that is not theirs. */}
+        {remembered && (
+          <>
+            <DocTitle name={remembered.name} />
+            <FaviconSync cat={remembered} />
+          </>
+        )}
         <div className={s.card} style={{ textAlign: "center" }}>
           {/* The cat, even here. The app opens from cache on a bad connection, so this screen is what
               she sees standing on a train with no signal, and an empty page with an error on it is a
               worse thing to be handed than a sleeping cat and a promise to keep trying. */}
           <div className={s.stage}>
             <Cat
-              label="A pixel cat asleep in a sunlit room."
-              look={DOOR_CAT}
+              label={`${knownCat.name} asleep in a sunlit room.`}
+              look={knownCat}
               clock={DOOR_CLOCK}
               mood={null}
               nudge={0}
@@ -1002,6 +1019,7 @@ function RoomPage({ id }: { id: string }) {
       <ChromeSync night={nightChrome} />
       <VoiceSync fur={view.cat.fur} />
       <DocTitle name={view.cat.name} />
+      <FaviconSync cat={view.cat} />
       {/* The room is the page, and it had no heading at all: the only one was the hidden <h2> over
           the props list, which left a screen reader with an h2 and nothing above it. */}
       <h1 className={s.srOnly}>{`${view.cat.name}'s room`}</h1>
@@ -1761,6 +1779,32 @@ const ERROR_ON_DARK = "#d39a88";
  * specific cat. Naming her is what makes the tab, the history entry and the app switcher say whose
  * room this is. Reset on unmount so the door is not titled after the last room you looked at.
  */
+/*
+ * The tab icon, in her coat.
+ *
+ * index.html ships a ginger cat, which is right for the front door and wrong for every room that
+ * chose a different one. Swapped rather than added: leaving the shipped link in place lets whichever
+ * the browser prefers win, and the two would not be the same cat. Restored on unmount so the door
+ * gets its own back.
+ */
+function FaviconSync({ cat }: { cat: CatLook }) {
+  const { fur, furDk, belly, eyes, tabby } = cat;
+  useEffect(() => {
+    const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!link) return;
+    const drawn = faviconFor({ fur, furDk, belly, eyes, tabby });
+    if (!drawn) return;
+    const shipped = { href: link.href, type: link.type };
+    link.type = "image/png";
+    link.href = drawn;
+    return () => {
+      link.type = shipped.type;
+      link.href = shipped.href;
+    };
+  }, [fur, furDk, belly, eyes, tabby]);
+  return null;
+}
+
 function DocTitle({ name }: { name: string }) {
   useEffect(() => {
     document.title = `${name} \u00b7 mrrp`;

@@ -411,6 +411,37 @@ export const MRRP = sprite(
  * an overdraw, so the picture is authored: FRAME's inner area is exactly 7x5, enough for ears, two
  * eyes and a nose and not one pixel more. `c` is her fur, so the photo is of HER cat.
  */
+/**
+ * Her head alone, for the tab icon.
+ *
+ * PERK's head with the two empty edge columns trimmed, so it fills a square favicon instead of
+ * floating in it. Its own grid rather than a runtime slice of PERK: at sixteen displayed pixels the
+ * crop is the entire drawing, and that is a decision to make in the art, not in a substring.
+ */
+// prettier-ignore
+export const HEAD = sprite(
+  [
+    ".ww..........ww.",
+    ".wffw......wffw.",
+    ".wfpfw....wfpfw.",
+    ".wfpfw....wfpfw.",
+    ".wffffwwwwffffw.",
+    "wfdffffffffffdfw",
+    "wffffffffffffffw",
+    "wffbbbbbbbbbbffw",
+    "wfcbhebbbbhebcfw",
+    "wfcbeebbbbeebcfw",
+    "wffbbbbnnbbbbffw",
+    "wffbbbbmmbbbbffw",
+    ".wffbbbbbbbbffw.",
+    ".wfffbbbbbbfffw.",
+    "..wwffffffffww..",
+    "...wwwwwwwwww...",
+  ],
+  0,
+  0,
+);
+
 export const FRAME_CAT = sprite(
   [
     "wwwwwwwwwwwww",
