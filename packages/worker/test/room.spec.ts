@@ -1287,3 +1287,168 @@ describe("freeing her seat and giving it to a new phone", () => {
     expect((await view(STRANGER)).you).toBeNull();
   });
 });
+
+describe("deleting the room", () => {
+  it("takes the cat's name, typed, and not just the button", async () => {
+    await seat();
+    expect((await post("delete", { me: HIM, name: "not the cat" })).status).toBe(403);
+    expect((await view(HIM)).you).not.toBeNull();
+  });
+
+  it("is not hers to do, however she asks", async () => {
+    await seat();
+    expect((await post("delete", { me: HER, name: "Bean" })).status).toBe(403);
+    expect((await post("delete", { me: STRANGER, name: "Bean" })).status).toBe(403);
+    expect((await view(HIM)).you).not.toBeNull();
+  });
+
+  it("accepts the name however it was capitalised or spaced", async () => {
+    await seat();
+    expect((await post("delete", { me: HIM, name: "  bEaN " })).status).toBe(200);
+  });
+
+  it("answers 410 to everyone afterwards, and never reseats", async () => {
+    await seat();
+    await post("delete", { me: HIM, name: "Bean" });
+
+    const r = await SELF.fetch(`https://x/api/room/${id}?me=${HIM}`);
+    expect(r.status).toBe(410);
+    // The danger is not a 500. It is a 200 with an empty room in it: view() seats whoever turns up
+    // when there are fewer than two people, so a dead link would hand the maker's chair to a stranger.
+    expect((await SELF.fetch(`https://x/api/room/${id}?me=${STRANGER}`)).status).toBe(410);
+    expect((await post("tell", { me: HER, mood: "good" })).status).toBe(410);
+    expect((await post("delete", { me: HIM, name: "Bean" })).status).toBe(410);
+  });
+
+  it("leaves nothing behind but the date it went", async () => {
+    await seat();
+    await post("say", { me: HER, text: "something of hers" });
+    await post("delete", { me: HIM, name: "Bean" });
+
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    await runInDurableObject(stub, async (_instance, state) => {
+      const left = [...(await state.storage.list()).keys()];
+      expect(left).toEqual(["deleted"]);
+    });
+  });
+
+  // The tripwire. Every method reachable from a route has to refuse on a deleted room, and the one
+  // that forgets is the one that hands a dead link to a stranger as a fresh room.
+  //
+  // Adding any method to the Room fails this test until its name is put in one of the two lists
+  // below, which is the point: deciding which list is deciding whether a dead room can still be
+  // reached through it. TypeScript's `private` is gone by runtime, so the split cannot be detected.
+  const INTERNAL = [
+    "constructor",
+    "guard",
+    "roles",
+    "recoveryCode",
+    "adoptFound",
+    "reseatBelongings",
+    "found",
+    "notes",
+    "wipeHerSide",
+    "doodleFor",
+    "noteFor",
+    "build",
+  ];
+  // The one method that must answer on a dead room, because it is how the client knows it is dead.
+  const ANSWERS_WHEN_GONE = ["deletedAt"];
+
+  it("refuses every method a route can reach, including ones added after this was written", async () => {
+    await seat();
+    await post("delete", { me: HIM, name: "Bean" });
+
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    await runInDurableObject(stub, async (instance) => {
+      const proto = Object.getPrototypeOf(instance) as object;
+      const all = Object.getOwnPropertyNames(proto).filter(
+        (m) => typeof (instance as unknown as Record<string, unknown>)[m] === "function",
+      );
+      const unclassified = all.filter((m) => !INTERNAL.includes(m) && !ANSWERS_WHEN_GONE.includes(m));
+      expect(unclassified.length).toBeGreaterThan(10);
+
+      for (const name of unclassified) {
+        const call = (instance as unknown as Record<string, (...a: unknown[]) => unknown>)[name]!;
+        let message = "did not throw";
+        try {
+          await call.call(instance, HIM, "Bean", null);
+        } catch (e) {
+          message = (e as Error).message;
+        }
+        expect(message, `${name}() on a deleted room`).toMatch(/room deleted/);
+      }
+
+      // And the list itself is honest: nothing in it has been renamed away.
+      for (const name of [...INTERNAL.slice(1), ...ANSWERS_WHEN_GONE]) {
+        expect(all, `${name} is listed but no longer exists`).toContain(name);
+      }
+    });
+  });
+});
+
+describe("her leaving on her own", () => {
+  it("frees her seat and takes her side with her", async () => {
+    await seat();
+    await post("tell", { me: HER, mood: "sad" });
+    expect((await post("leave", { me: HER })).status).toBe(200);
+
+    const v = await view(HIM);
+    expect(v.waitingForThem).toBe(true);
+    expect(v.catMood).toBeNull();
+  });
+
+  it("leaves his room standing, notes and all", async () => {
+    await seat();
+    await post("notes", { me: HIM, notes: ["one of his", "two of his"] });
+    await post("leave", { me: HER });
+
+    const v = await view(HIM);
+    expect(v.you).not.toBeNull();
+    expect((await SELF.fetch(`https://x/api/room/${id}?me=${HIM}`)).status).toBe(200);
+  });
+
+  it("lets the next person she sends the link to take the empty seat", async () => {
+    await seat();
+    await post("leave", { me: HER });
+    expect((await view(STRANGER, "Someone new")).youAreHer).toBe(true);
+  });
+
+  // Leaving that a page load undoes is not leaving. Her own browser is the one thing standing in
+  // front of the empty seat she just vacated, so it is the one thing that must not be seated by it.
+  it("does not hand the seat straight back to the browser that just left", async () => {
+    await seat();
+    await post("leave", { me: HER });
+
+    const v = await view(HER);
+    expect(v.youAreHer).toBe(false);
+    expect(v.you).toBeNull();
+    expect(v.youLeft).toBe(true);
+    expect((await view(HIM)).waitingForThem).toBe(true);
+  });
+
+  it("takes her back on a fresh token, because that is what the way back does", async () => {
+    await seat();
+    await post("leave", { me: HER });
+    const v = await view("herherherher-again");
+    expect(v.youAreHer).toBe(true);
+    expect(v.youLeft).toBe(false);
+  });
+
+  // His release button exists so the right person can take a seat back. Barring the token it frees
+  // would lock out the case it was built for: her browser still holding the seat he just freed.
+  it("does not bar her token when he frees the seat instead", async () => {
+    await seat();
+    await post("release", { me: HIM });
+    const v = await view(HER);
+    expect(v.youAreHer).toBe(true);
+    expect(v.youLeft).toBe(false);
+  });
+
+  it("is not his to do, and not a stranger's", async () => {
+    await seat();
+    expect((await post("leave", { me: HIM })).status).toBe(403);
+    expect((await post("leave", { me: STRANGER })).status).toBe(403);
+    expect((await view(HER)).youAreHer).toBe(true);
+  });
+});

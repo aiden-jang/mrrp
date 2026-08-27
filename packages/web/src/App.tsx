@@ -6,7 +6,9 @@ import {
   doClock,
   doDress,
   adoptSeat,
+  doDelete,
   doDraw,
+  doLeave,
   doLink,
   doNotes,
   doOurDay,
@@ -17,6 +19,9 @@ import {
   doTidy,
   doWindowLight,
   fetchRoom,
+  forgetMe,
+  forgetRoom,
+  GONE,
   lastCat,
   lastRoom,
   myName,
@@ -479,6 +484,7 @@ function RoomPage({ id }: { id: string }) {
   const [found, setFound] = useState("");
   const [imageStatus, setImageStatus] = useState<"saving" | "shared" | "saved" | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [gone, setGone] = useState(false);
   const handleCaptureReady = useCallback((capture: () => Promise<Blob | null>) => {
     setCaptureRoom(() => capture);
   }, []);
@@ -511,6 +517,34 @@ function RoomPage({ id }: { id: string }) {
       // The mug is still on the floor. Tap it again.
     }
   }, []);
+  const [leaveArmed, setLeaveArmed] = useState(false);
+  const [typedName, setTypedName] = useState("");
+  const [ending, setEnding] = useState(false);
+  const endRoom = async () => {
+    setEnding(true);
+    try {
+      await doDelete(id, typedName);
+      forgetRoom(id);
+      setGone(true);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't delete the room.");
+      setEnding(false);
+    }
+  };
+  const leave = async () => {
+    setEnding(true);
+    try {
+      await doLeave(id);
+      forgetRoom(id);
+      // Her seat is free and this browser is a stranger here now, so the room she would load is not
+      // hers to see. Home rather than the gone screen: the room is still standing, just not for her.
+      window.location.href = "/";
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't leave the room.");
+      setEnding(false);
+    }
+  };
+
   const windowLightPending = useRef(false);
   const touchWindowLight = useCallback(async () => {
     if (windowLightPending.current) return;
@@ -754,6 +788,13 @@ function RoomPage({ id }: { id: string }) {
         if (next.arrivals.length > 0) setArrivalCard(next.arrivals);
         setErr(null);
       } catch (e) {
+        // A gone room is the one failure that must not be retried into. Everything else here is
+        // "the train went into a tunnel"; this one is an answer.
+        if (e instanceof Error && e.message === GONE) {
+          forgetRoom(id);
+          setGone(true);
+          return;
+        }
         setErr(`${e instanceof Error ? e.message : "Something went wrong."} Trying again in a moment.`);
       }
     },
@@ -765,10 +806,10 @@ function RoomPage({ id }: { id: string }) {
   }, [asking, load]);
 
   useEffect(() => {
-    if (asking || view || !err) return;
+    if (asking || view || !err || gone) return;
     const t = setTimeout(() => void load(), 2500);
     return () => clearTimeout(t);
-  }, [asking, view, err, load]);
+  }, [asking, view, err, gone, load]);
 
   useEffect(() => {
     if (asking) return;
@@ -941,6 +982,33 @@ function RoomPage({ id }: { id: string }) {
     );
   }
 
+  // No cat on this screen, on purpose. Every other empty state in the app draws her asleep and
+  // promises to keep trying, because every other empty state is a bad connection. This one is an
+  // answer, and drawing the cat here would be telling somebody she is still in there.
+  if (gone) {
+    return (
+      <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
+        <ChromeSync night={isNightChrome(door.sun)} />
+        <div className={s.card} style={{ textAlign: "center" }}>
+          <h1 className={s.h1}>this room is gone</h1>
+          <p className={s.small} style={{ marginTop: 12 }}>
+            It was deleted. The cat, the notes, the year of it, both sides. There is nothing left in here to
+            get back.
+          </p>
+          <button
+            className={`${s.btn} ${s.btnGo}`}
+            style={{ width: "100%", marginTop: 18 }}
+            onClick={() => {
+              window.location.href = "/";
+            }}
+          >
+            Start a new one
+          </button>
+        </div>
+      </main>
+    );
+  }
+
   if (!view) {
     return (
       <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
@@ -969,6 +1037,35 @@ function RoomPage({ id }: { id: string }) {
           <p className={s.small} style={{ marginTop: 16 }}>
             {err ?? "opening the door quietly…"}
           </p>
+        </div>
+      </main>
+    );
+  }
+
+  // She used the leave button, so the room will not seat this browser again on its own. Saying so
+  // beats the alternative, which is the stranger screen telling her a room she was in for a year
+  // belongs to two people she is not one of.
+  if (view.youLeft) {
+    return (
+      <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
+        <ChromeSync night={isNightChrome(door.sun)} />
+        <div className={s.card} style={{ textAlign: "center" }}>
+          <h1 className={s.h1}>you left this room</h1>
+          <p className={s.small} style={{ marginTop: 12 }}>
+            Your side of it is gone: the moods, the visits, the days. {view.cat.name} is still in there and
+            the seat is empty, so you can take it again if you want it. You would be starting from the
+            beginning.
+          </p>
+          <button
+            className={`${s.btn} ${s.btnGo}`}
+            style={{ width: "100%", marginTop: 18 }}
+            onClick={() => {
+              forgetMe();
+              window.location.reload();
+            }}
+          >
+            Take the seat again
+          </button>
         </div>
       </main>
     );
@@ -1803,6 +1900,65 @@ function RoomPage({ id }: { id: string }) {
             <button className={s.quiet} disabled={linking} onClick={() => void link(!view.linked)}>
               {view.linked ? "Take this seat off my account" : "Keep this seat on my account"}
             </button>
+          </details>
+        )}
+
+        {/*
+         * The way out, and it is two different doors.
+         *
+         * His ends the room for both of them, because he made it and it is his notes in it. Hers takes
+         * her side and leaves his standing, so she has a way to remove herself that does not cost him a
+         * year. Both are here rather than buried in a settings page: an app that can hold something
+         * this personal has to show you how to end it, in the room, where you are.
+         */}
+        {!setup && (iAmHim || view.youAreHer) && (
+          <details className={s.recovery} onToggle={() => setLeaveArmed(false)}>
+            <summary className={s.recoverySummary}>{iAmHim ? "delete this room" : "leave this room"}</summary>
+            {iAmHim ? (
+              <>
+                <p className={s.small} style={{ marginTop: 8 }}>
+                  This deletes the whole room for both of you: {view.cat.name}, the notes, everything either
+                  of you left in here. It happens straight away and there is no getting it back.
+                </p>
+                <p className={s.small} style={{ marginTop: 10 }}>
+                  Type her name to confirm.
+                </p>
+                <input
+                  className={s.input}
+                  value={typedName}
+                  placeholder={view.cat.name}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  aria-label={`Type ${view.cat.name} to confirm deleting this room`}
+                  onChange={(e) => setTypedName(e.target.value)}
+                />
+                <button
+                  className={s.quiet}
+                  disabled={ending || typedName.trim().toLowerCase() !== view.cat.name.trim().toLowerCase()}
+                  onClick={() => void endRoom()}
+                >
+                  {ending ? "deleting…" : "Delete this room for both of us"}
+                </button>
+              </>
+            ) : (
+              <>
+                <p className={s.small} style={{ marginTop: 8 }}>
+                  This takes your side out of the room: your moods, your visits, the days you have been in
+                  here. {view.them ?? "The other one"} keeps the room and {view.cat.name} stays, but she will
+                  not be you any more.
+                </p>
+                {/* Two taps, because this is as permanent for her as deleting is for him and she has no
+                    name to type. Closing the panel disarms it, so a stray tap does not sit there armed. */}
+                <button
+                  className={s.quiet}
+                  disabled={ending}
+                  onClick={() => (leaveArmed ? void leave() : setLeaveArmed(true))}
+                >
+                  {ending ? "leaving…" : leaveArmed ? "Yes, take my side out of it" : "Leave this room"}
+                </button>
+              </>
+            )}
           </details>
         )}
 

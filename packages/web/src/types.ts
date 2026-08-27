@@ -93,6 +93,9 @@ export interface RoomView {
   cat: Cat;
   clock: Clock;
   youAreHer: boolean;
+  // True only for a browser that used the leave button. It is why the room does not simply seat her
+  // again on her next visit, and it is what the client shows the way back on.
+  youLeft: boolean;
   catMood: Mood | null;
   catMoodAt: number | null;
   you: string | null;

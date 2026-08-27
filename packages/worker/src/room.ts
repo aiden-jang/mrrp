@@ -37,6 +37,8 @@ import {
 const DOODLE_CELLS = 35;
 
 const LOG_KEEP = 40;
+// Enough that leaving holds on every browser she has used. It is a list of random tokens, not names.
+const LEFT_KEEP = 20;
 const HERE_NOW_MS = 3 * 60_000;
 const DEFAULT_CAT: Cat = {
   name: "Bean",
@@ -47,6 +49,21 @@ const DEFAULT_CAT: Cat = {
   tabby: true,
 };
 const DEFAULT_CLOCK: Clock = { tz: "America/New_York", homeHour: 18 };
+
+// A deleted room keeps exactly one key: the date it went. Wiping storage outright is not enough,
+// because view() seats whoever turns up when there are fewer than two people, so the next person to
+// open a dead link would silently become the maker of a brand new room at the same address.
+const TOMBSTONE = "deleted";
+
+// Thrown by every method on a deleted room. index.ts turns it into a 410. Matched by message, not by
+// class, because a Durable Object RPC boundary carries the message across and not the prototype.
+export const ROOM_GONE = "mrrp: room deleted";
+
+export class RoomGone extends Error {
+  constructor() {
+    super(ROOM_GONE);
+  }
+}
 
 const GIFT_AFTER_MS = 8 * 60 * 60 * 1000;
 const GIFTS = ["leaf", "cap", "moth"] as const;
@@ -76,6 +93,7 @@ interface WindowLight {
 
 export class Room extends DurableObject<Env> {
   async view(me: string, name: string | null, account?: string | null): Promise<RoomView> {
+    await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     const now = Date.now();
     // A signed-in person is whichever seat they tied to this room, in any browser. `seat` goes back in
@@ -84,7 +102,9 @@ export class Room extends DurableObject<Env> {
     if (bound && bound !== me) return this.view(bound, name);
     const lastVisit = people[me]?.lastSeen;
 
-    if (!people[me] && Object.keys(people).length < 2) {
+    const left = (await this.ctx.storage.get<string[]>("left")) ?? [];
+    const iLeft = !people[me] && left.includes(me);
+    if (!people[me] && !iLeft && Object.keys(people).length < 2) {
       people[me] = { name: name?.trim().slice(0, 24) || "Someone", firstSeen: now, lastSeen: now, visits: 0 };
     }
     if (people[me]) {
@@ -122,6 +142,7 @@ export class Room extends DurableObject<Env> {
   }
 
   async act(me: string, action: Action): Promise<RoomView> {
+    await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (!people[me]) return this.build(me, people);
     // Checked here and not only in the UI. Her side does not render these buttons, but a request is a
@@ -166,6 +187,7 @@ export class Room extends DurableObject<Env> {
   }
 
   async putBack(me: string): Promise<false | "tidy" | "again"> {
+    await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     const { him, her } = this.roles(people);
     if (me !== him && me !== her) return false;
@@ -177,6 +199,7 @@ export class Room extends DurableObject<Env> {
   }
 
   async touchWindowLight(me: string): Promise<RoomView | null> {
+    await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     const { him, her } = this.roles(people);
     if (me !== him && me !== her) return null;
@@ -191,6 +214,7 @@ export class Room extends DurableObject<Env> {
   }
 
   async dress(me: string, cat: Partial<Cat>): Promise<boolean> {
+    await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (this.roles(people).him !== me) return false;
     const current = (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT;
@@ -212,6 +236,7 @@ export class Room extends DurableObject<Env> {
   }
 
   async recoverSeat(me: string, code: string): Promise<boolean> {
+    await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     const { him, her } = this.roles(people);
     const given = code.trim().toLowerCase();
@@ -285,6 +310,7 @@ export class Room extends DurableObject<Env> {
   }
 
   async linkAccount(me: string, account: string, on: boolean): Promise<boolean> {
+    await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     const { him, her } = this.roles(people);
     if (me !== him && me !== her) return false;
@@ -306,6 +332,7 @@ export class Room extends DurableObject<Env> {
   }
 
   async noticed(me: string, key: unknown): Promise<boolean> {
+    await this.guard();
     if (!isDiscoveryKey(key)) return false;
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     const { him, her } = this.roles(people);
@@ -323,6 +350,7 @@ export class Room extends DurableObject<Env> {
   }
 
   async setNotes(me: string, notes: string[]): Promise<boolean> {
+    await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (this.roles(people).him !== me) return false;
 
@@ -340,10 +368,60 @@ export class Room extends DurableObject<Env> {
     return true;
   }
 
+  // Every public method calls this first. A test walks the prototype and fails if a new one does not,
+  // because the one that forgets is the one that resurrects a deleted room.
+  private async guard(): Promise<void> {
+    if (await this.ctx.storage.get<number>(TOMBSTONE)) throw new RoomGone();
+  }
+
+  async deletedAt(): Promise<number | null> {
+    return (await this.ctx.storage.get<number>(TOMBSTONE)) ?? null;
+  }
+
+  // His to delete, because he made it. Typing the cat's name is the only thing standing between a
+  // mis-tap and both of their years, so it is checked here and not only in the UI.
+  async deleteRoom(me: string, typed: string): Promise<boolean> {
+    await this.guard();
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (this.roles(people).him !== me) return false;
+    const cat = (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT;
+    if (typed.trim().toLowerCase() !== cat.name.trim().toLowerCase()) return false;
+
+    const at = Date.now();
+    await this.ctx.storage.deleteAll();
+    await this.ctx.storage.put(TOMBSTONE, at);
+    return true;
+  }
+
+  // Hers to leave, so she has a way out that does not cost him the room. Same wipe as him freeing her
+  // seat, which is why both call one place: her side gone, his year untouched.
+  async leaveRoom(me: string): Promise<boolean> {
+    await this.guard();
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (this.roles(people).her !== me) return false;
+    await this.wipeHerSide(people, true);
+    return true;
+  }
+
   async releaseHerSeat(me: string): Promise<boolean> {
+    await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     const { him, her } = this.roles(people);
     if (him !== me || !her) return false;
+    await this.wipeHerSide(people, false);
+    return true;
+  }
+
+  // Everything that was hers, and nothing that was his. Called both when he frees her seat and when
+  // she leaves on her own, so the two can never drift into wiping different things.
+  //
+  // `bar` is the difference between the two. Leaving has to stop this browser being seated again by
+  // its own next page load, or leaving undoes itself the moment she reopens the link. Him freeing the
+  // seat must NOT bar anything: that button exists so the right person can take a seat back, and
+  // barring the token would lock out the case where the browser holding it is hers.
+  private async wipeHerSide(people: Record<string, Person>, bar: boolean): Promise<void> {
+    const her = this.roles(people).her;
+    if (!her) return;
 
     const moods = (await this.ctx.storage.get<Record<string, Told>>("moods")) ?? {};
     delete moods[her];
@@ -358,13 +436,18 @@ export class Room extends DurableObject<Env> {
     const light = await this.ctx.storage.get<WindowLight>("windowLight");
     if (light?.from === her) await this.ctx.storage.delete("windowLight");
     await this.ctx.storage.delete("recoveryHer");
-    // What she had noticed waits for whoever takes the seat next, or freeing her seat quietly takes
+    // What she had noticed waits for whoever takes the seat next, or the seat emptying quietly takes
     // the collar off the cat.
     await this.ctx.storage.put("handover", her);
-    return true;
+
+    if (bar) {
+      const left = (await this.ctx.storage.get<string[]>("left")) ?? [];
+      await this.ctx.storage.put("left", [her, ...left.filter((t) => t !== her)].slice(0, LEFT_KEEP));
+    }
   }
 
   async tell(me: string, mood: Mood): Promise<RoomView> {
+    await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (!people[me]) return this.build(me, people);
     if (this.roles(people).her !== me) return this.build(me, people);
@@ -379,6 +462,7 @@ export class Room extends DurableObject<Env> {
   }
 
   async say(me: string, text: string): Promise<RoomView> {
+    await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (!people[me]) return this.build(me, people);
     if (this.roles(people).her !== me) return this.build(me, people);
@@ -393,6 +477,7 @@ export class Room extends DurableObject<Env> {
   }
 
   async draw(me: string, cells: string): Promise<RoomView> {
+    await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (!people[me]) return this.build(me, people);
     const { him, her } = this.roles(people);
@@ -413,6 +498,7 @@ export class Room extends DurableObject<Env> {
     me: string,
     want: { days?: number; tally?: Tally; noteIdx?: number; awayHours?: number },
   ): Promise<RoomView> {
+    await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     const { him, her } = this.roles(people);
     if (me !== him && me !== her) return this.build(me, people);
@@ -436,6 +522,7 @@ export class Room extends DurableObject<Env> {
   }
 
   async setOurDay(me: string, day: OurDay | null): Promise<boolean> {
+    await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (this.roles(people).him !== me) return false;
     if (day) await this.ctx.storage.put("ourDay", day);
@@ -444,6 +531,7 @@ export class Room extends DurableObject<Env> {
   }
 
   async setClock(me: string, clock: Partial<Clock>): Promise<boolean> {
+    await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (this.roles(people).him !== me) return false;
     const current = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
@@ -484,6 +572,7 @@ export class Room extends DurableObject<Env> {
   }
 
   private async build(me: string, people: Record<string, Person>, since?: number): Promise<RoomView> {
+    const youLeft = !people[me] && ((await this.ctx.storage.get<string[]>("left")) ?? []).includes(me);
     const cat = (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT;
     const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
     const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
@@ -543,6 +632,7 @@ export class Room extends DurableObject<Env> {
       cat,
       clock,
       youAreHer,
+      youLeft,
       catMood: catTold?.mood ?? null,
       catMoodAt: catTold?.at ?? null,
       you: people[me]?.name ?? null,

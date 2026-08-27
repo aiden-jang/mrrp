@@ -2,6 +2,10 @@ import type { Action, Cat, Clock, Mood, RoomView } from "./types.js";
 
 const TOKEN_KEY = "mrrp:me";
 
+// Matched by App to show the room-is-gone screen. A deleted room answers 410 on every route, and the
+// thing it must never do is look like an ordinary failure the client would retry into.
+export const GONE = "mrrp: this room is gone";
+
 export function myToken(): string {
   let t = localStorage.getItem(TOKEN_KEY);
   if (!t) {
@@ -9,6 +13,13 @@ export function myToken(): string {
     localStorage.setItem(TOKEN_KEY, t);
   }
   return t;
+}
+
+// A brand new identity for this browser. Only used by the way back after leaving: her old token is
+// barred by the room on purpose, so coming back has to be a new one rather than an unbarring, which
+// would make the bar meaningless.
+export function forgetMe(): void {
+  localStorage.removeItem(TOKEN_KEY);
 }
 
 export function adoptSeat(seat: string | null): void {
@@ -30,6 +41,18 @@ export const lastRoom = {
   get: () => localStorage.getItem("mrrp:room"),
   set: (id: string) => localStorage.setItem("mrrp:room", id),
 };
+
+// Called when a room turns out to be gone. Without it the landing page keeps offering "back to the
+// room" and the door keeps drawing a cat that no longer exists, both of which lead to the same dead
+// end. The seat token stays: it is this browser's name, not this room's.
+export function forgetRoom(id: string): void {
+  try {
+    if (localStorage.getItem("mrrp:room") === id) localStorage.removeItem("mrrp:room");
+    localStorage.removeItem(`mrrp:cat:${id}`);
+  } catch {
+    // Private mode. Nothing was stored to forget.
+  }
+}
 
 export const myName = {
   get: () => localStorage.getItem("mrrp:name"),
@@ -74,6 +97,7 @@ export async function fetchRoom(id: string, name?: string | null): Promise<RoomV
   } catch {
     throw new Error("Can't reach the room. Still trying.");
   }
+  if (r.status === 410) throw new Error(GONE);
   if (!r.ok) throw new Error("Could not find her.");
   return r.json() as Promise<RoomView>;
 }
@@ -123,6 +147,30 @@ export async function doRelease(id: string): Promise<void> {
     body: JSON.stringify({ me: myToken() }),
   });
   if (!r.ok) throw new Error("Couldn't free her seat.");
+}
+
+// His. The cat's name is typed rather than confirmed, because a room is both of their years and a
+// confirm dialog is one mis-tap away from gone.
+export async function doDelete(id: string, name: string): Promise<void> {
+  const r = await fetch(`/api/room/${id}/delete`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ me: myToken(), name }),
+  });
+  if (r.status === 410) throw new Error(GONE);
+  if (r.status === 403) throw new Error("That is not her name.");
+  if (!r.ok) throw new Error("Couldn't delete the room.");
+}
+
+// Hers. Takes her side with her and leaves his room standing.
+export async function doLeave(id: string): Promise<void> {
+  const r = await fetch(`/api/room/${id}/leave`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ me: myToken() }),
+  });
+  if (r.status === 410) throw new Error(GONE);
+  if (!r.ok) throw new Error("Couldn't leave the room.");
 }
 
 export async function doNotes(id: string, notes: string[]): Promise<void> {
