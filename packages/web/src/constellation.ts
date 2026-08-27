@@ -23,7 +23,6 @@ function validKeys(value: unknown): ConstellationKey[] {
   ];
 }
 
-/** Local-only progress: a room keeps its discoveries without adding identity or server state. */
 export function constellationProgress(
   roomKey: string,
   storage: StorageLike = localStorage,
@@ -51,7 +50,7 @@ export function collectConstellationStar(
   try {
     storage.setItem(storageKey(roomKey), JSON.stringify({ version: 1, found }));
   } catch {
-    // Private browsing and full storage should not break an otherwise ephemeral room interaction.
+    // Private mode. The write just does not survive a reload.
   }
   return { found, complete, discovered: true, justCompleted: complete && !before.complete };
 }

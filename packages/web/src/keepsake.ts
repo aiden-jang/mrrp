@@ -3,25 +3,10 @@ export type KeepsakeDetails = {
   doing: string;
   together: boolean;
   capturedAt?: Date;
-  /** True when the room in the capture is dark. The card is printed to match. */
   night?: boolean;
-  /**
-   * How far into her notes she was.
-   *
-   * Without it two keepsakes taken in the same hour are near-identical: the caption comes from the
-   * room's own line, so it repeats, and the date only changes once a day. The day number is the one
-   * thing that says where in their year this one sits.
-   */
   day?: number;
 };
 
-/*
- * The card takes the room's light, like every other surface in the app.
- *
- * A cream card around a photograph of a dark lavender room reads as a picture pasted onto the wrong
- * stationery. This is the one thing anybody keeps or sends on, so it should look like the room it
- * came from rather than like the app's daytime palette.
- */
 const CARD = {
   day: { paper: "#fffaf1", caption: "#4a3520", date: "#907961", mark: "#c58c43" },
   night: { paper: "#2b2439", caption: "#f6f1e6", date: "#c9bccb", mark: "#e8ad55" },
@@ -93,25 +78,16 @@ async function loadImage(blob: Blob): Promise<CanvasImageSource> {
   });
 }
 
-/*
- * The postcard's type, matching the app's.
- *
- * Canvas takes a font string and draws immediately; it will not wait for a webfont the way the DOM
- * does, so an unloaded Quicksand silently falls back and the keepsake comes out in a different face
- * from the room it was captured from. Waiting for the two weights it uses costs nothing after the
- * first paint, since the page has already loaded them.
- */
 const KEEPSAKE_FONT = 'Quicksand, ui-rounded, "SF Pro Rounded", system-ui, sans-serif';
 
 async function keepsakeFontReady(): Promise<void> {
   try {
     await Promise.all([document.fonts.load("600 42px Quicksand"), document.fonts.load("700 32px Quicksand")]);
   } catch {
-    // An unavailable font is not a reason to refuse somebody their postcard.
+    // Private mode. The write just does not survive a reload.
   }
 }
 
-/** A small paw: four toes over a pad, on a 22-unit box with its top-left at (x, y). */
 function paw(g: CanvasRenderingContext2D, x: number, y: number, color: string): void {
   g.save();
   g.fillStyle = color;
@@ -130,7 +106,6 @@ function paw(g: CanvasRenderingContext2D, x: number, y: number, color: string): 
   g.restore();
 }
 
-/** Turns the room capture into a shareable little print without uploading it anywhere. */
 export async function makeKeepsake(room: Blob, details: KeepsakeDetails): Promise<Blob | null> {
   const [image] = await Promise.all([loadImage(room), keepsakeFontReady()]);
   const canvas = document.createElement("canvas");
@@ -166,13 +141,6 @@ export async function makeKeepsake(room: Blob, details: KeepsakeDetails): Promis
   g.textAlign = "right";
   g.fillStyle = card.mark;
   g.font = `700 32px ${KEEPSAKE_FONT}`;
-  /*
-   * The sign-off, with a drawn paw rather than a borrowed glyph.
-   *
-   * This was a Thai character standing in for a paw. Canvas text has no fallback chain the way the
-   * DOM does, so on a device whose resolved font lacks Thai it renders as a tofu box, on the one
-   * thing in this app made to be kept and shown to somebody.
-   */
   g.fillText("mrrp", 1076, 1350);
   paw(g, 1092, 1337, card.mark);
 

@@ -1,16 +1,8 @@
 /**
- * The cat, drawn by hand, one pixel at a time.
+ * The cat, drawn by hand, one pixel at a time. Not a pixelation filter. See DECISIONS.md.
  *
- * ─── Why grids and not a filter ──────────────────────────────────────────────
- *  Running a pixelation pass over a smooth drawing gives you a smooth drawing
- *  with square edges, and it always looks like a mistake. Real pixel art is a
- *  set of decisions about individual pixels: where the outline breaks, which
- *  single pixel is the highlight in the eye, how few pixels a nose can be.
- *  So these are grids you can read and edit in the source.
- *
- *  Every character maps to a palette ROLE, not a colour, so `dress` still
- *  recolours her: `f` and `d` come from her fur, `e` from her eyes.
- * ─────────────────────────────────────────────────────────────────────────────
+ * Each letter is a ROLE, not a colour, which is how one grid draws every cat: `f` and `d` come from
+ * whichever fur she has, `e` from her eyes.
  *
  *  . transparent      f fur            d fur, shaded      b belly / muzzle
  *  w outline          e eye, open      n nose              m mouth

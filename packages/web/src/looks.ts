@@ -1,23 +1,9 @@
 import type { Cat } from "./types.js";
 
-/**
- * Cats you can pick from.
- *
- * Presets rather than colour pickers. Nobody knows the hex of their girlfriend's cat, and a form
- * that asks for one turns a two-minute gift into homework. Six taps gets close enough, and close
- * enough is the whole point: she has to recognise it, not colour-match it.
- */
 export interface Look {
   id: string;
   label: string;
   cat: Omit<Cat, "name" | "eyes">;
-  /**
-   * How high she talks, as a multiplier on her mrrp and her chirp.
-   *
-   * Authored per coat rather than hashed off the name, because a voice is a decision about a cat and
-   * not an arbitrary number attached to one. Kept inside a fifth: past that she stops sounding like a
-   * cat and starts sounding like a sound effect.
-   */
   voice: number;
 }
 
@@ -80,7 +66,6 @@ export const EYES: { id: string; label: string; hex: string }[] = [
   { id: "grey", label: "grey", hex: "#8e9aa0" },
 ];
 
-/** A short list first, then everything the browser knows, so the common case is one tap. */
 export function timezones(): string[] {
   const common = [
     "America/New_York",

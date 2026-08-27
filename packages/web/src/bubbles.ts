@@ -14,7 +14,6 @@ export interface BubbleMoment {
 export const BUBBLE_GAME_MS = 11_000;
 const BUBBLE_LAP_MS = 4_800;
 
-/** Five bubbles stay clustered around where the cat heard the secret word. */
 export function bubbleSeeds(center: number): BubbleSeed[] {
   const offsets = [-22, -11, 0, 12, 23];
   return offsets.map((offset, index) => ({
@@ -25,7 +24,6 @@ export function bubbleSeeds(center: number): BubbleSeed[] {
   }));
 }
 
-/** A looping rise gives somebody time to discover that the bubbles can be tapped. */
 export function bubbleMomentAt(seed: BubbleSeed, elapsed: number, reduceMotion = false): BubbleMoment | null {
   const local = elapsed - seed.delay;
   if (local < 0 || elapsed >= BUBBLE_GAME_MS) return null;

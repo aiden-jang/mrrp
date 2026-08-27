@@ -1,23 +1,13 @@
 import { HEAD } from "./sprites.js";
 import type { Cat } from "./types.js";
 
-/**
- * The tab icon, in her actual coat.
- *
- * The one in index.html is a ginger cat baked into an SVG, so a room with a black cat in it sat on
- * the home screen under somebody else's cat. This redraws the same head from the room's own colours
- * once the room has loaded, which is the only moment those colours are known.
- */
-
-/** Room colours the sprite grid needs, matching the ones the canvas draws her with. */
 const INK = "#4a3520";
 const PINK = "#e79ba3";
 const BLUSH = "#f0aeb4";
 const WHITE = "#fffdf6";
 const PAPER = "#f7ecdc";
 
-/** 4 device pixels per sprite pixel: whole-numbered, and 64 is the largest size anything asks for.
- *  The grid carries its own margin, so it needs no padding to sit right in a tab. */
+// 4 device pixels per sprite pixel: a whole number, so no row of her comes out wider than another.
 const SCALE = 4;
 
 export function faviconFor(cat: Omit<Cat, "name">): string | null {
@@ -27,7 +17,7 @@ export function faviconFor(cat: Omit<Cat, "name">): string | null {
   const g = canvas.getContext("2d");
   if (!g) return null;
 
-  // Opaque, not transparent: a dark browser theme behind a dark outline loses the whole silhouette.
+  // Opaque, not transparent. A dark browser theme behind her dark outline loses the whole shape.
   g.fillStyle = PAPER;
   g.fillRect(0, 0, canvas.width, canvas.height);
 
