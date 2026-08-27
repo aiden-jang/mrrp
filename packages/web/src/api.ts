@@ -33,6 +33,32 @@ export const myName = {
   set: (n: string) => localStorage.setItem("mrrp:name", n),
 };
 
+/**
+ * The last cat this device saw, per room.
+ *
+ * The offline screen used to fall back to the ginger cat from the front door, so losing signal turned
+ * your black cat named Miso into a stranger at the exact moment you most wanted the room to still be
+ * yours. Kept per room id: this device may hold two.
+ */
+export const lastCat = {
+  get: (id: string): Cat | null => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(`mrrp:cat:${id}`) ?? "null") as Partial<Cat> | null;
+      if (!raw || typeof raw.name !== "string" || typeof raw.fur !== "string") return null;
+      return raw as Cat;
+    } catch {
+      return null;
+    }
+  },
+  set: (id: string, cat: Cat) => {
+    try {
+      localStorage.setItem(`mrrp:cat:${id}`, JSON.stringify(cat));
+    } catch {
+      // Private browsing should cost you the fallback, not the room.
+    }
+  },
+};
+
 /** Room ids live in the path (/r/<id>) so the link is the only thing you have to send. */
 export function roomFromPath(): string | null {
   const m = location.pathname.match(/^\/r\/([a-z0-9]{6,24})$/);
