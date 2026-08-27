@@ -442,15 +442,15 @@ function Landing() {
         <p className={s.small} style={{ marginTop: 14 }}>
           You'll get a link. Send it to one person. That's the whole thing.
         </p>
-        {/* Links here and plain text inside a room, on purpose. This page is the one strangers see, so
-            a credit that goes somewhere belongs, and it is the right place for the legal pages now that
-            a seat can be tied to an account. In the room the only two people are the two it is for, and
-            a link pointing away from a note she is reading turns a signature into a byline with a call
-            to action, which is the one thing this app has refused to be all along.
+        {/* Links here, plain text inside a room. This page is the one strangers see, so a credit that
+            goes somewhere belongs, and it is the right place for the legal pages now that a seat can be
+            tied to an account. In the room a link pointing away from a note she is reading turns a
+            signature into a byline with a call to action, which this app has refused to be all along.
 
-            The list comes from the shared client so it stays in step with the other apps; the type is
-            mrrp's own so the footer still looks like this room. */}
+            The list comes from the shared client so it stays in step with the other apps; the paw and
+            the type are mrrp's own so the footer still looks like this room. */}
         <p className={s.credit}>
+          <PawMark />
           {siteFooterLinks(AUTH_URL).map((item, i) => (
             <Fragment key={item.href}>
               {i > 0 && " · "}
