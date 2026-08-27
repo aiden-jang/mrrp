@@ -382,6 +382,9 @@ const installed = () =>
  *
  * The viewer's own timezone, so she is doing whatever fits the hour where they are.
  */
+/** Long enough that it cannot be an accident, short enough to happen inside one sitting. */
+const STAY_MS = 180_000;
+
 const DOOR_CAT = { name: "Bean", ...LOOKS[0]!.cat, eyes: EYES[0]!.hex };
 const DOOR_CLOCK = {
   tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York",
@@ -639,6 +642,37 @@ function RoomPage({ id }: { id: string }) {
    * window lapses rather than the instant they close the tab, which is late but not wrong: it is
    * still the moment she is on her own again.
    */
+  /*
+   * Being in the room, which the room asks for and has never once answered.
+   *
+   * Pointer *movement* deliberately does not count: a mouse nudged on the way past is not somebody
+   * leaving, and moving the cursor near her already earns a slow blink. Only a real action resets it,
+   * along with the tab going away, so this cannot run while nobody is looking.
+   */
+  const [staying, setStaying] = useState(false);
+  useEffect(() => {
+    let timer = 0;
+    const arm = () => {
+      setStaying(false);
+      window.clearTimeout(timer);
+      if (document.hidden || !document.hasFocus()) return;
+      timer = window.setTimeout(() => setStaying(true), STAY_MS);
+    };
+    const acts = ["pointerdown", "keydown", "touchstart"] as const;
+    arm();
+    acts.forEach((e) => window.addEventListener(e, arm, { passive: true }));
+    document.addEventListener("visibilitychange", arm);
+    window.addEventListener("focus", arm);
+    window.addEventListener("blur", arm);
+    return () => {
+      window.clearTimeout(timer);
+      acts.forEach((e) => window.removeEventListener(e, arm));
+      document.removeEventListener("visibilitychange", arm);
+      window.removeEventListener("focus", arm);
+      window.removeEventListener("blur", arm);
+    };
+  }, []);
+
   const [watchDoorAt, setWatchDoorAt] = useState<number | null>(null);
   useEffect(() => {
     const here = view?.themHereNow ?? false;
@@ -1053,6 +1087,7 @@ function RoomPage({ id }: { id: string }) {
             framed={view.framed}
             doorOpenAt={doorOpenAt}
             watchDoorAt={watchDoorAt}
+            staying={staying && (iAmHim || view.youAreHer)}
             box={view.box}
             brought={view.brought}
             brushed={view.brushed}
