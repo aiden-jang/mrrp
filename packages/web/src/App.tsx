@@ -1798,15 +1798,16 @@ function RoomPage({ id }: { id: string }) {
                  * once and abandoned now clears itself after a day; this is what to do before then.
                  */}
                 <p className={s.small} style={{ textAlign: "center", marginTop: 10 }}>
-                  If this link was sent to you, one of the seats is being held by a browser that is not yours.
-                  Ask whoever sent it to free your seat, or open the link again tomorrow.
+                  If you have been in here before, your recovery code will get you back in. If a seat is being
+                  held by a browser that is not yours, ask whoever sent you the link to free it.
                 </p>
                 {/* A new phone lands on exactly this screen, so this is where the way back belongs.
                     Nothing here leaks: redeeming needs the code, and the code only ever goes to him. */}
                 <div className={s.panel} style={{ marginTop: 14 }}>
-                  <p className={s.panelTitle}>is this your room?</p>
+                  <p className={s.panelTitle}>is one of these seats yours?</p>
                   <p className={s.small} style={{ marginBottom: 9 }}>
-                    If you made it and lost the device you made it on, put the recovery code in here.
+                    Either of you can come back on a new phone. Put your recovery code in and the room works
+                    out which seat is yours.
                   </p>
                   <input
                     className={s.input}
@@ -1898,17 +1899,21 @@ function RoomPage({ id }: { id: string }) {
         )}
 
         {/*
-            The recovery code, on his side, outside the setup panel.
-            It was only ever rendered inside "change how she looks", so the one string that can get
-            his seat back lived behind a button labelled as a cosmetic editor. A code you cannot
-            find is not a recovery mechanism.
+            The recovery code, outside the setup panel.
+            It was only ever rendered inside "change how she looks", so the one string that can get a
+            seat back lived behind a button labelled as a cosmetic editor. A code you cannot find is
+            not a recovery mechanism.
+
+            Both of them now. A seat is a token in one browser, and hers was the one with no way back:
+            she had to wait for him to notice and free it. Same words for both, because it is the same
+            thing.
           */}
-        {iAmHim && !setup && view.recoveryCode && (
+        {!setup && view.recoveryCode && (
           <details className={s.recovery}>
             <summary className={s.recoverySummary}>show my recovery code</summary>
             <p className={s.small} style={{ marginTop: 8 }}>
-              The only way to get your side of the room back on a new phone. Keep it somewhere that is not
-              this phone.
+              The way back into your side of the room on a new phone. Keep it somewhere that is not this
+              phone.
             </p>
             <RecoveryCode code={view.recoveryCode} />
           </details>

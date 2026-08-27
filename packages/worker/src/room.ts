@@ -279,41 +279,96 @@ export class Room extends DurableObject<Env> {
    *
    * Ambiguous characters are left out so it survives being read aloud or copied off a screen.
    */
-  private async recoveryCode(): Promise<string> {
-    const existing = await this.ctx.storage.get<string>("recovery");
+  private async recoveryCode(seat: "him" | "her"): Promise<string> {
+    const key = seat === "him" ? "recovery" : "recoveryHer";
+    const existing = await this.ctx.storage.get<string>(key);
     if (existing) return existing;
     const A = "abcdefghijkmnpqrstuvwxyz23456789"; // no l, o, 0, 1
     const raw = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => A[b % A.length]).join("");
     const code = `${raw.slice(0, 4)}-${raw.slice(4, 8)}-${raw.slice(8, 12)}`;
-    await this.ctx.storage.put("recovery", code);
+    await this.ctx.storage.put(key, code);
     return code;
   }
 
   /**
-   * Take back the first seat on a new device. Her seat can be freed by him; without this his cannot be
-   * recovered at all, so a lost phone leaves the room permanently read-only.
+   * Take a seat back on a new device, with the code that seat was given.
+   *
+   * Both seats have one now. His always did; hers did not, so the only way back into her seat was for
+   * him to notice, free it, and send the link again. That made losing a phone a far bigger deal for
+   * her than for him, in an app where hers is the seat that matters.
+   *
+   * One box takes either code and the room works out which seat is being claimed: the codes are
+   * distinct random strings, and asking somebody to declare which seat they hold is asking a question
+   * they should not have to think about.
    *
    * Carry the old seat's `firstSeen` over rather than stamping it fresh. Arrival order decides who is
-   * who, and a new timestamp would make him the second seat, which is the cat.
+   * who, so a new timestamp on his would make him the second seat, which is the cat.
    */
-  async recoverHisSeat(me: string, code: string): Promise<boolean> {
+  async recoverSeat(me: string, code: string): Promise<boolean> {
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     const { him, her } = this.roles(people);
-    if (!him) return false;
-    // She must not be able to redeem it into holding both seats, which would leave the room with one
-    // person and no cat.
-    if (me === her) return false;
-    if (me === him) return true; // already his; nothing to do and no reason to fail
-    const stored = await this.ctx.storage.get<string>("recovery");
-    if (!stored || stored !== code.trim().toLowerCase()) return false;
+    const given = code.trim().toLowerCase();
+    if (!given) return false;
 
-    const old = people[him]!;
-    delete people[him];
+    const hisCode = him ? await this.ctx.storage.get<string>("recovery") : null;
+    const herCode = her ? await this.ctx.storage.get<string>("recoveryHer") : null;
+    const seat = hisCode && given === hisCode ? "him" : herCode && given === herCode ? "her" : null;
+    if (!seat) return false;
+
+    const taking = seat === "him" ? him! : her!;
+    // Neither of them may redeem their way into holding both seats, which would leave the room with
+    // one person and no cat.
+    if (me === (seat === "him" ? her : him)) return false;
+    if (me === taking) return true; // already theirs; nothing to do and no reason to fail
+
+    const old = people[taking]!;
+    delete people[taking];
     people[me] = { ...old, lastSeen: Date.now() };
     await this.ctx.storage.put("people", people);
-    const light = await this.ctx.storage.get<WindowLight>("windowLight");
-    if (light?.from === him) await this.ctx.storage.put("windowLight", { ...light, from: me });
+    await this.reseatBelongings(taking, me);
     return true;
+  }
+
+  /**
+   * Everything stored against a seat token, pointed at the token that now holds that seat.
+   *
+   * His recovery only ever moved the window light, which was enough while he was the seat with no
+   * mood, no log entries of his own to inherit and nothing found under his name. Her seat has all
+   * three, so recovering onto a new phone without this would hand her back a room that had forgotten
+   * how she was, wiped what he had done for her, and taken away the collar.
+   */
+  private async reseatBelongings(from: string, to: string): Promise<void> {
+    const light = await this.ctx.storage.get<WindowLight>("windowLight");
+    if (light?.from === from) await this.ctx.storage.put("windowLight", { ...light, from: to });
+
+    const moods = (await this.ctx.storage.get<Record<string, Told>>("moods")) ?? {};
+    if (moods[from]) {
+      moods[to] = moods[from]!;
+      delete moods[from];
+      await this.ctx.storage.put("moods", moods);
+    }
+
+    const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
+    if (log.some((v) => v.who === from)) {
+      await this.ctx.storage.put(
+        "log",
+        log.map((v) => (v.who === from ? { ...v, who: to } : v)),
+      );
+    }
+
+    const found = await this.found();
+    let moved = false;
+    const next: FoundLedger = {};
+    for (const [key, seats] of Object.entries(found)) {
+      const copy = { ...seats };
+      if (copy[from] !== undefined) {
+        copy[to] = copy[from]!;
+        delete copy[from];
+        moved = true;
+      }
+      next[key] = copy;
+    }
+    if (moved) await this.ctx.storage.put("found", next);
   }
 
   /** The notes this room runs on: his if he wrote any, otherwise the shipped defaults. */
@@ -400,6 +455,8 @@ export class Room extends DurableObject<Env> {
     );
     const light = await this.ctx.storage.get<WindowLight>("windowLight");
     if (light?.from === her) await this.ctx.storage.delete("windowLight");
+    // Or the device he just evicted walks straight back in with the code it still has.
+    await this.ctx.storage.delete("recoveryHer");
     return true;
   }
 
@@ -712,7 +769,7 @@ export class Room extends DurableObject<Env> {
       monthsOld: Math.max(0, Math.floor((Date.now() - startedAt) / (DAY_MS * 30))),
       // His only, and readable for as long as he holds the seat. Useless to anybody else: redeeming it
       // requires knowing it, and he is the only one it is ever sent to.
-      recoveryCode: seated && !youAreHer ? await this.recoveryCode() : null,
+      recoveryCode: seated ? await this.recoveryCode(youAreHer ? "her" : "him") : null,
       // Only she sees what was done, because only he does anything.
       theirRecent: youAreHer && him ? log.filter((v) => v.who === him).slice(0, 4) : [],
       theyCameAfter: !!catTold && !!them && youAreHer && them.lastSeen > catTold.at,
