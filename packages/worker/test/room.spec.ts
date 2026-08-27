@@ -1135,6 +1135,15 @@ describe("fast-forwarding a room", () => {
     expect(p.personality?.trait).toBe("petted");
   });
 
+  it("moves your own last visit, which is what coming back is measured from", async () => {
+    await seat();
+    // Consumed by the read that reports it, so this is the one read that can see it.
+    await post("age", { me: HIM, awayHours: 100 * 24 });
+    const back = await view(HIM);
+    expect(Math.round((back.awayMs ?? 0) / (24 * 60 * 60 * 1000))).toBe(100);
+    expect((await view(HIM)).awayMs).toBeLessThan(1000);
+  });
+
   /*
    * The gate that keeps this out of production. `.dev.vars` is loaded for the test run too, so the
    * flag has to be taken away here to see the closed door at all.

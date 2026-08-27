@@ -773,6 +773,7 @@ function RoomPage({ id }: { id: string }) {
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
   }, [line, lineOpen]);
+  const [awayNote, setAwayNote] = useState<string | null>(null);
   const [arrivalCard, setArrivalCard] = useState<Arrival[] | null>(null);
   const [saving, setSaving] = useState(false);
   const [setup, setSetup] = useState(false);
@@ -822,6 +823,18 @@ function RoomPage({ id }: { id: string }) {
         const next = await fetchRoom(id, n ?? myName.get());
         setView(next);
         lastCat.set(id, next.cat);
+        /*
+         * Coming back is spent by the read that reports it.
+         *
+         * `awayMs` is the gap since your previous visit, and the same read that returns it moves your
+         * last-seen marker, so the very next one says nothing. Anything that reads the room twice
+         * before it paints loses the line: a retried first request on a bad connection, which is the
+         * case the retry loop below exists for, or React double-invoking the effect in development,
+         * which is why this line was never once visible while building. Latched exactly the way the
+         * arrival card two lines down already is, and for the same reason.
+         */
+        const back = awayLine(next.awayMs, next.cat.name);
+        if (back) setAwayNote((prev) => prev ?? back);
         // Polls return an empty list after the server advances this seat's last-seen marker. Keep the
         // postcard on screen until the person puts it away, rather than flashing it for 15 seconds.
         if (next.arrivals.length > 0) setArrivalCard(next.arrivals);
@@ -1273,37 +1286,38 @@ function RoomPage({ id }: { id: string }) {
         )}
 
         {/*
-         * The two things the room worked out from having been used for a while. The milestone goes
-         * first on the rare day there is one: it is the only line here about a date, and burying it
-         * would read as an afterthought. Neither is shown to a spectator, who is not part of the year.
-         */}
-        {!setup && view.milestone && (iAmHim || view.youAreHer) && (
-          <p className={s.remembers}>{milestoneLine(view.milestone, view.cat.name)}</p>
-        )}
-        {/* Only after a real absence, and never a count of it. See awayLine. */}
-        {!setup && (iAmHim || view.youAreHer) && awayLine(view.awayMs, view.cat.name) && (
-          <p className={s.remembers}>{awayLine(view.awayMs, view.cat.name)}</p>
-        )}
-        {!setup && view.personality && (iAmHim || view.youAreHer) && (
-          <p className={s.remembers}>{personalityLine(view.personality, view.youAreHer, view.them)}</p>
-        )}
-
-        {/*
-         * Where she is, in the two ways the room can be honest about it being somewhere else.
+         * The quiet lines under the room, and at most two of them.
          *
-         * The date line only appears for a couple who are actually on different days, so for most
-         * rooms it never fires at all. His side only: the room runs on her clock, so on her side there
-         * is no gap to name and "where she is" would be talking about the person reading it. The moon
-         * needs the room to be dark for the window it is talking about to be the one on screen.
+         * They were written one at a time, each rare enough on its own to be an aside. Together they
+         * are not: a long-distance couple has the date line every single day, the personality line is
+         * permanent once earned, and on a full-moon anniversary all four land at once and turn the
+         * space under the room into eight lines of grey. That is the same mistake the milestones
+         * already avoid, where the comment reads "a room that celebrates every fortnight is not
+         * celebrating".
+         *
+         * Ordered rarest first and cut to two, so a once-a-year line is never crowded out by a daily
+         * one, and an ordinary evening still has something to say. Not shown to a spectator, who is
+         * not part of any of it.
          */}
-        {!setup && herDay && (
-          <p className={s.remembers}>
-            {herDay === "ahead"
-              ? "it is already tomorrow where she is."
-              : "it is still yesterday where she is."}
-          </p>
-        )}
-        {!setup && moon && (iAmHim || view.youAreHer) && <p className={s.remembers}>{moon}</p>}
+        {!setup &&
+          (iAmHim || view.youAreHer) &&
+          [
+            view.milestone && milestoneLine(view.milestone, view.cat.name),
+            awayNote,
+            moon,
+            view.personality && personalityLine(view.personality, view.youAreHer, view.them),
+            herDay &&
+              (herDay === "ahead"
+                ? "it is already tomorrow where she is."
+                : "it is still yesterday where she is."),
+          ]
+            .filter((line): line is string => !!line)
+            .slice(0, 2)
+            .map((line) => (
+              <p key={line} className={s.remembers}>
+                {line}
+              </p>
+            ))}
 
         {/* The one gesture that isn't a button was also the one nobody could find. It disappears after
             the first touch rather than nagging, and it is never shown to a spectator, who has nothing

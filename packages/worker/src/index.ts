@@ -91,6 +91,7 @@ app.post("/api/room/:id/age", async (c) => {
       days: count(body.days),
       tally,
       noteIdx: count(body.noteIdx),
+      awayHours: count(body.awayHours),
     }),
   );
 });
