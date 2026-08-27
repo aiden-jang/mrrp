@@ -3,6 +3,7 @@ import { getSessionUser } from "@aidenjang/auth-client";
 import type { Action, Mood } from "./types.js";
 import type { Tally } from "./remembers.js";
 import type { Env } from "./env.js";
+import { ROOM_GONE } from "./room.js";
 
 export { Room } from "./room.js";
 
@@ -24,6 +25,12 @@ async function accountOf(request: Request, env: Env): Promise<string | null> {
     return null;
   }
 }
+
+// One place, so a deleted room answers the same way on every route rather than each one remembering.
+app.onError((err, c) => {
+  if (err.message === ROOM_GONE) return c.json({ error: "gone" }, 410);
+  throw err;
+});
 
 app.get("/api/health", (c) => c.json({ ok: true }));
 
@@ -216,6 +223,27 @@ app.post("/api/room/:id/release", async (c) => {
   if (me.length < 8) return c.json({ error: "bad request" }, 400);
   const ok = await room(c.env, id).releaseHerSeat(me);
   return ok ? c.json({ ok: true }) : c.json({ error: "not yours to release" }, 403);
+});
+
+app.post("/api/room/:id/delete", async (c) => {
+  const id = c.req.param("id");
+  if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
+  const body = (await c.req.json().catch(() => ({}))) as { me?: unknown; name?: unknown };
+  const me = typeof body.me === "string" ? body.me : "";
+  const name = typeof body.name === "string" ? body.name : "";
+  if (me.length < 8 || !name) return c.json({ error: "bad request" }, 400);
+  const ok = await room(c.env, id).deleteRoom(me, name);
+  return ok ? c.json({ ok: true }) : c.json({ error: "not yours to delete" }, 403);
+});
+
+app.post("/api/room/:id/leave", async (c) => {
+  const id = c.req.param("id");
+  if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
+  const body = (await c.req.json().catch(() => ({}))) as { me?: unknown };
+  const me = typeof body.me === "string" ? body.me : "";
+  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+  const ok = await room(c.env, id).leaveRoom(me);
+  return ok ? c.json({ ok: true }) : c.json({ error: "not your seat to leave" }, 403);
 });
 
 app.post("/api/room/:id/clock", async (c) => {
