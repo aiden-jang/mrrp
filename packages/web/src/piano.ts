@@ -10,7 +10,6 @@ export interface PianoKey {
   height: number;
 }
 
-/** Put five chunky, finger-sized keys near the cat without letting them leave the room. */
 export function pianoKeys(center: number): PianoKey[] {
   const width = 9;
   const gap = 1;
@@ -38,7 +37,6 @@ export function advancePawMelody(history: number[], next: number): { history: nu
     candidate.length === PAW_MELODY.length && candidate.every((note, index) => note === PAW_MELODY[index]);
   if (complete) return { history: [], complete: true };
 
-  // Keep the longest suffix that is also the beginning of the melody, so 0,1,0,1,2… still works.
   for (let length = Math.min(candidate.length, PAW_MELODY.length - 1); length > 0; length--) {
     const suffix = candidate.slice(-length);
     if (suffix.every((note, index) => note === PAW_MELODY[index]))

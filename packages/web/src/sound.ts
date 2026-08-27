@@ -1,13 +1,9 @@
 /*
- * A very small cat, synthesized.
+ * A very small cat, built out of oscillators and noise. No sound files. See DECISIONS.md.
  *
- * Oscillators and filtered noise built at runtime, so the voice costs no download. A cat that needs a
- * 200 KB sample to purr is silent on the first visit, which is the visit where somebody decides
- * whether this room is worth coming back to.
- *
- * A purr is not a note. It is a ~25 Hz amplitude modulation of a broadband rumble, so the pitch you
- * think you hear is the flutter rate. The fundamental is below what a phone speaker can reproduce,
- * which is why this modulates filtered noise: the flutter survives the speaker intact.
+ * A purr is not a note. It is a rumble whose volume flutters about 25 times a second, and that
+ * flutter is the "pitch" you think you hear. Its real pitch is too low for a phone speaker, so this
+ * flutters filtered noise instead, which comes out of a small speaker intact.
  */
 
 const MUTE_KEY = "mrrp.muted.v1";
@@ -195,17 +191,9 @@ function voice(
   osc.stop(o.at + o.dur + 0.05);
 }
 
-/*
- * Whose cat is talking, and how she is.
- *
- * Every room used to sound identical: `play("mrrp")` took no arguments, so a small white cat and a
- * big black one had the same voice. `pitch` comes from her coat, authored in looks.ts. `settled`
- * comes from her mood, and only the purr uses it, because a purr is the one sound whose speed says
- * something about how an animal feels rather than which animal it is.
- *
- * Module state rather than a parameter on every call: the room sets this once when it knows which
- * cat it is drawing, and every cue after that is hers.
- */
+// Whose cat is talking. Module state, not an argument, so every cue after the room says which cat it
+// is drawing belongs to that cat. `settled` only reaches the purr: how fast an animal purrs says how
+// it feels, everything else says which animal it is.
 let pitch = 1;
 let settled = 0.5;
 

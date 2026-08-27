@@ -5,7 +5,6 @@ export interface MouseMoment {
   phase: "peek" | "dash" | "escape";
 }
 
-/** A tiny visitor peeks in, commits to a run, then vanishes behind the far wall. */
 export function mouseRunAt(elapsed: number, duration: number): MouseMoment | null {
   if (elapsed < 0 || elapsed >= duration || duration <= 0) return null;
   const progress = elapsed / duration;

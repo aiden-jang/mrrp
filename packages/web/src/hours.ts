@@ -6,11 +6,9 @@ import { seasonFor } from "./season.js";
 export type LightPhase = "night" | "dawn" | "day" | "golden" | "evening";
 
 /**
- * What the room looks like at a given moment of HER day.
- *
- * Nothing here is simulated. Every value is a hand-picked keyframe at an hour that means something,
- * and the in-between is straight interpolation. A room whose light comes from a solar model looks
- * correct and feels like nothing; one where somebody decided 3pm is the warmest hour feels decided.
+ * What the room looks like at a given moment of HER day. Every value is picked by hand at an hour
+ * that means something, and the hours in between are just a blend of the two nearest. Nothing here
+ * is a sun model. See DECISIONS.md.
  */
 
 export interface Scene {

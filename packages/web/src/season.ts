@@ -1,6 +1,5 @@
 export type Season = "spring" | "summer" | "autumn" | "winter";
 
-/** Northern-calendar seasons, matching the room's default North American setting. */
 export function seasonFor(date: Date): Season {
   const month = date.getMonth();
   if (month >= 2 && month <= 4) return "spring";

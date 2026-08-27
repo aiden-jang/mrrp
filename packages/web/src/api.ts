@@ -1,13 +1,5 @@
 import type { Action, Cat, Clock, Mood, RoomView } from "./types.js";
 
-/**
- * Identity is a random token in localStorage, nothing more. The room link plus this token is the
- * whole notion of "who am I", which keeps a gift frictionless: no email, no password, nothing asked
- * for at the door.
- *
- * Signing in does not change that. An account only lets the room hand this token back on a new
- * phone, so everything below is the same code path whether or not anybody ever signs in.
- */
 const TOKEN_KEY = "mrrp:me";
 
 export function myToken(): string {
@@ -19,13 +11,6 @@ export function myToken(): string {
   return t;
 }
 
-/**
- * Take the seat the room says is ours.
- *
- * Signing in does not replace the token; it only lets the room hand back the one that already holds
- * your seat, so a new phone stops being a dead end. Everything after this call is the same code path
- * as somebody who never signed in at all, which is why nothing else in this app knows about accounts.
- */
 export function adoptSeat(seat: string | null): void {
   if (seat && seat !== localStorage.getItem(TOKEN_KEY)) localStorage.setItem(TOKEN_KEY, seat);
 }
@@ -41,14 +26,6 @@ export async function doLink(id: string, on: boolean): Promise<void> {
   if (!r.ok) throw new Error("Couldn't do that.");
 }
 
-/**
- * The last room this device was in.
- *
- * A static manifest cannot have a per-room start_url, so the home screen icon resolves to "/", which
- * is the make-a-room page. Adding the app to her home screen from her room and then being shown a name
- * box and a "Make her a room" button the next day is the worst possible outcome for the one flow this
- * app exists for. This is how the front door knows where she was.
- */
 export const lastRoom = {
   get: () => localStorage.getItem("mrrp:room"),
   set: (id: string) => localStorage.setItem("mrrp:room", id),
@@ -59,13 +36,6 @@ export const myName = {
   set: (n: string) => localStorage.setItem("mrrp:name", n),
 };
 
-/**
- * The last cat this device saw, per room.
- *
- * The offline screen used to fall back to the ginger cat from the front door, so losing signal turned
- * your black cat named Miso into a stranger at the exact moment you most wanted the room to still be
- * yours. Kept per room id: this device may hold two.
- */
 export const lastCat = {
   get: (id: string): Cat | null => {
     try {
@@ -80,12 +50,11 @@ export const lastCat = {
     try {
       localStorage.setItem(`mrrp:cat:${id}`, JSON.stringify(cat));
     } catch {
-      // Private browsing should cost you the fallback, not the room.
+      // Private mode. The write just does not survive a reload.
     }
   },
 };
 
-/** Room ids live in the path (/r/<id>) so the link is the only thing you have to send. */
 export function roomFromPath(): string | null {
   const m = location.pathname.match(/^\/r\/([a-z0-9]{6,24})$/);
   return m ? m[1]! : null;
@@ -103,9 +72,6 @@ export async function fetchRoom(id: string, name?: string | null): Promise<RoomV
   try {
     r = await fetch(`/api/room/${id}?${q}`);
   } catch {
-    // A dead connection throws a TypeError whose message is "Failed to fetch", and that string was
-    // going straight to the screen. The service worker means the app itself still opens on a bad
-    // connection, so this line is what she actually reads when it does.
     throw new Error("Can't reach the room. Still trying.");
   }
   if (!r.ok) throw new Error("Could not find her.");
@@ -122,7 +88,6 @@ export async function doAct(id: string, action: Action): Promise<RoomView> {
   return r.json() as Promise<RoomView>;
 }
 
-/** Tell the cat how you are. Returns the room as it now looks to you. */
 export async function doTell(id: string, mood: Mood): Promise<RoomView> {
   const r = await fetch(`/api/room/${id}/tell`, {
     method: "POST",
@@ -133,7 +98,6 @@ export async function doTell(id: string, mood: Mood): Promise<RoomView> {
   return r.json() as Promise<RoomView>;
 }
 
-/** Dress the cat. His only; the Worker returns 403 from the other seat. */
 export async function doDress(id: string, cat: Partial<Cat>): Promise<void> {
   const r = await fetch(`/api/room/${id}/dress`, {
     method: "POST",
@@ -143,7 +107,6 @@ export async function doDress(id: string, cat: Partial<Cat>): Promise<void> {
   if (!r.ok) throw new Error("Couldn't save how she looks.");
 }
 
-/** Set whose day the room runs on. His only, same as dress. */
 export async function doClock(id: string, clock: Partial<Clock>): Promise<void> {
   const r = await fetch(`/api/room/${id}/clock`, {
     method: "POST",
@@ -153,12 +116,6 @@ export async function doClock(id: string, clock: Partial<Clock>): Promise<void> 
   if (!r.ok) throw new Error("Couldn't save her hours.");
 }
 
-/**
- * Free her seat so a new device can claim it. His only.
- *
- * The last resort of three. She has a recovery code of her own now, and can tie her seat to an
- * account, so this is for the case neither covers: a browser that is not hers is holding the seat.
- */
 export async function doRelease(id: string): Promise<void> {
   const r = await fetch(`/api/room/${id}/release`, {
     method: "POST",
@@ -168,7 +125,6 @@ export async function doRelease(id: string): Promise<void> {
   if (!r.ok) throw new Error("Couldn't free her seat.");
 }
 
-/** Replace this room's notes, one per entry. His only; an empty list restores the defaults. */
 export async function doNotes(id: string, notes: string[]): Promise<void> {
   const r = await fetch(`/api/room/${id}/notes`, {
     method: "POST",
@@ -178,7 +134,6 @@ export async function doNotes(id: string, notes: string[]): Promise<void> {
   if (!r.ok) throw new Error("Couldn't save the notes.");
 }
 
-/** Take his seat back on a new device. The only way he can be restored. */
 export async function doRecover(id: string, code: string): Promise<void> {
   const r = await fetch(`/api/room/${id}/recover`, {
     method: "POST",
@@ -188,7 +143,6 @@ export async function doRecover(id: string, code: string): Promise<void> {
   if (!r.ok) throw new Error("That code doesn't match this room.");
 }
 
-/** Put the mug back on the shelf. Either seat; the Worker checks which. */
 export async function doTidy(id: string): Promise<{ again: boolean }> {
   const r = await fetch(`/api/room/${id}/shelf`, {
     method: "POST",
@@ -199,7 +153,6 @@ export async function doTidy(id: string): Promise<{ again: boolean }> {
   return (await r.json()) as { again: boolean };
 }
 
-/** Leave a tiny light in the window, or collect the one waiting there from the other seat. */
 export async function doWindowLight(id: string): Promise<RoomView> {
   const r = await fetch(`/api/room/${id}/window-light`, {
     method: "POST",
@@ -210,7 +163,6 @@ export async function doWindowLight(id: string): Promise<RoomView> {
   return r.json() as Promise<RoomView>;
 }
 
-/** Leave him a line. Hers only; empty text clears it. */
 export async function doOurDay(
   id: string,
   day: { month: number; day: number; label: string } | null,
