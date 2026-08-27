@@ -158,3 +158,69 @@ route, so the local Worker sees the production hostname exactly as production do
 
 Everything the route writes is a state an ordinary room reaches on its own eventually. It cannot put a
 room somewhere a real one could not be.
+
+## Two seats read different sentences about the same act
+
+Every action carries two phrasings, not one. `past` finishes "Ada brushed the cat", which she reads.
+`mine` finishes "She'll see that you brushed the cat", which he reads. Sharing one string is cheaper
+and produces "you brushed you". Moods have the same problem in miniature: their text has to read
+after a plural pronoun, because the sentence is "told the cat they're ___".
+
+The general rule: the two sides of this app are never looking at the same sentence, and a string that
+serves both is usually serving neither.
+
+## Notes belong to the room, not to the app
+
+The set of notes she gets is written by whoever made the room. Defaults exist as a floor so a new
+room is never empty, but they are a floor. Shipping one hardcoded list means everybody who is not its
+author hands over a gift full of somebody else's specifics.
+
+Editing them must not cost her progress either. She is on note 14; he fixes a typo in note 2. Losing
+three weeks of her year to a typo fix would be indefensible, so how far along she is and what the
+notes say are stored apart.
+
+## She never dreams about a secret you have not found
+
+The dreams she has are drawn from what this person has actually discovered. Naming the piano tells
+somebody there is a piano, and a sleeping cat is the last surface anybody would think to audit for a
+leak. That is the only reason dreams are gathered and filtered rather than looked up.
+
+The same rule is why the day's note is fetched with a server-side day index: tomorrow's words never
+reach the browser at all. A gift you can skim ahead in devtools is not a gift.
+
+## Timing that cannot be watched is written as a function of the clock
+
+The moth visits for 18 seconds out of every 100. There is no way to confirm that by looking at the
+room, and I screenshotted the wrong 18 seconds twice before admitting it. So where the moth is at
+time `t` is a pure function of `t`, and a test pins it.
+
+Anything else in the room with a cadence measured in minutes follows the same rule. If the only way
+to check a behaviour is to catch it happening, it will ship broken.
+
+## Symbols are drawn, never typed
+
+The arrival marks are little SVG paths, not ✦ ✧ ❧. A dingbat is whatever the device's font decides it
+is, and ❧ is missing from plenty of them, so a typed symbol makes the same list a different shape on
+her phone than on his.
+
+## One logical pixel is always a whole number of device pixels
+
+This holds everywhere anything is drawn: the room canvas, the favicon, the keepsake. Half a device
+pixel means two floorboards come out at different widths, and the eye catches it immediately even
+though nothing looks obviously broken. It is the single most common way pixel art gets ruined, so the
+scale is floored rather than fitted.
+
+The favicon is redrawn from the room's own colours for the same reason the room is: index.html ships a
+ginger cat, so without this a room with a black cat in it sits on the home screen as somebody else's
+pet. And it is painted opaque, because a dark browser theme behind her dark outline eats the whole
+silhouette.
+
+## Tests never depend on when they run
+
+Two timezones are used throughout the worker suite: `Etc/GMT+12` and `Pacific/Kiritimati`, 26 hours
+apart, so their local dates always differ. The first version used New York and Tokyo, 13 hours apart,
+which share a date part of the day: those tests passed in the evening and failed in the morning.
+
+Nothing in the suite reads `.dev.vars` either. That file is gitignored, so the tests that fast-forward
+a room passed here and failed on a fresh clone. A suite that depends on an untracked file lies about
+whether the code works.
