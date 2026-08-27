@@ -27,6 +27,14 @@ than a crossfade; her voice pitched per coat and her purr following her mood and
 is held; and the room keeping what he leaves in it. Deliberately not done: anything that could make
 the room worse over time, which rules out most of what "living" usually means.
 
+Since then, all authored grids and all in the same spirit: a head sprite that becomes the tab icon in
+her actual coat; a collar she wears once both of them have called her by name; an empty frame and a
+seven-by-five sheet either of them can draw on, which is the size of the hole that was already in the
+frame; a worn patch on the rug where she has taken to sitting; one swipe at the moth per visit, which
+she always misses; the pointer becoming the same paw as the credit line; and her voice settling four
+percent over her first year. The rule from the reverted phases held throughout: the cute is authored,
+never computed.
+
 **Phases 2 and 3 were built as generated layers, and reverted.** The migration went all the way: six
 generated room states, nine cat poses with recolorable eye overlays, a DOM interaction surface
 replacing the canvas, and postcard capture compositing the image layers. It was then reverted in two

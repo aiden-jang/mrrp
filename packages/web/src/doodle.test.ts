@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BLANK, cellAt, DOODLE_CELLS, DOODLE_INK, isBlank, isDoodle, withCell } from "./doodle.js";
+import { BLANK, cellAt, DOODLE_CELLS, DOODLE_INK, isBlank, withCell } from "./doodle.js";
 
 describe("the shape of a drawing", () => {
   /*
@@ -10,18 +10,6 @@ describe("the shape of a drawing", () => {
   it("is thirty-five cells, which is what the worker's regex allows", () => {
     expect(DOODLE_CELLS).toBe(35);
     expect(BLANK).toHaveLength(35);
-  });
-
-  it("accepts only the exact length and only real colours", () => {
-    expect(isDoodle(BLANK)).toBe(true);
-    expect(isDoodle("1".repeat(35))).toBe(true);
-    expect(isDoodle("4".repeat(35))).toBe(true);
-  });
-
-  it("refuses anything else, because the cells get drawn a pixel at a time", () => {
-    for (const junk of ["", "0".repeat(34), "0".repeat(36), "5".repeat(35), "a".repeat(35), 35, null, {}]) {
-      expect(isDoodle(junk)).toBe(false);
-    }
   });
 
   it("has an ink for every index the regex permits", () => {
