@@ -40,25 +40,6 @@ never uploads that file.
 Everything it writes is a state an ordinary room reaches on its own eventually. Nothing here can put
 a room somewhere a real one could not be.
 
-## Seats, and getting back into one
-
-A seat is a random token in one browser's localStorage. That is what makes the link work with no
-account: she taps it and she is in, which is the whole gesture and the one moment worth protecting.
-
-It also means a seat can be lost, so there are two ways back and neither is at the front door:
-
-- **A recovery code per seat.** Both of them have one now. Paste it into any browser and that seat is
-  yours again, along with the mood, the visit log and the finds stored against it.
-- **Optional sign-in.** Tie a seat to an account on `accounts.aidenjang.com` and signing in on a new
-  phone hands the seat's token back. One account holds at most one seat per room, and as many rooms
-  as it likes. Untying leaves the seat where it is.
-
-Neither is at the front door, and neither ever will be: she taps a link and she is in a room with a
-cat, and that is the whole gesture.
-
-If a browser that is not hers ends up holding her seat, which a private window will do, he can free it
-from **"{her} can't get in"**.
-
 ## The four rules
 
 These are design constraints, not preferences. Each one is load-bearing.
@@ -91,6 +72,7 @@ first and written in text only if it still needs saying.
 | `web/src/Cat.tsx`     | the room, drawn one aligned rectangle per logical pixel            |
 | `web/src/hours.ts`    | her clock: light, palette, where she lies, keyframed by hand       |
 | `web/src/moods.ts`    | what the cat does about what you told it                           |
+| `web/src/doodle.ts`   | the seven-by-five sheet either of you can hang in the frame        |
 
 ## Before you send it
 
@@ -102,6 +84,10 @@ whole app. Editing them no longer needs a deploy.
 **Dress the cat.** Same panel. She defaults to a ginger tabby called Bean; point her at a cat somebody
 actually knows and set whose day the room runs on. Her eyes are held open while the panel is up, because
 shut eyes are drawn as a line in the outline colour and you cannot pick a colour you cannot see.
+
+**Optionally, name a day.** Also that panel: a date and a few words for what it is. The room says your
+words back on that day every year. Only the month and day are kept, because storing the year would let
+the room say "three years since", and that is a counter rather than a greeting.
 
 Then open the link yourself first, and send it. **Whoever opens it second is the one the cat is.**
 
@@ -216,17 +202,32 @@ password, no email) and it is also the one thing that can go permanently wrong: 
 data or moving to a new phone loses the seat, and with exactly two seats and no way to free one, the
 room would be stuck forever with nobody able to be the cat.
 
-So he has one recovery action, on his side, under **"She got a new phone"**. It frees her seat, and
-whoever opens the link next becomes the cat. What deliberately survives: **how far into the notes she
-has read**, and **the line she left him**. Losing a phone should not cost her three weeks of notes.
-Her mood resets, which is correct, because a mood is how you are now and the new device will be asked.
+A seat can be lost, so there are three ways back. None of them is at the front door, and none ever
+will be: she taps a link and she is in a room with a cat, and that is the whole gesture.
 
-His own seat recovers differently, because the link alone can't prove anyone is him: the room mints a
-one-off **recovery code** on first use and shows it to him and nobody else. `POST .../recover` with it
-takes the first seat back on a new device. It's stored in plaintext deliberately: its entire power is
-"become the first seat of this room", and anyone who can read that storage already has the room, the
-notes and both names, so hashing would buy nothing and cost him the ability to look it up again from
-a device he still has. Ambiguous characters are left out so it survives being read aloud.
+**A recovery code, one per seat.** The room mints one on first use and shows it to that seat and
+nobody else. Paste it into any browser and the seat is yours again, and so is what was stored against
+it: her mood, the log of what he did for her, and her half of the collar. One box takes either code
+and the room works out which seat is being claimed, because the codes are distinct random strings and
+asking somebody which seat they hold is asking a question they should not have to think about.
+
+The code is stored in plaintext deliberately. Its entire power is "become this seat of this room", and
+anyone who can read that storage already has the room, the notes and both names, so hashing would buy
+nothing and cost the ability to look it up again from a device you still have. Ambiguous characters are
+left out so it survives being read aloud.
+
+**Optional sign-in.** Tie a seat to an account on `accounts.aidenjang.com` and signing in on a new
+phone hands the seat's token back, with no code to keep. One account holds at most one seat per room,
+and as many rooms as it likes. Untying leaves the seat exactly where it is. Signing in never replaces
+the token; it only delivers the one that already holds your seat, which is why accounts touch a single
+method in the Durable Object instead of all of them.
+
+**He can free her seat,** under **"{her} can't get in"**, for the case neither code nor account
+covers: a browser that is not hers is holding it, which a private window opened to look at the room
+will do. Whoever opens the link next becomes the cat. What deliberately survives a handover: how far
+into the notes she has read, the line she left him, and what she had noticed, so the collar stays on
+the cat. Her mood resets, which is correct, because a mood is how you are now and the new device will
+be asked.
 
 Two things the note deliberately does not do: it never sends tomorrow's text (she could read
 ahead in devtools, and a gift you can skim is not a gift), and it advances at most once per her
@@ -235,7 +236,7 @@ local day, so a day she doesn't visit is not a note she never sees.
 ## Tests
 
 ```bash
-pnpm check       # typecheck, lint, then 304 tests: 156 web, 148 worker
+pnpm check       # typecheck, lint, then 340 tests: 161 web, 179 worker
 ```
 
 `lint` exists for one rule. owewell shipped a `useEffect` below a component's early returns, so the
