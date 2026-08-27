@@ -325,6 +325,7 @@ export function Cat({
   eyesOpen = false,
   framed = false,
   doodle = null,
+  spot = null,
   doorOpenAt = null,
   watchDoorAt = null,
   box = false,
@@ -380,6 +381,13 @@ export function Cat({
    * this is the part that only happens when somebody goes, and it is the whole difference between the
    * two. She keeps watching the door for a while after it has shut.
    */
+  /**
+   * Where she has taken to sitting, 0-1 across the room, or null while the room is still new.
+   *
+   * Only fills the hours nothing else claims: the sunbeam, her bed and the hour you are due home all
+   * still outrank it, so this is a habit rather than a leash.
+   */
+  spot?: number | null;
   /** Cells for the drawing in the frame, or null for whatever the frame held before. */
   doodle?: string | null;
   /** Pixels of page under the room that the room must not grow into. See ROOM_RESERVE. */
@@ -460,6 +468,8 @@ export function Cat({
   framedRef.current = framed;
   const doodleRef = useRef(doodle);
   doodleRef.current = doodle;
+  const spotRef = useRef(spot);
+  spotRef.current = spot;
   const doorRef = useRef(doorOpenAt);
   doorRef.current = doorOpenAt;
   const boxRef = useRef(box);
@@ -998,7 +1008,13 @@ export function Cat({
       // small things you happen to notice, not events the other person needs to be told about.
       if (hit?.key === "window") {
         const now = performance.now();
-        const scene = sceneFor(clockRef.current, Date.now(), moodRef.current, togetherRef.current);
+        const scene = sceneFor(
+          clockRef.current,
+          Date.now(),
+          moodRef.current,
+          togetherRef.current,
+          spotRef.current,
+        );
         // A light from the other person outranks the ordinary window secrets. One touch collects it;
         // the server clears the shared bit while this local burst makes the handoff visible now.
         if (windowLightRef.current && roleRef.current) {
@@ -1225,7 +1241,13 @@ export function Cat({
       roomCodeAt = e.key === expected ? roomCodeAt + 1 : e.key === ROOM_CODE[0] ? 1 : 0;
       if (roomCodeAt === ROOM_CODE.length) {
         const now = performance.now();
-        const scene = sceneFor(clockRef.current, Date.now(), moodRef.current, togetherRef.current);
+        const scene = sceneFor(
+          clockRef.current,
+          Date.now(),
+          moodRef.current,
+          togetherRef.current,
+          spotRef.current,
+        );
         if (scene.sun < 0.12) {
           auroraUntil.current = now + AURORA_MS;
         } else {
@@ -1485,7 +1507,13 @@ export function Cat({
       cam = Math.round(camBase * (1 - pull) + Math.min(camBase, 2) * pull);
       camRef.current = cam;
       const L = lookRef.current;
-      const sc = sceneFor(clockRef.current, Date.now(), moodRef.current, togetherRef.current);
+      const sc = sceneFor(
+        clockRef.current,
+        Date.now(),
+        moodRef.current,
+        togetherRef.current,
+        spotRef.current,
+      );
       const beamX = Math.round(sc.beam * GW);
 
       // ── room ──────────────────────────────────────────────────────────────
@@ -1556,6 +1584,23 @@ export function Cat({
       rect(32, FLOOR + 13, 46, 13, rugEdge);
       rect(34, FLOOR + 12, 42, 15, rugEdge);
       rect(35, FLOOR + 13, 40, 13, rugBody);
+
+      /*
+       * Where she always sits, gone pale.
+       *
+       * Under the threads, not over them: a worn patch is the pile flattened and the colour lifted,
+       * so the weave still runs across it. It arrives with her habit rather than fading in over
+       * months, because a patch you can watch appear is a progress bar and one that is simply there
+       * one day is a room somebody lives in.
+       */
+      if (spotRef.current !== null) {
+        const wx = Math.max(41, Math.min(69, Math.round(spotRef.current * GW)));
+        const worn = mixHex(rugBody, sc.beamWarm, 0.26);
+        rect(wx - 5, FLOOR + 16, 11, 1, worn);
+        rect(wx - 7, FLOOR + 17, 15, 4, worn);
+        rect(wx - 5, FLOOR + 21, 11, 1, worn);
+      }
+
       dither(38, FLOOR + 16, 34, 1, rugThread);
       dither(38, FLOOR + 22, 34, 1, rugThread, 1);
       for (const x of [35, 40, 69, 74]) px(x, FLOOR + 27, rugEdge);

@@ -115,6 +115,15 @@ const NAP_FROM = 13,
 /** Her bed's centre as a fraction of the 100-wide room. The bed spans grid 13..33. */
 const BED_X = 0.23;
 
+/**
+ * The middle of the rug, and the one place in the room she takes to on her own.
+ *
+ * She has always had a hardcoded 0.42 for the hours when there is no sunbeam to follow, no bed to be
+ * in and nobody due home: a number that meant "somewhere, it does not matter". Once the room has been
+ * going long enough to have a habit at all, it matters. See `sceneFor`'s `spot`.
+ */
+export const HER_SPOT = 0.55;
+
 /*
  * What the line under the room says she is doing.
  *
@@ -145,7 +154,17 @@ function doingAt(hour: number, atDoor: boolean, sleepy: number, homeHour: number
  * all three only ever move the CAT. The light belongs to the clock alone, so a low mood can make the
  * room closer and warmer but never darker.
  */
-export function sceneFor(clock: Clock, at = Date.now(), mood: Mood | null = null, together = false): Scene {
+export function sceneFor(
+  clock: Clock,
+  at = Date.now(),
+  mood: Mood | null = null,
+  together = false,
+  /**
+   * Where she goes when nothing else is claiming her. Null until the room has a habit, which keeps
+   * the old drifting 0.42 for a room that is a week old and has not settled into anything yet.
+   */
+  spot: number | null = null,
+): Scene {
   const hour = hourIn(clock.tz, at);
 
   let i = 0;
@@ -185,6 +204,18 @@ export function sceneFor(clock: Clock, at = Date.now(), mood: Mood | null = null
   const sleepy = atDoor || dawn ? 0.1 : napping ? 1 : Math.max(0, 1 - sun * 1.15);
 
   const r = mood ? RESPONSES[mood] : null;
+  /** The sunless, bedless, nobody-due hours: her own spot if she has one, else the old nowhere. */
+  const idle = spot ?? 0.42;
+  /*
+   * The evening she stops chasing the last of the light.
+   *
+   * Every other hour of this room is spoken for: she is in her bed, at the door, or on the sunbeam,
+   * and the only gap left was half an hour at five in the morning. These hours were the honest place
+   * for a habit, because the line under the room already says "settled, now that everyone's in" and
+   * says nothing at all about the sun. A cat who used to walk the last patch of light across the
+   * boards now just goes and sits in her place instead, which is what having a place means.
+   */
+  const settledIn = spot !== null && !inBed && !atDoor && hour >= clock.homeHour && hour < 21 ? spot : null;
 
   const scene: Scene = {
     hour,
@@ -204,7 +235,20 @@ export function sceneFor(clock: Clock, at = Date.now(), mood: Mood | null = null
     // copy describes a cat that isn't there.
     // BED_X centres her on the cushion; see BED in sprites.ts, which sits at grid 13..33.
     catX:
-      r?.catX ?? (inBed ? BED_X : r ? (sun > 0.15 ? beam : 0.42) : atDoor ? 0.19 : sun > 0.15 ? beam : 0.42),
+      r?.catX ??
+      (inBed
+        ? BED_X
+        : r
+          ? sun > 0.15
+            ? beam
+            : idle
+          : atDoor
+            ? 0.19
+            : settledIn !== null
+              ? settledIn
+              : sun > 0.15
+                ? beam
+                : idle),
     sleepy: r?.sleepy ?? sleepy,
     atDoor: r ? r.catX === 0.19 : atDoor,
     // What she's doing about what you said outranks the time of day. It's the more specific fact.
