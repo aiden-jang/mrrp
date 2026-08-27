@@ -30,6 +30,14 @@ let id = "";
 /** A fresh room id per test. Durable Object state persists within a run. */
 beforeEach(() => {
   id = `t${String(++room).padStart(6, "0")}`;
+  /*
+   * The suite owns this rather than inheriting it from `.dev.vars`.
+   *
+   * That file is gitignored, so the six tests that fast-forward a room passed on my machine and
+   * failed on a fresh clone: a suite that depends on an untracked file is a suite that lies about
+   * whether the code works. The one test that checks the closed door takes it away itself.
+   */
+  env.DEV_TOOLS = "on";
 });
 
 // `away()` moves the system clock, so put it back or every later test inherits the jump.
