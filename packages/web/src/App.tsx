@@ -385,6 +385,9 @@ const installed = () =>
 /** Long enough that it cannot be an accident, short enough to happen inside one sitting. */
 const STAY_MS = 180_000;
 
+/** One sentence, not a letter. Her side is the only place anybody types free text at somebody. */
+const LINE_MAX = 140;
+
 const DOOR_CAT = { name: "Bean", ...LOOKS[0]!.cat, eyes: EYES[0]!.hex };
 const DOOR_CLOCK = {
   tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York",
@@ -709,6 +712,21 @@ function RoomPage({ id }: { id: string }) {
   const [did, setDid] = useState<string | null>(null);
   const [line, setLine] = useState("");
   const [lineOpen, setLineOpen] = useState(false);
+
+  /*
+   * Her sentence grows to fit instead of scrolling.
+   *
+   * Two fixed rows held about sixty of the hundred and forty characters she is allowed, and the last
+   * row it did show was cut through the middle of the letters, so the one place in the app where she
+   * says something in her own words was the one place she could not read what she had written.
+   */
+  const lineBox = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = lineBox.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [line, lineOpen]);
   const [arrivalCard, setArrivalCard] = useState<Arrival[] | null>(null);
   const [saving, setSaving] = useState(false);
   const [setup, setSetup] = useState(false);
@@ -1270,6 +1288,10 @@ function RoomPage({ id }: { id: string }) {
                 <button
                   key={l.id}
                   title={l.label}
+                  // A coloured square with a title and nothing else announces as an unnamed button on
+                  // a phone, where there is no hover to reveal a title in the first place.
+                  aria-label={l.label}
+                  aria-pressed={draft.look === l.id}
                   onClick={() => setDraft((d) => ({ ...d!, look: l.id }))}
                   className={s.swatch}
                   style={{
@@ -1293,6 +1315,8 @@ function RoomPage({ id }: { id: string }) {
                 <button
                   key={e.id}
                   title={e.label}
+                  aria-label={e.label}
+                  aria-pressed={draft.eyes === e.id}
                   onClick={() => setDraft((d) => ({ ...d!, eyes: e.id }))}
                   className={s.swatch}
                   style={{
@@ -1533,13 +1557,20 @@ function RoomPage({ id }: { id: string }) {
               <div className={s.sayBox}>
                 <textarea
                   autoFocus
+                  ref={lineBox}
                   value={line}
-                  maxLength={140}
-                  rows={2}
+                  maxLength={LINE_MAX}
                   placeholder={`Something for ${view.them ?? "him"} to find`}
                   onChange={(e) => setLine(e.target.value)}
                   className={s.sayInput}
                 />
+                {/* Silent until it is nearly over. A counter sitting there from the first character
+                    turns a note to somebody into a form with a budget. */}
+                {LINE_MAX - line.length <= 20 && (
+                  <p className={s.small} style={{ textAlign: "right", margin: "6px 2px 0" }}>
+                    {LINE_MAX - line.length} left
+                  </p>
+                )}
                 <div className={s.row} style={{ marginTop: 8 }}>
                   <button className={s.btn} onClick={() => setLineOpen(false)}>
                     Never mind
@@ -1581,6 +1612,9 @@ function RoomPage({ id }: { id: string }) {
               {MOODS.map((m) => (
                 <button
                   key={m.id}
+                  // Which one is set is drawn in honey and nowhere else, so it did not exist for a
+                  // screen reader on the one control her whole side is about.
+                  aria-pressed={view.catMood === m.id}
                   className={`${s.mood} ${view.catMood === m.id ? s.moodOn : ""}`}
                   style={
                     view.catMood === m.id

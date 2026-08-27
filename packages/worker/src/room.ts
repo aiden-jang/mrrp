@@ -520,8 +520,16 @@ export class Room extends DurableObject<Env> {
       arrivals.sort((a, b) => b.at - a.at);
     }
 
-    // Her mood, whoever is looking, because the cat is her.
-    const catTold = her ? (moods[her] ?? null) : null;
+    /*
+     * Her mood, to the two of them and nobody else.
+     *
+     * It used to go to whoever was looking, on the grounds that the cat is her. But the cat is also
+     * the only place the mood is written down, so a forwarded link let a stranger read how she was
+     * today off the caption, next to a paragraph telling them this room is not theirs. Every other
+     * thing she leaves in here is gated on the seat; a tapped mood is a shorter sentence, not a
+     * different kind of one. Spectators get the cat the clock alone would give them.
+     */
+    const catTold = seated && her ? (moods[her] ?? null) : null;
     const note = await this.noteFor(clock, youAreHer, !waitingForThem);
 
     return {
