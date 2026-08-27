@@ -240,3 +240,28 @@ export function sceneFor(clock: Clock, at = Date.now(), mood: Mood | null = null
     doing: "up, in the middle of the room, purring",
   };
 }
+
+/**
+ * Her date against yours, when the two disagree.
+ *
+ * The room runs on her clock and the person reading it runs on their own, and for a few hours a day
+ * that is not a detail, it is the whole distance between them. Null when both of you are on the same
+ * date, which for two people in one timezone is always: this is for the couple it is actually about.
+ */
+export function dayApart(clock: Clock, at = Date.now()): "ahead" | "behind" | null {
+  // formatToParts rather than parsing a localised date string: the string form is locale-dependent
+  // and Date's parser is free to reject it, which is exactly the kind of bug that only shows up on
+  // somebody else's phone.
+  const there = new Intl.DateTimeFormat("en-GB", {
+    timeZone: clock.tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date(at));
+  const part = (type: string) => Number(there.find((x) => x.type === type)?.value ?? 0);
+  const here = new Date(at);
+  const theirs = part("year") * 10000 + part("month") * 100 + part("day");
+  const yours = here.getFullYear() * 10000 + (here.getMonth() + 1) * 100 + here.getDate();
+  if (theirs === yours) return null;
+  return theirs > yours ? "ahead" : "behind";
+}
