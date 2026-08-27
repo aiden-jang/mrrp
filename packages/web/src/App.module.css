@@ -136,6 +136,12 @@
   margin: 8px 0 0;
 }
 
+/* Sits on the credit's own line and takes its colour, so it reads as part of the sentence. */
+.paw {
+  vertical-align: -1px;
+  margin-right: 5px;
+}
+
 .creditLink {
   color: inherit;
   text-decoration: underline;
