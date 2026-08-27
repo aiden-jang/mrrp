@@ -1,4 +1,4 @@
-import { SELF } from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NOTES } from "../src/notes.js";
 import type { Mood, RoomView } from "../src/types.js";
@@ -1088,5 +1088,73 @@ describe("both of you calling her by name", () => {
     await post("found", { me: HIM, key: "herName" });
     await post("found", { me: HER, key: "herName" });
     expect((await view(STRANGER)).bothCalledHer).toBe(false);
+  });
+});
+
+/*
+ * The ageing tool.
+ *
+ * It exists so the states that take months can be looked at, and everything it writes is reachable
+ * by ordinary use given enough time. What is worth pinning is the two things that keep it from being
+ * a way to edit somebody else's room: the flag, and the seat.
+ */
+describe("fast-forwarding a room", () => {
+  it("moves the room's age, which is otherwise a year of waiting", async () => {
+    await seat();
+    expect((await view(HIM)).monthsOld).toBe(0);
+
+    await post("age", { me: HIM, days: 400 });
+    const aged = await view(HIM);
+    expect(aged.monthsOld).toBe(13);
+  });
+
+  it("reaches every milestone the room has", async () => {
+    await seat();
+    for (const [days, kind] of [
+      [7, "first-week"],
+      [30, "first-month"],
+      [365, "anniversary"],
+    ] as const) {
+      await post("age", { me: HIM, days });
+      expect((await view(HIM)).milestone?.kind).toBe(kind);
+    }
+  });
+
+  it("gives her a personality that would otherwise need weeks of history", async () => {
+    await seat();
+    expect((await view(HIM)).personality).toBeNull();
+
+    await post("age", { me: HIM, days: 90, tally: { pet: 40, brush: 2 } });
+    expect((await view(HIM)).personality?.trait).toBe("petted");
+  });
+
+  it("takes only the counts it knows, so an invented action cannot become a trait", async () => {
+    await seat();
+    await post("age", { me: HIM, days: 90, tally: { pet: 40, __proto__: 900, dance: 900 } });
+    const p = await view(HIM);
+    expect(p.personality?.trait).toBe("petted");
+  });
+
+  /*
+   * The gate that keeps this out of production. `.dev.vars` is loaded for the test run too, so the
+   * flag has to be taken away here to see the closed door at all.
+   */
+  it("is not there at all without the dev flag", async () => {
+    await seat();
+    const on = env.DEV_TOOLS;
+    env.DEV_TOOLS = undefined;
+    try {
+      const r = await post("age", { me: HIM, days: 400 });
+      expect(r.status).toBe(404);
+      expect((await view(HIM)).monthsOld).toBe(0);
+    } finally {
+      env.DEV_TOOLS = on;
+    }
+  });
+
+  it("refuses somebody who only holds the link", async () => {
+    await seat();
+    await post("age", { me: STRANGER, days: 400 });
+    expect((await view(HIM)).monthsOld).toBe(0);
   });
 });
