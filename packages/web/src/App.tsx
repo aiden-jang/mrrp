@@ -418,6 +418,11 @@ const installed = () =>
 /** Long enough that it cannot be an accident, short enough to happen inside one sitting. */
 const STAY_MS = 180_000;
 
+/** What the room says when nobody is signed in, and the one error worth acting on rather than showing. */
+const SIGNED_OUT = "Sign in first.";
+/** Survives the round trip to the login page, which is a full navigation away and back. */
+const FINISH_LINK = "mrrp:finish-link";
+
 /** One sentence, not a letter. Her side is the only place anybody types free text at somebody. */
 const LINE_MAX = 140;
 
@@ -748,17 +753,40 @@ function RoomPage({ id }: { id: string }) {
   const [shareResult, setShareResult] = useState<"copied" | "shared" | null>(null);
   const [did, setDid] = useState<string | null>(null);
   const [linking, setLinking] = useState(false);
+  /*
+   * Try it first, and only send somebody to sign in if the room says they are not.
+   *
+   * The first version always redirected, which sent anybody already signed in on a round trip through
+   * a login page to arrive back where they started. Being signed in on another app is the normal case
+   * here, since one session covers every app on the domain.
+   */
   const link = async (on: boolean) => {
     setLinking(true);
     try {
       await doLink(id, on);
       await load();
     } catch (e) {
+      if (on && e instanceof Error && e.message === SIGNED_OUT) {
+        // Come back and finish the job, rather than making them find this button a second time.
+        sessionStorage.setItem(FINISH_LINK, id);
+        window.location.href = loginUrl(AUTH_URL, window.location.href);
+        return;
+      }
       setErr(e instanceof Error ? e.message : "Couldn't do that.");
     } finally {
       setLinking(false);
     }
   };
+
+  // Back from signing in, with a seat to tie. Cleared first, so a refusal is not retried forever.
+  const wantsLink = view?.you !== undefined && view?.you !== null && !view?.linked;
+  useEffect(() => {
+    if (!wantsLink || sessionStorage.getItem(FINISH_LINK) !== id) return;
+    sessionStorage.removeItem(FINISH_LINK);
+    void link(true);
+    // `link` is redefined every render; this must run on the first view that could carry it out.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantsLink, id]);
 
   const [drawing, setDrawing] = useState(false);
   const hangUp = async (cells: string) => {
@@ -1948,16 +1976,7 @@ function RoomPage({ id }: { id: string }) {
                 ? "This seat is on your account, so signing in on a new phone brings you straight back here."
                 : "Or sign in, and this seat comes back on any phone you sign in on. No code to keep."}
             </p>
-            <button
-              className={s.quiet}
-              disabled={linking}
-              onClick={() => {
-                if (view.linked) return void link(false);
-                // Full-page redirect, and back to this exact room. The session cookie is never read
-                // in the browser: only this app's Worker ever asks the auth service who you are.
-                window.location.href = loginUrl(AUTH_URL, window.location.href);
-              }}
-            >
+            <button className={s.quiet} disabled={linking} onClick={() => void link(!view.linked)}>
               {view.linked ? "Take this seat off my account" : "Keep this seat on my account"}
             </button>
           </details>
