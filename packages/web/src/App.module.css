@@ -157,12 +157,6 @@
   border: 1px solid var(--line);
 }
 
-.recoverySummary {
-  cursor: pointer;
-  font-size: 13.5px;
-  color: var(--soft);
-}
-
 .code {
   font: inherit;
   font-size: 17.5px;
@@ -514,7 +508,20 @@
   text-decoration: underline;
 }
 
+/*
+ * Her note, with the corner turned down.
+ *
+ * This is the emotional payload of the whole app and it was a rounded panel like every other rounded
+ * panel. A dog-ear costs two pseudo-elements and makes it a piece of paper somebody folded rather
+ * than a card the app drew.
+ *
+ * The fold is cut out of the card with `clip-path` and the underside is drawn back over it, so the
+ * page shows through the missing corner exactly as it would if the paper were really turned. Only
+ * this one card gets it: a room where everything has a folded corner is a room with a texture, not
+ * a room with a note in it.
+ */
 .note {
+  position: relative;
   animation: arrive 0.42s var(--ease-bounce) both;
   margin: 14px 0 2px;
   padding: 15px 17px;
@@ -522,6 +529,30 @@
   background: var(--panel);
   border: 1px solid var(--line);
   box-shadow: 0 8px 22px -14px rgba(120, 84, 44, 0.4);
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+}
+
+/*
+ * The underside of the flap: the same paper, turned over.
+ *
+ * Only the lower-left half of this box is inside the clip, so only the fold itself paints; the rest
+ * is the hole the corner left. The lit edge along the diagonal is what makes it read as a crease
+ * rather than a grey wedge, and it is the same warm the room lights everything else with.
+ */
+.note::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 19px;
+  height: 19px;
+  background: linear-gradient(
+    to bottom left,
+    transparent 0 50%,
+    color-mix(in srgb, var(--panel) 62%, var(--ink)) 50% 100%
+  );
+  border-bottom-left-radius: 3px;
+  box-shadow: -1px 1px 0 color-mix(in srgb, var(--panel) 40%, var(--air-warm));
 }
 
 .noteFrom {
@@ -581,7 +612,16 @@
 }
 
 /** A disclosure is a control, so it gets a control's target size rather than a line of text's. */
-.summary {
+/*
+ * Disclosures, with a drawn marker instead of the browser's triangle.
+ *
+ * The last OS-supplied mark on the page, after the emoji sound toggle and the select's own caret.
+ * Same chevron as `.selectCaret`, so the app has one language for "there is more here", and it turns
+ * rather than swapping to a second glyph. `list-style: none` is what removes the default; Safari
+ * needs the `::-webkit-details-marker` rule below as well.
+ */
+.summary,
+.recoverySummary {
   font-size: 13.5px;
   color: var(--soft);
   line-height: 1.5;
@@ -589,6 +629,31 @@
   min-height: 24px;
   display: flex;
   align-items: center;
+  gap: 7px;
+  list-style: none;
+}
+
+.summary::-webkit-details-marker,
+.recoverySummary::-webkit-details-marker {
+  display: none;
+}
+
+.summary::before,
+.recoverySummary::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  border-right: 1.6px solid currentColor;
+  border-bottom: 1.6px solid currentColor;
+  border-bottom-right-radius: 2px;
+  transform: rotate(-45deg);
+  transition: transform 0.2s var(--ease-spring);
+}
+
+details[open] > .summary::before,
+details[open] > .recoverySummary::before {
+  transform: rotate(45deg);
 }
 
 .selectWrap {
