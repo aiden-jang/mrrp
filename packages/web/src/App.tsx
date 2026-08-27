@@ -20,7 +20,8 @@ import {
   roomFromPath,
 } from "./api.js";
 import { Cat } from "./Cat.js";
-import { mixHex, sceneFor, type Scene } from "./hours.js";
+import { dayApart, mixHex, sceneFor, type Scene } from "./hours.js";
+import { moonLine } from "./moon.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
 import { MoodFace } from "./faces.js";
 import type { Cue } from "./sound.js";
@@ -1012,6 +1013,11 @@ function RoomPage({ id }: { id: string }) {
    */
   const iAmHim = view.you !== null && !view.youAreHer;
 
+  // Both build an Intl formatter, so they are resolved once rather than twice in the condition and
+  // again in the body.
+  const herDay = iAmHim ? dayApart(view.clock) : null;
+  const moon = nightChrome ? moonLine(new Date(), view.cat.name) : null;
+
   // While the panel is open the canvas shows the draft, so choosing a cat is a thing you watch
   // happen rather than a form you submit and hope about.
   const previewLook =
@@ -1177,6 +1183,23 @@ function RoomPage({ id }: { id: string }) {
         {!setup && view.personality && (iAmHim || view.youAreHer) && (
           <p className={s.remembers}>{personalityLine(view.personality, view.youAreHer, view.them)}</p>
         )}
+
+        {/*
+         * Where she is, in the two ways the room can be honest about it being somewhere else.
+         *
+         * The date line only appears for a couple who are actually on different days, so for most
+         * rooms it never fires at all. His side only: the room runs on her clock, so on her side there
+         * is no gap to name and "where she is" would be talking about the person reading it. The moon
+         * needs the room to be dark for the window it is talking about to be the one on screen.
+         */}
+        {!setup && herDay && (
+          <p className={s.remembers}>
+            {herDay === "ahead"
+              ? "it is already tomorrow where she is."
+              : "it is still yesterday where she is."}
+          </p>
+        )}
+        {!setup && moon && (iAmHim || view.youAreHer) && <p className={s.remembers}>{moon}</p>}
 
         {/* The one gesture that isn't a button was also the one nobody could find. It disappears after
             the first touch rather than nagging, and it is never shown to a spectator, who has nothing
