@@ -3319,6 +3319,9 @@ export function Cat({
         boxShadow:
           "0 1px 0 rgba(255,255,255,.72) inset, 0 24px 56px -25px rgba(82,53,34,.58), 0 8px 22px -18px rgba(82,53,34,.35)",
         imageRendering: "pixelated",
+        // A drag on the room is a gesture, never a text selection: without this, holding to pet
+        // highlights the caption underneath and the cursor turns into an I-beam over the cat.
+        userSelect: "none",
         // Holding to pet needs the browser to stop treating the drag as a scroll. Only his side holds,
         // so everyone else keeps normal scrolling over the canvas.
         touchAction: role === "him" ? "none" : "manipulation",

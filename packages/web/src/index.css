@@ -183,6 +183,33 @@ body {
 }
 
 /*
+ * The phone's own answer to a tap, removed.
+ *
+ * Every touch flashes a translucent grey box the OS picks, over the top of the press state below.
+ * Two responses to one tap, one of them ours and one of them not, in an app where the whole point is
+ * that every mark on screen was drawn on purpose. The press state stays; only the OS's is dropped,
+ * so nothing loses its feedback.
+ */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * Autofill, in the room's colours.
+ *
+ * Chrome paints its own pale blue or yellow behind a filled field and it wins over any background,
+ * so the one field on the front door would arrive in a colour from nowhere. The inset shadow is the
+ * documented way to override it; `background-color` alone does nothing.
+ */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  -webkit-box-shadow: 0 0 0 100px var(--panel) inset;
+  caret-color: var(--ink);
+}
+
+/*
  * Everything answers a touch. Cream panels on a cream page read as flat however warm the palette is,
  * so panels get a real shadow to sit above the page, and everything gets a press state: on a phone an
  * element that does not move when you touch it feels dead.
