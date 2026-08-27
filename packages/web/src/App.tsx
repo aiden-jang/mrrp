@@ -152,6 +152,19 @@ function ArrivalMark({ kind }: { kind: string }) {
         <g stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
           <path d="M5 1v2.4M5 6.6V9M1 5h2.4M6.6 5H9" />
         </g>
+      ) : kind === "drawn" ? (
+        /* A frame, because that is where it went. Open rather than filled: the thumbnail beside the
+           line already carries the drawing, and a second solid shape here would fight it. */
+        <rect
+          x="1.4"
+          y="2"
+          width="7.2"
+          height="6"
+          rx="1"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.3"
+        />
       ) : kind === "kept" ? (
         <path
           d="M5 1.4c2.4 0 3.6 1.4 3.6 3.4S7.2 8.6 5 8.6 1.4 6.8 1.4 4.8 2.6 1.4 5 1.4z"
@@ -326,6 +339,10 @@ function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[];
                     <b>{name}</b> found something in here you haven&apos;t seen yet.
                   </>
                 )
+              ) : item.kind === "drawn" ? (
+                <>
+                  <b>{name}</b> put something in the frame. <Sheet cells={item.cells} />
+                </>
               ) : item.kind === "kept" ? (
                 /* The one arrival that closes a loop rather than reporting a new thing: she left it,
                    he took it, and this is the only way she finds out. */

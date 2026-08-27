@@ -772,7 +772,10 @@ details[open] > .recoverySummary::before {
   text-align: left;
 }
 .sheetMini {
-  display: grid;
+  /* inline-grid, not grid: this also sits inside a sentence in the arrival card, and a block-level
+     grid there breaks the line under the words it belongs to. */
+  display: inline-grid;
+  vertical-align: -4px;
   gap: 1px;
   width: 42px;
   padding: 3px;
