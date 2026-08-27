@@ -106,6 +106,12 @@ path after that is identical to somebody who never signed in — which is why ac
 in the Durable Object rather than all of them. An auth outage is indistinguishable from never having
 signed in.
 
+## Sound is on by default
+
+Which is only defensible because of how browsers work: an audio context will not start until you
+touch the page. So the first noise she can make is always an answer to something you did, never a
+sound that arrives at you unasked.
+
 ## Nothing accumulates into an inbox
 
 The arrival card is capped and clears itself. The visit log is bounded. There is no unread count, no
