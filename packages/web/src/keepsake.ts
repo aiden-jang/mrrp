@@ -5,6 +5,14 @@ export type KeepsakeDetails = {
   capturedAt?: Date;
   /** True when the room in the capture is dark. The card is printed to match. */
   night?: boolean;
+  /**
+   * How far into her notes she was.
+   *
+   * Without it two keepsakes taken in the same hour are near-identical: the caption comes from the
+   * room's own line, so it repeats, and the date only changes once a day. The day number is the one
+   * thing that says where in their year this one sits.
+   */
+  day?: number;
 };
 
 /*
@@ -150,7 +158,10 @@ export async function makeKeepsake(room: Blob, details: KeepsakeDetails): Promis
 
   g.fillStyle = card.date;
   g.font = `28px ${KEEPSAKE_FONT}`;
-  g.fillText(keepsakeDate(details.capturedAt), 86, 1338);
+  const stamp = details.day
+    ? `${keepsakeDate(details.capturedAt)}  \u00b7  day ${details.day}`
+    : keepsakeDate(details.capturedAt);
+  g.fillText(stamp, 86, 1338);
 
   g.textAlign = "right";
   g.fillStyle = card.mark;

@@ -217,7 +217,17 @@ export function setVoice(v: { pitch?: number; settled?: number }): void {
 }
 
 export type Cue =
-  "purr" | "mrrp" | "chirp" | "brush" | "thump" | "shutter" | "settle" | "twinkle" | "jingle" | "rain";
+  | "purr"
+  | "mrrp"
+  | "chirp"
+  | "brush"
+  | "thump"
+  | "shutter"
+  | "settle"
+  | "twinkle"
+  | "jingle"
+  | "rain"
+  | "glint";
 
 const CUES: Record<Cue, (g: { ctx: AudioContext; master: GainNode }, t: number) => void> = {
   /*
@@ -271,6 +281,18 @@ const CUES: Record<Cue, (g: { ctx: AudioContext; master: GainNode }, t: number) 
       wobbleDepth: 30,
       type: "sine",
     });
+  },
+
+  /*
+   * A light passed through the window, and collected on the other side.
+   *
+   * Borrowed `twinkle` before, which is the app's general-purpose sparkle and fires for eleven other
+   * things. This is the only object that travels between the two of them, so it gets a sound nobody
+   * else has: two notes, up then settling, rather than twinkle's single shimmer.
+   */
+  glint: (g, t) => {
+    voice(g, { at: t, dur: 0.16, gain: 0.07, sweep: [880, 1180], type: "sine" });
+    voice(g, { at: t + 0.12, dur: 0.26, gain: 0.05, sweep: [1320, 1245], type: "sine" });
   },
 
   /*

@@ -545,6 +545,7 @@ function RoomPage({ id }: { id: string }) {
         doing: currentScene?.doing ?? "keeping the room warm",
         together: view?.bothHereNow ?? false,
         night: currentScene ? isNightChrome(currentScene.sun) : false,
+        day: view?.note?.day ?? view?.noteDay ?? undefined,
       });
       if (!blob) throw new Error("postcard unavailable");
       const fileName = `${
@@ -777,6 +778,9 @@ function RoomPage({ id }: { id: string }) {
 
   const saveSetup = async () => {
     if (!draft) return;
+    // He has just decided who she is. `settle` is the same sound as sitting down with her: done,
+    // rather than congratulations.
+    play("settle");
     const look = LOOKS.find((l) => l.id === draft.look)!;
     const eyes = EYES.find((e) => e.id === draft.eyes)!;
     setSavingSetup(true);
@@ -810,6 +814,15 @@ function RoomPage({ id }: { id: string }) {
    * rejects a valid one, so showing it immediately is honest.
    */
   const tell = async (m: Mood) => {
+    /*
+     * The cat notices.
+     *
+     * All five of his actions map to a cue; the one thing she does every day had none, so her side
+     * of the room was silent. A chirp rather than a mrrp: a mrrp is what she says to you when you
+     * arrive, and this is her registering something you told her.
+     */
+    play("chirp");
+    setNudge((v) => v + 1);
     setNudge((v) => v + 1);
     setView((v) => (v ? { ...v, catMood: m, catMoodAt: Date.now() } : v));
     try {
