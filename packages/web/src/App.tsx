@@ -95,6 +95,28 @@ function SpeakerMark({ off }: { off: boolean }) {
 }
 
 /*
+ * The same paw the postcard signs off with, drawn once here and once on the canvas.
+ *
+ * A mark rather than the word "mrrp". The footer already ends with a credit, and the block was put
+ * together in the first place so two quiet things would stop competing to be last; a second name
+ * would undo that. The room says what it is by being the room, and this ties it to the keepsake,
+ * which carries the same paw beside the same name.
+ */
+function PawMark() {
+  return (
+    <svg viewBox="0 0 22 22" width="11" height="11" aria-hidden focusable="false" className={s.paw}>
+      <g fill="currentColor">
+        <ellipse cx="4" cy="5" rx="2.6" ry="3" />
+        <ellipse cx="10" cy="3" rx="2.8" ry="3.2" />
+        <ellipse cx="16" cy="5" rx="2.6" ry="3" />
+        <ellipse cx="20.5" cy="10" rx="2.2" ry="2.5" />
+        <ellipse cx="11" cy="15" rx="7.5" ry="5.8" />
+      </g>
+    </svg>
+  );
+}
+
+/*
  * The mark against each line in the arrivals list.
  *
  * A filled dot for something she said, a small burst for something one of you found, a leaf for a
@@ -1618,7 +1640,10 @@ function RoomPage({ id }: { id: string }) {
             Nothing in here needs keeping up with. No streaks, no history, and nothing kept except how you are
             right now.
           </p>
-          <p className={s.credit}>made by aiden jang</p>
+          <p className={s.credit}>
+            <PawMark />
+            made by aiden jang
+          </p>
         </footer>
       </div>
     </main>
