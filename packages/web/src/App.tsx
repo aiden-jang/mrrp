@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import type { Action, Arrival, Cat as CatLook, Mood, RoomView } from "./types.js";
 import { ACTIONS, MOODS } from "./types.js";
 import {
@@ -44,7 +44,7 @@ import {
   withCell,
 } from "./doodle.js";
 import { faviconFor } from "./favicon.js";
-import { loginUrl } from "@aidenjang/auth-client";
+import { loginUrl, siteFooterLinks } from "@aidenjang/auth-client";
 import { AUTH_URL } from "./config.js";
 import { foundKeys, noticed } from "./discoveries.js";
 import { awayLine, milestoneLine, personalityLine } from "./remembers.js";
@@ -536,15 +536,27 @@ function Landing() {
         <p className={s.small} style={{ marginTop: 14 }}>
           You'll get a link. Send it to one person. That's the whole thing.
         </p>
-        {/* A link here and plain text inside a room, on purpose. This page is the one strangers see, so
-            a credit that goes somewhere belongs. In the room the only two people are the two it is for,
-            and a link pointing away from a note she is reading turns a signature into a byline with a
-            call to action, which is the one thing this app has refused to be all along. */}
+        {/* Links here and plain text inside a room, on purpose. This page is the one strangers see, so
+            a credit that goes somewhere belongs, and it is the right place for the legal pages now that
+            a seat can be tied to an account. In the room the only two people are the two it is for, and
+            a link pointing away from a note she is reading turns a signature into a byline with a call
+            to action, which is the one thing this app has refused to be all along.
+
+            The list comes from the shared client so it stays in step with the other apps; the type is
+            mrrp's own so the footer still looks like this room. */}
         <p className={s.credit}>
-          made by{" "}
-          <a href="https://aidenjang.com" target="_blank" rel="noopener noreferrer" className={s.creditLink}>
-            aiden jang
-          </a>
+          {siteFooterLinks(AUTH_URL).map((item, i) => (
+            <Fragment key={item.href}>
+              {i > 0 && " · "}
+              <a
+                href={item.href}
+                className={s.creditLink}
+                {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              >
+                {item.label}
+              </a>
+            </Fragment>
+          ))}
         </p>
       </div>
     </main>
@@ -2033,7 +2045,18 @@ function RoomPage({ id }: { id: string }) {
             <p className={s.small} style={{ marginTop: 14 }}>
               {view.linked
                 ? "This seat is on your account, so signing in on a new phone brings you straight back here."
-                : "Or sign in, and this seat comes back on any phone you sign in on. No code to keep."}
+                : "Or sign in, and this seat comes back on any phone you sign in on. No code to keep."}{" "}
+              {/* Beside the control rather than in the footer. This is where somebody decides to
+                  attach a room to an identity, so it is where the question comes up. */}
+              <a
+                href={`${AUTH_URL}/privacy`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={s.creditLink}
+              >
+                What this keeps
+              </a>
+              .
             </p>
             <button className={s.quiet} disabled={linking} onClick={() => void link(!view.linked)}>
               {view.linked ? "Take this seat off my account" : "Keep this seat on my account"}
