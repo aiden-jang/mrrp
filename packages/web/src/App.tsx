@@ -2066,8 +2066,8 @@ function RoomPage({ id }: { id: string }) {
 
         <footer className={s.footer}>
           <p className={s.small} style={{ textAlign: "center" }}>
-            Nothing in here needs keeping up with. No streaks, no history, and nothing kept except how you are
-            right now.
+            Nothing in here needs keeping up with. No streaks, no unread, and nothing that goes wrong if you
+            stay away.
           </p>
           <p className={s.credit}>
             <PawMark />
