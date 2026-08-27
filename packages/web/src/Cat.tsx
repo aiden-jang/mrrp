@@ -791,6 +791,19 @@ export function Cat({
           petting.current = true;
           onPetRef.current?.();
         } else if (roleRef.current === "her") onPokeRef.current?.();
+        else {
+          /*
+           * Nobody's cat, on the front door.
+           *
+           * The room's furniture has always been tappable for everyone, because none of it touches
+           * the server; the cat alone checked for a seat, so the first cat anybody ever meets was the
+           * one thing in the room that did not answer. She answers now, locally and to nobody: a
+           * bounce and a mrrp, the same as a tap from a seat, with nothing recorded and nobody told.
+           */
+          bounce.current = 1;
+          speakUntil.current = now + 1100;
+          play("mrrp");
+        }
         if (roleRef.current) {
           const taps = catTaps.current;
           taps.count = now - taps.last < 1200 ? taps.count + 1 : 1;
@@ -855,7 +868,7 @@ export function Cat({
           windowLightTouchedAt.current = now;
           windowTaps.current.count = 0;
           onWindowLightRef.current?.();
-          play("twinkle");
+          play("glint");
         }
         if (scene.sun < 0.12) {
           shootingStar.current = now;
@@ -3325,8 +3338,9 @@ export function Cat({
         // Holding to pet needs the browser to stop treating the drag as a scroll. Only his side holds,
         // so everyone else keeps normal scrolling over the canvas.
         touchAction: role === "him" ? "none" : "manipulation",
-        // The room responds to taps/presses; a grab hand promises a drag that does not exist.
-        cursor: role ? "pointer" : "default",
+        // Everything in the room answers a tap now, including her on the front door, so the pointer
+        // is unconditional. A grab hand would promise a drag that does not exist.
+        cursor: "pointer",
       }}
     />
   );
