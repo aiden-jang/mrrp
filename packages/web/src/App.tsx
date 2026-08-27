@@ -21,7 +21,7 @@ import {
   roomFromPath,
 } from "./api.js";
 import { Cat } from "./Cat.js";
-import { dayApart, mixHex, sceneFor, type Scene } from "./hours.js";
+import { dayApart, HER_SPOT, mixHex, sceneFor, type Scene } from "./hours.js";
 import { moonLine } from "./moon.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
 import { MoodFace } from "./faces.js";
@@ -598,7 +598,9 @@ function RoomPage({ id }: { id: string }) {
     try {
       const roomBlob = await captureRoom();
       if (!roomBlob) throw new Error("capture unavailable");
-      const currentScene = view ? sceneFor(view.clock, Date.now(), view.catMood, view.bothHereNow) : null;
+      const currentScene = view
+        ? sceneFor(view.clock, Date.now(), view.catMood, view.bothHereNow, view.personality ? HER_SPOT : null)
+        : null;
       const blob = await makeKeepsake(roomBlob, {
         catName: view?.cat.name ?? "the cat",
         doing: currentScene?.doing ?? "keeping the room warm",
@@ -1094,7 +1096,10 @@ function RoomPage({ id }: { id: string }) {
   const last = view.theirRecent[0];
   // Same four inputs the canvas uses, so the caption under the room can never describe a different
   // cat from the one being drawn.
-  const scene = sceneFor(view.clock, Date.now(), view.catMood, view.bothHereNow);
+  // Her own spot, once the room has been going long enough to have worked one out. Same condition as
+  // the personality line, so the room starts describing a habit and showing one on the same day.
+  const herSpot = view.personality ? HER_SPOT : null;
+  const scene = sceneFor(view.clock, Date.now(), view.catMood, view.bothHereNow, herSpot);
 
   const chrome = chromeFor(scene);
   const roomTheme = chrome as React.CSSProperties;
@@ -1148,6 +1153,7 @@ function RoomPage({ id }: { id: string }) {
             eyesOpen={setup}
             framed={view.framed}
             doodle={view.doodle?.cells ?? null}
+            spot={herSpot}
             doorOpenAt={doorOpenAt}
             watchDoorAt={watchDoorAt}
             staying={staying && (iAmHim || view.youAreHer)}
