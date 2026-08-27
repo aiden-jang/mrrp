@@ -87,8 +87,36 @@ different sizes and it reads as a mistake rather than a style.
 Light is **extra palette entries** (`litWall`, `litFloor`, `patch`), not translucent layers.
 Glazing alpha over dithered bands is what produced vertical streaks the first time.
 
+**One logical pixel is a whole number of device pixels.** The draw helpers snap each cell to the
+device grid, so nothing blurs, but a fractional cell size makes consecutive cells round to different
+widths: at 8.425 the floorboards come out 8 and 9 device pixels wide alternating, which is the exact
+thing the rule above forbids. The canvas takes the largest whole-pixel size that fits and hands the
+remainder back as margin, so it is usually a little narrower than its column. It is also bounded by
+the height of the window, because the room is square and a short wide screen would otherwise push
+everything else below the fold.
+
+**The cat is lit by the room.** Her fur carries toward the beam by how much of her stands in the
+floor pool, with one pixel of the window's light down the edge the shaft arrives from, and her
+shadow takes the floor's colour and leans with the light. Keep the fur mix low: she has to stay the
+highest-contrast object in the room, and mixing a ginger cat far toward a near-white beam turns her
+into part of the wall.
+
+**Every pose is bounded by its own reach.** `kx` is her anchor, not her left edge: each pose carries
+a negative `ox`, and `STRETCH` is not centred at all, so she reaches 17 columns right of kx and only
+10 left. The bounds come from the sprites, so a new pose cannot walk her through a wall.
+
 `dither()` takes an optional `phase`. Do not pass `y` to it: the parity becomes `x + 2y`, which
 depends on `x` alone, and your checkerboard silently becomes vertical stripes.
+
+**The interface goes dark when the room does**, rather than crossfading. Blending a light panel into
+a dark one drags it through mid grey, where neither dark nor light text clears 4.5:1 against it, so
+the chrome is two palettes and the text polarity flips with the surfaces at a single point. Checked
+across all 24 keyframe hours: the worst ratio anywhere is 4.54.
+
+The typeface is **self-hosted Quicksand**, first in the stack ahead of the Apple rounded faces. The
+stack named it for a long time and never loaded it, so it only ever resolved in Safari and everywhere
+else a cat app rendered in Roboto. This app is two people looking at the same thing, so it is worth
+28KB for them to see the same one.
 
 The coordinate tables carry `// prettier-ignore`: the star fields, the light pool, the moon rows, the
 palette keyframes in `hours.ts`, the mood faces in `faces.tsx`. Those are grids you read by column,
@@ -110,13 +138,33 @@ than the UI, because a rule enforced in the browser is a rule anyone can turn of
 | `GET /api/room/:id`           | anyone      | seats the first two callers. Only her read advances the note  |
 | `POST .../tell`               | her only    | her mood, one of six                                          |
 | `POST .../say`                | her only    | one line back, 140 chars, empty clears it                     |
-| `POST .../act`                | him only    | pet, brush, bring, sit, photo                                 |
+| `POST .../act`                | him only    | pet, brush, bring, sit, photo. Four of the five leave a mark  |
 | `POST .../shelf`              | either seat | puts the mug back. The one write both of them may make        |
 | `POST .../dress`, `.../clock` | him only    | 403 otherwise                                                 |
 | `POST .../notes`              | him only    | this room's notes, one per entry; empty restores the defaults |
 | `POST .../window-light`       | either seat | leave one glint in the window, or collect the other person's  |
 | `POST .../release`            | him only    | frees her seat so a new device can be her                     |
 | `POST .../recover`            | his code    | takes the first seat back on a new device                     |
+
+### What his actions leave behind
+
+Four of the five things he can do put something in the room, and all of them last **her** local day
+and no longer, like the notes. Nothing in here may pile up on her.
+
+| action | what she finds                                               |
+| ------ | ------------------------------------------------------------ |
+| photo  | the picture on the wall, which is the one permanent one      |
+| bring  | a box one time in three, a small bow on her bed the rest     |
+| brush  | a tuft of her on the rug                                     |
+| sit    | the dent he left beside her bed                              |
+| pet    | nothing to find, but the purr deepens the longer he holds on |
+
+Before this, `bring` left nothing two times in three and `brush` and `sit` left nothing at all: he
+pressed a button, she was told he had done something, and the room was exactly as it had been. A
+present that does not exist is a worse gesture than no present.
+
+Two more things only time can do, and neither can go backwards: the boards where the midday sun
+rests go pale over a year, and the plant puts out new fronds at three months and again at eight.
 
 ### When she loses her phone
 
@@ -186,6 +234,21 @@ stopped being true once you passed 40 visits. There's a running tally alongside 
 that caught me was subtler: I seeded the tally from a log that already had the new visit appended, so
 every action counted twice. Unit tests passed. Only the tests running against a real Durable Object
 found it.
+
+**The one I did not expect to matter.** One logical pixel has to be a whole number of device pixels.
+The draw code snapped every cell to the device grid, so nothing was ever blurry, and that made the
+real problem invisible: at 8.425 device pixels per cell, consecutive cells round to 8 and 9, so the
+floorboards came out at two different widths. The whole look rests on not doing that, and it was
+happening at almost every viewport size, because filling the container only lands on a whole number
+when the container is an exact multiple of the grid. The fix is to take the largest whole-pixel size
+that fits and give the remainder back as margin.
+
+**The one that needed a number, not an eye.** Making the interface follow the room into the dark
+looked like a crossfade problem and is not one. Blending a light panel into a dark one drags it
+through mid grey, where neither dark nor light text has 4.5:1 against it, so the app would have spent
+every dawn and dusk unreadable. I checked all 24 hours of the keyframe table before writing any of it:
+the crossfade failed at ten of them, worst case 1.5:1. Two palettes with the text polarity flipping at
+one point never crosses that zone, and the worst ratio anywhere is now 4.54.
 
 **What breaks first.** Nothing, realistically. Two people per room and rooms don't talk to each other,
 so it scales by doing nothing. The real limit is that the room is the only copy of the data, and
