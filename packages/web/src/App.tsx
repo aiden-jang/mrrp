@@ -9,6 +9,7 @@ import {
   doDraw,
   doLink,
   doNotes,
+  doOurDay,
   doRecover,
   doRelease,
   doSay,
@@ -420,6 +421,8 @@ const STAY_MS = 180_000;
 
 /** What the room says when nobody is signed in, and the one error worth acting on rather than showing. */
 const SIGNED_OUT = "Sign in first.";
+const pad = (n: number) => String(n).padStart(2, "0");
+
 /** Long enough for the mug to look like it is staying up there, short enough to still be one gesture. */
 const MUG_AGAIN_MS = 1400;
 /** Survives the round trip to the login page, which is a full navigation away and back. */
@@ -852,6 +855,9 @@ function RoomPage({ id }: { id: string }) {
     tz: string;
     homeHour: number;
     notes: string;
+    /** "MM-DD" for the date input, or empty for no day at all. */
+    ourDate: string;
+    ourLabel: string;
   } | null>(null);
 
   /*
@@ -991,6 +997,9 @@ function RoomPage({ id }: { id: string }) {
       // Seeded from whatever the room runs on, which for an untouched room is the defaults. Editing
       // from a real starting point is far easier than facing an empty box.
       notes: (view.yourNotes ?? []).join("\n"),
+      // The control wants a full date; the room only keeps the month and day, so any year will do.
+      ourDate: view.ourDay ? `2000-${pad(view.ourDay.month)}-${pad(view.ourDay.day)}` : "",
+      ourLabel: view.ourDay?.label ?? "",
     });
     setSetup(true);
   };
@@ -1024,6 +1033,11 @@ function RoomPage({ id }: { id: string }) {
       await doDress(id, { name: draft.name.trim() || "Bean", ...look.cat, eyes: eyes.hex });
       await doClock(id, { tz: draft.tz, homeHour: draft.homeHour });
       await doNotes(id, draft.notes.split("\n"));
+      // Month and day only. The year in the input is a formality the control demands and the room
+      // throws away, because "three years since" is a counter and this is meant to be a greeting.
+      const [, mm, dd] = draft.ourDate.match(/^\d{4}-(\d{2})-(\d{2})$/) ?? [];
+      const label = draft.ourLabel.trim();
+      await doOurDay(id, mm && dd && label ? { month: Number(mm), day: Number(dd), label } : null);
       setSetup(false);
       await load();
     } catch (e) {
@@ -1485,6 +1499,33 @@ function RoomPage({ id }: { id: string }) {
              * once and probably pasted in, and thirty inputs would be thirty things to tab through.
              * Blank lines are dropped server-side, so pasting messy text is fine.
              */}
+            {/*
+             * A day the room should notice, in his words.
+             *
+             * Both fields or neither: a date with no name gives the room nothing to say, and a name
+             * with no date never arrives. The year is discarded, so this never becomes a count of
+             * how long it has been.
+             */}
+            <p className={s.fieldLabel}>a day worth remembering</p>
+            <input
+              className={s.input}
+              type="date"
+              value={draft.ourDate}
+              onChange={(e) => setDraft((d) => ({ ...d!, ourDate: e.target.value }))}
+            />
+            <input
+              className={s.input}
+              style={{ marginTop: 8 }}
+              value={draft.ourLabel}
+              maxLength={32}
+              placeholder="what it is, in a few words"
+              onChange={(e) => setDraft((d) => ({ ...d!, ourLabel: e.target.value }))}
+            />
+            <p className={s.small} style={{ marginTop: 6 }}>
+              She will mention it every year on the day, in exactly those words. Leave either blank for no day
+              at all.
+            </p>
+
             <p className={s.fieldLabel}>her notes, one per line</p>
             <textarea
               /* 16px, not 14: iOS zooms the whole page when you focus an input smaller than that,

@@ -160,6 +160,8 @@ export interface RoomView {
   linked: boolean;
   /** Takes his seat back on a new device. Sent to him and nobody else. */
   recoveryCode: string | null;
+  /** The day he told the room to notice. His side only; she meets it on the day. */
+  ourDay: { month: number; day: number; label: string } | null;
   /** His side, so he can edit them. She must never receive the ones she has not reached. */
   yourNotes: string[] | null;
   /** One line she left him. Overwritten rather than appended, so there is nothing to keep up with. */

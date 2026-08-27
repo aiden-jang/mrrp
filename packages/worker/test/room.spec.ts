@@ -1352,3 +1352,62 @@ describe("putting the mug back", () => {
     }
   });
 });
+
+describe("a day the two of them chose", () => {
+  /** Today's month and day in the room's own timezone, which is the calendar the day is checked on. */
+  const todayThere = (tz: string) => {
+    const [m, d] = new Intl.DateTimeFormat("en-CA", { timeZone: tz, month: "2-digit", day: "2-digit" })
+      .format(new Date())
+      .split("-");
+    return { month: Number(m), day: Number(d) };
+  };
+
+  it("says his words back on the day, to both of them", async () => {
+    await seat();
+    const { month, day } = todayThere("America/New_York");
+    expect((await post("ourday", { me: HIM, month, day, label: "the day we met" })).status).toBe(200);
+
+    for (const who of [HIM, HER]) {
+      const m = (await view(who)).milestone;
+      expect(m?.kind).toBe("ours");
+      expect(m?.label).toBe("the day we met");
+    }
+  });
+
+  it("says nothing on any other day", async () => {
+    await seat();
+    const { month, day } = todayThere("America/New_York");
+    await post("ourday", { me: HIM, month, day: (day % 28) + 1, label: "not today" });
+    expect((await view(HER)).milestone).toBeNull();
+  });
+
+  it("beats the room's own anniversary when the two collide", async () => {
+    await seat();
+    const { month, day } = todayThere("America/New_York");
+    await post("age", { me: HIM, days: 365 });
+    expect((await view(HIM)).milestone?.kind).toBe("anniversary");
+
+    await post("ourday", { me: HIM, month, day, label: "ours" });
+    expect((await view(HIM)).milestone?.kind).toBe("ours");
+  });
+
+  it("is his to set, and refuses a date that does not exist", async () => {
+    await seat();
+    expect((await post("ourday", { me: HER, month: 1, day: 1, label: "nope" })).status).toBe(403);
+    expect((await post("ourday", { me: HIM, month: 2, day: 31, label: "nope" })).status).toBe(400);
+    expect((await post("ourday", { me: HIM, month: 13, day: 1, label: "nope" })).status).toBe(400);
+  });
+
+  it("is only ever echoed back to him, and clears on an empty label", async () => {
+    await seat();
+    const { month, day } = todayThere("America/New_York");
+    await post("ourday", { me: HIM, month, day, label: "ours" });
+    expect((await view(HIM)).ourDay).toEqual({ month, day, label: "ours" });
+    // She meets it on the day rather than reading it out of a settings panel she cannot open.
+    expect((await view(HER)).ourDay).toBeNull();
+
+    await post("ourday", { me: HIM, label: "" });
+    expect((await view(HIM)).ourDay).toBeNull();
+    expect((await view(HER)).milestone).toBeNull();
+  });
+});

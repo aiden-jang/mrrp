@@ -36,9 +36,18 @@ export function roomStartedAt(arrivals: number[], now: number): number {
 }
 
 export interface Milestone {
-  kind: "anniversary" | "first-week" | "first-month";
-  /** Whole years, for an anniversary. Zero for the earlier two. */
+  kind: "anniversary" | "first-week" | "first-month" | "ours";
+  /** Whole years, for an anniversary. Zero for the earlier two and for a day of their own. */
   years: number;
+  /** What he called the day, for `ours`. Never longer than a few words; the room repeats it. */
+  label?: string;
+}
+
+/** A date the two of them care about, month and day only. Years are theirs to remember, not ours. */
+export interface OurDay {
+  month: number;
+  day: number;
+  label: string;
 }
 
 /**
@@ -47,10 +56,25 @@ export interface Milestone {
  * A 29 February room answers on 1 March in common years rather than skipping three years running, an
  * edge that only ever shows up as "why did nothing happen".
  */
-export function milestoneFor(startedAt: number, now: number, tz: string): Milestone | null {
+export function milestoneFor(
+  startedAt: number,
+  now: number,
+  tz: string,
+  ours?: OurDay | null,
+): Milestone | null {
   const start = localParts(startedAt, tz);
   const today = localParts(now, tz);
   const days = Math.floor((now - startedAt) / DAY_MS);
+
+  /*
+   * A day of theirs beats the room's own, on the rare year the two collide.
+   *
+   * The room's anniversary is about the room. Theirs is about them, and the room noticing it is the
+   * whole point of letting him set one, so it cannot be the thing that gets bumped.
+   */
+  if (ours && today.m === ours.month && today.d === ours.day) {
+    return { kind: "ours", years: 0, label: ours.label };
+  }
 
   const sameDate = today.m === start.m && today.d === start.d;
   // 29 Feb, in a year that has no 29 Feb.

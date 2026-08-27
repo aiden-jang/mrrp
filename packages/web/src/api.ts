@@ -207,6 +207,18 @@ export async function doWindowLight(id: string): Promise<RoomView> {
 }
 
 /** Leave him a line. Hers only; empty text clears it. */
+export async function doOurDay(
+  id: string,
+  day: { month: number; day: number; label: string } | null,
+): Promise<void> {
+  const r = await fetch(`/api/room/${id}/ourday`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ me: myToken(), ...(day ?? { label: "" }) }),
+  });
+  if (!r.ok) throw new Error("Couldn't set that day.");
+}
+
 export async function doDraw(id: string, cells: string): Promise<RoomView> {
   const r = await fetch(`/api/room/${id}/draw`, {
     method: "POST",

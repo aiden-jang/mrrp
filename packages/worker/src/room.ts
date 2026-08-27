@@ -24,7 +24,15 @@ import {
   type FoundLedger,
 } from "./discoveries.js";
 import type { Env } from "./env.js";
-import { DAY_MS, milestoneFor, personalityFrom, roomStartedAt, tallyFrom, type Tally } from "./remembers.js";
+import {
+  DAY_MS,
+  milestoneFor,
+  personalityFrom,
+  roomStartedAt,
+  tallyFrom,
+  type OurDay,
+  type Tally,
+} from "./remembers.js";
 
 /**
  * Seven by five, matching the hole in the frame the drawing hangs in. Duplicated from the web
@@ -620,6 +628,21 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
+  /**
+   * A day the two of them care about, which the room will notice every year.
+   *
+   * His to set, like the clock and the cat. Month and day only: the year is theirs to remember and
+   * storing it would let the room say "three years since", which is a counter and not a greeting.
+   * An empty label clears the whole thing, so there is a way to take it back.
+   */
+  async setOurDay(me: string, day: OurDay | null): Promise<boolean> {
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (this.roles(people).him !== me) return false;
+    if (day) await this.ctx.storage.put("ourDay", day);
+    else await this.ctx.storage.delete("ourDay");
+    return true;
+  }
+
   /** Set whose day the room runs on: her timezone, and when she's usually home. His to set. */
   async setClock(me: string, clock: Partial<Clock>): Promise<boolean> {
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -801,6 +824,8 @@ export class Room extends DurableObject<Env> {
       // He wrote them, so handing them back is how he edits them. Never to her, and never to a
       // spectator: that would be the note leak again with extra steps.
       yourNotes: seated && !youAreHer ? await this.notes() : null,
+      // His only, and only so the panel can show him what he set. She meets it on the day.
+      ourDay: seated && !youAreHer ? ((await this.ctx.storage.get<OurDay>("ourDay")) ?? null) : null,
       framed: (await this.ctx.storage.get<boolean>("framed")) ?? false,
       // Not gated: it is a physical object on a floor, and both of them can see a floor.
       shelfDown: (await this.ctx.storage.get<boolean>("shelfDown")) ?? false,
@@ -852,7 +877,9 @@ export class Room extends DurableObject<Env> {
       awayMs: since !== undefined ? Math.max(0, Date.now() - since) : null,
       /* Derived from the earliest arrival and the running tally, and answered in her timezone: a day
        * that turns over at UTC midnight is nobody's day. */
-      milestone: seated ? milestoneFor(startedAt, Date.now(), clock.tz) : null,
+      milestone: seated
+        ? milestoneFor(startedAt, Date.now(), clock.tz, await this.ctx.storage.get<OurDay>("ourDay"))
+        : null,
       personality: seated
         ? personalityFrom(
             (await this.ctx.storage.get<Tally>("tally")) ?? tallyFrom(log),
