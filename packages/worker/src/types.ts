@@ -100,6 +100,8 @@ export type Arrival =
   | { kind: "action"; at: number; action: Action }
   | { kind: "mood"; at: number; mood: Mood }
   | { kind: "line"; at: number; text: string }
+  /** They put a drawing in the frame. The cells travel so the card can show it. */
+  | { kind: "drawn"; at: number; cells: string }
   /*
    * The other seat found one of the room's secrets. `what` is null unless you have found it too:
    * naming it hands over the answer to something you were going to enjoy discovering. Encoded in the

@@ -550,6 +550,14 @@ export class Room extends DurableObject<Env> {
         if (line && line.at > since) arrivals.push({ kind: "line", at: line.at, text: line.text });
       }
       /*
+       * A drawing the other one put up. Both seats, and only theirs: it hangs on the wall where you
+       * cannot miss it, but so does her sentence, and that is in here too. Yours is not news to you.
+       */
+      const hung = await this.ctx.storage.get<Doodle>("doodle");
+      if (hung && hung.by !== me && hung.at > since) {
+        arrivals.push({ kind: "drawn", at: hung.at, cells: hung.cells });
+      }
+      /*
        * Secrets the other person found while you were away. Both seats get these, unlike almost
        * everything else in build(): finding something is the one thing either of them does in the
        * same way, so it is the one thing that travels both directions.
