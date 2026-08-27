@@ -192,6 +192,21 @@
   place-items: center;
 }
 
+/*
+ * The room leaves the reading column on a screen wide enough to spare it.
+ *
+ * 600px is a measure for prose, not for the thing the app is actually about, and on a laptop it left
+ * the room small in the middle of a very empty page. `width: auto` is what makes the negative margins
+ * widen the box instead of just shifting it; symmetric ones keep it on the same centre line as the
+ * copy. The canvas still picks its own size inside this, in whole pixels.
+ */
+@media (min-width: 860px) {
+  .stage {
+    width: auto;
+    margin-inline: -80px;
+  }
+}
+
 .doing {
   font-size: 13.5px;
   color: var(--soft);
