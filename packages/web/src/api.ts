@@ -1,8 +1,12 @@
 import type { Action, Cat, Clock, Mood, RoomView } from "./types.js";
 
 /**
- * Identity is a random token in localStorage, nothing more. No accounts, no email, no password:
- * the room link plus this token is the whole notion of "who am I", which keeps a gift frictionless.
+ * Identity is a random token in localStorage, nothing more. The room link plus this token is the
+ * whole notion of "who am I", which keeps a gift frictionless: no email, no password, nothing asked
+ * for at the door.
+ *
+ * Signing in does not change that. An account only lets the room hand this token back on a new
+ * phone, so everything below is the same code path whether or not anybody ever signs in.
  */
 const TOKEN_KEY = "mrrp:me";
 
@@ -152,8 +156,8 @@ export async function doClock(id: string, clock: Partial<Clock>): Promise<void> 
 /**
  * Free her seat so a new device can claim it. His only.
  *
- * The one recovery path in an app with no accounts: a seat is the token below, and a cleared browser
- * or a new phone otherwise loses it for good.
+ * The last resort of three. She has a recovery code of her own now, and can tie her seat to an
+ * account, so this is for the case neither covers: a browser that is not hers is holding the seat.
  */
 export async function doRelease(id: string): Promise<void> {
   const r = await fetch(`/api/room/${id}/release`, {
