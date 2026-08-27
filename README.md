@@ -23,7 +23,7 @@ the boards do not fade for a year, and the worn patch on the rug waits for both.
 instead.
 
 ```bash
-echo 'DEV_TOOLS=on' > packages/worker/.dev.vars   # untracked, and the whole gate
+cp packages/worker/.dev.vars.example packages/worker/.dev.vars   # untracked, and the whole gate
 curl -X POST localhost:8787/api/room/<id>/age \
   -H 'content-type: application/json' \
   -d '{"me":"<your token>","days":400,"tally":{"pet":120,"sit":22},"noteIdx":29}'
