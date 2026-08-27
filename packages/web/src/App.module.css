@@ -342,6 +342,8 @@
 
 .sayInput {
   font: inherit;
+  /* Two rows of floor. Her box is sized from its content and would otherwise collapse to one. */
+  min-height: 72px;
   /*
    * 16 is a floor, not a preference: iOS zooms the page when you focus anything smaller, and both
    * things anybody types in this app are textareas carrying this style.
