@@ -1617,8 +1617,8 @@ function RoomPage({ id }: { id: string }) {
                   recovery code
                 </p>
                 <p className={s.small} style={{ marginBottom: 6 }}>
-                  Save this somewhere that is not this phone. It is the only way to get your side of the room
-                  back if you lose it.
+                  Save this somewhere that is not this phone. It gets your side of the room back if you lose
+                  it, and so does signing in.
                 </p>
                 <RecoveryCode code={view.recoveryCode} />
               </>
