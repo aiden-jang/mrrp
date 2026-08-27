@@ -278,6 +278,7 @@ export function Cat({
   clock,
   mood,
   nudge,
+  staying = false,
   eyesOpen = false,
   framed = false,
   doorOpenAt = null,
@@ -335,6 +336,13 @@ export function Cat({
    * this is the part that only happens when somebody goes, and it is the whole difference between the
    * two. She keeps watching the door for a while after it has shut.
    */
+  /**
+   * Somebody has been in the room a while and has not touched anything.
+   *
+   * "Go and be in there. That's all it takes." was on screen while every credited thing in here was a
+   * button, so the one instruction the room gives was the one thing it did not respond to.
+   */
+  staying?: boolean;
   watchDoorAt?: number | null;
   /**
    * There is a box in the room today, so she is probably in it. Whether she is *in* it is decided
@@ -644,6 +652,12 @@ export function Cat({
    */
   /** One go per visit, so she is not batting at it for the whole eighteen seconds. */
   const mothSwipe = useRef({ visit: -1, at: -Infinity });
+  const stayingRef = useRef(staying);
+  stayingRef.current = staying;
+  /** How far she has gone under from company alone. Rises in about ten seconds, falls in four. */
+  const stayDepth = useRef(0);
+  /** One purr per settling, not one per frame over the threshold. */
+  const stayPurred = useRef(false);
   const watchDoorUntil = useRef(0);
   useEffect(() => {
     if (watchDoorAt === null) return;
@@ -2412,7 +2426,26 @@ export function Cat({
        * ever more settled than whatever the hour had her at.
        */
       petDepth.current = Math.max(0, Math.min(1, petDepth.current + (pet ? 0.006 : -0.003)));
-      const settledNow = Math.max(sc.sleepy, petDepth.current);
+
+      /*
+       * The same idea for somebody who is only there.
+       *
+       * Capped below being petted, and it never reaches the full depth of a hand: sitting in a room
+       * with a cat is not the same as touching her, and the sound should not pretend otherwise. The
+       * purr fires once at the moment she settles rather than looping, because a cat you can hear
+       * every eight seconds is a noise and a cat you heard once is company.
+       */
+      stayDepth.current = Math.max(
+        0,
+        Math.min(1, stayDepth.current + (stayingRef.current ? 0.0016 : -0.004)),
+      );
+      const staySettled = stayDepth.current > 0.2;
+      if (!staySettled) stayPurred.current = false;
+      else if (!stayPurred.current) {
+        stayPurred.current = true;
+        play("purr");
+      }
+      const settledNow = Math.max(sc.sleepy, petDepth.current, stayDepth.current * 0.75);
       if (Math.abs(settledNow - toldVoice.current) > 0.04) {
         toldVoice.current = settledNow;
         setVoice({ settled: settledNow });
@@ -3332,9 +3365,9 @@ export function Cat({
       }
 
       // Purring, shown rather than written: small marks rising off her.
-      if (pet || sc.purring || slowBlinking) {
+      if (pet || sc.purring || slowBlinking || staySettled) {
         // Deeper in, more of them: the marks are the only visible half of a purr that is mostly sound.
-        const a = pet ? 0.7 + petDepth.current * 0.3 : slowBlinking ? 0.8 : 0.42;
+        const a = pet ? 0.7 + petDepth.current * 0.3 : slowBlinking ? 0.8 : staySettled ? 0.34 : 0.42;
         // Clamped inside her silhouette rather than a flat +10. The poses are different widths, and on
         // the narrow standing pose (the one a low mood puts at the door) a fixed offset put the marks
         // out in mid-air beside her, where they read as three stray pixels on the wall rather than as
