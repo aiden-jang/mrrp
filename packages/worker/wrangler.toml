@@ -21,6 +21,11 @@ class_name = "Room"
 tag = "v1"
 new_sqlite_classes = ["Room"]
 
+# Optional sign-in only. A room is a link and two seats; an account just remembers which seat is
+# yours, so the auth service being unreachable is indistinguishable from never having signed in.
+[vars]
+AUTH_URL = "https://accounts.aidenjang.com"
+
 [observability]
 enabled = true
 

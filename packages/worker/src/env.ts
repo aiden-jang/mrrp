@@ -10,4 +10,6 @@ export interface Env {
    * Undefined in production, which is what keeps the ageing route unreachable there.
    */
   DEV_TOOLS?: string;
+  /** The shared identity service. Signing in is optional here; a room works with no account at all. */
+  AUTH_URL: string;
 }

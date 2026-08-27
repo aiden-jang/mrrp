@@ -37,6 +37,22 @@ never uploads that file.
 Everything it writes is a state an ordinary room reaches on its own eventually. Nothing here can put
 a room somewhere a real one could not be.
 
+## Seats, and getting back into one
+
+A seat is a random token in one browser's localStorage. That is what makes the link work with no
+account: she taps it and she is in, which is the whole gesture and the one moment worth protecting.
+
+It also means a seat can be lost, so there are two ways back and neither is at the front door:
+
+- **A recovery code per seat.** Both of them have one now. Paste it into any browser and that seat is
+  yours again, along with the mood, the visit log and the finds stored against it.
+- **Optional sign-in.** Tie a seat to an account on `accounts.aidenjang.com` and signing in on a new
+  phone hands the seat's token back. One account holds at most one seat per room, and as many rooms
+  as it likes. Untying leaves the seat where it is.
+
+If a browser that is not hers ends up holding her seat, which a private window will do, he can free it
+from **"{her} can't get in"**.
+
 ## The four rules
 
 These are design constraints, not preferences. Each one is load-bearing.

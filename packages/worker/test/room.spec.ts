@@ -1,4 +1,4 @@
-import { env, SELF } from "cloudflare:test";
+import { env, runInDurableObject, SELF } from "cloudflare:test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NOTES } from "../src/notes.js";
 import type { Mood, RoomView } from "../src/types.js";
@@ -1253,5 +1253,78 @@ describe("taking her seat back", () => {
     await view(NEW_PHONE, "Bea");
 
     expect((await view(NEW_PHONE)).recoveryCode).not.toBe(first);
+  });
+});
+
+/*
+ * Tying a seat to an account.
+ *
+ * Driven against the Durable Object rather than through the Worker, because the Worker's half is one
+ * call to the shared auth service and forwarding a cookie to it is a pattern the other apps already
+ * prove. What is worth pinning is the room's half: which seat an account resolves to, and the fact
+ * that nobody can sign their way into holding both.
+ */
+describe("a seat tied to an account", () => {
+  const ME = "acct-user-alice";
+  const OTHER = "acct-user-bob";
+  const NEW_PHONE = "hernewphone9999";
+
+  /** The room object behind `id`, for calling its methods directly. */
+  const inRoom = async <T>(fn: (room: InstanceType<typeof import("../src/room.js").Room>) => Promise<T>) => {
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    return runInDurableObject(stub, (instance) => fn(instance as never));
+  };
+
+  it("brings her back on a phone that has never held her seat", async () => {
+    await seat();
+    await inRoom((r) => r.linkAccount(HER, ME, true));
+
+    // A new device, signed in as her: no token of ours, and still her seat.
+    const v = await inRoom((r) => r.view(NEW_PHONE, "Bea", ME));
+    expect(v.youAreHer).toBe(true);
+    expect(v.seat).toBe(HER);
+    expect(v.linked).toBe(true);
+  });
+
+  it("leaves somebody signed into no room here exactly where they were", async () => {
+    await seat();
+    // Signed in, but this account has tied itself to nothing in this room.
+    const v = await inRoom((r) => r.view(HIM, "Aiden", OTHER));
+    expect(v.youAreHer).toBe(false);
+    expect(v.seat).toBe(HIM);
+    expect(v.linked).toBe(false);
+  });
+
+  it("refuses one account both seats, which would leave the room with no cat", async () => {
+    await seat();
+    expect(await inRoom((r) => r.linkAccount(HER, ME, true))).toBe(true);
+    expect(await inRoom((r) => r.linkAccount(HIM, ME, true))).toBe(false);
+
+    const v = await inRoom((r) => r.view(NEW_PHONE, "x", ME));
+    expect(v.youAreHer).toBe(true);
+  });
+
+  it("lets the two of them hold a seat each", async () => {
+    await seat();
+    expect(await inRoom((r) => r.linkAccount(HIM, ME, true))).toBe(true);
+    expect(await inRoom((r) => r.linkAccount(HER, OTHER, true))).toBe(true);
+
+    expect((await inRoom((r) => r.view("newa", "x", ME))).youAreHer).toBe(false);
+    expect((await inRoom((r) => r.view("newb", "x", OTHER))).youAreHer).toBe(true);
+  });
+
+  it("gives a spectator nothing to tie", async () => {
+    await seat();
+    expect(await inRoom((r) => r.linkAccount(STRANGER, ME, true))).toBe(false);
+  });
+
+  it("stops reaching the seat once untied, and leaves the seat where it is", async () => {
+    await seat();
+    await inRoom((r) => r.linkAccount(HER, ME, true));
+    expect(await inRoom((r) => r.linkAccount(HER, ME, false))).toBe(true);
+
+    // Signing in no longer finds it, and her own device still holds it.
+    expect((await inRoom((r) => r.view(NEW_PHONE, "x", ME))).youAreHer).toBe(false);
+    expect((await inRoom((r) => r.view(HER, "Bea"))).youAreHer).toBe(true);
   });
 });

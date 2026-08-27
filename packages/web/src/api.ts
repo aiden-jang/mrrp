@@ -16,6 +16,28 @@ export function myToken(): string {
 }
 
 /**
+ * Take the seat the room says is ours.
+ *
+ * Signing in does not replace the token; it only lets the room hand back the one that already holds
+ * your seat, so a new phone stops being a dead end. Everything after this call is the same code path
+ * as somebody who never signed in at all, which is why nothing else in this app knows about accounts.
+ */
+export function adoptSeat(seat: string | null): void {
+  if (seat && seat !== localStorage.getItem(TOKEN_KEY)) localStorage.setItem(TOKEN_KEY, seat);
+}
+
+export async function doLink(id: string, on: boolean): Promise<void> {
+  const r = await fetch(`/api/room/${id}/link`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ me: myToken(), on }),
+  });
+  if (r.status === 401) throw new Error("Sign in first.");
+  if (r.status === 409) throw new Error("That account already has a seat in this room.");
+  if (!r.ok) throw new Error("Couldn't do that.");
+}
+
+/**
  * The last room this device was in.
  *
  * A static manifest cannot have a per-room start_url, so the home screen icon resolves to "/", which
