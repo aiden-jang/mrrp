@@ -6,14 +6,6 @@ import { LOOKS, EYES, timezones } from "../src/looks.js";
 import { POSES, BED, DOOR, FRAME, MRRP, PLANT, SHELF, TAIL, WINDOW, type Sprite } from "../src/sprites.js";
 import { sceneFor, hourIn, lightPhaseAt } from "../src/hours.js";
 
-/**
- * The art and the copy have their own failure modes, and none of them throw.
- *
- * A sheared sprite, a mood with no pose, a `doing` line that reads "Bean has batting at the dust":
- * all of these render happily and look broken. Every test here is one I'd otherwise be catching by
- * squinting at a screenshot, which is slow and misses things.
- */
-
 const ALL_SPRITES: [string, Sprite][] = [
   ...Object.entries(POSES),
   ["tail", TAIL],
@@ -26,56 +18,36 @@ const ALL_SPRITES: [string, Sprite][] = [
   ["mrrp", MRRP],
 ];
 
-/**
- * The word in the speech bubble, checked letter by letter.
- *
- * Rectangularity was never the problem here: my first cut was a perfectly rectangular 15x4 sprite
- * that spelled "nrrp", because I gave the m three columns and an m needs three stems. It rendered
- * happily and read as a capital pi. Nothing but eyes on the actual pixels catches that, so these
- * assert the stems rather than the shape.
- */
 describe("every mood has a face", () => {
-  // FACES is keyed by string, not by Mood, so a mood added without a face renders nothing at all and
-  // nothing complains: not the compiler, not the build. The chip just quietly loses its face.
   it.each(MOODS.map((m) => m.id))("%s", (id) => {
     expect(FACE_KEYS).toContain(id);
   });
 
   it("has no faces for moods that do not exist", () => {
-    // The other direction, so deleting a mood leaves no orphan grid behind.
     for (const k of FACE_KEYS) expect(MOODS.map((m) => m.id)).toContain(k);
   });
 });
 
 describe("the word she says", () => {
-  /** Columns of the given row that have ink in them. */
   const inked = (row: number): number[] => [...MRRP.rows[row]!].flatMap((c, i) => (c === "w" ? [i] : []));
 
   it("gives the m a five-column box, which is what three stems needs", () => {
-    // Written the obvious way first, as `inked(1).filter(x => x < 5)`, this passed on the broken
-    // sprite: with a 3-wide m the column-4 ink it was reading belonged to the next glyph's stem, so
-    // the assertion held and the name lied. Mutation testing is the only reason I know that. Pin the
-    // glyph's box instead, which a narrower m cannot satisfy.
     expect(MRRP.rows[0]!.slice(0, 6)).toBe("wwwww.");
     expect(MRRP.rows[1]!.slice(0, 6)).toBe("w.w.w.");
     expect(MRRP.rows[2]!.slice(0, 6)).toBe("w.w.w.");
   });
 
   it("spaces four glyphs with a clear column between each", () => {
-    // Glyph starts: m at 0 (5 wide), then r, r, p at 6, 10, 14 (3 wide each).
     for (const gap of [5, 9, 13]) {
       for (let r = 0; r < MRRP.h; r++) expect(MRRP.rows[r]![gap], `row ${r} col ${gap}`).toBe(".");
     }
   });
 
   it("gives the p a descender and nothing else one", () => {
-    // The fourth row exists only for the p's tail. Ink anywhere else on it is a stray pixel.
     expect(inked(3)).toEqual([14]);
   });
 
   it("fits in a bubble that fits in the room", () => {
-    // The bubble is the word plus two columns of padding either side, and it is clamped inside a
-    // 100-wide grid. If the word ever grows past this, the clamp starts cropping letters.
     expect(MRRP.w + 4).toBeLessThanOrEqual(30);
     expect(MRRP.h).toBe(4);
   });
@@ -83,13 +55,11 @@ describe("the word she says", () => {
 
 describe("sprites", () => {
   it.each(ALL_SPRITES)("%s is rectangular", (_name, sp) => {
-    // One miscounted row shears everything below it, and it is very hard to see by eye.
     for (const row of sp.rows) expect(row.length).toBe(sp.w);
     expect(sp.rows.length).toBe(sp.h);
   });
 
   it.each(ALL_SPRITES)("%s uses only known palette roles", (_name, sp) => {
-    // A typo'd character is silently transparent: you get a hole in the cat, not an error.
     const known = new Set([".", "w", "f", "d", "b", "e", "n", "m", "p", "h", "c", "g"]);
     for (const row of sp.rows) {
       for (const ch of row) expect(known, `unknown role ${JSON.stringify(ch)}`).toContain(ch);
@@ -159,8 +129,6 @@ describe("moods", () => {
   });
 
   it('phrases every "doing" line to complete "<name> is ___"', () => {
-    // This is the "Bean has batting at the dust" bug. The sentence is built with a single "is", so a
-    // line starting with a past-tense verb reads as broken English and nothing catches it at runtime.
     const pastTense = /^(came|knocked|went|sat|brought|petted|brushed|had|was)\b/;
     for (const [mood, r] of Object.entries(RESPONSES)) {
       expect(r.doing, `${mood}: "${r.doing}"`).not.toMatch(pastTense);
@@ -170,8 +138,6 @@ describe("moods", () => {
   });
 
   it("never renders a low mood as a distressed cat", () => {
-    // The one rule the whole feature rests on: she answers a low mood, she does not mirror it. If sad
-    // reads as pitiful, she stops using it, and the feature is dead.
     for (const low of ["sad", "stressed", "lonely", "tired"] as Mood[]) {
       const r = RESPONSES[low];
       expect(r.snug, `${low} should draw the room in`).toBeGreaterThanOrEqual(0.6);
@@ -185,7 +151,6 @@ describe("moods", () => {
   });
 
   it("gives sad and stressed different poses", () => {
-    // They were both the upright sit, which made them the same cat with different captions.
     expect(RESPONSES.sad.pose).not.toBe(RESPONSES.stressed.pose);
   });
 });
@@ -243,7 +208,6 @@ describe("her clock", () => {
   });
 
   it("keeps her awake at dawn even though the light is low", () => {
-    // Her eyes have to agree with the copy, which says she's watching the window.
     expect(scene(6).sleepy).toBeLessThan(0.2);
   });
 
@@ -271,7 +235,6 @@ describe("her clock", () => {
   });
 
   it("lets what she told the cat outrank the time of day", () => {
-    // Otherwise "bored" leaves her at the door at 5pm while the caption says she's at the shelf.
     const bored = scene(17.5, "bored");
     expect(bored.atDoor).toBe(false);
     expect(bored.pose).toBe("play");

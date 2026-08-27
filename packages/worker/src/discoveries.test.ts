@@ -18,8 +18,6 @@ describe("the allowlist", () => {
   });
 
   it("refuses anything else, because the client is not the authority", () => {
-    // Without this, whoever holds the link can inflate the count with invented keys, or wedge junk
-    // into storage that every later read has to render.
     for (const junk of ["", "PIANO", "piano ", "__proto__", "constructor", 7, null, undefined, {}]) {
       expect(isDiscoveryKey(junk)).toBe(false);
     }
@@ -36,11 +34,6 @@ describe("recording a find", () => {
     expect(second.ledger.piano?.[HIM]).toBe(1000);
   });
 
-  /*
-   * The re-stamp is the bug worth guarding. If a repeat visit updated the timestamp, the secret would
-   * surface as a fresh arrival on the other side every single time he played the piano, and a small
-   * delight becomes a notification you learn to ignore.
-   */
   it("does not resurface an old find as new", () => {
     let ledger: FoundLedger = {};
     ledger = recordFound(ledger, "piano", HIM, 1000).ledger;
@@ -95,7 +88,6 @@ describe("telling you what the other one found", () => {
   });
 
   it("says nothing about what you found yourself", () => {
-    // Your own discoveries are not news delivered back to you.
     const ledger: FoundLedger = { piano: { [HIM]: 5000 } };
     expect(arrivalsFor(ledger, HIM, HER, 1000)).toEqual([]);
   });
@@ -115,13 +107,11 @@ describe("telling you what the other one found", () => {
       treat: { [HER]: 6000 },
     };
     const arrivals = arrivalsFor(ledger, HIM, HER, 1000);
-    // Capped so a binge does not bury the sentence she left him on the same card.
     expect(arrivals).toHaveLength(3);
     expect(arrivals.map((a) => a.key)).toEqual(["treat", "yarn", "catnip"]);
   });
 
   it("skips a stored key that is no longer in the allowlist", () => {
-    // Retiring a secret must not crash the room or surface a key the client cannot render.
     const ledger: FoundLedger = { retiredThing: { [HER]: 5000 }, piano: { [HER]: 6000 } };
     expect(arrivalsFor(ledger, HIM, HER, 1000).map((a) => a.key)).toEqual(["piano"]);
   });
@@ -143,7 +133,6 @@ describe("what both of them found", () => {
   });
 
   it("does not count one seat twice", () => {
-    // A room where only one person exists must not read as "both of you have done this".
     expect(bothFound({ herName: { him: 1 } }, "herName", "him", "him")).toBe(true);
     expect(bothFound({ herName: { him: 1 } }, "herName", "him", "her")).toBe(false);
   });

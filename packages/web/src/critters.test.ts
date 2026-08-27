@@ -1,15 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MOTH_CYCLE_MS, MOTH_SPREAD, MOTH_VISIT_MS, fireflyAt, mothAt } from "./critters.js";
 
-/**
- * Moth timing, checked by arithmetic rather than by screenshot.
- *
- * It visits for 18 seconds out of every 100. I tried twice to catch that in a screenshot and missed both
- * times, because the gap between deciding to look and actually looking is longer than you'd think. This
- * is the lesson from the blink timing repeated: if a thing is only true for a fraction of the time, test
- * the fraction, don't hunt for it.
- */
-
 const BEAM = 50;
 
 describe("the moth", () => {
@@ -28,7 +19,6 @@ describe("the moth", () => {
   });
 
   it("is present for roughly a sixth of the time, not most of it or none of it", () => {
-    // A moth that is always there is furniture; one that is never there is dead code.
     let seen = 0;
     const step = 250;
     for (let t = 0; t < MOTH_CYCLE_MS * 4; t += step) if (mothAt(t, BEAM)) seen++;
@@ -38,7 +28,6 @@ describe("the moth", () => {
   });
 
   it("never drifts outside the beam", () => {
-    // Outside the shaft it is a stray pixel on a wall, which reads as a rendering fault.
     for (let t = 0; t < MOTH_VISIT_MS; t += 100) {
       const m = mothAt(t, BEAM)!;
       expect(Math.abs(m.x - BEAM)).toBeLessThanOrEqual(MOTH_SPREAD + 0.001);
@@ -46,7 +35,6 @@ describe("the moth", () => {
   });
 
   it("stays in the upper part of the room, above the floor", () => {
-    // FLOOR is 48 on the 100x80 grid; a moth walking along the boards is not a moth.
     for (let t = 0; t < MOTH_VISIT_MS; t += 100) {
       const m = mothAt(t, BEAM)!;
       expect(m.y).toBeGreaterThan(8);
@@ -74,7 +62,6 @@ describe("the moth", () => {
   });
 
   it("survives a negative clock without vanishing forever", () => {
-    // performance.now() is never negative, but a caller doing arithmetic on it might be.
     expect(() => mothAt(-500, BEAM)).not.toThrow();
   });
 });

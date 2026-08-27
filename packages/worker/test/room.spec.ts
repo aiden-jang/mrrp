@@ -3,20 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NOTES } from "../src/notes.js";
 import type { Mood, RoomView } from "../src/types.js";
 
-/**
- * The rules of the room.
- *
- * Every one of these started life as a curl command I ran by hand and then threw away, which meant
- * re-running the same checks after every change and trusting my memory of what passed. Two real bugs
- * got through that way: /dress had no seat check at all, and notes were indexed by calendar date so a
- * day she didn't visit was a note she never saw. Both have a test here now.
- *
- * The order the two people arrive in decides who they are, so every test claims seats explicitly.
- */
-
-// UTC-12 and UTC+14: 26 hours apart, so their local dates ALWAYS differ. New York to Tokyo is only
-// +13 and crosses a date boundary just some of the time, which made this pass in the evening and fail
-// in the morning.
+// UTC-12 and UTC+14, so these two are 26 hours apart and their local dates ALWAYS differ. New York
+// to Tokyo is only +13 and shares a date part of the time, which made these tests pass in the
+// evening and fail in the morning. A test that depends on when you run it is worse than no test.
 const BEHIND = "Etc/GMT+12";
 const AHEAD = "Pacific/Kiritimati";
 
@@ -27,20 +16,14 @@ const STRANGER = "strangerstranger";
 let room = 0;
 let id = "";
 
-/** A fresh room id per test. Durable Object state persists within a run. */
+// DEV_TOOLS is set here and not read from `.dev.vars`, which is gitignored: the fast-forward tests
+// passed on my machine and failed on a fresh clone. The closed-door test takes it away itself.
 beforeEach(() => {
   id = `t${String(++room).padStart(6, "0")}`;
-  /*
-   * The suite owns this rather than inheriting it from `.dev.vars`.
-   *
-   * That file is gitignored, so the six tests that fast-forward a room passed on my machine and
-   * failed on a fresh clone: a suite that depends on an untracked file is a suite that lies about
-   * whether the code works. The one test that checks the closed door takes it away itself.
-   */
   env.DEV_TOOLS = "on";
 });
 
-// `away()` moves the system clock, so put it back or every later test inherits the jump.
+// `away()` moves the system clock. Put it back, or every later test inherits the jump.
 afterEach(() => {
   vi.useRealTimers();
 });
@@ -60,24 +43,14 @@ const post = (path: string, body: unknown) =>
     body: JSON.stringify(body),
   });
 
-/** Jump the clock forward so a seat that was just used reads as long abandoned. */
 function away(hours: number): void {
   vi.useFakeTimers({ shouldAdvanceTime: true });
   vi.setSystemTime(new Date(Date.now() + hours * 60 * 60 * 1000));
 }
 
-/**
- * Seat both people. Pass `tz` to pin the room's clock BEFORE her first read.
- *
- * That ordering is the whole point for the note tests. Her day is recorded on whatever timezone is
- * in force when she first reads, and with no `tz` that is DEFAULT_CLOCK — America/New_York, a third
- * zone neither BEHIND nor AHEAD. For eight hours out of every day New York shares its date with
- * AHEAD rather than BEHIND, which left the rollover tests with a baseline equal to their own target,
- * unable to advance, failing only between 04:00 and 12:00 UTC.
- *
- * The zones being 26 hours apart makes them differ from *each other* always; it says nothing about
- * the one the room starts on.
- */
+// Seat both people. Pass `tz` to pin the room's clock BEFORE her first read, which the note tests
+// depend on: her day is recorded from whatever zone is in force the first time she reads. The two
+// zones above differ from each other always; that says nothing about the one the room starts on.
 async function seat(tz?: string) {
   await view(HIM, "Aiden");
   if (tz) await post("clock", { me: HIM, tz });
@@ -174,12 +147,11 @@ describe("who may do what", () => {
     expect(v.clock).toEqual({ tz: "Asia/Seoul", homeHour: 20 });
   });
 
+  // Unvalidated, this string reaches Intl.DateTimeFormat inside the room and takes the room down.
   it("rejects a timezone the runtime doesn't know", async () => {
     await seat();
-    // Unvalidated, this string reaches Intl.DateTimeFormat inside the DO and takes the room down.
     expect((await post("clock", { me: HIM, tz: "Mars/Olympus" })).status).toBe(400);
     expect((await post("clock", { me: HIM, homeHour: 99 })).status).toBe(400);
-    // and the room is still alive afterwards
     expect((await view(HER)).clock.tz).toBe("America/New_York");
   });
 });
@@ -195,8 +167,6 @@ describe("notes", () => {
     await seat();
     const body = await (await SELF.fetch(`https://x/api/room/${id}?me=${HER}`)).text();
     expect(body).toContain(NOTES[0]!.slice(0, 30));
-    // If tomorrow's text is in the payload she can read ahead in devtools, and a gift you can skim
-    // is not a gift.
     expect(body).not.toContain(NOTES[1]!.slice(0, 30));
   });
 
@@ -224,21 +194,13 @@ describe("notes", () => {
     expect(his.noteDay).toBe(1);
   });
 
-  // Rolling her timezone forward is, to the room, the same event as tomorrow arriving.
-  //
-  // The zones are chosen for determinism, not realism: Etc/GMT+12 is UTC-12 and Pacific/Kiritimati is
-  // UTC+14, so they are 26 hours apart and their local dates therefore ALWAYS differ. My first attempt
-  // used New York to Tokyo (+13h), which crosses a date boundary only some of the time, so the test
-  // passed in the evening and failed in the morning. A test that depends on when you run it is worse
-  // than no test.
-
   it("advances by exactly one when her day rolls over", async () => {
     await seat(BEHIND);
     expect((await view(HER)).note!.day).toBe(1);
 
     await post("clock", { me: HIM, tz: AHEAD });
     expect((await view(HER)).note!.day).toBe(2);
-    expect((await view(HER)).note!.day).toBe(2); // and holds for the rest of that day
+    expect((await view(HER)).note!.day).toBe(2);
   });
 
   it("never goes backwards if her clock moves back", async () => {
@@ -252,12 +214,6 @@ describe("notes", () => {
   });
 });
 
-/**
- * His own notes.
- *
- * Every room used to share one hardcoded array, so anybody who was not the author opened a gift full
- * of somebody else's specifics. Defaults still exist as a floor, but they are a floor.
- */
 describe("writing his own notes", () => {
   it("is his to do, and nobody else's", async () => {
     await seat();
@@ -298,7 +254,6 @@ describe("writing his own notes", () => {
   });
 
   it("keeps her place when he edits, and clamps rather than resetting when he trims", async () => {
-    // Losing three weeks of her progress because he fixed a typo would be indefensible.
     await seat(BEHIND);
     await post("notes", { me: HIM, notes: ["one", "two", "three", "four"] });
     await view(HER);
@@ -331,7 +286,6 @@ describe("writing his own notes", () => {
   });
 
   it("gives them back to him to edit, and to nobody else", async () => {
-    // He needs them to edit them. She must not have them: that is the read-ahead leak with extra steps.
     await seat();
     await post("notes", { me: HIM, notes: ["one", "two", "three"] });
     expect((await view(HIM)).yourNotes).toEqual(["one", "two", "three"]);
@@ -358,7 +312,6 @@ describe("writing his own notes", () => {
 });
 
 describe("the photo on the wall", () => {
-  // The only thing in the room that accumulates. Everything else is deliberately stateless.
   it("starts as the fish it ships with", async () => {
     await seat();
     expect((await view(HER)).framed).toBe(false);
@@ -388,14 +341,6 @@ describe("the photo on the wall", () => {
   });
 });
 
-/**
- * Losing HIS phone.
- *
- * Her seat has had a path back for a while, because he can free it. His had none, so one lost phone left
- * the room permanently read-only: notes he could not edit, a cat he could not change, and no way to hand
- * the seat to a new device. This is the only way he can be restored, because there is nobody who could
- * vouch for him.
- */
 describe("taking his seat back", () => {
   const NEWPHONE = "hisnewphonehis";
 
@@ -406,14 +351,12 @@ describe("taking his seat back", () => {
     const shape = /^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$/;
     expect(his).toMatch(shape);
     expect(hers).toMatch(shape);
-    // Two seats, two codes. One shared code could not say which seat was being claimed.
     expect(his).not.toBe(hers);
     await view(STRANGER);
     expect((await view(STRANGER)).recoveryCode).toBeNull();
   });
 
   it("stays the same code every time he looks", async () => {
-    // He has to be able to find it again while he still has the device.
     await seat();
     const a = (await view(HIM)).recoveryCode;
     expect((await view(HIM)).recoveryCode).toBe(a);
@@ -428,12 +371,10 @@ describe("taking his seat back", () => {
     expect(restored.youAreHer).toBe(false);
     expect(restored.them).toBe("Sofia");
     expect(restored.recoveryCode).toBe(code);
-    // And she is untouched: still the cat, still second.
     expect((await view(HER)).youAreHer).toBe(true);
   });
 
   it("keeps him first, so the new device is not handed the cat", async () => {
-    // Arrival order decides who is who. Stamping a fresh firstSeen would make him the second seat.
     await seat();
     const code = (await view(HIM)).recoveryCode!;
     await post("recover", { me: NEWPHONE, code });
@@ -459,11 +400,10 @@ describe("taking his seat back", () => {
     await seat();
     expect((await post("recover", { me: NEWPHONE, code: "aaaa-bbbb-cccc" })).status).toBe(403);
     expect((await view(HIM)).youAreHer).toBe(false);
-    expect((await view(HIM)).recoveryCode).not.toBeNull(); // still his seat
+    expect((await view(HIM)).recoveryCode).not.toBeNull();
   });
 
   it("will not let her redeem it into holding both seats", async () => {
-    // If she could, the room would have one person in it and no cat.
     await seat();
     const code = (await view(HIM)).recoveryCode!;
     expect((await post("recover", { me: HER, code })).status).toBe(403);
@@ -497,7 +437,6 @@ describe("presence", () => {
     await seat();
     await post("act", { me: HIM, action: "sit" });
     await post("tell", { me: HER, mood: "sad" });
-    // He has not been back since she said it.
     expect((await view(HER)).theyCameAfter).toBe(false);
     await view(HIM);
     expect((await view(HER)).theyCameAfter).toBe(true);
@@ -553,14 +492,11 @@ describe("her line back", () => {
     await seat();
     await post("say", { me: HER, text: "  I liked the third one  " });
     const his = await view(HIM);
-    // Trimmed, and stamped, so his side can say when.
     expect(his.herLine?.text).toBe("I liked the third one");
     expect(his.herLine?.at).toBeGreaterThan(0);
   });
 
   it("keeps only the latest, never a history", async () => {
-    // Same reasoning as the mood: a log becomes a chat, a chat has unread counts, and unread counts
-    // are a thing to keep up with. The app promises there is nothing to keep up with.
     await seat();
     await post("say", { me: HER, text: "first" });
     await post("say", { me: HER, text: "second" });
@@ -588,13 +524,10 @@ describe("her line back", () => {
   });
 
   it("does not show it to somebody who only has the link", async () => {
-    // The room is one private link between two people. Her line used to go to anybody who opened it,
-    // while the note text was gated from the start, so privacy held in one direction only.
     await seat();
     await post("say", { me: HER, text: "come sit with me for a bit" });
     const v = await view(STRANGER);
     expect(v.herLine).toBeNull();
-    // and not merely hidden by the UI: it must not be in the payload at all
     const body = await (await SELF.fetch(`https://x/api/room/${id}?me=${STRANGER}`)).text();
     expect(body).not.toContain("come sit with me");
   });
@@ -609,25 +542,16 @@ describe("her line back", () => {
   it("does not tell a spectator how far into her notes she is", async () => {
     await seat();
     expect((await view(STRANGER)).noteDay).toBeNull();
-    expect((await view(HIM)).noteDay).toBe(1); // he still gets the count
+    expect((await view(HIM)).noteDay).toBe(1);
   });
 
   it("caps the length instead of rejecting it", async () => {
-    // Rejecting a too-long note would lose what she typed. Truncating keeps it.
     await seat();
     await post("say", { me: HER, text: "x".repeat(400) });
     expect((await view(HIM)).herLine?.text).toHaveLength(140);
   });
 });
 
-/**
- * Losing a phone.
- *
- * A seat is a random localStorage token, so clearing browser data or changing device loses it. With
- * exactly two seats and no way to free one, the room would be dead forever with nobody able to be the
- * cat. This is the only recovery the app has, so it needs to work and it needs to not cost her
- * anything she has already been given.
- */
 describe("freeing her seat", () => {
   const NEWPHONE = "newphonenewphone";
 
@@ -651,7 +575,7 @@ describe("freeing her seat", () => {
 
     const fresh = await view(NEWPHONE, "Sofia again");
     expect(fresh.youAreHer).toBe(true);
-    expect((await view(HIM)).youAreHer).toBe(false); // he is still him
+    expect((await view(HIM)).youAreHer).toBe(false);
     expect((await view(HIM)).them).toBe("Sofia again");
   });
 
@@ -686,7 +610,6 @@ describe("freeing her seat", () => {
     await post("act", { me: HIM, action: "pet" });
     await post("release", { me: HIM });
     const fresh = await view(NEWPHONE, "Sofia again");
-    // His actions survive: he never lost his seat. Hers would be entries by a person with no seat.
     expect(fresh.theirRecent.map((v) => v.action)).toEqual(["pet"]);
   });
 
@@ -694,7 +617,6 @@ describe("freeing her seat", () => {
     await seat();
     await post("release", { me: HIM });
     await view(NEWPHONE, "Sofia again");
-    // A fourth token arriving after the seat is retaken is a spectator, same as always.
     const late = await view("latecomerlatecomer");
     expect(late.you).toBeNull();
     expect(late.youAreHer).toBe(false);
@@ -709,7 +631,6 @@ describe("both of you at once", () => {
 
   it("is true for each of you when you are both recently here", async () => {
     await seat();
-    // seat() just visited as both, so both lastSeen are fresh.
     expect((await view(HER)).bothHereNow).toBe(true);
     expect((await view(HIM)).bothHereNow).toBe(true);
   });
@@ -721,17 +642,8 @@ describe("both of you at once", () => {
 });
 
 describe("what she leaves him", () => {
-  /**
-   * Only he sees it, and it is gone once he touches anything.
-   *
-   * The seat gate is the point of this test rather than a nicety. This room has already shipped one
-   * leak of exactly this shape (her line to him was readable by anyone holding the link), and a gift
-   * is the same kind of thing: something that passes between two people and nobody else.
-   */
   it("is his to find, and never hers or a stranger's", async () => {
     await seat();
-    // Move the clock on instead of reaching into storage: his lastSeen stays where it was and the
-    // room simply finds him long gone, which is exactly the situation being tested.
     away(9);
     await view(HER);
 
@@ -751,7 +663,6 @@ describe("what she leaves him", () => {
   });
 
   it("does not appear when he has only just been in", async () => {
-    // The whole meaning is "you were away". A gift waiting after a five minute gap is a notification.
     await seat();
     await view(HER);
     expect((await view(HIM)).gift).toBeNull();
@@ -759,27 +670,13 @@ describe("what she leaves him", () => {
 });
 
 describe("the thing she knocks off the shelf", () => {
-  /**
-   * Either seat may put it back, and nobody else may.
-   *
-   * The unusual one: every other mutation here is his alone. Tidying up after the cat is not a
-   * gesture performed for someone, it is just a job, and letting only him do it would make this
-   * his room that she visits. A stranger with the link still cannot rearrange their furniture.
-   */
   it("can be put back by either of them, and by no one else", async () => {
     await seat();
     const knock = async () => {
-      // Her visit is what knocks it off, and it is a chance rather than a certainty, so keep going
-      // until it lands. Bounded so a broken implementation fails the test instead of hanging.
       for (let i = 0; i < 200 && !(await view(HIM)).shelfDown; i++) await view(HER);
       expect((await view(HIM)).shelfDown).toBe(true);
     };
 
-    /*
-     * Putting it back no longer means it stays up: one time in three she knocks it straight off
-     * again while you are standing there. So the room's answer, not `false`, is what the mug should
-     * agree with.
-     */
     const putBack = async (me: string) => {
       const r = await post("shelf", { me });
       expect(r.status).toBe(200);
@@ -820,13 +717,6 @@ describe("the light in the window", () => {
   });
 });
 
-/*
- * What the two of them have noticed.
- *
- * The room is full of secrets that only fire if you go looking, and every one of them used to be
- * invisible to the other person: she could find all of them and he would never know. These cover the
- * ledger being shared, being seat-only, and not spoiling a secret the viewer has not found yet.
- */
 describe("shared discoveries", () => {
   it("counts what either of them noticed, for both of them", async () => {
     await seat();
@@ -846,7 +736,6 @@ describe("shared discoveries", () => {
 
   it("refuses a key the room does not have", async () => {
     await seat();
-    // The allowlist lives on the server, so an invented key cannot inflate the count.
     expect((await post("found", { me: HIM, key: "definitely-not-real" })).status).toBe(400);
     expect((await post("found", { me: HIM, key: "__proto__" })).status).toBe(400);
     expect((await view(HIM)).noticed).toBe(0);
@@ -855,19 +744,16 @@ describe("shared discoveries", () => {
   it("ignores a stranger holding the link", async () => {
     await seat();
     expect((await post("found", { me: STRANGER, key: "piano" })).status).toBe(400);
-    // What the two of them found together stays theirs.
     expect((await view(HIM)).noticed).toBe(0);
   });
 
   it("tells you the other one found something, without saying what", async () => {
     await seat();
-    await view(HIM); // his clock starts now
+    await view(HIM);
     await post("found", { me: HER, key: "piano" });
 
     const found = (await view(HIM)).arrivals.filter((a) => a.kind === "found");
     expect(found).toHaveLength(1);
-    // He has not found the piano, so naming it would hand him the answer to a thing he was going to
-    // enjoy walking into.
     expect(found[0]).toMatchObject({ kind: "found", what: null });
   });
 
@@ -893,7 +779,6 @@ describe("shared discoveries", () => {
     await view(HIM);
     await post("found", { me: HER, key: "piano" });
     expect((await view(HIM)).arrivals.some((a) => a.kind === "found")).toBe(true);
-    // Second read: already delivered, so the card is clean.
     expect((await view(HIM)).arrivals.some((a) => a.kind === "found")).toBe(false);
   });
 
@@ -908,24 +793,16 @@ describe("shared discoveries", () => {
   it("is quietly fine about being told the same thing twice", async () => {
     await seat();
     expect((await post("found", { me: HIM, key: "piano" })).status).toBe(200);
-    // The client reports optimistically on every device, so a repeat is normal, not an error.
     expect((await post("found", { me: HIM, key: "piano" })).status).toBe(200);
     expect((await view(HIM)).noticed).toBe(1);
   });
 });
 
 describe("what the room works out from having been used a while", () => {
-  /** Every action goes through the same route the app uses, so the tally is built the real way. */
   const acted = async (action: string, times: number): Promise<void> => {
     for (let i = 0; i < times; i += 1) expect((await post("act", { me: HIM, action })).status).toBe(200);
   };
 
-  /**
-   * A room old enough to have habits about, without the fortnight of waiting.
-   *
-   * Seats first, then jumps: the room's age is measured from the first arrival, so seating after the jump
-   * would produce a brand-new room in the future rather than an old one.
-   */
   const settled = async (): Promise<void> => {
     await seat();
     away(24 * 30);
@@ -939,7 +816,6 @@ describe("what the room works out from having been used a while", () => {
   });
 
   it("gives a brand-new room no personality, however much he taps in it", async () => {
-    // Petting her is a button, so a count on its own is not a stand-in for elapsed time.
     await seat();
     await acted("pet", 20);
     expect((await view(HIM)).personality).toBeNull();
@@ -961,13 +837,6 @@ describe("what the room works out from having been used a while", () => {
   });
 
   it("keeps the room's age when a seat changes hands", async () => {
-    /*
-     * The reason the start is the earliest `firstSeen` rather than a stored key.
-     *
-     * He can take his seat back on a new device with the recovery code, which carries the old seat's
-     * arrival over. If the room's age came from the new device it would reset to zero on a recovery, and
-     * a year of this would vanish because somebody got a new phone.
-     */
     await seat();
     const code = (await view(HIM)).recoveryCode;
     expect(code).toBeTruthy();
@@ -984,10 +853,7 @@ describe("what the room works out from having been used a while", () => {
     expect((await view(HIM)).personality).toEqual({ trait: "petted", count: 12 });
   });
 
-  // Forty-five round trips through workerd, which is over the default 5s and reads as a logic failure
-  // when it trips. The test is worth its own timeout rather than a smaller number: the number IS the test.
   it("keeps counting past the length of the visit log", async () => {
-    // The log holds forty. The whole point of the separate tally is that the forty-first still counts.
     await settled();
     await acted("brush", 45);
     expect((await view(HIM)).personality).toEqual({ trait: "brushed", count: 45 });
@@ -1012,7 +878,6 @@ describe("what the room works out from having been used a while", () => {
   });
 
   it("is not something she can move by reading the room", async () => {
-    // build() reads the tally and must never write it: a page open is not a thing done to the cat.
     await settled();
     await acted("sit", 12);
     for (let i = 0; i < 5; i += 1) await view(HER);
@@ -1022,7 +887,6 @@ describe("what the room works out from having been used a while", () => {
 
 describe("how long you were away", () => {
   it("has no answer on a first visit", async () => {
-    // Not zero: never having been here is a different thing from having just been here.
     expect((await view(HIM, "Aiden")).awayMs).toBeNull();
   });
 
@@ -1039,7 +903,6 @@ describe("how long you were away", () => {
     away(30);
     await view(HIM);
     const again = await view(HIM);
-    // The 30-hour gap belongs to the previous read; this one happened immediately after it.
     expect(again.awayMs!).toBeLessThan(60_000);
   });
 
@@ -1051,13 +914,9 @@ describe("how long you were away", () => {
 
 describe("the thing she left, and what happens to it", () => {
   it("tells her he took it, once", async () => {
-    /*
-     * The gift used to go one way and stop. She left it, he picked it up, and she never found out,
-     * which for an app about two people is the wrong shape.
-     */
     await seat();
     away(72);
-    await view(HER); // she drops in while he has been away, which is what leaves the gift
+    await view(HER);
     expect((await view(HIM)).gift).not.toBeNull();
 
     await post("act", { me: HIM, action: "pet" });
@@ -1065,7 +924,6 @@ describe("the thing she left, and what happens to it", () => {
     const kept = hers.arrivals.find((arrival) => arrival.kind === "kept");
     expect(kept).toBeTruthy();
 
-    // Told once: the next read has nothing, because an arrival is not an inbox.
     expect((await view(HER)).arrivals.find((a) => a.kind === "kept")).toBeUndefined();
   });
 
@@ -1112,13 +970,6 @@ describe("both of you calling her by name", () => {
   });
 });
 
-/*
- * The ageing tool.
- *
- * It exists so the states that take months can be looked at, and everything it writes is reachable
- * by ordinary use given enough time. What is worth pinning is the two things that keep it from being
- * a way to edit somebody else's room: the flag, and the seat.
- */
 describe("fast-forwarding a room", () => {
   it("moves the room's age, which is otherwise a year of waiting", async () => {
     await seat();
@@ -1158,17 +1009,12 @@ describe("fast-forwarding a room", () => {
 
   it("moves your own last visit, which is what coming back is measured from", async () => {
     await seat();
-    // Consumed by the read that reports it, so this is the one read that can see it.
     await post("age", { me: HIM, awayHours: 100 * 24 });
     const back = await view(HIM);
     expect(Math.round((back.awayMs ?? 0) / (24 * 60 * 60 * 1000))).toBe(100);
     expect((await view(HIM)).awayMs).toBeLessThan(1000);
   });
 
-  /*
-   * The gate that keeps this out of production. `.dev.vars` is loaded for the test run too, so the
-   * flag has to be taken away here to see the closed door at all.
-   */
   it("is not there at all without the dev flag", async () => {
     await seat();
     const on = env.DEV_TOOLS;
@@ -1189,13 +1035,6 @@ describe("fast-forwarding a room", () => {
   });
 });
 
-/*
- * Taking her seat back.
- *
- * His seat always had a code and hers did not, so a lost phone meant waiting for him to notice, free
- * her seat and send the link again. Hers carries more than his ever did, so the interesting part is
- * not the swap: it is what survives it.
- */
 describe("taking her seat back", () => {
   const NEW_PHONE = "hernewphone1234";
 
@@ -1259,7 +1098,6 @@ describe("taking her seat back", () => {
     const code = (await view(HER)).recoveryCode!;
     await post("release", { me: HIM });
 
-    // Otherwise the device he just evicted walks back in with the code it still has.
     expect((await post("recover", { me: NEW_PHONE, code })).status).toBe(403);
   });
 
@@ -1273,20 +1111,11 @@ describe("taking her seat back", () => {
   });
 });
 
-/*
- * Tying a seat to an account.
- *
- * Driven against the Durable Object rather than through the Worker, because the Worker's half is one
- * call to the shared auth service and forwarding a cookie to it is a pattern the other apps already
- * prove. What is worth pinning is the room's half: which seat an account resolves to, and the fact
- * that nobody can sign their way into holding both.
- */
 describe("a seat tied to an account", () => {
   const ME = "acct-user-alice";
   const OTHER = "acct-user-bob";
   const NEW_PHONE = "hernewphone9999";
 
-  /** The room object behind `id`, for calling its methods directly. */
   const inRoom = async <T>(fn: (room: InstanceType<typeof import("../src/room.js").Room>) => Promise<T>) => {
     const stub = env.ROOM.get(env.ROOM.idFromName(id));
     return runInDurableObject(stub, (instance) => fn(instance as never));
@@ -1296,7 +1125,6 @@ describe("a seat tied to an account", () => {
     await seat();
     await inRoom((r) => r.linkAccount(HER, ME, true));
 
-    // A new device, signed in as her: no token of ours, and still her seat.
     const v = await inRoom((r) => r.view(NEW_PHONE, "Bea", ME));
     expect(v.youAreHer).toBe(true);
     expect(v.seat).toBe(HER);
@@ -1305,7 +1133,6 @@ describe("a seat tied to an account", () => {
 
   it("leaves somebody signed into no room here exactly where they were", async () => {
     await seat();
-    // Signed in, but this account has tied itself to nothing in this room.
     const v = await inRoom((r) => r.view(HIM, "Aiden", OTHER));
     expect(v.youAreHer).toBe(false);
     expect(v.seat).toBe(HIM);
@@ -1340,18 +1167,12 @@ describe("a seat tied to an account", () => {
     await inRoom((r) => r.linkAccount(HER, ME, true));
     expect(await inRoom((r) => r.linkAccount(HER, ME, false))).toBe(true);
 
-    // Signing in no longer finds it, and her own device still holds it.
     expect((await inRoom((r) => r.view(NEW_PHONE, "x", ME))).youAreHer).toBe(false);
     expect((await inRoom((r) => r.view(HER, "Bea"))).youAreHer).toBe(true);
   });
 });
 
 describe("putting the mug back", () => {
-  /*
-   * Whether she knocks it off again is a coin the room tosses, so what is worth pinning is not the
-   * odds but that the answer and the room never disagree. The client shows the mug going back up and
-   * then falling, and it takes the room's word for which of those happened.
-   */
   it("always agrees with itself about where the mug ended up", async () => {
     await seat();
     for (let i = 0; i < 25; i++) {
@@ -1362,7 +1183,6 @@ describe("putting the mug back", () => {
 });
 
 describe("a day the two of them chose", () => {
-  /** Today's month and day in the room's own timezone, which is the calendar the day is checked on. */
   const todayThere = (tz: string) => {
     const [m, d] = new Intl.DateTimeFormat("en-CA", { timeZone: tz, month: "2-digit", day: "2-digit" })
       .format(new Date())
@@ -1411,7 +1231,6 @@ describe("a day the two of them chose", () => {
     const { month, day } = todayThere("America/New_York");
     await post("ourday", { me: HIM, month, day, label: "ours" });
     expect((await view(HIM)).ourDay).toEqual({ month, day, label: "ours" });
-    // She meets it on the day rather than reading it out of a settings panel she cannot open.
     expect((await view(HER)).ourDay).toBeNull();
 
     await post("ourday", { me: HIM, label: "" });
@@ -1430,8 +1249,6 @@ describe("freeing her seat and giving it to a new phone", () => {
     await post("release", { me: HIM });
     await view(NEW_PHONE, "Sofia");
 
-    // Her line and her place in the notes already survived this. What she had noticed did not, so
-    // freeing her seat quietly took the collar off the cat.
     expect((await view(HIM)).bothCalledHer).toBe(true);
     expect((await view(NEW_PHONE)).bothCalledHer).toBe(true);
   });
@@ -1453,7 +1270,6 @@ describe("freeing her seat and giving it to a new phone", () => {
     await view(HIM);
     await view(NEW_PHONE, "Sofia");
 
-    // He was already seated, so the inheritance must wait for whoever actually takes the free seat.
     await post("found", { me: HIM, key: "piano" });
     expect((await view(HIM)).noticed).toBe(1);
     expect((await view(NEW_PHONE)).youAreHer).toBe(true);
