@@ -475,7 +475,10 @@ export class Room extends DurableObject<Env> {
    *
    * Reachable on localhost only; see the route.
    */
-  async age(me: string, want: { days?: number; tally?: Tally; noteIdx?: number }): Promise<RoomView> {
+  async age(
+    me: string,
+    want: { days?: number; tally?: Tally; noteIdx?: number; awayHours?: number },
+  ): Promise<RoomView> {
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     const { him, her } = this.roles(people);
     if (me !== him && me !== her) return this.build(me, people);
@@ -483,6 +486,12 @@ export class Room extends DurableObject<Env> {
     if (want.days !== undefined) {
       const start = Date.now() - Math.max(0, want.days) * DAY_MS;
       for (const person of Object.values(people)) person.firstSeen = start;
+      await this.ctx.storage.put("people", people);
+    }
+    if (want.awayHours !== undefined && people[me]) {
+      // The one thing `days` cannot reach: coming back is measured from your own last visit, not from
+      // the room's age, and it is the input to five lines of copy that are otherwise unreachable.
+      people[me].lastSeen = Date.now() - Math.max(0, want.awayHours) * 60 * 60 * 1000;
       await this.ctx.storage.put("people", people);
     }
     if (want.tally) await this.ctx.storage.put("tally", want.tally);
