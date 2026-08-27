@@ -65,6 +65,21 @@ first and written in text only if it still needs saying.
 Design decisions, and the ones that were tried and reverted, are in
 [`DECISIONS.md`](DECISIONS.md). The art direction is in [`ART.md`](ART.md).
 
+## Reading the code
+
+The reasoning lives in [`DECISIONS.md`](DECISIONS.md), not in the source. Comments in the code are
+kept for three things only:
+
+- a trap that has actually bitten somebody, like the whole-pixel rule or the two gain stages in
+  `sound.ts` where one node would let the LFO and the envelope fight over the same parameter
+- a rule that fails silently when broken, like the seat checks in the Durable Object or the spoiler
+  filter in `dreams.ts`
+- why not the obvious alternative, where a reader would reasonably try the obvious thing and quietly
+  break something
+
+Everything else was moved to `DECISIONS.md` or deleted. If you are wondering why something is shaped
+the way it is and the code does not say, that is deliberate: it is in the doc.
+
 ## Where things are
 
 | file                  | what                                                               |
