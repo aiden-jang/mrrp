@@ -111,9 +111,11 @@ export type Gift = "leaf" | "cap" | "moth";
 
 /** A day in the room's own history worth saying something about. */
 export interface Milestone {
-  kind: "anniversary" | "first-week" | "first-month";
-  /** Whole years, for an anniversary. Zero for the earlier two. */
+  kind: "anniversary" | "first-week" | "first-month" | "ours";
+  /** Whole years, for an anniversary. Zero for the earlier two and for a day of their own. */
   years: number;
+  /** What he called the day, for `ours`. The room repeats it rather than naming the occasion. */
+  label?: string;
 }
 
 /** The one thing she has come to expect, and how much of her history says so. */
@@ -169,6 +171,8 @@ export interface RoomView {
   linked: boolean;
   /** Takes his seat back on a new device. Sent to him and nobody else. */
   recoveryCode: string | null;
+  /** The day he told the room to notice. His side only; she meets it on the day. */
+  ourDay: { month: number; day: number; label: string } | null;
   /** His side, so he can edit them. She must never receive the ones she has not reached. */
   yourNotes: string[] | null;
   /** One line she left him. Overwritten rather than appended, so there is nothing to keep up with. */

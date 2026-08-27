@@ -151,6 +151,32 @@ app.post("/api/room/:id/draw", async (c) => {
   return c.json(await room(c.env, id).draw(body.me, cells));
 });
 
+/**
+ * A day the two of them care about. His to set, and the Room re-checks that.
+ *
+ * Month and day only, validated as a real calendar date so 31 February cannot be stored and then
+ * never arrive. An empty label clears it.
+ */
+app.post("/api/room/:id/ourday", async (c) => {
+  const id = c.req.param("id");
+  if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
+  const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  const me = typeof body.me === "string" ? body.me : "";
+  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+
+  const label = typeof body.label === "string" ? body.label.trim().slice(0, 32) : "";
+  const month = typeof body.month === "number" ? Math.trunc(body.month) : 0;
+  const day = typeof body.day === "number" ? Math.trunc(body.day) : 0;
+  // 29 February is allowed: milestoneFor answers on the day itself, and a leap-year date simply
+  // arrives in leap years, which is the honest behaviour for a date somebody chose.
+  const DAYS = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const real = month >= 1 && month <= 12 && day >= 1 && day <= DAYS[month - 1]!;
+  if (label && !real) return c.json({ error: "bad request" }, 400);
+
+  const ok = await room(c.env, id).setOurDay(me, label ? { month, day, label } : null);
+  return ok ? c.json({ ok: true }) : c.json({ error: "not yours to set" }, 403);
+});
+
 /** Set her name and colours. His to set, and the Room re-checks that. */
 app.post("/api/room/:id/dress", async (c) => {
   const id = c.req.param("id");
