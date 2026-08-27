@@ -224,3 +224,38 @@ which share a date part of the day: those tests passed in the evening and failed
 Nothing in the suite reads `.dev.vars` either. That file is gitignored, so the tests that fast-forward
 a room passed here and failed on a fresh clone. A suite that depends on an untracked file lies about
 whether the code works.
+
+## Both of them can get out, through different doors
+
+He can delete the room. She can leave it. The asymmetry is the decision, and the two symmetric
+alternatives are both worse.
+
+If only he could delete, she would have to ask another person to remove her own data, which is not a
+delete path at all. If either of them could delete everything, one bad evening could erase the other's
+year, and a shared gift that one person can unilaterally destroy is a worse thing to hand somebody
+than one they cannot.
+
+So: his door ends the room for both, because he made it and most of what is in it is his. Her door
+takes her side out and leaves his standing. Each of them can remove everything that is theirs, and
+neither can destroy what is not.
+
+His confirmation is the cat's name, typed. A dialog with a red button is one mis-tap from both of
+their years; a name is something a person who means it can produce and a thumb cannot. Hers is two
+taps, because it is just as permanent for her and she has no name to type.
+
+## A deleted room keeps one bit, and a test hunts for the method that forgets
+
+Wiping storage is not enough. A room with fewer than two people in it seats whoever turns up, so the
+next person to open a dead link would quietly become the maker of a brand new room at the same
+address, and she would find a stranger sitting in it. So a deleted room keeps exactly one key, the
+date it went, and every method refuses on it.
+
+"Every method" is the hard part, and it is enforced by a test that walks the Durable Object's own
+prototype rather than by remembering. Adding any method fails that test until its name is classified
+as internal or as a route can reach it, which is the moment to decide whether a dead room may be
+reached through it.
+
+Leaving needed the same kind of thinking one level down. The first version freed her seat and was
+undone by her own next page load, because the free seat she had just vacated was hers for the taking
+again. Leaving now bars that browser's token. Him freeing her seat does not, because that button
+exists precisely so the right person can take a seat back.

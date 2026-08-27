@@ -180,18 +180,20 @@ That last part is enforced, not assumed. A third person with the link gets no no
 both in here", and a 403 on anything that writes. All of it lives in the Durable Object rather
 than the UI, because a rule enforced in the browser is a rule anyone can turn off.
 
-| endpoint                      | who         | notes                                                         |
-| ----------------------------- | ----------- | ------------------------------------------------------------- |
-| `GET /api/room/:id`           | anyone      | seats the first two callers. Only her read advances the note  |
-| `POST .../tell`               | her only    | her mood, one of six                                          |
-| `POST .../say`                | her only    | one line back, 140 chars, empty clears it                     |
-| `POST .../act`                | him only    | pet, brush, bring, sit, photo. Four of the five leave a mark  |
-| `POST .../shelf`              | either seat | puts the mug back. The one write both of them may make        |
-| `POST .../dress`, `.../clock` | him only    | 403 otherwise                                                 |
-| `POST .../notes`              | him only    | this room's notes, one per entry; empty restores the defaults |
-| `POST .../window-light`       | either seat | leave one glint in the window, or collect the other person's  |
-| `POST .../release`            | him only    | frees her seat so a new device can be her                     |
-| `POST .../recover`            | his code    | takes the first seat back on a new device                     |
+| endpoint                      | who         | notes                                                          |
+| ----------------------------- | ----------- | -------------------------------------------------------------- |
+| `GET /api/room/:id`           | anyone      | seats the first two callers. Only her read advances the note   |
+| `POST .../tell`               | her only    | her mood, one of six                                           |
+| `POST .../say`                | her only    | one line back, 140 chars, empty clears it                      |
+| `POST .../act`                | him only    | pet, brush, bring, sit, photo. Four of the five leave a mark   |
+| `POST .../shelf`              | either seat | puts the mug back. The one write both of them may make         |
+| `POST .../dress`, `.../clock` | him only    | 403 otherwise                                                  |
+| `POST .../notes`              | him only    | this room's notes, one per entry; empty restores the defaults  |
+| `POST .../window-light`       | either seat | leave one glint in the window, or collect the other person's   |
+| `POST .../release`            | him only    | frees her seat so a new device can be her                      |
+| `POST .../recover`            | his code    | takes the first seat back on a new device                      |
+| `POST .../delete`             | him only    | ends the room for both. Needs the cat's name typed, not a flag |
+| `POST .../leave`              | her only    | takes her side out and frees her seat. His room stands         |
 
 ### What his actions leave behind
 
@@ -213,12 +215,40 @@ present that does not exist is a worse gesture than no present.
 Two more things only time can do, and neither can go backwards: the boards where the midday sun
 rests go pale over a year, and the plant puts out new fronds at three months and again at eight.
 
+### Ending it
+
+Both of them can get out, and the two doors are deliberately different sizes.
+
+**He can delete the room**, because he made it and most of what is in it is his: the notes, the cat,
+the day he asked it to remember. It goes for both of them, immediately, and there is no undo. The
+confirmation is the cat's name, typed. A dialog with a red button in it is one mis-tap away from both
+of their years, and the name is the one thing a person who means it can produce and a stray thumb
+cannot.
+
+**She can leave**, which takes her side with her and leaves his room standing: her moods, her visits,
+the days she has been in here. Her seat goes back to empty, so he can send the link on. She gets a
+door of her own rather than a share of his because the alternatives are both worse. If only he could
+delete, she would have to ask someone else to remove her own data. If she could delete the whole room,
+one bad evening could erase his year.
+
+Leaving bars that browser's token from being seated again. Without that, her own next page load walks
+back through the free seat and undoes the thing she just did, which was the first bug this feature had.
+She can still come back, on a fresh token, from a screen that says she left; the room does not pretend
+it never happened. Him freeing her seat does **not** bar the token, because that button exists so the
+right person can take a seat back.
+
+A deleted room keeps exactly one thing: the date it went. Wiping the storage outright is not enough,
+because a room with fewer than two people in it seats whoever turns up, so the next person to open a
+dead link would quietly become the maker of a brand new room at the same address. Every route answers
+410 afterwards, and a test walks the Durable Object's own method list to make sure a new one cannot be
+added that forgets.
+
 ### When she loses her phone
 
 A seat is a random token in `localStorage`. That is what makes this frictionless (no account, no
 password, no email) and it is also the one thing that can go permanently wrong: clearing Safari's
-data or moving to a new phone loses the seat, and with exactly two seats and no way to free one, the
-room would be stuck forever with nobody able to be the cat.
+data or moving to a new phone loses the seat, and with exactly two seats, a lost one would leave the
+room stuck with nobody able to be the cat.
 
 A seat can be lost, so there are three ways back. None of them is at the front door, and none ever
 will be: she taps a link and she is in a room with a cat, and that is the whole gesture.
@@ -254,7 +284,7 @@ local day, so a day she doesn't visit is not a note she never sees.
 ## Tests
 
 ```bash
-pnpm check       # typecheck, lint, then 340 tests: 161 web, 179 worker
+pnpm check       # typecheck, lint, then 353 tests: 161 web, 192 worker
 ```
 
 `lint` exists for one rule. owewell shipped a `useEffect` below a component's early returns, so the
