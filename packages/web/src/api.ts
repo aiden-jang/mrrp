@@ -185,13 +185,14 @@ export async function doRecover(id: string, code: string): Promise<void> {
 }
 
 /** Put the mug back on the shelf. Either seat; the Worker checks which. */
-export async function doTidy(id: string): Promise<void> {
+export async function doTidy(id: string): Promise<{ again: boolean }> {
   const r = await fetch(`/api/room/${id}/shelf`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ me: myToken() }),
   });
   if (!r.ok) throw new Error("Couldn't reach the shelf.");
+  return (await r.json()) as { again: boolean };
 }
 
 /** Leave a tiny light in the window, or collect the one waiting there from the other seat. */

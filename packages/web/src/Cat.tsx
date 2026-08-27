@@ -344,6 +344,7 @@ export function Cat({
   windowLight = false,
   onWindowLight,
   shelfDown = false,
+  mugFell = null,
   onTidy,
   role = null,
   together = false,
@@ -429,6 +430,13 @@ export function Cat({
   /** Leaves a light when the window is double-tapped, or collects one already waiting. */
   onWindowLight?: () => void;
   /** The mug is on the floor rather than the shelf. Tapping it there puts it back. */
+  /**
+   * She knocked it off again, just now, while you were standing there.
+   *
+   * The room decides this when the mug is put back, not on her next visit, because the joke only
+   * works if somebody sees it happen. All this does is make her look at what she did.
+   */
+  mugFell?: number | null;
   shelfDown?: boolean;
   /** Called when someone taps the fallen mug. Seat-checked on the server, not here. */
   onTidy?: () => void;
@@ -517,6 +525,12 @@ export function Cat({
   windowLightRef.current = windowLight;
   const onWindowLightRef = useRef(onWindowLight);
   onWindowLightRef.current = onWindowLight;
+  useEffect(() => {
+    if (mugFell === null) return;
+    lookAt.current = { x: MUG_FLOOR_X + 4, until: performance.now() + 2600 };
+    speakUntil.current = performance.now() + 1200;
+  }, [mugFell]);
+
   const downRef = useRef(shelfDown);
   downRef.current = shelfDown;
   const tidyRef = useRef(onTidy);
