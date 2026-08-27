@@ -158,6 +158,8 @@ export interface RoomView {
   yourNotes: string[] | null;
   /** One line she left him. Overwritten rather than appended, so there is nothing to keep up with. */
   herLine: Told2 | null;
+  /** What one of you drew for the other, hanging in the frame. Seats only. */
+  doodle: { cells: string; mine: boolean; at: number } | null;
   /** Her note for today. Null for him: he wrote them. */
   note: Note | null;
   /** Her day number, for his side, without the text. */
@@ -182,4 +184,16 @@ export interface RoomView {
   milestone: Milestone | null;
   /** What she has come to expect, once there is enough history behind it to mean anything. */
   personality: Personality | null;
+}
+
+/**
+ * What is in the frame, as stored.
+ *
+ * `by` is a seat token and never leaves the Durable Object: the view sends `mine` instead, so a
+ * browser is told whose drawing it is without being told who anybody is.
+ */
+export interface Doodle {
+  cells: string;
+  by: string;
+  at: number;
 }

@@ -1,5 +1,18 @@
 import { DurableObject } from "cloudflare:workers";
-import type { Action, Arrival, Cat, Clock, Gift, Mood, Note, RoomView, Told, Told2, Visit } from "./types.js";
+import type {
+  Action,
+  Arrival,
+  Cat,
+  Clock,
+  Doodle,
+  Gift,
+  Mood,
+  Note,
+  RoomView,
+  Told,
+  Told2,
+  Visit,
+} from "./types.js";
 import { NOTES } from "./notes.js";
 import {
   arrivalsFor,
@@ -12,6 +25,13 @@ import {
 } from "./discoveries.js";
 import type { Env } from "./env.js";
 import { DAY_MS, milestoneFor, personalityFrom, roomStartedAt, tallyFrom, type Tally } from "./remembers.js";
+
+/**
+ * Seven by five, matching the hole in the frame the drawing hangs in. Duplicated from the web
+ * package rather than shared: this is the number a request is validated against, and validation that
+ * imports its bound from the thing being validated is not validation.
+ */
+const DOODLE_CELLS = 35;
 
 const LOG_KEEP = 40;
 /** How recently they must have been seen to count as being here now, rather than having been here. */
@@ -134,7 +154,12 @@ export class Room extends DurableObject<Env> {
     if (this.roles(people).him !== me) return this.build(me, people);
 
     // A photo is the one action with a consequence: it replaces the picture on the wall, for good.
-    if (action === "photo") await this.ctx.storage.put("framed", true);
+    // It takes the frame back from a drawing too. One frame, and whatever went in last is what is in
+    // it: no priority rule to remember and no way to be confused about why the wall did not change.
+    if (action === "photo") {
+      await this.ctx.storage.put("framed", true);
+      await this.ctx.storage.delete("doodle");
+    }
 
     /*
      * Sometimes what he brings is a box. One in three, because a box that arrives on demand is a
@@ -415,6 +440,28 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
+  /**
+   * Put something in the frame. Either seat: it is one wall between the two of them.
+   *
+   * Validated here as well as at the route, because the route is not the only way in and a cells
+   * string is the one thing in this app a person hands us that gets drawn a pixel at a time. A blank
+   * sheet is a delete rather than a stored square of nothing, so the frame goes back to its fish.
+   */
+  async draw(me: string, cells: string): Promise<RoomView> {
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (!people[me]) return this.build(me, people);
+    const { him, her } = this.roles(people);
+    if (me !== him && me !== her) return this.build(me, people);
+    if (cells.length !== DOODLE_CELLS || !/^[0-4]+$/.test(cells)) return this.build(me, people);
+
+    if (/[1-4]/.test(cells)) await this.ctx.storage.put<Doodle>("doodle", { cells, by: me, at: Date.now() });
+    else await this.ctx.storage.delete("doodle");
+
+    people[me].lastSeen = Date.now();
+    await this.ctx.storage.put("people", people);
+    return this.build(me, people);
+  }
+
   /** Set whose day the room runs on: her timezone, and when she's usually home. His to set. */
   async setClock(me: string, clock: Partial<Clock>): Promise<boolean> {
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -435,6 +482,12 @@ export class Room extends DurableObject<Env> {
    * This writes from inside build(), so reading the room is a mutation for her seat. The alternative
    * is a separate "mark read" round trip that could fail after she had already seen it.
    */
+  private async doodleFor(me: string, seated: boolean): Promise<RoomView["doodle"]> {
+    if (!seated) return null;
+    const d = await this.ctx.storage.get<Doodle>("doodle");
+    return d ? { cells: d.cells, mine: d.by === me, at: d.at } : null;
+  }
+
   private async noteFor(clock: Clock, isHer: boolean, bothHere: boolean): Promise<Note | null> {
     const notes = await this.notes();
     if (!bothHere || notes.length === 0) return null;
@@ -556,6 +609,9 @@ export class Room extends DurableObject<Env> {
       // Seated people only, or a third person with the link can read the sentence she left him. She
       // needs it too, to see and edit what she left, so the gate is the seat and not which seat.
       herLine: seated ? ((await this.ctx.storage.get<Told2>("herLine")) ?? null) : null,
+      // Same gate as the line, for the same reason: a drawing is a shorter one. `mine` is what lets
+      // the frame say whose it is without ever sending the other seat's token to a browser.
+      doodle: await this.doodleFor(me, seated),
       // He wrote the notes, so handing them back to him is pointless. He gets the day count only,
       // and a spectator gets nothing: how far into her notes she is is between the two of them.
       note: youAreHer ? note : null,

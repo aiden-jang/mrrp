@@ -6,6 +6,7 @@ import { play, playPianoNote, setVoice } from "./sound.js";
 import { dreamOf, type Dream, type DreamContext, type DreamScene } from "./dreams.js";
 import { catCallCode } from "./secrets.js";
 import { moonPhase, moonPixelLit } from "./moon.js";
+import { cellAt, DOODLE_INK } from "./doodle.js";
 import { seasonFor, seasonalPlantColors } from "./season.js";
 import { mouseRunAt } from "./mouse.js";
 import { BUBBLE_GAME_MS, bubbleMomentAt, bubbleSeeds, type BubbleSeed } from "./bubbles.js";
@@ -34,6 +35,8 @@ import {
   MUG_DOWN,
   FRAME,
   FRAME_CAT,
+  FRAME_EMPTY,
+  FRAME_HOLE,
   MRRP,
   PLANT,
   POSES,
@@ -321,6 +324,7 @@ export function Cat({
   staying = false,
   eyesOpen = false,
   framed = false,
+  doodle = null,
   doorOpenAt = null,
   watchDoorAt = null,
   box = false,
@@ -376,6 +380,8 @@ export function Cat({
    * this is the part that only happens when somebody goes, and it is the whole difference between the
    * two. She keeps watching the door for a while after it has shut.
    */
+  /** Cells for the drawing in the frame, or null for whatever the frame held before. */
+  doodle?: string | null;
   /** Pixels of page under the room that the room must not grow into. See ROOM_RESERVE. */
   reserveBelow?: number;
   /**
@@ -452,6 +458,8 @@ export function Cat({
   eyesRef.current = eyesOpen;
   const framedRef = useRef(framed);
   framedRef.current = framed;
+  const doodleRef = useRef(doodle);
+  doodleRef.current = doodle;
   const doorRef = useRef(doorOpenAt);
   doorRef.current = doorOpenAt;
   const boxRef = useRef(box);
@@ -2038,8 +2046,20 @@ export function Cat({
       }
       // The frame casts one blocky shadow, which is enough to lift it from the wall.
       rect(18, 14, FRAME.w, FRAME.h, mixHex(sc.wallBottom, INK, 0.12));
-      if (framedRef.current) {
-        blit(FRAME_CAT, 16 + shake("frame"), 12, {
+      const fx = 16 + shake("frame");
+      const drawn = doodleRef.current;
+      if (drawn) {
+        // Whatever went in last is what is in the frame, so a drawing simply covers the fish or the
+        // photo rather than negotiating with either.
+        blit(FRAME_EMPTY, fx, 12, { w: INK, f: "#c69a63", h: "#cfe0e4" });
+        for (let dy = 0; dy < FRAME_HOLE.h; dy++) {
+          for (let dx = 0; dx < FRAME_HOLE.w; dx++) {
+            const ink = DOODLE_INK[cellAt(drawn, dx, dy)];
+            if (ink) px(fx + FRAME_HOLE.x + dx, 12 + FRAME_HOLE.y + dy, ink);
+          }
+        }
+      } else if (framedRef.current) {
+        blit(FRAME_CAT, fx, 12, {
           w: INK,
           f: "#c69a63",
           h: "#cfe0e4",
@@ -2048,7 +2068,7 @@ export function Cat({
           n: PINK,
         });
       } else {
-        blit(FRAME, 16 + shake("frame"), 12, { w: INK, f: "#c69a63", h: "#cfe0e4", g: "#e2926f" });
+        blit(FRAME, fx, 12, { w: INK, f: "#c69a63", h: "#cfe0e4", g: "#e2926f" });
       }
       // Once her photo exists, the frame catches a little light when you tap it. There is no
       // equivalent before the photo because a glint should reward something that actually happened

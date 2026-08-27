@@ -713,3 +713,73 @@ details[open] > .recoverySummary::before {
   background: var(--panel);
   color: var(--ink);
 }
+
+/*
+ * The drawing sheet.
+ *
+ * The grid wears the frame's own mount colour so the thing you are drawing on looks like the thing it
+ * will hang in. `touch-action: none` is what lets a finger drag across cells: without it the browser
+ * claims the gesture as a scroll after the first few pixels and the drawing stops halfway.
+ */
+.sheetGrid {
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  border-radius: 12px;
+  background: #cfe0e4;
+  touch-action: none;
+}
+.sheetCell {
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 3px;
+  padding: 0;
+  cursor: crosshair;
+  box-shadow: inset 0 0 0 1px rgba(74, 53, 32, 0.09);
+}
+.inkRow {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+.inkDot {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* The button that opens the editor, once there is something in the frame to open. */
+.sheetPeek {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  color: var(--soft);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.sheetPeekLabel {
+  flex: 1;
+  text-align: left;
+}
+.sheetMini {
+  display: grid;
+  gap: 1px;
+  width: 42px;
+  padding: 3px;
+  border-radius: 4px;
+  background: #cfe0e4;
+}
+.sheetMini > span {
+  aspect-ratio: 1;
+  border-radius: 1px;
+}

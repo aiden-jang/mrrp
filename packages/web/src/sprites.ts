@@ -393,6 +393,35 @@ export const FRAME = sprite(
 );
 
 /**
+ * The same frame with nothing in it, for when one of you has put a drawing there.
+ *
+ * A separate grid rather than blitting FRAME with the fish mapped away: the fish is not only `g`
+ * cells, it has two outline pixels inside the mount, and those would sit in the middle of somebody's
+ * drawing as specks nobody put there.
+ */
+// prettier-ignore
+export const FRAME_EMPTY = sprite(
+  [
+    "wwwwwwwwwwwww",
+    "wfffffffffffw",
+    "wfwwwwwwwwwfw",
+    "wfwhhhhhhhwfw",
+    "wfwhhhhhhhwfw",
+    "wfwhhhhhhhwfw",
+    "wfwhhhhhhhwfw",
+    "wfwhhhhhhhwfw",
+    "wfwwwwwwwwwfw",
+    "wfffffffffffw",
+    "wwwwwwwwwwwww",
+  ],
+  0,
+  0,
+);
+
+/** Top-left of the hole in every frame grid above, and how big it is. A drawing is exactly this. */
+export const FRAME_HOLE = { x: 3, y: 3, w: 7, h: 5 };
+
+/**
  * The word, hand-set. Real letters rather than canvas fillText: at this scale antialiased text beside
  * hand-placed pixels looks like a screenshot of two different programs.
  *
