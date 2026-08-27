@@ -1575,6 +1575,18 @@ function RoomPage({ id }: { id: string }) {
                 Change how {view.cat.name} looks, or her hours
               </button>
             )}
+            {/* The link was offered exactly once, on the screen that says nobody else is here yet, and
+                then never again. Installed to a home screen there is no address bar either, so a buried
+                message meant the room was unreachable and unresendable at the same time. */}
+            {iAmHim && !setup && (
+              <button className={s.quiet} onClick={() => void shareRoom()}>
+                {shareResult === "shared"
+                  ? "Sent."
+                  : shareResult === "copied"
+                    ? "Copied. Go send it."
+                    : `Send ${view.them ?? "her"} the link again`}
+              </button>
+            )}
 
             {/*
              * Somebody who only has the link. They get none of his side: not her mood, not the
