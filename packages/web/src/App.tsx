@@ -50,8 +50,6 @@ import { foundKeys, noticed } from "./discoveries.js";
 import { awayLine, milestoneLine, personalityLine } from "./remembers.js";
 import { myToken } from "./api.js";
 
-/* What each button sounds like. Sitting with her is the only one that answers with a purr: the rest
-   are things you do to a cat, and that one is a cat deciding to stay. */
 const ACTION_SOUND: Record<Action, Cue> = {
   pet: "purr",
   brush: "brush",
@@ -60,12 +58,6 @@ const ACTION_SOUND: Record<Action, Cue> = {
   photo: "shutter",
 };
 
-/*
- * Sound is on by default, which is only defensible because a browser will not start an audio
- * context until you touch something: the first noise she can make is an answer to your own tap.
- * Fixed to the corner rather than in a settings panel, because this room gets opened next to
- * sleeping people and "make it stop" has to be reachable from anywhere in it.
- */
 function SoundToggle() {
   const [off, setOff] = useState(isMuted);
   return (
@@ -81,14 +73,6 @@ function SoundToggle() {
   );
 }
 
-/*
- * The speaker, drawn.
- *
- * This was 🔊 and 🔇: a full-colour raster glyph the reader's OS picks, sitting in the corner of an
- * app where every other visible mark is authored, and changing shape entirely between an iPhone, an
- * Android and a laptop. Same reasoning as the icon grid in scripts/icons.mjs. Two waves on, a slash
- * off, on the same 16-unit box the rest of the drawing uses.
- */
 function SpeakerMark({ off }: { off: boolean }) {
   return (
     <svg
@@ -114,14 +98,6 @@ function SpeakerMark({ off }: { off: boolean }) {
   );
 }
 
-/*
- * The same paw the postcard signs off with, drawn once here and once on the canvas.
- *
- * A mark rather than the word "mrrp". The footer already ends with a credit, and the block was put
- * together in the first place so two quiet things would stop competing to be last; a second name
- * would undo that. The room says what it is by being the room, and this ties it to the keepsake,
- * which carries the same paw beside the same name.
- */
 function PawMark() {
   return (
     <svg viewBox="0 0 22 22" width="11" height="11" aria-hidden focusable="false" className={s.paw}>
@@ -136,13 +112,6 @@ function PawMark() {
   );
 }
 
-/*
- * The mark against each line in the arrivals list.
- *
- * A filled dot for something she said, a small burst for something one of you found, a leaf for a
- * keepsake, a plain dot for anything else. Drawn on the same 10-unit box so the column stays even
- * whichever mark a row gets.
- */
 function ArrivalMark({ kind }: { kind: string }) {
   return (
     <svg
@@ -158,8 +127,6 @@ function ArrivalMark({ kind }: { kind: string }) {
           <path d="M5 1v2.4M5 6.6V9M1 5h2.4M6.6 5H9" />
         </g>
       ) : kind === "drawn" ? (
-        /* A frame, because that is where it went. Open rather than filled: the thumbnail beside the
-           line already carries the drawing, and a second solid shape here would fight it. */
         <rect
           x="1.4"
           y="2"
@@ -182,7 +149,6 @@ function ArrivalMark({ kind }: { kind: string }) {
   );
 }
 
-/** Copy with the small fallback needed by older browsers and embedded web views. */
 async function copyText(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text);
@@ -204,7 +170,6 @@ async function copyText(text: string): Promise<boolean> {
   }
 }
 
-/** A recovery code only helps if it can leave this phone before it is lost. */
 function RecoveryCode({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
@@ -233,11 +198,6 @@ function RecoveryCode({ code }: { code: string }) {
   );
 }
 
-/**
- * What to say out loud when a secret fires. The visual reward is the whole payoff, so without this a
- * screen reader user does the work of finding one and is told nothing. Phrased as observations of the
- * room rather than confirmations, for the same reason the room never says "unlocked".
- */
 export const FOUND_ANNOUNCEMENTS: Record<string, string> = {
   constellation: "the stars in the window have all come out.",
   roomTour: "the whole room is awake at once.",
@@ -255,7 +215,6 @@ export const FOUND_ANNOUNCEMENTS: Record<string, string> = {
   mouse: "a mouse just ran along the wall.",
 };
 
-/** "this morning", "yesterday evening" — warmer and vaguer than a timestamp, which is the point. */
 function whenish(at: number): string {
   const mins = Math.round((Date.now() - at) / 60000);
   if (mins < 3) return "just now";
@@ -271,18 +230,12 @@ function whenish(at: number): string {
 
 const pastTense = (a: Action) => ACTIONS.find((x) => x.id === a)?.past ?? "was here";
 
-/** What she left on the floor, named so the sentence about it reads like a thing rather than a type. */
 const GIFT_NAMES: Record<string, string> = {
   leaf: "leaf",
   cap: "bottle cap",
   moth: "moth",
 };
 
-/*
- * What to call a secret the other person found. Only reachable when the viewer has found it too, since
- * the server sends `what: null` otherwise. Phrased as a thing that happened in the room rather than a
- * feature with a label: "the piano in the floorboards", not "piano easter egg".
- */
 const FOUND_NAMES: Record<string, string> = {
   constellation: "the stars in the window",
   roomTour: "every corner of the room",
@@ -300,7 +253,6 @@ const FOUND_NAMES: Record<string, string> = {
   mouse: "the mouse",
 };
 
-/** A one-read postcard assembled from things the other person did between visits. */
 function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[]; onClose: () => void }) {
   return (
     <section className={s.arrival} aria-label="Things the room kept for you">
@@ -338,8 +290,6 @@ function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[];
                     <b>{name}</b> found {FOUND_NAMES[item.what] ?? "something in here"} too.
                   </>
                 ) : (
-                  /* Unnamed on purpose: there is something in here he has not walked into yet, and
-                     telling him what it is would spend the best part of it for him. */
                   <>
                     <b>{name}</b> found something in here you haven&apos;t seen yet.
                   </>
@@ -349,8 +299,6 @@ function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[];
                   <b>{name}</b> put something in the frame. <Sheet cells={item.cells} />
                 </>
               ) : item.kind === "kept" ? (
-                /* The one arrival that closes a loop rather than reporting a new thing: she left it,
-                   he took it, and this is the only way she finds out. */
                 <>
                   <b>{name}</b> took the {GIFT_NAMES[item.gift] ?? "thing"} you left.
                 </>
@@ -368,20 +316,6 @@ function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[];
   );
 }
 
-/**
- * A tint per mood, for the one control she actually touches.
- *
- * Very low saturation, all in the room's creams, clays and roses. Saturated chips read as a paintbox,
- * and a paintbox beside hand-authored pixel art looks like two different apps. Nothing dark or cold:
- * what she taps on a bad day should not look like a bad day.
- */
-/*
- * The daylight tints. `moodTint` takes them somewhere dark when the room is.
- *
- * Note how close these are to each other: sad, done and tired differ by six across all three
- * channels. That is on purpose and worth knowing before "improving" them. The tint is a whisper of
- * warmth, not a code for which mood is which, and the label and the face do the identifying.
- */
 const MOOD_TINT: Record<string, string> = {
   good: "#f8e3b8",
   tired: "#e7ddd0",
@@ -400,35 +334,18 @@ export function App() {
   return id ? <RoomPage id={id} /> : <Landing />;
 }
 
-/**
- * Launched from a home screen icon rather than opened in a browser, which decides whether the front
- * door sends you straight to your room. In a normal tab that would be hijacking: you typed the address,
- * you should get the page. From the installed icon it is the only correct behaviour.
- */
 const installed = () =>
   matchMedia("(display-mode: standalone)").matches ||
   (navigator as unknown as { standalone?: boolean }).standalone === true;
 
-/**
- * The cat the front door shows, before anybody has made a room. She explains this app faster than a
- * sentence can. Ginger tabby, which is what a new room ships with, so the door is not advertising a
- * cat you then have to go and build.
- *
- * The viewer's own timezone, so she is doing whatever fits the hour where they are.
- */
-/** Long enough that it cannot be an accident, short enough to happen inside one sitting. */
 const STAY_MS = 180_000;
 
-/** What the room says when nobody is signed in, and the one error worth acting on rather than showing. */
 const SIGNED_OUT = "Sign in first.";
 const pad = (n: number) => String(n).padStart(2, "0");
 
-/** Long enough for the mug to look like it is staying up there, short enough to still be one gesture. */
 const MUG_AGAIN_MS = 1400;
-/** Survives the round trip to the login page, which is a full navigation away and back. */
 const FINISH_LINK = "mrrp:finish-link";
 
-/** One sentence, not a letter. Her side is the only place anybody types free text at somebody. */
 const LINE_MAX = 140;
 
 const DOOR_CAT = { name: "Bean", ...LOOKS[0]!.cat, eyes: EYES[0]!.hex };
@@ -437,14 +354,6 @@ const DOOR_CLOCK = {
   homeHour: 19,
 };
 
-/*
- * The hour the door is standing in.
- *
- * The landing and the offline screens draw a room on the viewer's own clock, so the page around that
- * room has to run on the same clock. Without this the frame is midnight inside a cream afternoon.
- * Ticked once a minute because the canvas keeps moving on its own and nobody promises to go in
- * before sunset.
- */
 function useDoorScene(): Scene {
   const [at, setAt] = useState(() => Date.now());
   useEffect(() => {
@@ -454,12 +363,10 @@ function useDoorScene(): Scene {
   return sceneFor(DOOR_CLOCK, at, null, false);
 }
 
-/* ─────────────── landing: make a room, send the link ─────────────── */
 function Landing() {
   const back = lastRoom.get();
   const wantsNew = new URLSearchParams(location.search).has("new");
 
-  // From the home screen icon, go where she meant to go. `?new` is the way out, for making a second room.
   useEffect(() => {
     if (back && installed() && !wantsNew) location.replace(`/r/${back}`);
   }, [back, wantsNew]);
@@ -482,7 +389,6 @@ function Landing() {
             clock={DOOR_CLOCK}
             mood={null}
             nudge={0}
-            // The name, both paragraphs and the button all live under the cat here.
             reserveBelow={340}
           />
         </div>
@@ -563,48 +469,34 @@ function Landing() {
   );
 }
 
-/* ─────────────── the room ─────────────── */
 function RoomPage({ id }: { id: string }) {
   const [view, setView] = useState<RoomView | null>(null);
   const [captureRoom, setCaptureRoom] = useState<(() => Promise<Blob | null>) | null>(null);
-  /** The room's objects and a way to touch them without a pointer. See Cat's onProps. */
   const [roomProps, setRoomProps] = useState<{
     props: { key: string; label: string }[];
     poke: (key: string) => void;
   } | null>(null);
-  /** What just happened, for anybody who cannot see the room react. */
   const [found, setFound] = useState("");
   const [imageStatus, setImageStatus] = useState<"saving" | "shared" | "saved" | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const handleCaptureReady = useCallback((capture: () => Promise<Blob | null>) => {
     setCaptureRoom(() => capture);
   }, []);
-  /*
-   * Memoized, and it has to be.
-   *
-   * Cat's effect that reports the room's props lists this in its dependencies, and calling it sets
-   * state up here. An inline arrow gets a new identity on every render, so the effect re-ran, set
-   * state, re-rendered, and handed itself a new callback: React's "Maximum update depth exceeded",
-   * looping forever on the app's main screen. `onCapture` above already had the same shape and the
-   * same fix; this one was missed.
-   */
+  // Memoized, and it has to be. An inline arrow here is a new function every render, which is in the
+  // canvas effect's deps, which remounts the canvas, which calls this again: an infinite loop.
   const handleRoomProps = useCallback(
     (props: { key: string; label: string }[], poke: (key: string) => void) => {
       setRoomProps({ props, poke });
     },
     [],
   );
-  /** Put the mug back. Either seat may, so this is not gated on being him. */
   const tidy = useCallback(async () => {
     const r = roomFromPath();
     if (!r) return;
     try {
       const { again } = await doTidy(r);
-      /*
-       * On the shelf first, always. The room already put it back on the floor if she was going to,
-       * but showing that instantly would look like the tap failed rather than like she did it.
-       * A beat of the mug sitting there is the whole gag: you did it, and then she undid it.
-       */
+      // Back on the shelf first, always. Showing her knock it off instantly reads as the tap failing
+      // rather than as her doing it.
       if (!again) {
         setView(await fetchRoom(r));
         return;
@@ -616,7 +508,7 @@ function RoomPage({ id }: { id: string }) {
         void fetchRoom(r).then(setView);
       }, MUG_AGAIN_MS);
     } catch {
-      // A failed tidy is not worth an error banner. The mug is still on the floor; tap it again.
+      // The mug is still on the floor. Tap it again.
     }
   }, []);
   const windowLightPending = useRef(false);
@@ -626,7 +518,7 @@ function RoomPage({ id }: { id: string }) {
     try {
       setView(await doWindowLight(id));
     } catch {
-      // It is an easter egg, not a form. A failed glint leaves the ordinary window untouched.
+      // An easter egg. A failed glint leaves the ordinary window untouched.
     } finally {
       windowLightPending.current = false;
     }
@@ -654,14 +546,9 @@ function RoomPage({ id }: { id: string }) {
           ?.trim()
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-") || "mrrp";
-      // Dated, because every card used to save as the same name and the second one became
-      // "bean-postcard (1)". A keepsake should sort next to the others, not queue behind them.
       const fileName = `${slug}-${new Date().toISOString().slice(0, 10)}.png`;
       const file = new File([blob], fileName, { type: "image/png" });
       const share = navigator as Navigator & { canShare?: (data?: ShareData) => boolean };
-      // Sharing the actual image feels right on a phone (Messages, WhatsApp, etc.). `canShare` is
-      // essential: Safari can expose navigator.share while declining files, in which case we keep
-      // the ordinary PNG download rather than showing a share sheet that cannot complete.
       if (navigator.share && share.canShare?.({ files: [file] })) {
         try {
           await navigator.share({ title: `${view?.cat.name ?? "mrrp"}'s room`, files: [file] });
@@ -694,14 +581,6 @@ function RoomPage({ id }: { id: string }) {
   const wasHere = useRef<boolean | null>(null);
   const youArrived = useRef(false);
 
-  /*
-   * The door swings on an arrival: yours on first paint, theirs on the edge into presence. Opening
-   * only for them almost never fires, since both of you have to be here at once inside one poll.
-   * Watch the edge, not the value: `themHereNow` stays true for a whole visit.
-   */
-  // Read out first, so the dependency is the value the effect actually uses. Depending on the whole
-  // view would re-run this on every poll, since each fetch returns a new object; null covers both the
-  // not-loaded-yet case and a spectator, neither of which is an arrival.
   const yourSeat = view?.you ?? null;
   useEffect(() => {
     if (yourSeat === null || youArrived.current) return;
@@ -710,21 +589,6 @@ function RoomPage({ id }: { id: string }) {
     const t = setTimeout(() => setDoorOpenAt(null), 4200);
     return () => clearTimeout(t);
   }, [yourSeat]);
-  /*
-   * Coming and going both swing the door; only one of them gets a sound.
-   *
-   * Arriving was marked twice over and leaving was not marked at all, so the room had a cat who was
-   * delighted to see you and indifferent to your going. `themHereNow` falls when their presence
-   * window lapses rather than the instant they close the tab, which is late but not wrong: it is
-   * still the moment she is on her own again.
-   */
-  /*
-   * Being in the room, which the room asks for and has never once answered.
-   *
-   * Pointer *movement* deliberately does not count: a mouse nudged on the way past is not somebody
-   * leaving, and moving the cursor near her already earns a slow blink. Only a real action resets it,
-   * along with the tab going away, so this cannot run while nobody is looking.
-   */
   const [staying, setStaying] = useState(false);
   useEffect(() => {
     let timer = 0;
@@ -764,11 +628,6 @@ function RoomPage({ id }: { id: string }) {
 
   const [nudge, setNudge] = useState(0);
 
-  /*
-   * She says mrrp the moment it becomes both of you. Reuses `nudge` rather than adding a channel: it
-   * already means "something happened, react to it" and gives the bounce and bubble together. Edge
-   * only, or a long visit becomes a cat chanting at the poll interval.
-   */
   const wasTogether = useRef<boolean | null>(null);
   useEffect(() => {
     const now = view?.bothHereNow ?? false;
@@ -784,21 +643,15 @@ function RoomPage({ id }: { id: string }) {
   const [shareResult, setShareResult] = useState<"copied" | "shared" | null>(null);
   const [did, setDid] = useState<string | null>(null);
   const [linking, setLinking] = useState(false);
-  /*
-   * Try it first, and only send somebody to sign in if the room says they are not.
-   *
-   * The first version always redirected, which sent anybody already signed in on a round trip through
-   * a login page to arrive back where they started. Being signed in on another app is the normal case
-   * here, since one session covers every app on the domain.
-   */
   const link = async (on: boolean) => {
     setLinking(true);
     try {
       await doLink(id, on);
       await load();
     } catch (e) {
+      // Only redirect if the room says they are signed out. This used to redirect always, which sent
+      // anybody already signed in on a round trip through a login page to arrive back where they were.
       if (on && e instanceof Error && e.message === SIGNED_OUT) {
-        // Come back and finish the job, rather than making them find this button a second time.
         sessionStorage.setItem(FINISH_LINK, id);
         window.location.href = loginUrl(AUTH_URL, window.location.href);
         return;
@@ -809,13 +662,11 @@ function RoomPage({ id }: { id: string }) {
     }
   };
 
-  // Back from signing in, with a seat to tie. Cleared first, so a refusal is not retried forever.
   const wantsLink = view?.you !== undefined && view?.you !== null && !view?.linked;
   useEffect(() => {
     if (!wantsLink || sessionStorage.getItem(FINISH_LINK) !== id) return;
     sessionStorage.removeItem(FINISH_LINK);
     void link(true);
-    // `link` is redefined every render; this must run on the first view that could carry it out.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wantsLink, id]);
 
@@ -836,17 +687,12 @@ function RoomPage({ id }: { id: string }) {
   const [line, setLine] = useState("");
   const [lineOpen, setLineOpen] = useState(false);
 
-  /*
-   * Her sentence grows to fit instead of scrolling.
-   *
-   * Two fixed rows held about sixty of the hundred and forty characters she is allowed, and the last
-   * row it did show was cut through the middle of the letters, so the one place in the app where she
-   * says something in her own words was the one place she could not read what she had written.
-   */
   const lineBox = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     const el = lineBox.current;
     if (!el) return;
+    // Grows to fit rather than scrolling. Two fixed rows hid most of her 140 characters and cut the
+    // last visible line through the middle of the letters.
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
   }, [line, lineOpen]);
@@ -867,16 +713,10 @@ function RoomPage({ id }: { id: string }) {
     tz: string;
     homeHour: number;
     notes: string;
-    /** "MM-DD" for the date input, or empty for no day at all. */
     ourDate: string;
     ourLabel: string;
   } | null>(null);
 
-  /*
-   * She answers to the name once you settle on it. Debounced rather than per-keystroke: reacting to
-   * every letter makes her twitchy and turns her into a progress bar, where a beat of stillness and
-   * then a look up reads as hearing it. Seeded with the open value so opening the panel is silent.
-   */
   const heardName = useRef<string | null>(null);
   useEffect(() => {
     const called = draft?.name.trim() ?? "";
@@ -889,6 +729,8 @@ function RoomPage({ id }: { id: string }) {
       return;
     }
     if (!called || called === heardName.current) return;
+    // Debounced, not per keystroke: reacting to every letter makes her twitchy and turns her into a
+    // progress bar. The beat of stillness before she answers is the point.
     const t = setTimeout(() => {
       heardName.current = called;
       play("chirp");
@@ -901,24 +743,14 @@ function RoomPage({ id }: { id: string }) {
     async (n?: string | null) => {
       try {
         const next = await fetchRoom(id, n ?? myName.get());
-        // Before anything else uses it: if an account resolved a different seat, that is now ours.
         adoptSeat(next.seat);
         setView(next);
         lastCat.set(id, next.cat);
-        /*
-         * Coming back is spent by the read that reports it.
-         *
-         * `awayMs` is the gap since your previous visit, and the same read that returns it moves your
-         * last-seen marker, so the very next one says nothing. Anything that reads the room twice
-         * before it paints loses the line: a retried first request on a bad connection, which is the
-         * case the retry loop below exists for, or React double-invoking the effect in development,
-         * which is why this line was never once visible while building. Latched exactly the way the
-         * arrival card two lines down already is, and for the same reason.
-         */
+        // Coming back is spent by the read that reports it, so latch it. Anything that reads the room
+        // twice before it paints loses the line: a retried first request, or React's double effect in
+        // development, which is why this was never once visible while building.
         const back = awayLine(next.awayMs, next.cat.name);
         if (back) setAwayNote((prev) => prev ?? back);
-        // Polls return an empty list after the server advances this seat's last-seen marker. Keep the
-        // postcard on screen until the person puts it away, rather than flashing it for 15 seconds.
         if (next.arrivals.length > 0) setArrivalCard(next.arrivals);
         setErr(null);
       } catch (e) {
@@ -932,29 +764,14 @@ function RoomPage({ id }: { id: string }) {
     if (!asking) void load();
   }, [asking, load]);
 
-  /*
-   * Retry quickly while there is nothing on screen. A failed first load otherwise leaves "Something
-   * went wrong" sitting there until the slow poll comes round, which on a phone on a weak connection
-   * is the normal case. Stops once the room has loaded: after that a dropped request is a quiet line.
-   */
   useEffect(() => {
     if (asking || view || !err) return;
     const t = setTimeout(() => void load(), 2500);
     return () => clearTimeout(t);
   }, [asking, view, err, load]);
 
-  // No socket: the room is asynchronous by design, so a quiet poll is enough to turn "was here" into
-  // "is here" while the tab is open.
-  //
-  // Skip hidden tabs. A phone left on this page overnight is ~1,900 Durable Object requests rendering
-  // a sleeping cat to a screen nobody is looking at; one fetch on becoming visible covers it.
   useEffect(() => {
     if (asking) return;
-    /*
-     * 15s while the tab is visible. The door is a promise that something is happening *now*, and one
-     * that opens three quarters of a minute after somebody walked in reads as broken rather than late.
-     * The hidden-tab check above means this only costs a read from a tab someone is looking at.
-     */
     const tick = setInterval(() => {
       if (!document.hidden) void load();
     }, 15_000);
@@ -971,30 +788,22 @@ function RoomPage({ id }: { id: string }) {
   const act = async (a: Action) => {
     setNudge((v) => v + 1);
     play(ACTION_SOUND[a]);
-    // Both the button and the hold-to-pet gesture come through here, so this is the only place the
-    // two gestures that are actually touch need naming.
     if (a === "pet" || a === "brush") buzz(a);
     try {
       setView(await doAct(id, a));
-      // He gets one line back, phrased the way she'll read it, so the button does something visible.
       const said = ACTIONS.find((x) => x.id === a)?.mine;
       if (said) {
         setDid(said);
         setTimeout(() => setDid(null), 2600);
       }
     } catch {
-      /*
-       * Say so. The bounce and the sound fire before the request, so a failed action looked exactly
-       * like a successful one: you would believe you had petted her and she would never know.
-       * Quiet, because the room's rule is not to announce things, but not silent, because this is
-       * the one case where quiet reads as done.
-       */
+      // Say so. The bounce and the sound fire before the request, so without this a failed action
+      // looked exactly like a successful one: you would believe you had petted her, and she never knew.
       setErr("That didn't reach her. Try it again.");
       setTimeout(() => setErr(null), 4000);
     }
   };
 
-  /** Opening the panel seeds the draft from whatever the room already has. */
   const openSetup = () => {
     if (!view) return;
     const look =
@@ -1006,23 +815,13 @@ function RoomPage({ id }: { id: string }) {
       eyes,
       tz: view.clock.tz,
       homeHour: view.clock.homeHour,
-      // Seeded from whatever the room runs on, which for an untouched room is the defaults. Editing
-      // from a real starting point is far easier than facing an empty box.
       notes: (view.yourNotes ?? []).join("\n"),
-      // The control wants a full date; the room only keeps the month and day, so any year will do.
       ourDate: view.ourDay ? `2000-${pad(view.ourDay.month)}-${pad(view.ourDay.day)}` : "",
       ourLabel: view.ourDay?.label ?? "",
     });
     setSetup(true);
   };
 
-  /*
-   * Focus around the setup panel.
-   *
-   * Opening it unmounts the button that opened it, so focus fell to <body>: the panel arrived with no
-   * announcement and the next Tab started again from the top of the document. Closing it did the same
-   * in reverse. The panel takes focus on open, and the trigger takes it back on close.
-   */
   const setupTrigger = useRef<HTMLButtonElement>(null);
   const setupPanel = useRef<HTMLDivElement>(null);
   const wasSetup = useRef(false);
@@ -1034,8 +833,6 @@ function RoomPage({ id }: { id: string }) {
 
   const saveSetup = async () => {
     if (!draft) return;
-    // He has just decided who she is. `settle` is the same sound as sitting down with her: done,
-    // rather than congratulations.
     play("settle");
     const look = LOOKS.find((l) => l.id === draft.look)!;
     const eyes = EYES.find((e) => e.id === draft.eyes)!;
@@ -1045,8 +842,6 @@ function RoomPage({ id }: { id: string }) {
       await doDress(id, { name: draft.name.trim() || "Bean", ...look.cat, eyes: eyes.hex });
       await doClock(id, { tz: draft.tz, homeHour: draft.homeHour });
       await doNotes(id, draft.notes.split("\n"));
-      // Month and day only. The year in the input is a formality the control demands and the room
-      // throws away, because "three years since" is a counter and this is meant to be a greeting.
       const [, mm, dd] = draft.ourDate.match(/^\d{4}-(\d{2})-(\d{2})$/) ?? [];
       const label = draft.ourLabel.trim();
       await doOurDay(id, mm && dd && label ? { month: Number(mm), day: Number(dd), label } : null);
@@ -1064,24 +859,14 @@ function RoomPage({ id }: { id: string }) {
       setView(await doSay(id, line));
       setLineOpen(false);
     } catch {
-      /* she'll survive */
+      // Her words are still in the box. The button is still there.
     }
     setSaving(false);
   };
 
-  /**
-   * Optimistic on purpose. Waiting for the round trip means that on anything slower than a desk
-   * connection, tapping a mood feels like it did not register. The mood is hers and the server never
-   * rejects a valid one, so showing it immediately is honest.
-   */
+  // Optimistic on purpose. Waiting for the round trip makes tapping a mood feel like it did not
+  // register on anything slower than a desk connection, and the server never refuses hers.
   const tell = async (m: Mood) => {
-    /*
-     * The cat notices.
-     *
-     * All five of his actions map to a cue; the one thing she does every day had none, so her side
-     * of the room was silent. A chirp rather than a mrrp: a mrrp is what she says to you when you
-     * arrive, and this is her registering something you told her.
-     */
     play("chirp");
     setNudge((v) => v + 1);
     setNudge((v) => v + 1);
@@ -1089,7 +874,7 @@ function RoomPage({ id }: { id: string }) {
     try {
       setView(await doTell(id, m));
     } catch {
-      void load(); // put the real state back if it never landed
+      void load();
     }
   };
 
@@ -1108,18 +893,13 @@ function RoomPage({ id }: { id: string }) {
         resetResult("shared");
         return;
       } catch (e) {
-        // Dismissing the sheet is a choice, not an error to turn into a
-        // surprise clipboard write. Other failures retain that fallback.
         if (e instanceof Error && e.name === "AbortError") return;
       }
     }
     if (await copyText(location.href)) resetResult("copied");
   };
 
-  // Both screens below stand at the door rather than in a room, and neither can call a hook of its own.
   const door = useDoorScene();
-  // Her clock is on the server, so the offline room still runs on the viewer's. Her coat is not, and
-  // showing the door's ginger stranger was the room forgetting whose it was at the worst moment.
   const remembered = lastCat.get(id);
   const knownCat = remembered ?? DOOR_CAT;
 
@@ -1161,8 +941,6 @@ function RoomPage({ id }: { id: string }) {
     );
   }
 
-  // Only a total failure with nothing to show gets the whole page. Once the room has loaded once, a
-  // dropped request is a quiet line at the bottom, not the cat vanishing.
   if (!view) {
     return (
       <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
@@ -1197,10 +975,6 @@ function RoomPage({ id }: { id: string }) {
   }
 
   const last = view.theirRecent[0];
-  // Same four inputs the canvas uses, so the caption under the room can never describe a different
-  // cat from the one being drawn.
-  // Her own spot, once the room has been going long enough to have worked one out. Same condition as
-  // the personality line, so the room starts describing a habit and showing one on the same day.
   const herSpot = view.personality ? HER_SPOT : null;
   const scene = sceneFor(view.clock, Date.now(), view.catMood, view.bothHereNow, herSpot);
 
@@ -1209,21 +983,13 @@ function RoomPage({ id }: { id: string }) {
 
   const nightChrome = isNightChrome(scene.sun);
 
-  /**
-   * Whether the viewer actually holds his seat, rather than merely not being her. Never gate on
-   * `!view.youAreHer`: that is true for a third person with the link, and it hands spectators his
-   * whole control surface, which then 403s on save. Offering a control that cannot work is its own
-   * kind of broken, separate from the server refusing it.
-   */
+  // Never gate on `!view.youAreHer`. That is also true for a third person holding the link, and it
+  // hands a spectator his whole side of the app.
   const iAmHim = view.you !== null && !view.youAreHer;
 
-  // Both build an Intl formatter, so they are resolved once rather than twice in the condition and
-  // again in the body.
   const herDay = iAmHim ? dayApart(view.clock) : null;
   const moon = nightChrome ? moonLine(new Date(), view.cat.name) : null;
 
-  // While the panel is open the canvas shows the draft, so choosing a cat is a thing you watch
-  // happen rather than a form you submit and hope about.
   const previewLook =
     setup && draft
       ? {
@@ -1272,30 +1038,18 @@ function RoomPage({ id }: { id: string }) {
             shelfDown={view.shelfDown}
             onTidy={() => void tidy()}
             mugFell={mugFell}
-            /* Holding on her is petting, the one gesture that isn't a button. She gets a poke instead:
-               she IS the cat, so petting herself would be nonsense and telling him she did it would be
-               worse, but a tap that gets a mrrp back costs nothing. Local only, nobody told. A spectator
-               gets neither, though the furniture is tappable for everyone. */
             role={iAmHim ? "him" : view.youAreHer ? "her" : null}
-            /* The banner says you're both here; this is her doing something about it. */
             together={view.bothHereNow}
             onPet={() => void act("pet")}
             onPoke={() => {
               play("mrrp");
               setNudge((v) => v + 1);
             }}
-            /* Fire and forget. The canvas calls this mid-frame, so nothing here may await or throw. */
             onFound={(key) => {
               noticed(id, myToken(), key);
-              // Announced as a thing that happened in the room, not as an achievement unlocked.
               setFound(FOUND_ANNOUNCEMENTS[key] ?? "something in the room answered.");
             }}
             onProps={handleRoomProps}
-            /*
-             * Everything she could be dreaming about, gathered here rather than in the canvas. Filter
-             * by `found`, this device's own discoveries, or the dream hands somebody the answer to a
-             * secret they were going to enjoy finding.
-             */
             dreamContext={{
               found: foundKeys(),
               recent: view.theirRecent.map((visit) => visit.action),
@@ -1418,7 +1172,6 @@ function RoomPage({ id }: { id: string }) {
         )}
 
         {iAmHim && setup && draft && (
-          // tabIndex -1 so it can take focus on open without becoming a tab stop of its own.
           <div
             className={s.panel}
             id="setup-panel"
@@ -1444,8 +1197,6 @@ function RoomPage({ id }: { id: string }) {
                 <button
                   key={l.id}
                   title={l.label}
-                  // A coloured square with a title and nothing else announces as an unnamed button on
-                  // a phone, where there is no hover to reveal a title in the first place.
                   aria-label={l.label}
                   aria-pressed={draft.look === l.id}
                   onClick={() => setDraft((d) => ({ ...d!, look: l.id }))}
@@ -1540,8 +1291,6 @@ function RoomPage({ id }: { id: string }) {
 
             <p className={s.fieldLabel}>her notes, one per line</p>
             <textarea
-              /* 16px, not 14: iOS zooms the whole page when you focus an input smaller than that,
-                 and this is the longest thing anybody types in here. */
               className={s.sayInput}
               style={{ minHeight: 150 }}
               value={draft.notes}
@@ -1679,8 +1428,6 @@ function RoomPage({ id }: { id: string }) {
                 className={s.btn}
                 style={{ width: "100%", marginTop: 12 }}
                 onClick={openSetup}
-                // No aria-controls: this button unmounts when the panel opens, so the id it named
-                // would not exist at the moment anything could follow it.
                 aria-expanded={setup}
               >
                 Set up her cat first
@@ -1699,7 +1446,6 @@ function RoomPage({ id }: { id: string }) {
             </button>
           </>
         ) : view.youAreHer ? (
-          /* ── her side: she says how she is, and finds out he came ── */
           <>
             {view.note && (
               <div className={s.note}>
@@ -1797,8 +1543,6 @@ function RoomPage({ id }: { id: string }) {
               {MOODS.map((m) => (
                 <button
                   key={m.id}
-                  // Which one is set is drawn in honey and nowhere else, so it did not exist for a
-                  // screen reader on the one control her whole side is about.
                   aria-pressed={view.catMood === m.id}
                   className={`${s.mood} ${view.catMood === m.id ? s.moodOn : ""}`}
                   style={
@@ -1822,7 +1566,6 @@ function RoomPage({ id }: { id: string }) {
             </div>
           </>
         ) : (
-          /* ── his side: he finds out how she is, and does something about it ── */
           <>
             {iAmHim && (
               <div className={s.theirs}>
@@ -2079,51 +1822,17 @@ function RoomPage({ id }: { id: string }) {
   );
 }
 
-/* ─────────────── styles, inline to keep this one small ─────────────── */
-/*
- * The interface, lit by the same clock as the room.
- *
- * Two sets of surfaces, not one blend between them. Crossfading a light panel into a dark one drags
- * it through mid grey, where neither dark nor light text has 4.5:1 against it, and the app spends
- * every dusk and dawn unreadable. So the chrome is either a day palette or a night one, each blended
- * internally for warmth, and the polarity of the text flips with it at a single point.
- *
- * Checked across all 24 hours of the keyframe table: the worst ratio anywhere is 4.54, at the first
- * hour after the switch.
- *
- * The old version mixed every surface most of the way back to cream, which at midnight produced a
- * bright cool grey wrapped around a dark lavender room, with warm brown text that never moved. Night
- * is when this app is most often opened.
- */
 const DEEP = { air: "#221d2e", warm: "#2b2439", panel: "#2f2940", line: "#463d5c", honey: "#e8ad55" };
 const DUSK = { air: "#332c42", warm: "#3d3350", panel: "#413851", line: "#584d6e", honey: "#e2a349" };
 const DAWN = { air: "#f4e9db", warm: "#fbf1e4", panel: "#fbf5ea", line: "#ded0b8", honey: "#d9963a" };
 const FULL = { air: "#f7ecdc", warm: "#fdf6ea", panel: "#fffaf0", line: "#e6d5bb", honey: "#e0a03f" };
 
-/** Where the chrome stops being a light interface and starts being a dark one. */
 const NIGHT_BELOW = 0.45;
 
-/** Text on the dark palette. The light palette keeps the --ink and --soft declared in index.css. */
 const INK_ON_DARK = "#f6f1e6";
 const SOFT_ON_DARK = "#c9bccb";
-/** Same hue and saturation as the daylight error, lifted until it clears 4.5 on the dark surfaces. */
 const ERROR_ON_DARK = "#d39a88";
 
-/*
- * The tab's name, which was "mrrp" for every room forever.
- *
- * This app lives on a home screen and gets opened next to other things, and its whole subject is one
- * specific cat. Naming her is what makes the tab, the history entry and the app switcher say whose
- * room this is. Reset on unmount so the door is not titled after the last room you looked at.
- */
-/*
- * The tab icon, in her coat.
- *
- * index.html ships a ginger cat, which is right for the front door and wrong for every room that
- * chose a different one. Swapped rather than added: leaving the shipped link in place lets whichever
- * the browser prefers win, and the two would not be the same cat. Restored on unmount so the door
- * gets its own back.
- */
 function FaviconSync({ cat }: { cat: CatLook }) {
   const { fur, furDk, belly, eyes, tabby } = cat;
   useEffect(() => {
@@ -2142,14 +1851,6 @@ function FaviconSync({ cat }: { cat: CatLook }) {
   return null;
 }
 
-/*
- * The seven-by-five sheet, and the frame it goes in.
- *
- * Both seats get one. Every other object in the room is touchable by both of them, and it also gives
- * him the only thing his side has never had: a way to say something now, rather than in a note he
- * wrote weeks ago. It is not a message box. It is an object you leave on a wall, which is the same
- * grammar as the mug and the light in the window.
- */
 function FrameSheet({
   current,
   saving,
@@ -2162,8 +1863,6 @@ function FrameSheet({
   const [open, setOpen] = useState(false);
   const [sheet, setSheet] = useState(BLANK);
   const [ink, setInk] = useState(1);
-  // Held down means keep painting: tapping thirty-five cells one at a time to draw a line is the
-  // difference between a toy and a chore.
   const painting = useRef(false);
   useEffect(() => {
     const up = () => (painting.current = false);
@@ -2219,15 +1918,11 @@ function FrameSheet({
               style={{ background: DOODLE_INK[at] || "transparent" }}
               aria-label={`Row ${y + 1}, column ${x + 1}: ${DOODLE_NAMES[at]}`}
               onPointerDown={(e) => {
-                // Without releasing the capture, every later pointerenter goes to this one cell and
-                // dragging paints a single square.
                 e.currentTarget.releasePointerCapture?.(e.pointerId);
                 painting.current = true;
                 paint(x, y);
               }}
               onPointerEnter={() => painting.current && paint(x, y)}
-              // Also on click, or the grid is mouse-and-finger only: Enter and Space on a button
-              // raise a click and never a pointerdown. Painting the same cell twice costs nothing.
               onClick={() => paint(x, y)}
             />
           );
@@ -2270,7 +1965,6 @@ function FrameSheet({
   );
 }
 
-/** The drawing at a readable size, for the button that opens the editor. */
 function Sheet({ cells }: { cells: string }) {
   return (
     <span className={s.sheetMini} style={{ gridTemplateColumns: `repeat(${DOODLE_W}, 1fr)` }} aria-hidden>
@@ -2296,29 +1990,8 @@ function DocTitle({ name }: { name: string }) {
   return null;
 }
 
-/*
- * She sounds like her own cat.
- *
- * Pitch only. How settled she is belongs to the canvas, which is the one place that knows both the
- * hour and whether somebody is holding on her right now, and two writers to one number would have
- * them undoing each other every frame.
- *
- * Its own component for the same reason ChromeSync is: this sits below the room's early returns, and
- * a hook there runs in a different order on different renders.
- */
 function VoiceSync({ fur, monthsOld }: { fur: string; monthsOld: number }) {
-  // Matched by fur colour, not by look id: the room stores the colours, not which swatch was tapped.
   const coat = LOOKS.find((l) => l.cat.fur.toLowerCase() === fur.toLowerCase())?.voice ?? 1;
-  /*
-   * She settles into her voice over the first year.
-   *
-   * A kitten's mrrp is higher than a cat's, and this room has always drawn one that ages in every
-   * other way while sounding exactly the same on day one and day four hundred. Four percent across
-   * twelve months, which nobody will ever catch happening: it is only ever noticeable as the
-   * difference between a recording from the first week and one from now, which is the point.
-   *
-   * Rounded to a hundredth so the synth is not re-tuned on every render for a change under hearing.
-   */
   const settled = Math.min(1, Math.max(0, monthsOld) / 12);
   const voice = Math.round(coat * (1 - settled * 0.04) * 100) / 100;
   useEffect(() => {
@@ -2327,13 +2000,6 @@ function VoiceSync({ fur, monthsOld }: { fur: string; monthsOld: number }) {
   return null;
 }
 
-/*
- * The browser's own chrome, following whichever room is on screen.
- *
- * Without this the phone keeps a cream status bar above a dark page while the scrollbars and any
- * native control stay light. Its own component so the effect sits above no early return, which is
- * what lets the door screens mount one of their own.
- */
 function ChromeSync({ night }: { night: boolean }) {
   useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]');
@@ -2347,28 +2013,12 @@ function ChromeSync({ night }: { night: boolean }) {
   return null;
 }
 
-/*
- * A mood chip's background, for the room's current light.
- *
- * At night the daylight tints are pale enough to read as nine glowing pills on a dark page, and the
- * light ink they carry sits on them at about 1.2:1, which is invisible. Mixed most of the way into
- * the panel instead: the hues flatten, which costs nothing given how close they already are, and the
- * chips end up better separated from the panel than the daylight ones are (1.7 against 1.3).
- */
 function moodTint(id: string, night: boolean, panel: string): string {
   const day = MOOD_TINT[id];
   if (!day) return "var(--panel)";
   return night ? mixHex(day, panel, 0.8) : day;
 }
 
-/*
- * A select in the app's own material.
- *
- * The control already borrowed the border and the radius, but the caret came from the browser, so
- * these two fields were visibly a different object from every input around them. The list a select
- * opens still belongs to the OS and cannot be styled; the closed control is the part that is on the
- * page all the time.
- */
 function Select({
   value,
   onChange,
@@ -2401,7 +2051,6 @@ function chromeFor(scene: Scene): Record<string, string> {
     : Math.min(1, (scene.sun - NIGHT_BELOW) / (1 - NIGHT_BELOW));
   const from = night ? DEEP : DAWN;
   const to = night ? DUSK : FULL;
-  // A whisper of the room's own wall, so dawn still reads lavender and golden hour still reads honey.
   const tint = (key: keyof typeof DEEP, hue: string) =>
     mixHex(mixHex(from[key], to[key], t), hue, night ? 0.06 : 0.1);
   return {
@@ -2416,29 +2065,10 @@ function chromeFor(scene: Scene): Record<string, string> {
   };
 }
 
-/*
- * The scales. Five type steps, four radii, three elevations, three durations.
- *
- * There were fourteen distinct font sizes for thirty-six usages, several of them half a point apart,
- * which is below the threshold anybody can see and above the threshold at which they drift. Same for
- * six radii and three shadows in two different browns. Reach for a step here rather than a number.
- */
 const FS = {
-  /** Credit lines, the day counter. */
   micro: 12,
-  /** Captions, field labels, helper text. Most of the quiet copy in the app. */
   small: 13.5,
-  /** Buttons, chips, list rows. */
   body: 15,
-  /** Anything you type into. A floor, not a preference: iOS zooms below 16. */
   field: 16,
-  /** The note, the arrival headline, anything meant to be read first. */
   lead: 17.5,
 } as const;
-
-/*
- * How long things take. `settle` is everything that arrives; `crossfade` is the room's own light
- * changing, which is slow on purpose and belongs to nothing else.
- */
-
-/** One brown, three heights. The tint was two different browns before. */
