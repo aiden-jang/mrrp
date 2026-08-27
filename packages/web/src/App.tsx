@@ -659,6 +659,31 @@ function RoomPage({ id }: { id: string }) {
     notes: string;
   } | null>(null);
 
+  /*
+   * She answers to the name once you settle on it. Debounced rather than per-keystroke: reacting to
+   * every letter makes her twitchy and turns her into a progress bar, where a beat of stillness and
+   * then a look up reads as hearing it. Seeded with the open value so opening the panel is silent.
+   */
+  const heardName = useRef<string | null>(null);
+  useEffect(() => {
+    const called = draft?.name.trim() ?? "";
+    if (!setup) {
+      heardName.current = null;
+      return;
+    }
+    if (heardName.current === null) {
+      heardName.current = called;
+      return;
+    }
+    if (!called || called === heardName.current) return;
+    const t = setTimeout(() => {
+      heardName.current = called;
+      play("chirp");
+      setNudge((v) => v + 1);
+    }, 900);
+    return () => clearTimeout(t);
+  }, [setup, draft?.name]);
+
   const load = useCallback(
     async (n?: string | null) => {
       try {
@@ -1056,7 +1081,7 @@ function RoomPage({ id }: { id: string }) {
             held awake so her eye colour is visible, which makes "deeply asleep" a lie, so it says what
             is actually happening instead. */}
         <p className={s.doing}>
-          {setup ? `Picking out ${view.cat.name}.` : `${view.cat.name} is ${scene.doing}.`}
+          {setup ? `Picking out ${previewLook.name}.` : `${previewLook.name} is ${scene.doing}.`}
         </p>
 
         <span id="room-actions" tabIndex={-1} />
