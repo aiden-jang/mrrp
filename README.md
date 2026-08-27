@@ -30,7 +30,10 @@ curl -X POST localhost:8787/api/room/<id>/age \
 ```
 
 `me` is the `mrrp:me` value in that browser's localStorage, and you have to hold a seat in the room.
-`days` moves the room's age, `tally` gives her a personality, `noteIdx` jumps her through the notes.
+`days` moves the room's age, `tally` gives her a personality, `noteIdx` jumps her through the notes,
+and `awayHours` moves _your own_ last visit, which is what "coming back" is measured from and the one
+thing `days` cannot reach. That value is spent by the read that reports it, so the next request after
+an `awayHours` call is the only one that sees it.
 Without `.dev.vars` the route is a 404, which is why it is safe to have deployed: `wrangler deploy`
 never uploads that file.
 

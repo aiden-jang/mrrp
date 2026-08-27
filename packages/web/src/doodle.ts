@@ -23,11 +23,6 @@ export const DOODLE_NAMES = ["rub out", "ink", "honey", "rose", "leaf"] as const
 /** An empty sheet. */
 export const BLANK = "0".repeat(DOODLE_CELLS);
 
-/** Exactly the right length, and only colours that exist. Anything else is not a drawing. */
-export function isDoodle(value: unknown): value is string {
-  return typeof value === "string" && value.length === DOODLE_CELLS && /^[0-4]+$/.test(value);
-}
-
 /** Nothing was drawn, so there is nothing to hang. Saving this takes the frame back to the fish. */
 export function isBlank(cells: string): boolean {
   return !/[1-4]/.test(cells);
