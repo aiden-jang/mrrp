@@ -3,7 +3,7 @@ const DAY_MS = 86_400_000;
 // A well-known new moon anchor; phase repeats from here independent of the viewer's timezone.
 const NEW_MOON_2000 = Date.UTC(2000, 0, 6, 18, 14);
 
-export const MOON_PHASES = [
+const MOON_PHASES = [
   "new moon",
   "waxing crescent",
   "first quarter",
