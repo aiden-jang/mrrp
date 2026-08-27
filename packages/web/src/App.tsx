@@ -573,14 +573,17 @@ function RoomPage({ id }: { id: string }) {
    * only for them almost never fires, since both of you have to be here at once inside one poll.
    * Watch the edge, not the value: `themHereNow` stays true for a whole visit.
    */
+  // Read out first, so the dependency is the value the effect actually uses. Depending on the whole
+  // view would re-run this on every poll, since each fetch returns a new object; null covers both the
+  // not-loaded-yet case and a spectator, neither of which is an arrival.
+  const yourSeat = view?.you ?? null;
   useEffect(() => {
-    if (!view || youArrived.current) return;
-    if (view.you === null) return; // spectators are not arrivals
+    if (yourSeat === null || youArrived.current) return;
     youArrived.current = true;
     setDoorOpenAt(Date.now());
     const t = setTimeout(() => setDoorOpenAt(null), 4200);
     return () => clearTimeout(t);
-  }, [view?.you]);
+  }, [yourSeat]);
   useEffect(() => {
     const here = view?.themHereNow ?? false;
     const prev = wasHere.current;
