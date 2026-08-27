@@ -630,12 +630,22 @@ function RoomPage({ id }: { id: string }) {
     const t = setTimeout(() => setDoorOpenAt(null), 4200);
     return () => clearTimeout(t);
   }, [yourSeat]);
+  /*
+   * Coming and going both swing the door; only one of them gets a sound.
+   *
+   * Arriving was marked twice over and leaving was not marked at all, so the room had a cat who was
+   * delighted to see you and indifferent to your going. `themHereNow` falls when their presence
+   * window lapses rather than the instant they close the tab, which is late but not wrong: it is
+   * still the moment she is on her own again.
+   */
+  const [watchDoorAt, setWatchDoorAt] = useState<number | null>(null);
   useEffect(() => {
     const here = view?.themHereNow ?? false;
     const prev = wasHere.current;
     wasHere.current = here;
-    if (prev === null || !here || prev) return;
-    play("chirp");
+    if (prev === null || prev === here) return;
+    if (here) play("chirp");
+    else setWatchDoorAt(Date.now());
     setDoorOpenAt(Date.now());
     const t = setTimeout(() => setDoorOpenAt(null), 4200);
     return () => clearTimeout(t);
@@ -1036,6 +1046,7 @@ function RoomPage({ id }: { id: string }) {
             eyesOpen={setup}
             framed={view.framed}
             doorOpenAt={doorOpenAt}
+            watchDoorAt={watchDoorAt}
             box={view.box}
             brought={view.brought}
             brushed={view.brushed}

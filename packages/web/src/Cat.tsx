@@ -177,6 +177,32 @@ const RAINBOW_MS = 2600;
 const PLANT_BLOOM_MS = 3800;
 /** A double knock at the door gets a tiny note slid into the room. */
 const DOOR_NOTE_MS = 3600;
+/*
+ * The paw the pointer becomes over the room.
+ *
+ * Inline SVG rather than a file: it is three lines, it has to load before the first hover, and a
+ * cursor that 404s falls back silently to the default, which is the one failure nobody would notice.
+ * Cream outline under the ink so it stays visible over both the night floor and the sunbeam.
+ */
+const PAW_CURSOR =
+  "data:image/svg+xml," +
+  encodeURIComponent(
+    // The mark's own 0 0 22 22 box clips the outer toe and the whole outline; widened to fit both.
+    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="-1 -2 26 26">' +
+      '<g fill="none" stroke="#fffdf6" stroke-width="2.4">' +
+      '<ellipse cx="4" cy="5" rx="2.6" ry="3"/><ellipse cx="10" cy="3" rx="2.8" ry="3.2"/>' +
+      '<ellipse cx="16" cy="5" rx="2.6" ry="3"/><ellipse cx="20.5" cy="10" rx="2.2" ry="2.5"/>' +
+      '<ellipse cx="11" cy="15" rx="7.5" ry="5.8"/></g>' +
+      '<g fill="#4a3520">' +
+      '<ellipse cx="4" cy="5" rx="2.6" ry="3"/><ellipse cx="10" cy="3" rx="2.8" ry="3.2"/>' +
+      '<ellipse cx="16" cy="5" rx="2.6" ry="3"/><ellipse cx="20.5" cy="10" rx="2.2" ry="2.5"/>' +
+      '<ellipse cx="11" cy="15" rx="7.5" ry="5.8"/></g></svg>',
+  );
+
+/** Middle of the door leaf, for anything that needs to look at it. */
+const DOOR_CENTRE = 12;
+/** Long enough to outlast the door shutting, so the look is what you are left with. */
+const WATCH_DOOR_MS = 7000;
 /**
  * Where it comes to rest, having rolled. Not under the shelf, where it would land and never be seen:
  * the shelf is at 80 and the camera shows only 80 of 100 columns. Out here it is in frame wherever
@@ -253,6 +279,7 @@ export function Cat({
   eyesOpen = false,
   framed = false,
   doorOpenAt = null,
+  watchDoorAt = null,
   box = false,
   brought = false,
   brushed = false,
@@ -301,6 +328,12 @@ export function Cat({
    * from a fixed moment also survives a dropped frame or a backgrounded tab.
    */
   doorOpenAt?: number | null;
+  /**
+   * They just left. Distinct from `doorOpenAt`, which both arrivals and departures use for the swing:
+   * this is the part that only happens when somebody goes, and it is the whole difference between the
+   * two. She keeps watching the door for a while after it has shut.
+   */
+  watchDoorAt?: number | null;
   /**
    * There is a box in the room today, so she is probably in it. Whether she is *in* it is decided
    * here rather than on the server: it is a drawing decision, not shared state.
@@ -602,6 +635,17 @@ export function Cat({
       speakUntil.current = performance.now() + 1700;
     }
   }, [nudge]);
+
+  /*
+   * Arrivals get a chirp and a bounce; this gets neither on purpose. A cat watching a shut door is
+   * the entire beat, and any sound on top of it turns going away into an event.
+   */
+  const watchDoorUntil = useRef(0);
+  useEffect(() => {
+    if (watchDoorAt === null) return;
+    watchDoorUntil.current = performance.now() + WATCH_DOOR_MS;
+    lookAt.current = { x: DOOR_CENTRE, until: watchDoorUntil.current };
+  }, [watchDoorAt]);
 
   useEffect(() => {
     const cv = ref.current!;
@@ -2425,6 +2469,9 @@ export function Cat({
       const noticing =
         (mouseVisiting ||
           doorRef.current !== null ||
+          // Outlasts the swing, which is the only thing separating a departure from an arrival: after
+          // one she settles the moment the door shuts, after the other she is still sitting up.
+          t < watchDoorUntil.current ||
           birding ||
           stargazing ||
           constellating ||
@@ -3338,9 +3385,10 @@ export function Cat({
         // Holding to pet needs the browser to stop treating the drag as a scroll. Only his side holds,
         // so everyone else keeps normal scrolling over the canvas.
         touchAction: role === "him" ? "none" : "manipulation",
-        // Everything in the room answers a tap now, including her on the front door, so the pointer
-        // is unconditional. A grab hand would promise a drag that does not exist.
-        cursor: "pointer",
+        // The same paw as the one beside the credit line, with the system hand behind it for anything
+        // that will not take a custom cursor. Cursor images are capped around 128px and ignored
+        // wholesale above it, so this stays small; the hotspot is the middle of the pad.
+        cursor: `url("${PAW_CURSOR}") 11 16, pointer`,
       }}
     />
   );
