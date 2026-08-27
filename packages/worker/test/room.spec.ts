@@ -1411,3 +1411,55 @@ describe("a day the two of them chose", () => {
     expect((await view(HER)).milestone).toBeNull();
   });
 });
+
+describe("freeing her seat and giving it to a new phone", () => {
+  const NEW_PHONE = "handovernewphone";
+
+  it("keeps the collar, which needs both of them on record", async () => {
+    await seat();
+    await post("found", { me: HIM, key: "herName" });
+    await post("found", { me: HER, key: "herName" });
+    await post("release", { me: HIM });
+    await view(NEW_PHONE, "Sofia");
+
+    // Her line and her place in the notes already survived this. What she had noticed did not, so
+    // freeing her seat quietly took the collar off the cat.
+    expect((await view(HIM)).bothCalledHer).toBe(true);
+    expect((await view(NEW_PHONE)).bothCalledHer).toBe(true);
+  });
+
+  it("still resets her mood, which is the thing that should not carry over", async () => {
+    await seat();
+    await post("tell", { me: HER, mood: "sad" });
+    await post("release", { me: HIM });
+    await view(NEW_PHONE, "Sofia");
+
+    expect((await view(HIM)).catMood).toBeNull();
+  });
+
+  it("gives it to the seat, not to him, however many times he looks first", async () => {
+    await seat();
+    await post("found", { me: HER, key: "piano" });
+    await post("release", { me: HIM });
+    await view(HIM);
+    await view(HIM);
+    await view(NEW_PHONE, "Sofia");
+
+    // He was already seated, so the inheritance must wait for whoever actually takes the free seat.
+    await post("found", { me: HIM, key: "piano" });
+    expect((await view(HIM)).noticed).toBe(1);
+    expect((await view(NEW_PHONE)).youAreHer).toBe(true);
+  });
+
+  it("hands it over once, not to everyone who opens the link afterwards", async () => {
+    await seat();
+    await post("found", { me: HER, key: "herName" });
+    await post("found", { me: HIM, key: "herName" });
+    await post("release", { me: HIM });
+    await view(NEW_PHONE, "Sofia");
+    await view(STRANGER, "Nope");
+
+    expect((await view(NEW_PHONE)).bothCalledHer).toBe(true);
+    expect((await view(STRANGER)).you).toBeNull();
+  });
+});

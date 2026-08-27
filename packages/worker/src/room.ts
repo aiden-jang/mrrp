@@ -136,6 +136,13 @@ export class Room extends DurableObject<Env> {
       await this.ctx.storage.put("people", people);
     }
 
+    // Whoever just took the freed seat inherits what its last holder had noticed. See releaseHerSeat.
+    const handover = await this.ctx.storage.get<string>("handover");
+    if (handover && handover !== me && this.roles(people).her === me) {
+      await this.adoptFound(handover, me);
+      await this.ctx.storage.delete("handover");
+    }
+
     /*
      * She leaves him something: a leaf, a bottle cap, a moth, on the floor when he next opens the room.
      * Worth nothing and not actionable, which is the point.
@@ -370,6 +377,28 @@ export class Room extends DurableObject<Env> {
   }
 
   /**
+   * Move one seat's finds onto the token that holds that seat now.
+   *
+   * Only the finds. A recovery moves everything, because it is the same person on a new phone; a
+   * handover moves this and no more, because the room has deliberately reset the rest.
+   */
+  private async adoptFound(from: string, to: string): Promise<void> {
+    const found = await this.found();
+    let moved = false;
+    const next: FoundLedger = {};
+    for (const [key, seats] of Object.entries(found)) {
+      const copy = { ...seats };
+      if (copy[from] !== undefined) {
+        copy[to] = copy[from]!;
+        delete copy[from];
+        moved = true;
+      }
+      next[key] = copy;
+    }
+    if (moved) await this.ctx.storage.put("found", next);
+  }
+
+  /**
    * Everything stored against a seat token, pointed at the token that now holds that seat.
    *
    * His recovery only ever moved the window light, which was enough while he was the seat with no
@@ -524,6 +553,15 @@ export class Room extends DurableObject<Env> {
     if (light?.from === her) await this.ctx.storage.delete("windowLight");
     // Or the device he just evicted walks straight back in with the code it still has.
     await this.ctx.storage.delete("recoveryHer");
+    /*
+     * What she had noticed waits for whoever takes the seat next.
+     *
+     * The ledger is keyed per seat, so freeing hers took the collar off the cat: the one flag that
+     * needs both of them on record had one of them missing again. Her line and her place in the notes
+     * already survive a handover, because they belong to the room rather than to a phone. Her mood
+     * deliberately does not, and still does not.
+     */
+    await this.ctx.storage.put("handover", her);
     return true;
   }
 
