@@ -495,7 +495,7 @@ function Landing() {
           their day is going and she becomes that, so you know without having to ask.
         </p>
         <p className={s.lede} style={{ margin: "0 auto 18px", fontSize: FS.body }}>
-          Then you turn up and sit with her. No accounts, no notifications, nothing to keep up with.
+          Then you turn up and sit with her. No account needed, no notifications, nothing to keep up with.
         </p>
         {/* In a browser tab this is an offer rather than a redirect, so the page you asked for is the
             page you get, and making a second room stays possible. */}

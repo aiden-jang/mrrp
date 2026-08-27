@@ -1,6 +1,6 @@
 # mrrp
 
-One of you is the cat. One private link, two seats, and no accounts.
+One of you is the cat. One private link, two seats, and no account needed.
 
 You tell the cat how you are. It answers, and the other person finds out.
 
