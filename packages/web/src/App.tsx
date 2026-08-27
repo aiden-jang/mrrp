@@ -439,6 +439,8 @@ function Landing() {
             clock={DOOR_CLOCK}
             mood={null}
             nudge={0}
+            // The name, both paragraphs and the button all live under the cat here.
+            reserveBelow={340}
           />
         </div>
         <h1 className={s.h1}>mrrp</h1>

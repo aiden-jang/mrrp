@@ -199,6 +199,17 @@ const PAW_CURSOR =
       '<ellipse cx="11" cy="15" rx="7.5" ry="5.8"/></g></svg>',
   );
 
+/**
+ * What sits under the room, in pixels, kept clear of it.
+ *
+ * The default is the room view: a caption and the top of the first card. The front door needs far
+ * more, because a title, two paragraphs and the button that is the whole point of the page are all
+ * below the cat, and at 270 the button fell off the bottom of a laptop.
+ */
+const ROOM_RESERVE = 270;
+/** However tall the window, the room never takes the whole of it. */
+const ROOM_MAX_SHARE = 0.78;
+
 /** Middle of the door leaf, for anything that needs to look at it. */
 const DOOR_CENTRE = 12;
 /** One swipe: long enough to read as a lunge, short enough that she is back to loafing. */
@@ -278,6 +289,7 @@ export function Cat({
   clock,
   mood,
   nudge,
+  reserveBelow = ROOM_RESERVE,
   staying = false,
   eyesOpen = false,
   framed = false,
@@ -336,6 +348,8 @@ export function Cat({
    * this is the part that only happens when somebody goes, and it is the whole difference between the
    * two. She keeps watching the door for a while after it has shut.
    */
+  /** Pixels of page under the room that the room must not grow into. See ROOM_RESERVE. */
+  reserveBelow?: number;
   /**
    * Somebody has been in the room a while and has not touched anything.
    *
@@ -652,6 +666,8 @@ export function Cat({
    */
   /** One go per visit, so she is not batting at it for the whole eighteen seconds. */
   const mothSwipe = useRef({ visit: -1, at: -Infinity });
+  const reserveRef = useRef(reserveBelow);
+  reserveRef.current = reserveBelow;
   const stayingRef = useRef(staying);
   stayingRef.current = staying;
   /** How far she has gone under from company alone. Rises in about ten seconds, falls in four. */
@@ -705,12 +721,19 @@ export function Cat({
        * the note and everything else below the fold: the landing page ran to 995px inside a 720px
        * window. On a phone the width always wins and this never binds.
        *
+       * A flat 62% was the whole rule, which on a tall desktop window spent the extra height on
+       * empty cream instead of on the one thing anybody came to look at. Past about 710px tall it
+       * reserves a fixed strip for the caption and the first card underneath and gives the room the
+       * rest, so a taller window makes a bigger room rather than a longer margin. Below that the old
+       * proportion still wins, so nothing a phone or a short laptop sees changes.
+       *
        * Either measurement can be zero, in a hidden tab or before the first layout. Keep the size the
        * room already has rather than collapsing it to one pixel per cell, and ask again on the next
        * frame: rAF is paused while the tab is hidden, so this retries exactly when there is a real
        * layout to measure, without needing to guess which event announces it.
        */
-      const cap = innerHeight > 0 ? innerHeight * 0.62 : Infinity;
+      const h = innerHeight;
+      const cap = h > 0 ? Math.min(h * ROOM_MAX_SHARE, Math.max(h * 0.62, h - reserveRef.current)) : Infinity;
       const avail = Math.min(wide > 0 ? wide : Infinity, cap);
       if (!Number.isFinite(avail) || avail < VW) {
         refit = requestAnimationFrame(fit);
