@@ -1,19 +1,3 @@
-/**
- * One note a day.
- *
- * These are the DEFAULTS, used by any room whose owner has not written their own. They are
- * deliberately generic: they mention no names, no places, and nothing that only one couple could have
- * lived through, because every room that has not been edited gets exactly these. The previous set was
- * written for one specific person, which meant anybody else who made a room was handed somebody else's
- * love letters, and that is worse than a blank page.
- *
- * They still try to be about small ordinary things rather than compliments, because that is what
- * lands: "you fell asleep before the film ended again" beats "you're wonderful" every time. The point
- * is to be a decent floor, not a ceiling. Anything written in the app replaces this entirely.
- *
- * Order matters. Index 0 is day one, and the last one keeps showing after the list runs out, so it has
- * to be something that can sit there for a while without going stale.
- */
 export const NOTES: string[] = [
   "Somebody made you a cat. She lives here now, and she is not going anywhere.",
   "She is asleep in the sun. She is almost always asleep in the sun.",

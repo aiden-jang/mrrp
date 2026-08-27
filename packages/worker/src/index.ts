@@ -8,21 +8,14 @@ export { Room } from "./room.js";
 
 const app = new Hono<{ Bindings: Env }>();
 const ROOM_RE = /^[a-z0-9]{6,24}$/;
-/** Seven by five cells, each an index into a five-colour palette. Nothing else is a drawing. */
 const DOODLE_RE = /^[0-4]{35}$/;
 const VALID: Action[] = ["pet", "brush", "bring", "sit", "photo"];
 const VALID_MOODS: Mood[] = ["good", "tired", "stressed", "sad", "lonely", "bored", "feral", "done", "horny"];
 
 const room = (env: Env, id: string) => env.ROOM.get(env.ROOM.idFromName(id));
 
-/**
- * Who is signed in, if anybody.
- *
- * The cookie is forwarded to the auth service rather than parsed here, which is the point of the
- * shared session: this Worker never holds the secret and cannot be the thing that leaks it. An
- * outage returns null, which this app treats as "not signed in" rather than as an error, because a
- * room has never needed an account and must keep working without one.
- */
+// Forwarded, not parsed: this Worker never holds the session secret. An outage means "not signed
+// in", which is a state the whole app works in.
 async function accountOf(request: Request, env: Env): Promise<string | null> {
   try {
     const user = await getSessionUser(request, env.AUTH_URL);
@@ -34,7 +27,6 @@ async function accountOf(request: Request, env: Env): Promise<string | null> {
 
 app.get("/api/health", (c) => c.json({ ok: true }));
 
-/** Read the room. `me` is a token the browser keeps; it is the whole notion of identity here. */
 app.get("/api/room/:id", async (c) => {
   const id = c.req.param("id");
   const me = c.req.query("me") ?? "";
@@ -52,7 +44,6 @@ app.post("/api/room/:id/act", async (c) => {
   return c.json(await room(c.env, id).act(body.me, body.action as Action));
 });
 
-/** Tell the cat how you are. Validated against the fixed set; anything else is a 400, not a new mood. */
 app.post("/api/room/:id/tell", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as { me?: string; mood?: Mood } | null;
@@ -62,7 +53,6 @@ app.post("/api/room/:id/tell", async (c) => {
   return c.json(await room(c.env, id).tell(body.me, body.mood as Mood));
 });
 
-/** Leave him a line. Hers to write; the Room re-checks the seat. Empty text clears it. */
 app.post("/api/room/:id/say", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as { me?: string; text?: unknown } | null;
@@ -72,13 +62,6 @@ app.post("/api/room/:id/say", async (c) => {
   return c.json(await room(c.env, id).say(body.me, body.text));
 });
 
-/**
- * Tie the seat you are holding to the account you are signed into, or let it go.
- *
- * Optional, and never a step on the way in: the link still works with no account at all. What it buys
- * is one thing, which is that a new phone can be handed this seat's token after signing in, instead
- * of needing the recovery code typed in.
- */
 app.post("/api/room/:id/link", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => ({}))) as { me?: unknown; on?: unknown };
@@ -92,19 +75,9 @@ app.post("/api/room/:id/link", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "that account already has a seat here" }, 409);
 });
 
-/**
- * Fast-forward a room, so the states that take months can be looked at in a minute.
- *
- * Gated on DEV_TOOLS, which lives in `.dev.vars`: read by `wrangler dev`, never uploaded by
- * `wrangler deploy`, and already gitignored. The first attempt checked the hostname instead, on the
- * reasoning that this Worker has one custom-domain route and no workers.dev address. That gate does
- * not work: `wrangler dev` rewrites the request URL to the configured route, so the local Worker sees
- * mrrp.aidenjang.com exactly as production does and the check cannot tell them apart.
- *
- * Holding a seat is required on top of that, inside the Durable Object. Everything it writes is
- * reachable by ordinary use given enough months; nothing here puts a room into a state a real room
- * could not be in.
- */
+// Dev only. DEV_TOOLS lives in `.dev.vars`, which `wrangler deploy` never uploads. Do not gate this
+// on the hostname: `wrangler dev` rewrites the URL to the configured route, so local looks exactly
+// like production. Holding a seat is checked again inside the room.
 app.post("/api/room/:id/age", async (c) => {
   if (c.env.DEV_TOOLS !== "on") return c.json({ error: "not found" }, 404);
 
@@ -135,12 +108,6 @@ app.post("/api/room/:id/age", async (c) => {
   );
 });
 
-/**
- * Put a drawing in the frame. Either seat.
- *
- * The shape is checked here and again in the Room. Thirty-five characters of "0" to "4" is the whole
- * grammar, so anything that is not exactly that never reaches storage and never reaches a canvas.
- */
 app.post("/api/room/:id/draw", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as { me?: string; cells?: unknown } | null;
@@ -151,12 +118,6 @@ app.post("/api/room/:id/draw", async (c) => {
   return c.json(await room(c.env, id).draw(body.me, cells));
 });
 
-/**
- * A day the two of them care about. His to set, and the Room re-checks that.
- *
- * Month and day only, validated as a real calendar date so 31 February cannot be stored and then
- * never arrive. An empty label clears it.
- */
 app.post("/api/room/:id/ourday", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
@@ -167,8 +128,6 @@ app.post("/api/room/:id/ourday", async (c) => {
   const label = typeof body.label === "string" ? body.label.trim().slice(0, 32) : "";
   const month = typeof body.month === "number" ? Math.trunc(body.month) : 0;
   const day = typeof body.day === "number" ? Math.trunc(body.day) : 0;
-  // 29 February is allowed: milestoneFor answers on the day itself, and a leap-year date simply
-  // arrives in leap years, which is the honest behaviour for a date somebody chose.
   const DAYS = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   const real = month >= 1 && month <= 12 && day >= 1 && day <= DAYS[month - 1]!;
   if (label && !real) return c.json({ error: "bad request" }, 400);
@@ -177,7 +136,6 @@ app.post("/api/room/:id/ourday", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "not yours to set" }, 403);
 });
 
-/** Set her name and colours. His to set, and the Room re-checks that. */
 app.post("/api/room/:id/dress", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
@@ -198,11 +156,6 @@ app.post("/api/room/:id/dress", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "not yours to set" }, 403);
 });
 
-/**
- * Replace this room's notes. His only.
- *
- * One per entry, trimmed and capped in the Durable Object. An empty list means "use the defaults".
- */
 app.post("/api/room/:id/notes", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
@@ -216,13 +169,6 @@ app.post("/api/room/:id/notes", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "not yours to set" }, 403);
 });
 
-/**
- * Take a seat back on a new device, with that seat's recovery code.
- *
- * One box for both of them. His was always the only code, on the reasoning that she could be restored
- * because he can free her seat: true, but it left her needing him to notice, and left her with nothing
- * at all if he is the one who is away. The Room decides which seat a code belongs to.
- */
 app.post("/api/room/:id/recover", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
@@ -234,11 +180,6 @@ app.post("/api/room/:id/recover", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "that code does not match" }, 403);
 });
 
-/*
- * "I found the thing." Reported by the client the first time a secret fires on that device, so it is
- * chatty by nature: the DO answers ok for a key it already knew rather than making the client track
- * what the server has. Unknown keys are refused, since the allowlist lives on this side.
- */
 app.post("/api/room/:id/found", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as { me?: string; key?: unknown } | null;
@@ -247,7 +188,6 @@ app.post("/api/room/:id/found", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "bad request" }, 400);
 });
 
-/** Put the thing she knocked off back on the shelf. Either seat; the Room re-checks. */
 app.post("/api/room/:id/shelf", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
@@ -255,11 +195,9 @@ app.post("/api/room/:id/shelf", async (c) => {
   const me = typeof body.me === "string" ? body.me : "";
   if (me.length < 8) return c.json({ error: "bad request" }, 400);
   const done = await room(c.env, id).putBack(me);
-  // `again` means she was watching you do it. The client waits a beat and then plays it.
   return done ? c.json({ ok: true, again: done === "again" }) : c.json({ error: "not yours to tidy" }, 403);
 });
 
-/** Leave a light in the window, or collect the one the other person left. Either seat, never a spectator. */
 app.post("/api/room/:id/window-light", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
@@ -270,11 +208,6 @@ app.post("/api/room/:id/window-light", async (c) => {
   return next ? c.json(next) : c.json({ error: "not your room" }, 403);
 });
 
-/**
- * Free her seat, so a new phone can be her. A seat is a random token in localStorage, so clearing
- * browser data otherwise loses it forever and leaves the room with nobody able to be the cat.
- * His to call, checked in the Durable Object rather than here.
- */
 app.post("/api/room/:id/release", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
@@ -285,10 +218,6 @@ app.post("/api/room/:id/release", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "not yours to release" }, 403);
 });
 
-/**
- * Whose day the room runs on. Validated here rather than trusted: an unchecked timezone string
- * reaches Intl.DateTimeFormat inside the DO, where it throws and takes the whole room down.
- */
 app.post("/api/room/:id/clock", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
@@ -318,11 +247,6 @@ app.post("/api/room/:id/clock", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "not yours to set" }, 403);
 });
 
-/**
- * Room links are client-side routes (/r/<id>), so no file exists at that path. Assets are matched
- * first and miss, then this hands back index.html. Using not_found_handling = "single-page-application"
- * instead would swallow /api/* before the Worker ever saw it.
- */
 app.get("/r/:id", (c) => c.env.ASSETS.fetch(new Request(new URL("/", c.req.url))));
 
 export default { fetch: app.fetch } satisfies ExportedHandler<Env>;

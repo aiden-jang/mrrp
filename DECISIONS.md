@@ -112,6 +112,13 @@ Which is only defensible because of how browsers work: an audio context will not
 touch the page. So the first noise she can make is always an answer to something you did, never a
 sound that arrives at you unasked.
 
+## This Worker never sees the session secret
+
+The `platform_session` cookie is forwarded to the auth service rather than read here. So the thing
+holding your login is one service, and mrrp is not a second place it could leak from. If that service
+is down the answer is "not signed in", which is a state the whole app already works in, rather than an
+error page: a room has never needed an account.
+
 ## Nothing accumulates into an inbox
 
 The arrival card is capped and clears itself. The visit log is bounded. There is no unread count, no
