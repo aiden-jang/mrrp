@@ -1,0 +1,12 @@
+# Copy to `.dev.vars` (gitignored, read only by `wrangler dev`, never uploaded by `wrangler deploy`).
+#
+# Both of these exist so local development can do things production must not. Without the file the
+# app runs fine: the ageing route 404s and signing in is simply unavailable.
+
+# Opens /api/room/:id/age, which fast-forwards a room so the states that take months can be looked
+# at. See "Looking at an old room" in the README.
+DEV_TOOLS=on
+
+# The auth UI's own dev server, which proxies /auth to the auth Worker beside it. Production uses the
+# value in wrangler.toml. Point this at your running auth service, or leave it out and sign-in is off.
+AUTH_URL=http://localhost:34110
