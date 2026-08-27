@@ -15,6 +15,18 @@ for warmth, depth, material detail, and environmental storytelling. It is not a 
 with wall texture, floorboard depth, the rug, window architecture and a focal shadow. Everything after
 that is still a plan.
 
+**Phase 4 and most of Phase 6 shipped without the pipeline.** The living-room states, the mood and
+secret responses, and the interface following the room's light are all in, done as authored Canvas
+work rather than as generated layers. Worth knowing before picking up the plan below: the phases were
+written assuming Phase 2 came first, and two of them turned out not to need it at all.
+
+What landed: whole-pixel rendering (one logical pixel is a whole number of device pixels, or the
+floorboards come out at two different widths); the cat lit by the room, with a rim from the window and
+a shadow that leans with the light; the chrome going dark when the room does, as two palettes rather
+than a crossfade; her voice pitched per coat and her purr following her mood and deepening while she
+is held; and the room keeping what he leaves in it. Deliberately not done: anything that could make
+the room worse over time, which rules out most of what "living" usually means.
+
 **Phases 2 and 3 were built as generated layers, and reverted.** The migration went all the way: six
 generated room states, nine cat poses with recolorable eye overlays, a DOM interaction surface
 replacing the canvas, and postcard capture compositing the image layers. It was then reverted in two
@@ -133,6 +145,8 @@ Stopping point:
 
 ## Phase 4: living room states
 
+Largely shipped; see Status above.
+
 - Create deliberate dawn, afternoon, golden-hour, evening, night, and rain treatments.
 - Add restrained curtain movement, rain on glass, plant movement, steam, dust, and foreground depth.
 - Let seasons change only a few meaningful objects.
@@ -155,6 +169,8 @@ Stopping point:
 `feat: refresh Mrrp's moods secrets and shared keepsakes`
 
 ## Phase 6: interface integration
+
+Largely shipped; see Status above.
 
 - Let the room remain the dominant surface.
 - Match the surrounding interface colors to the room's current light.
