@@ -385,6 +385,23 @@ const DOOR_CLOCK = {
   homeHour: 19,
 };
 
+/*
+ * The hour the door is standing in.
+ *
+ * The landing and the offline screens draw a room on the viewer's own clock, so the page around that
+ * room has to run on the same clock. Without this the frame is midnight inside a cream afternoon.
+ * Ticked once a minute because the canvas keeps moving on its own and nobody promises to go in
+ * before sunset.
+ */
+function useDoorScene(): Scene {
+  const [at, setAt] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setAt(Date.now()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+  return sceneFor(DOOR_CLOCK, at, null, false);
+}
+
 /* ─────────────── landing: make a room, send the link ─────────────── */
 function Landing() {
   const back = lastRoom.get();
@@ -396,13 +413,15 @@ function Landing() {
   }, [back, wantsNew]);
 
   const [name, setName] = useState(myName.get() ?? "");
+  const door = useDoorScene();
   const make = () => {
     if (!name.trim()) return;
     myName.set(name.trim());
     location.href = `/r/${newRoomId()}`;
   };
   return (
-    <main className={s.page}>
+    <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
+      <ChromeSync night={isNightChrome(door.sun)} />
       <div className={s.card} style={{ textAlign: "center" }}>
         <div className={s.stage} style={{ marginBottom: 14 }}>
           <Cat
@@ -880,9 +899,13 @@ function RoomPage({ id }: { id: string }) {
     if (await copyText(location.href)) resetResult("copied");
   };
 
+  // Both screens below stand at the door rather than in a room, and neither can call a hook of its own.
+  const door = useDoorScene();
+
   if (asking) {
     return (
-      <main className={s.page}>
+      <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
+        <ChromeSync night={isNightChrome(door.sun)} />
         <div className={s.card} style={{ textAlign: "center" }}>
           <h1 className={s.h1}>mrrp</h1>
           <p className={s.lede} style={{ margin: "0 auto 20px" }}>
@@ -921,7 +944,8 @@ function RoomPage({ id }: { id: string }) {
   // dropped request is a quiet line at the bottom, not the cat vanishing.
   if (!view) {
     return (
-      <main className={s.page}>
+      <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
+        <ChromeSync night={isNightChrome(door.sun)} />
         <div className={s.card} style={{ textAlign: "center" }}>
           {/* The cat, even here. The app opens from cache on a bad connection, so this screen is what
               she sees standing on a train with no signal, and an empty page with an error on it is a
@@ -1719,13 +1743,6 @@ const SOFT_ON_DARK = "#c9bccb";
 const ERROR_ON_DARK = "#d39a88";
 
 /*
- * The browser's own chrome, following the room.
- *
- * The page can go dark now, and without this the phone keeps a cream status bar above it while the
- * scrollbars and any native control stay light. Its own component so the effect sits above no early
- * return, and so unmounting restores the daylight palette the door and recovery screens expect.
- */
-/*
  * The tab's name, which was "mrrp" for every room forever.
  *
  * This app lives on a home screen and gets opened next to other things, and its whole subject is one
@@ -1761,6 +1778,13 @@ function VoiceSync({ fur }: { fur: string }) {
   return null;
 }
 
+/*
+ * The browser's own chrome, following whichever room is on screen.
+ *
+ * Without this the phone keeps a cream status bar above a dark page while the scrollbars and any
+ * native control stay light. Its own component so the effect sits above no early return, which is
+ * what lets the door screens mount one of their own.
+ */
 function ChromeSync({ night }: { night: boolean }) {
   useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]');
