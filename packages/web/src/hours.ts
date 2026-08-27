@@ -204,15 +204,9 @@ export function sceneFor(
   const r = mood ? RESPONSES[mood] : null;
   /** The sunless, bedless, nobody-due hours: her own spot if she has one, else the old nowhere. */
   const idle = spot ?? 0.42;
-  /*
-   * The evening she stops chasing the last of the light.
-   *
-   * Every other hour of this room is spoken for: she is in her bed, at the door, or on the sunbeam,
-   * and the only gap left was half an hour at five in the morning. These hours were the honest place
-   * for a habit, because the line under the room already says "settled, now that everyone's in" and
-   * says nothing at all about the sun. A cat who used to walk the last patch of light across the
-   * boards now just goes and sits in her place instead, which is what having a place means.
-   */
+  // The evening hours are hers to have a place in: after he is home, she stops following the sunbeam
+  // and goes and sits in her spot. Every other hour is already spoken for (bed, door, or beam), and
+  // the line under the room at this hour talks about everyone being in, not about the sun.
   const settledIn = spot !== null && !inBed && !atDoor && hour >= clock.homeHour && hour < 21 ? spot : null;
 
   const scene: Scene = {

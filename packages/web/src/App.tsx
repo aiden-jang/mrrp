@@ -270,8 +270,8 @@ function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[];
       <ul className={s.arrivalList}>
         {items.map((item, index) => (
           <li key={`${item.kind}-${item.at}-${index}`} className={s.arrivalItem}>
-            {/* Drawn, not dingbats. ✦ ✧ ❧ come from whatever font resolves them, and ❧ in particular
-                is not in every face, so the list used to change character between devices. */}
+            {/* Drawn, not dingbats. ✦ ✧ ❧ are whatever the device's font decides they are, and ❧ is
+                missing from plenty of them, so the list changes character between phones. */}
             <span className={s.arrivalPaw} aria-hidden>
               <ArrivalMark kind={item.kind} />
             </span>
@@ -649,8 +649,8 @@ function RoomPage({ id }: { id: string }) {
       await doLink(id, on);
       await load();
     } catch (e) {
-      // Only redirect if the room says they are signed out. This used to redirect always, which sent
-      // anybody already signed in on a round trip through a login page to arrive back where they were.
+      // Redirect only when the room says they are signed out. Redirecting on any failure sends people
+      // who are already signed in on a round trip through a login page, back to where they started.
       if (on && e instanceof Error && e.message === SIGNED_OUT) {
         sessionStorage.setItem(FINISH_LINK, id);
         window.location.href = loginUrl(AUTH_URL, window.location.href);
@@ -1358,8 +1358,8 @@ function RoomPage({ id }: { id: string }) {
               );
             })()}
 
-            {/* Errors belong next to the button that failed. This used to surface at the very bottom of
-                the card, below everything, which on a panel this tall is off screen. */}
+            {/* Errors belong next to the button that failed. At the bottom of a panel this tall, they
+                are off screen. */}
             {view.recoveryCode && (
               <>
                 <p className={s.fieldLabel} style={{ marginTop: 14 }}>
@@ -1650,13 +1650,12 @@ function RoomPage({ id }: { id: string }) {
                   This room belongs to two people, and both seats are taken. You can watch the cat.
                 </p>
                 {/*
-                 * The likelier of the two reasons somebody is standing here, and it had no words at all.
+                 * The likelier of the two reasons somebody is standing here, so it needs words.
                  *
-                 * A seat is a token in one browser, so the second one gets spent by a private window
-                 * used to look at the room, or by whoever the link was forwarded to opening it once.
-                 * The person the room was actually for then arrives to a recovery box addressed to its
-                 * maker, which reads as the app telling her it is somebody else's room. A seat opened
-                 * once and abandoned now clears itself after a day; this is what to do before then.
+                 * A seat is a token in one browser. The second one gets spent by a private window, or
+                 * by whoever the link was forwarded to opening it once. The person the room was for
+                 * then arrives to a recovery box addressed to its maker, which reads as the app telling
+                 * her it is somebody else's room. Nothing frees a seat on its own, so say what to do.
                  */}
                 <p className={s.small} style={{ textAlign: "center", marginTop: 10 }}>
                   If you have been in here before, your recovery code will get you back in. If a seat is being
@@ -1747,8 +1746,8 @@ function RoomPage({ id }: { id: string }) {
           </>
         )}
 
-        {/* The whole sentence comes from whoever set it. "Trying again in a moment" used to be
-            appended here for every error, including the ones where nothing retries. */}
+        {/* The whole sentence comes from whoever set it. Do not append "trying again in a moment"
+            here: most of these errors have nothing retrying behind them. */}
         {err && (
           <p
             className={s.small}
