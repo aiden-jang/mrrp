@@ -821,11 +821,13 @@ export function Cat({
        * the note and everything else below the fold: the landing page ran to 995px inside a 720px
        * window. On a phone the width always wins and this never binds.
        *
-       * A flat 62% was the whole rule, which on a tall desktop window spent the extra height on
-       * empty cream instead of on the one thing anybody came to look at. Past about 710px tall it
-       * reserves a fixed strip for the caption and the first card underneath and gives the room the
-       * rest, so a taller window makes a bigger room rather than a longer margin. Below that the old
-       * proportion still wins, so nothing a phone or a short laptop sees changes.
+       * A flat 62% was the whole rule, which on a tall desktop window spent the extra height on empty
+       * cream instead of on the one thing anybody came to look at. So it reserves a strip for what is
+       * underneath and gives the room the rest, capped so it never takes the whole window.
+       *
+       * The reserve is a ceiling, not a floor. It was briefly `max(62%, h - reserve)`, which meant
+       * "take at least 62% whatever is below you" and on a short wide laptop put the front door's own
+       * button 33px under the fold. On a phone the width always wins and none of this binds.
        *
        * Either measurement can be zero, in a hidden tab or before the first layout. Keep the size the
        * room already has rather than collapsing it to one pixel per cell, and ask again on the next
@@ -833,7 +835,7 @@ export function Cat({
        * layout to measure, without needing to guess which event announces it.
        */
       const h = innerHeight;
-      const cap = h > 0 ? Math.min(h * ROOM_MAX_SHARE, Math.max(h * 0.62, h - reserveRef.current)) : Infinity;
+      const cap = h > 0 ? Math.min(h * ROOM_MAX_SHARE, h - reserveRef.current) : Infinity;
       const avail = Math.min(wide > 0 ? wide : Infinity, cap);
       if (!Number.isFinite(avail) || avail < VW) {
         refit = requestAnimationFrame(fit);

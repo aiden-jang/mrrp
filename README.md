@@ -50,6 +50,9 @@ It also means a seat can be lost, so there are two ways back and neither is at t
   phone hands the seat's token back. One account holds at most one seat per room, and as many rooms
   as it likes. Untying leaves the seat where it is.
 
+Neither is at the front door, and neither ever will be: she taps a link and she is in a room with a
+cat, and that is the whole gesture.
+
 If a browser that is not hers ends up holding her seat, which a private window will do, he can free it
 from **"{her} can't get in"**.
 
