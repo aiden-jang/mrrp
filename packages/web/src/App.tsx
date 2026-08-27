@@ -1194,7 +1194,7 @@ function RoomPage({ id }: { id: string }) {
   return (
     <main className={s.page} style={{ ...roomTheme }}>
       <ChromeSync night={nightChrome} />
-      <VoiceSync fur={view.cat.fur} />
+      <VoiceSync fur={view.cat.fur} monthsOld={view.monthsOld} />
       <DocTitle name={view.cat.name} />
       <FaviconSync cat={view.cat} />
       {/* The room is the page, and it had no heading at all: the only one was the hidden <h2> over
@@ -2224,9 +2224,21 @@ function DocTitle({ name }: { name: string }) {
  * Its own component for the same reason ChromeSync is: this sits below the room's early returns, and
  * a hook there runs in a different order on different renders.
  */
-function VoiceSync({ fur }: { fur: string }) {
+function VoiceSync({ fur, monthsOld }: { fur: string; monthsOld: number }) {
   // Matched by fur colour, not by look id: the room stores the colours, not which swatch was tapped.
-  const voice = LOOKS.find((l) => l.cat.fur.toLowerCase() === fur.toLowerCase())?.voice ?? 1;
+  const coat = LOOKS.find((l) => l.cat.fur.toLowerCase() === fur.toLowerCase())?.voice ?? 1;
+  /*
+   * She settles into her voice over the first year.
+   *
+   * A kitten's mrrp is higher than a cat's, and this room has always drawn one that ages in every
+   * other way while sounding exactly the same on day one and day four hundred. Four percent across
+   * twelve months, which nobody will ever catch happening: it is only ever noticeable as the
+   * difference between a recording from the first week and one from now, which is the point.
+   *
+   * Rounded to a hundredth so the synth is not re-tuned on every render for a change under hearing.
+   */
+  const settled = Math.min(1, Math.max(0, monthsOld) / 12);
+  const voice = Math.round(coat * (1 - settled * 0.04) * 100) / 100;
   useEffect(() => {
     setVoice({ pitch: voice });
   }, [voice]);
