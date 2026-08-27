@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Cat as CatLook, Clock, Gift, Mood } from "./types.js";
 import { mixHex, sceneFor } from "./hours.js";
-import { fireflyAt, mothAt } from "./critters.js";
+import { fireflyAt, mothAt, MOTH_CYCLE_MS } from "./critters.js";
 import { play, playPianoNote, setVoice } from "./sound.js";
 import { dreamOf, type Dream, type DreamContext, type DreamScene } from "./dreams.js";
 import { catCallCode } from "./secrets.js";
@@ -201,6 +201,8 @@ const PAW_CURSOR =
 
 /** Middle of the door leaf, for anything that needs to look at it. */
 const DOOR_CENTRE = 12;
+/** One swipe: long enough to read as a lunge, short enough that she is back to loafing. */
+const SWIPE_MS = 620;
 /** Long enough to outlast the door shutting, so the look is what you are left with. */
 const WATCH_DOOR_MS = 7000;
 /**
@@ -640,6 +642,8 @@ export function Cat({
    * Arrivals get a chirp and a bounce; this gets neither on purpose. A cat watching a shut door is
    * the entire beat, and any sound on top of it turns going away into an event.
    */
+  /** One go per visit, so she is not batting at it for the whole eighteen seconds. */
+  const mothSwipe = useRef({ visit: -1, at: -Infinity });
   const watchDoorUntil = useRef(0);
   useEffect(() => {
     if (watchDoorAt === null) return;
@@ -2341,6 +2345,30 @@ export function Cat({
       const kx = Math.round(catX.current);
 
       /*
+       * She has a go at the moth.
+       *
+       * She has always watched it and never once tried, which over eighteen seconds reads less like a
+       * cat than like a screensaver. One attempt per visit, only when it drifts within a body length,
+       * and she always misses: a moth she could catch would stop being the thing that comes back.
+       */
+      const m = reduce ? null : mothAt(t, beamX);
+      const mothVisit = Math.floor(t / MOTH_CYCLE_MS);
+      if (
+        m &&
+        sc.sun > 0.15 &&
+        sc.sleepy < 0.5 &&
+        mothSwipe.current.visit !== mothVisit &&
+        m.presence > 0.6 &&
+        Math.abs(m.x - kx) < 7
+      ) {
+        mothSwipe.current = { visit: mothVisit, at: t };
+        // Cats really do chatter at prey they cannot reach, and it is the one sound in here that is
+        // hers rather than aimed at anybody.
+        play("chirp");
+      }
+      const swiping = t - mothSwipe.current.at < SWIPE_MS;
+
+      /*
        * She leaves prints where she has actually walked.
        *
        * Only while she is crossing the room: a cat asleep in one spot for three hours should not be
@@ -2483,7 +2511,7 @@ export function Cat({
       const stretchCycle = t % 40_000;
       const stretching =
         !reduce && awake && sc.play < 0.5 && !inBox && Math.abs(wantX - kx) < 2 && stretchCycle < 1400;
-      const pouncing = mouseChasing || laserPlaying;
+      const pouncing = mouseChasing || laserPlaying || swiping;
       const walking = Math.abs(wantX - kx) > 3 && !zooming && !catnipping && !pouncing;
       const pose: Pose =
         boxPlaying || peeking
@@ -3057,12 +3085,16 @@ export function Cat({
         px(Math.round(ptr.x), FLOOR + 1, `rgba(255,239,183,${1 - age})`);
       }
 
-      // The moth, drawn before her so she can be in front of it, and so its position is known when
-      // her eyes are drawn.
-      const m = reduce ? null : mothAt(t, beamX);
+      // Drawn here, before her, so she can be in front of it. Its position was worked out up with
+      // the pose, which needs to know whether it is within reach.
       if (m && sc.sun > 0.15) {
+        // It jinks up out of the way for as long as the swipe lasts, which is what makes the miss a
+        // miss rather than her paw passing through it.
+        const dodge = swiping
+          ? Math.round(Math.sin(((t - mothSwipe.current.at) / SWIPE_MS) * Math.PI) * 6)
+          : 0;
         const mx = Math.round(m.x),
-          my = Math.round(m.y);
+          my = Math.round(m.y) - dodge;
         // One-pixel wings that alternate, which at this scale is all a flap needs to be.
         const flap = Math.sin(t / 90) > 0 ? 1 : 0;
         const a2 = 0.35 + m.presence * 0.65;
