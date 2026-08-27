@@ -1786,7 +1786,20 @@ function RoomPage({ id }: { id: string }) {
             {!iAmHim && (
               <>
                 <p className={s.small} style={{ textAlign: "center", marginTop: 16 }}>
-                  This room belongs to two people, and you are not one of them. You can watch the cat.
+                  This room belongs to two people, and both seats are taken. You can watch the cat.
+                </p>
+                {/*
+                 * The likelier of the two reasons somebody is standing here, and it had no words at all.
+                 *
+                 * A seat is a token in one browser, so the second one gets spent by a private window
+                 * used to look at the room, or by whoever the link was forwarded to opening it once.
+                 * The person the room was actually for then arrives to a recovery box addressed to its
+                 * maker, which reads as the app telling her it is somebody else's room. A seat opened
+                 * once and abandoned now clears itself after a day; this is what to do before then.
+                 */}
+                <p className={s.small} style={{ textAlign: "center", marginTop: 10 }}>
+                  If this link was sent to you, one of the seats is being held by a browser that is not yours.
+                  Ask whoever sent it to free your seat, or open the link again tomorrow.
                 </p>
                 {/* A new phone lands on exactly this screen, so this is where the way back belongs.
                     Nothing here leaks: redeeming needs the code, and the code only ever goes to him. */}
@@ -1839,8 +1852,10 @@ function RoomPage({ id }: { id: string }) {
               (releasing ? (
                 <div className={s.panel} style={{ marginTop: 14 }}>
                   <p className={s.small} style={{ color: "var(--ink)" }}>
-                    This frees her seat, and whoever opens the link next becomes the cat. Send it to her again
-                    afterwards. She keeps her place in the notes and the line she left you.
+                    Her seat lives in one browser, so a new phone, a cleared browser or a private window you
+                    opened to look at the room can all end up holding it. This frees it, and whoever opens the
+                    link next becomes the cat, so send it to her again afterwards. She keeps her place in the
+                    notes and the line she left you.
                   </p>
                   <div className={s.row} style={{ marginTop: 12 }}>
                     <button className={s.btn} onClick={() => setReleasing(false)}>
@@ -1864,7 +1879,7 @@ function RoomPage({ id }: { id: string }) {
                 </div>
               ) : (
                 <button className={s.quiet} onClick={() => setReleasing(true)}>
-                  {view.them ?? "She"} got a new phone
+                  {view.them ?? "She"} can&apos;t get in
                 </button>
               ))}
           </>
