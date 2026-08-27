@@ -154,6 +154,10 @@ export interface RoomView {
   gift: Gift | null;
   /** A tiny window light left by the other seat. Touching the window collects it. */
   windowLight: boolean;
+  /** The token holding this seat. Adopt it: an account may have resolved a different one. */
+  seat: string | null;
+  /** This seat is tied to an account, so signing in anywhere reaches it. */
+  linked: boolean;
   /** Takes his seat back on a new device. Sent to him and nobody else. */
   recoveryCode: string | null;
   /** His side, so he can edit them. She must never receive the ones she has not reached. */

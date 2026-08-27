@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { getSessionUser } from "@aidenjang/auth-client";
 import type { Action, Mood } from "./types.js";
 import type { Tally } from "./remembers.js";
 import type { Env } from "./env.js";
@@ -14,6 +15,23 @@ const VALID_MOODS: Mood[] = ["good", "tired", "stressed", "sad", "lonely", "bore
 
 const room = (env: Env, id: string) => env.ROOM.get(env.ROOM.idFromName(id));
 
+/**
+ * Who is signed in, if anybody.
+ *
+ * The cookie is forwarded to the auth service rather than parsed here, which is the point of the
+ * shared session: this Worker never holds the secret and cannot be the thing that leaks it. An
+ * outage returns null, which this app treats as "not signed in" rather than as an error, because a
+ * room has never needed an account and must keep working without one.
+ */
+async function accountOf(request: Request, env: Env): Promise<string | null> {
+  try {
+    const user = await getSessionUser(request, env.AUTH_URL);
+    return user?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 app.get("/api/health", (c) => c.json({ ok: true }));
 
 /** Read the room. `me` is a token the browser keeps; it is the whole notion of identity here. */
@@ -21,7 +39,8 @@ app.get("/api/room/:id", async (c) => {
   const id = c.req.param("id");
   const me = c.req.query("me") ?? "";
   if (!ROOM_RE.test(id) || me.length < 8) return c.json({ error: "bad request" }, 400);
-  return c.json(await room(c.env, id).view(me, c.req.query("name") ?? null));
+  const account = await accountOf(c.req.raw, c.env);
+  return c.json(await room(c.env, id).view(me, c.req.query("name") ?? null, account));
 });
 
 app.post("/api/room/:id/act", async (c) => {
@@ -51,6 +70,26 @@ app.post("/api/room/:id/say", async (c) => {
     return c.json({ error: "bad request" }, 400);
   }
   return c.json(await room(c.env, id).say(body.me, body.text));
+});
+
+/**
+ * Tie the seat you are holding to the account you are signed into, or let it go.
+ *
+ * Optional, and never a step on the way in: the link still works with no account at all. What it buys
+ * is one thing, which is that a new phone can be handed this seat's token after signing in, instead
+ * of needing the recovery code typed in.
+ */
+app.post("/api/room/:id/link", async (c) => {
+  const id = c.req.param("id");
+  const body = (await c.req.json().catch(() => ({}))) as { me?: unknown; on?: unknown };
+  const me = typeof body.me === "string" ? body.me : "";
+  if (!ROOM_RE.test(id) || me.length < 8) return c.json({ error: "bad request" }, 400);
+
+  const account = await accountOf(c.req.raw, c.env);
+  if (!account) return c.json({ error: "not signed in" }, 401);
+
+  const ok = await room(c.env, id).linkAccount(me, account, body.on !== false);
+  return ok ? c.json({ ok: true }) : c.json({ error: "that account already has a seat here" }, 409);
 });
 
 /**

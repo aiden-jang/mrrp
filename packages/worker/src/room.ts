@@ -75,6 +75,15 @@ interface Person {
   firstSeen: number;
   lastSeen: number;
   visits: number;
+  /**
+   * An account this seat has been tied to, if its holder chose to.
+   *
+   * Entirely optional and never asked for at the door: the whole gesture is that she taps a link and
+   * is in a room with a cat, and a sign-in page in front of that would tax the one moment this app is
+   * for. Signing in later only means the room can hand this seat's token back on a new phone, which
+   * is the same job the recovery code does, without a string to keep.
+   */
+  account?: string;
 }
 
 /** One shared, replaceable glint — never a history, count, or unread obligation. */
@@ -92,9 +101,19 @@ interface WindowLight {
  */
 export class Room extends DurableObject<Env> {
   /** Read the room as `me` sees it, claiming a seat if one is free. */
-  async view(me: string, name: string | null): Promise<RoomView> {
+  async view(me: string, name: string | null, account?: string | null): Promise<RoomView> {
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     const now = Date.now();
+    /*
+     * A signed-in person is whichever seat they tied to this room, whatever browser they are in.
+     *
+     * The seat is still a token; the account only says which one. `seat` goes back in the view so the
+     * client can adopt it and use it for everything after this, which is why no other method in here
+     * had to learn about accounts. A token this browser has never seen is exactly as secret as the
+     * one it generated for itself, and it arrives only over a verified session.
+     */
+    const bound = account ? Object.keys(people).find((t) => people[t]?.account === account) : undefined;
+    if (bound && bound !== me) return this.view(bound, name);
     // Capture this before the visit updates it. build() uses the old timestamp to hand back only
     // what the other person left since this seat last opened the door.
     const lastVisit = people[me]?.lastSeen;
@@ -369,6 +388,33 @@ export class Room extends DurableObject<Env> {
       next[key] = copy;
     }
     if (moved) await this.ctx.storage.put("found", next);
+  }
+
+  /**
+   * Tie the caller's seat to their account, or let it go again.
+   *
+   * Seats only: a spectator has nothing to tie. One account may hold at most one seat in a room, or
+   * somebody could sign in on both sides and leave the room with one person and no cat. Across rooms
+   * it is unbounded, because the front door already offers to start another one for somebody else.
+   *
+   * Unlinking leaves the seat exactly where it is. It stops being reachable by signing in, which is
+   * what was asked for, and the recovery code still works.
+   */
+  async linkAccount(me: string, account: string, on: boolean): Promise<boolean> {
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    const { him, her } = this.roles(people);
+    if (me !== him && me !== her) return false;
+
+    if (on) {
+      const taken = Object.entries(people).find(([token, p]) => p.account === account && token !== me);
+      if (taken) return false;
+      people[me]!.account = account;
+    } else {
+      if (people[me]!.account !== account) return false;
+      delete people[me]!.account;
+    }
+    await this.ctx.storage.put("people", people);
+    return true;
   }
 
   /** The notes this room runs on: his if he wrote any, otherwise the shipped defaults. */
@@ -770,6 +816,10 @@ export class Room extends DurableObject<Env> {
       // His only, and readable for as long as he holds the seat. Useless to anybody else: redeeming it
       // requires knowing it, and he is the only one it is ever sent to.
       recoveryCode: seated ? await this.recoveryCode(youAreHer ? "her" : "him") : null,
+      /* The token that actually holds this seat. Differs from what the browser sent only when an
+         account resolved it, and the client adopts it so nothing else needs to know about accounts. */
+      seat: seated ? me : null,
+      linked: seated ? (people[me]?.account ?? null) !== null : false,
       // Only she sees what was done, because only he does anything.
       theirRecent: youAreHer && him ? log.filter((v) => v.who === him).slice(0, 4) : [],
       theyCameAfter: !!catTold && !!them && youAreHer && them.lastSeen > catTold.at,

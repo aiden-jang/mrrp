@@ -5,7 +5,9 @@ import {
   doAct,
   doClock,
   doDress,
+  adoptSeat,
   doDraw,
+  doLink,
   doNotes,
   doRecover,
   doRelease,
@@ -41,6 +43,8 @@ import {
   withCell,
 } from "./doodle.js";
 import { faviconFor } from "./favicon.js";
+import { loginUrl } from "@aidenjang/auth-client";
+import { AUTH_URL } from "./config.js";
 import { foundKeys, noticed } from "./discoveries.js";
 import { awayLine, milestoneLine, personalityLine } from "./remembers.js";
 import { myToken } from "./api.js";
@@ -743,6 +747,19 @@ function RoomPage({ id }: { id: string }) {
   const [name, setName] = useState("");
   const [shareResult, setShareResult] = useState<"copied" | "shared" | null>(null);
   const [did, setDid] = useState<string | null>(null);
+  const [linking, setLinking] = useState(false);
+  const link = async (on: boolean) => {
+    setLinking(true);
+    try {
+      await doLink(id, on);
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't do that.");
+    } finally {
+      setLinking(false);
+    }
+  };
+
   const [drawing, setDrawing] = useState(false);
   const hangUp = async (cells: string) => {
     setDrawing(true);
@@ -821,6 +838,8 @@ function RoomPage({ id }: { id: string }) {
     async (n?: string | null) => {
       try {
         const next = await fetchRoom(id, n ?? myName.get());
+        // Before anything else uses it: if an account resolved a different seat, that is now ours.
+        adoptSeat(next.seat);
         setView(next);
         lastCat.set(id, next.cat);
         /*
@@ -1916,6 +1935,31 @@ function RoomPage({ id }: { id: string }) {
               phone.
             </p>
             <RecoveryCode code={view.recoveryCode} />
+
+            {/*
+             * The other way back, for anybody who would rather not keep a code.
+             *
+             * Sits inside the same block because it answers the same question, and nowhere near the
+             * front door because the front door is the point: she taps a link and she is in. Signing
+             * in is something you can decide to do afterwards, or never.
+             */}
+            <p className={s.small} style={{ marginTop: 14 }}>
+              {view.linked
+                ? "This seat is on your account, so signing in on a new phone brings you straight back here."
+                : "Or sign in, and this seat comes back on any phone you sign in on. No code to keep."}
+            </p>
+            <button
+              className={s.quiet}
+              disabled={linking}
+              onClick={() => {
+                if (view.linked) return void link(false);
+                // Full-page redirect, and back to this exact room. The session cookie is never read
+                // in the browser: only this app's Worker ever asks the auth service who you are.
+                window.location.href = loginUrl(AUTH_URL, window.location.href);
+              }}
+            >
+              {view.linked ? "Take this seat off my account" : "Keep this seat on my account"}
+            </button>
           </details>
         )}
 
