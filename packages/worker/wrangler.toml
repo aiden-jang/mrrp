@@ -12,8 +12,9 @@ workers_dev = false
 directory = "../web/dist"
 binding = "ASSETS"
 
-# One instance per room. No WebSockets, and exactly one alarm: the one that erases a deleted room a
-# week later. Everything else only moves when somebody visits.
+# One instance per room. No WebSockets, and one alarm, which does the two things that must happen a
+# week later whether or not anybody comes back: erasing a deleted room, and dropping the side of it
+# somebody left. Everything else only moves when somebody visits.
 [[durable_objects.bindings]]
 name = "ROOM"
 class_name = "Room"
