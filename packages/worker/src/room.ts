@@ -689,6 +689,56 @@ export class Room extends DurableObject<Env> {
     return true;
   }
 
+  /*
+   * Everything the room holds about the two of them, as one file they can keep.
+   *
+   * The room is the only copy of any of this, and the privacy policy's answer to "can I have it" was
+   * an email address. This is the same answer, self-serve.
+   *
+   * Gated exactly like the view is, and for the same reason: her copy stops at the note she has
+   * actually read. An export that hands her the rest is the read-ahead leak with a filename on it,
+   * and it would be the easiest one in the app to miss, because nobody looks at a download twice.
+   */
+  async exportFor(me: string): Promise<Record<string, unknown> | null> {
+    await this.guard();
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    const { him, her } = this.roles(people);
+    if (me !== him && me !== her) return null;
+
+    const youAreHer = me === her;
+    const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
+    const notes = await this.notes();
+    const readSoFar = Math.min((await this.ctx.storage.get<number>("noteIdx")) ?? 0, notes.length - 1);
+
+    return {
+      takenAt: new Date().toISOString(),
+      you: people[me]?.name ?? null,
+      them: (youAreHer ? him : her) ? (people[youAreHer ? him! : her!]?.name ?? null) : null,
+      youAreTheCat: youAreHer,
+      startedAt: new Date(
+        roomStartedAt(
+          Object.values(people).map((person) => person.firstSeen),
+          Date.now(),
+        ),
+      ).toISOString(),
+      cat: (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT,
+      clock,
+      blanket: (await this.ctx.storage.get<Blanket>("blanket")) ?? null,
+      ourDay: (await this.ctx.storage.get<OurDay>("ourDay")) ?? null,
+      drawing: (await this.ctx.storage.get<Doodle>("doodle"))?.cells ?? null,
+      // His in full, hers up to the one she has read. The count is not a secret; the words are.
+      notes: youAreHer ? notes.slice(0, readSoFar + 1) : notes,
+      notesInAll: notes.length,
+      found: Object.keys(await this.found()),
+      visits: Object.fromEntries(
+        Object.entries(people).map(([token, person]) => [
+          token === me ? "you" : "them",
+          { name: person.name, since: new Date(person.firstSeen).toISOString(), times: person.visits },
+        ]),
+      ),
+    };
+  }
+
   async tell(me: string, mood: Mood): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};

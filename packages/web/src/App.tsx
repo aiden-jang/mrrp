@@ -1971,6 +1971,22 @@ function RoomPage({ id }: { id: string }) {
           </div>
         )}
 
+        {/*
+            Out in the room for the same reason signing in is: it is a thing you have to know you can
+            do. The privacy policy's answer to "can I have a copy" was an email address, which is a
+            fine promise and a bad feature.
+
+            A plain link, not a button, because it is a GET the browser downloads. Whoever asks gets
+            their own room: hers stops at the note she has read, like every other way of looking.
+          */}
+        {!setup && (iAmHim || view.youAreHer) && (
+          <p className={s.account}>
+            <a className={s.creditLink} href={`/api/room/${id}/export?me=${encodeURIComponent(myToken())}`}>
+              Take a copy of everything in here
+            </a>
+          </p>
+        )}
+
         {!setup && view.recoveryCode && (
           <details className={s.recovery}>
             <summary className={s.recoverySummary}>or keep a code instead</summary>
