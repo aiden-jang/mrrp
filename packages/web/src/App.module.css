@@ -149,11 +149,6 @@
 }
 
 /** The recovery-code disclosure, on his side. Closed by default: it is reassurance, not a task. */
-.account {
-  margin-top: 18px;
-  text-align: center;
-}
-
 .recovery {
   margin-top: 18px;
   padding: 10px 14px;
@@ -828,4 +823,30 @@ details[open] > .recoverySummary::before {
   width: 3px;
   height: 14px;
   border-radius: 1px;
+}
+
+/*
+ * Everything that is about the room rather than about her, in one block.
+ *
+ * These were eight quiet links stacked at identical weight, so the thing you do most looked exactly
+ * as important as the thing you do once a year. The heading and the rule above it are what say
+ * "below here is admin", which is the whole job.
+ */
+.roomBits {
+  margin-top: 26px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+.roomBitsTitle {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+  color: var(--soft);
+  opacity: 0.75;
+  margin: 0 0 4px;
+}
+.accountInBits {
+  text-align: center;
+  margin-top: 6px;
 }
