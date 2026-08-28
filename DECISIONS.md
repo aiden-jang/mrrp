@@ -119,6 +119,15 @@ holding your login is one service, and mrrp is not a second place it could leak 
 is down the answer is "not signed in", which is a state the whole app already works in, rather than an
 error page: a room has never needed an account.
 
+That promise went untested for a long time, which is the worst shape for a promise: the account tests
+all handed the room an account id directly, so every one of them started a step after the question
+"who is this". The seam now has its own tests, and they check the outage by pointing AUTH_URL at a
+port that refuses instantly. They were verified by deleting the `catch` in `accountOf` and confirming
+all three go red, because a test for a swallowed error passes just as happily when nothing is thrown.
+
+What is still untested is a real session: that needs a cookie, which needs a login, which needs a
+person.
+
 ## Nothing accumulates into an inbox
 
 The arrival card is capped and clears itself. The visit log is bounded. There is no unread count, no
