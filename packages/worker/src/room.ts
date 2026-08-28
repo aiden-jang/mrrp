@@ -65,6 +65,21 @@ interface Tombstone {
   erasesAt: number;
 }
 
+const LEFT_SIDE = "leftSide";
+
+// What she took out of the room, kept just long enough to put back. The seat is genuinely free the
+// whole time: he can hand it to somebody else, and if he does, this stops being restorable.
+interface LeftSide {
+  token: string;
+  at: number;
+  dropsAt: number;
+  person: Person;
+  mood?: Told;
+  visits: Visit[];
+  recovery?: string;
+  light?: WindowLight;
+}
+
 // Thrown by every method on a deleted room. index.ts turns it into a 410. Matched by message, not by
 // class, because a Durable Object RPC boundary carries the message across and not the prototype.
 export const ROOM_GONE = "mrrp: room deleted";
@@ -405,15 +420,22 @@ export class Room extends DurableObject<Env> {
   async undelete(me: string): Promise<boolean> {
     if (!(await this.undoUntil(me))) return false;
     await this.ctx.storage.delete(TOMBSTONE);
-    await this.ctx.storage.deleteAlarm();
+    await this.scheduleNext();
     return true;
   }
 
   // The only alarm in the app, and the only thing here that happens without somebody visiting. It has
-  // to be: a delete that only completes if one of them comes back is not a delete.
+  // to be: a delete that only completes if one of them comes back is not a delete, and neither is a
+  // week of her data kept in a room nobody opens again.
   async alarm(): Promise<void> {
     const stone = await this.ctx.storage.get<Tombstone>(TOMBSTONE);
-    if (stone) await this.erase(stone);
+    if (stone && Date.now() >= stone.erasesAt) {
+      // Erasing takes the whole room, including anything she left behind, so nothing else to do.
+      await this.erase(stone);
+      return;
+    }
+    await this.sweepLeftSide();
+    await this.scheduleNext();
   }
 
   private async erase(stone: Tombstone): Promise<void> {
@@ -433,7 +455,7 @@ export class Room extends DurableObject<Env> {
     const at = Date.now();
     const erasesAt = at + UNDO_MS;
     await this.ctx.storage.put<Tombstone>(TOMBSTONE, { at, erasesAt });
-    await this.ctx.storage.setAlarm(erasesAt);
+    await this.scheduleNext();
     return erasesAt;
   }
 
@@ -468,16 +490,34 @@ export class Room extends DurableObject<Env> {
     if (!her) return;
 
     const moods = (await this.ctx.storage.get<Record<string, Told>>("moods")) ?? {};
+    const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
+    const light = await this.ctx.storage.get<WindowLight>("windowLight");
+    const recovery = await this.ctx.storage.get<string>("recoveryHer");
+
+    // Kept only when she is the one leaving. Him freeing the seat is not a thing anybody undoes: it
+    // is done precisely because whoever held that seat is not coming back to that browser.
+    if (bar) {
+      const at = Date.now();
+      await this.ctx.storage.put<LeftSide>(LEFT_SIDE, {
+        token: her,
+        at,
+        dropsAt: at + UNDO_MS,
+        person: people[her]!,
+        mood: moods[her],
+        visits: log.filter((v) => v.who === her),
+        recovery,
+        light: light?.from === her ? light : undefined,
+      });
+    }
+
     delete moods[her];
     delete people[her];
     await this.ctx.storage.put("people", people);
     await this.ctx.storage.put("moods", moods);
-    const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
     await this.ctx.storage.put(
       "log",
       log.filter((v) => v.who !== her),
     );
-    const light = await this.ctx.storage.get<WindowLight>("windowLight");
     if (light?.from === her) await this.ctx.storage.delete("windowLight");
     await this.ctx.storage.delete("recoveryHer");
     // What she had noticed waits for whoever takes the seat next, or the seat emptying quietly takes
@@ -487,7 +527,75 @@ export class Room extends DurableObject<Env> {
     if (bar) {
       const left = (await this.ctx.storage.get<string[]>("left")) ?? [];
       await this.ctx.storage.put("left", [her, ...left.filter((t) => t !== her)].slice(0, LEFT_KEEP));
+      await this.scheduleNext();
     }
+  }
+
+  // Whether she can still put her side back, and until when. Null once the week is up, once somebody
+  // else has taken the empty seat, or for anybody who is not her.
+  async undoLeaveUntil(me: string): Promise<number | null> {
+    const kept = await this.sweepLeftSide();
+    if (!kept || kept.token !== me) return null;
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    return this.roles(people).her ? null : kept.dropsAt;
+  }
+
+  async unleave(me: string): Promise<boolean> {
+    if (!(await this.undoLeaveUntil(me))) return false;
+    const kept = (await this.ctx.storage.get<LeftSide>(LEFT_SIDE))!;
+
+    // Her original firstSeen goes back untouched. Stamp it fresh and she sorts after him differently
+    // only by luck; the whole notion of who the cat is rests on that one number.
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    people[kept.token] = kept.person;
+    await this.ctx.storage.put("people", people);
+
+    if (kept.mood) {
+      const moods = (await this.ctx.storage.get<Record<string, Told>>("moods")) ?? {};
+      moods[kept.token] = kept.mood;
+      await this.ctx.storage.put("moods", moods);
+    }
+    if (kept.visits.length > 0) {
+      const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
+      const merged = [...log, ...kept.visits].sort((a, b) => b.at - a.at).slice(0, LOG_KEEP);
+      await this.ctx.storage.put("log", merged);
+    }
+    if (kept.recovery) await this.ctx.storage.put("recoveryHer", kept.recovery);
+    if (kept.light) await this.ctx.storage.put("windowLight", kept.light);
+
+    // Only if nobody has claimed it. Once her ledger has been adopted by a new seat it is theirs, and
+    // taking it back off them would be the same bug in the other direction.
+    if ((await this.ctx.storage.get<string>("handover")) === kept.token) {
+      await this.ctx.storage.delete("handover");
+    }
+
+    const left = (await this.ctx.storage.get<string[]>("left")) ?? [];
+    await this.ctx.storage.put(
+      "left",
+      left.filter((t) => t !== kept.token),
+    );
+    await this.ctx.storage.delete(LEFT_SIDE);
+    await this.scheduleNext();
+    return true;
+  }
+
+  // Drops what she left behind once the week is up, and hands back what is still inside it.
+  private async sweepLeftSide(): Promise<LeftSide | null> {
+    const kept = await this.ctx.storage.get<LeftSide>(LEFT_SIDE);
+    if (!kept) return null;
+    if (Date.now() < kept.dropsAt) return kept;
+    await this.ctx.storage.delete(LEFT_SIDE);
+    return null;
+  }
+
+  // One alarm, two possible deadlines. Whichever comes first wins, and alarm() reschedules for the
+  // other one if it is still out there.
+  private async scheduleNext(): Promise<void> {
+    const stone = await this.ctx.storage.get<Tombstone>(TOMBSTONE);
+    const kept = await this.ctx.storage.get<LeftSide>(LEFT_SIDE);
+    const due = [stone?.erasesAt, kept?.dropsAt].filter((t): t is number => typeof t === "number");
+    if (due.length === 0) await this.ctx.storage.deleteAlarm();
+    else await this.ctx.storage.setAlarm(Math.min(...due));
   }
 
   async tell(me: string, mood: Mood): Promise<RoomView> {
@@ -617,6 +725,7 @@ export class Room extends DurableObject<Env> {
 
   private async build(me: string, people: Record<string, Person>, since?: number): Promise<RoomView> {
     const youLeft = !people[me] && ((await this.ctx.storage.get<string[]>("left")) ?? []).includes(me);
+    const undoLeaveUntil = youLeft ? await this.undoLeaveUntil(me) : null;
     const cat = (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT;
     const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
     const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
@@ -677,6 +786,7 @@ export class Room extends DurableObject<Env> {
       clock,
       youAreHer,
       youLeft,
+      undoLeaveUntil,
       catMood: catTold?.mood ?? null,
       catMoodAt: catTold?.at ?? null,
       you: people[me]?.name ?? null,

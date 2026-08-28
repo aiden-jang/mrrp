@@ -82,6 +82,9 @@ export interface RoomView {
   // True only for a browser that used the leave button. It is why the room does not simply seat her
   // again on her next visit, and it is what the client shows the way back on.
   youLeft: boolean;
+  // When she can still put her side back, if she can. Null once the week is up or once somebody else
+  // has taken the seat she freed.
+  undoLeaveUntil: number | null;
   catMood: Mood | null;
   catMoodAt: number | null;
   you: string | null;

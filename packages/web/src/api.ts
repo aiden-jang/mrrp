@@ -176,6 +176,15 @@ export async function doDelete(id: string, name: string): Promise<number> {
   return ((await r.json()) as { undoUntil: number }).undoUntil;
 }
 
+export async function doUnleave(id: string): Promise<void> {
+  const r = await fetch(`/api/room/${id}/unleave`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ me: myToken() }),
+  });
+  if (!r.ok) throw new Error("The seat has been taken, so there is nothing to come back to.");
+}
+
 export async function doUndelete(id: string): Promise<void> {
   const r = await fetch(`/api/room/${id}/undelete`, {
     method: "POST",
