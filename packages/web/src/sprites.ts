@@ -398,17 +398,19 @@ export const PLANT = sprite(
 /** A picture on the wall. It is a fish, which is the only art she would have chosen. */
 export const FRAME = sprite(
   [
-    "wwwwwwwwwwwww",
-    "wfffffffffffw",
-    "wfwwwwwwwwwfw",
-    "wfwhhhhhhhwfw",
-    "wfwhhgggwhwfw",
-    "wfwhggggggwfw",
-    "wfwhhgggwhwfw",
-    "wfwhhhhhhhwfw",
-    "wfwwwwwwwwwfw",
-    "wfffffffffffw",
-    "wwwwwwwwwwwww",
+    "wwwwwwwwwwwwwwwww",
+    "wfffffffffffffffw",
+    "wfwwwwwwwwwwwwwfw",
+    "wfwhhhhhhhhhhhwfw",
+    "wfwhhhhggghhggwfw",
+    "wfwhhgggggghggwfw",
+    "wfwhgggwggggggwfw",
+    "wfwhhgggggghggwfw",
+    "wfwhhhhggghhggwfw",
+    "wfwhhhhhhhhhhhwfw",
+    "wfwwwwwwwwwwwwwfw",
+    "wfffffffffffffffw",
+    "wwwwwwwwwwwwwwwww",
   ],
   0,
   0,
@@ -424,24 +426,26 @@ export const FRAME = sprite(
 // prettier-ignore
 export const FRAME_EMPTY = sprite(
   [
-    "wwwwwwwwwwwww",
-    "wfffffffffffw",
-    "wfwwwwwwwwwfw",
-    "wfwhhhhhhhwfw",
-    "wfwhhhhhhhwfw",
-    "wfwhhhhhhhwfw",
-    "wfwhhhhhhhwfw",
-    "wfwhhhhhhhwfw",
-    "wfwwwwwwwwwfw",
-    "wfffffffffffw",
-    "wwwwwwwwwwwww",
+    "wwwwwwwwwwwwwwwww",
+    "wfffffffffffffffw",
+    "wfwwwwwwwwwwwwwfw",
+    "wfwhhhhhhhhhhhwfw",
+    "wfwhhhhhhhhhhhwfw",
+    "wfwhhhhhhhhhhhwfw",
+    "wfwhhhhhhhhhhhwfw",
+    "wfwhhhhhhhhhhhwfw",
+    "wfwhhhhhhhhhhhwfw",
+    "wfwhhhhhhhhhhhwfw",
+    "wfwwwwwwwwwwwwwfw",
+    "wfffffffffffffffw",
+    "wwwwwwwwwwwwwwwww",
   ],
   0,
   0,
 );
 
 /** Top-left of the hole in every frame grid above, and how big it is. A drawing is exactly this. */
-export const FRAME_HOLE = { x: 3, y: 3, w: 7, h: 5 };
+export const FRAME_HOLE = { x: 3, y: 3, w: 11, h: 7 };
 
 /**
  * The word, hand-set. Real letters rather than canvas fillText: at this scale antialiased text beside
@@ -495,17 +499,19 @@ export const HEAD = sprite(
 
 export const FRAME_CAT = sprite(
   [
-    "wwwwwwwwwwwww",
-    "wfffffffffffw",
-    "wfwwwwwwwwwfw",
-    "wfwcchhhccwfw",
-    "wfwcccccccwfw",
-    "wfwcecccecwfw",
-    "wfwcccncccwfw",
-    "wfwwwwwwwwwfw",
-    "wfwwwwwwwwwfw",
-    "wfffffffffffw",
-    "wwwwwwwwwwwww",
+    "wwwwwwwwwwwwwwwww",
+    "wfffffffffffffffw",
+    "wfwwwwwwwwwwwwwfw",
+    "wfwhhhhhhhhhhhwfw",
+    "wfwhhcchhhcchhwfw",
+    "wfwhccccccccchwfw",
+    "wfwhcecccccechwfw",
+    "wfwhccccncccchwfw",
+    "wfwhhccccccchhwfw",
+    "wfwhhhhhhhhhhhwfw",
+    "wfwwwwwwwwwwwwwfw",
+    "wfffffffffffffffw",
+    "wwwwwwwwwwwwwwwww",
   ],
   0,
   0,

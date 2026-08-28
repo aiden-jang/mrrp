@@ -427,3 +427,27 @@ describe("the thing she only does for both of you", () => {
     expect((await post("found", { me: STRANGER, key: "belly" })).status).toBe(400);
   });
 });
+
+describe("a drawing from before the sheet grew", () => {
+  // Real rooms have seven-by-five drawings in them. Growing the grid without widening these on the
+  // way out would have quietly blanked somebody's frame.
+  it("comes back centred in the bigger sheet rather than blank", async () => {
+    await seat();
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    const old = "1" + "0".repeat(34);
+    await runInDurableObject(stub, async (_instance, state) => {
+      await state.storage.put("doodle", { cells: old, by: HER, at: Date.now() });
+    });
+
+    const seen = (await view(HIM)).doodle;
+    expect(seen?.cells).toHaveLength(77);
+    // The old top-left corner sits at column 2, row 1 of the new sheet.
+    expect(seen?.cells[1 * 11 + 2]).toBe("1");
+    expect(seen?.cells.replace(/0/g, "")).toBe("1");
+  });
+
+  it("will not take a seven-by-five drawing as a new one", async () => {
+    await seat();
+    expect((await post("draw", { me: HER, cells: "1" + "0".repeat(34) })).status).toBe(400);
+  });
+});

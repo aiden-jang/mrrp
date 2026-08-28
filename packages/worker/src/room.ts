@@ -39,7 +39,19 @@ import {
   type Tally,
 } from "./remembers.js";
 
-const DOODLE_CELLS = 35;
+const DOODLE_CELLS = 77;
+// What the sheet used to be, seven by five. Drawings that size are hanging in real rooms, so they are
+// widened on the way out rather than thrown away.
+const OLD_DOODLE_CELLS = 35;
+
+function widenDoodle(cells: string): string {
+  if (cells.length !== OLD_DOODLE_CELLS) return cells;
+  const out = Array.from({ length: DOODLE_CELLS }, () => "0");
+  for (let y = 0; y < 5; y++) {
+    for (let x = 0; x < 7; x++) out[(y + 1) * 11 + (x + 2)] = cells[y * 7 + x]!;
+  }
+  return out.join("");
+}
 
 const LOG_KEEP = 40;
 // Enough that leaving holds on every browser she has used. It is a list of random tokens, not names.
@@ -725,7 +737,7 @@ export class Room extends DurableObject<Env> {
       clock,
       blanket: (await this.ctx.storage.get<Blanket>("blanket")) ?? null,
       ourDay: (await this.ctx.storage.get<OurDay>("ourDay")) ?? null,
-      drawing: (await this.ctx.storage.get<Doodle>("doodle"))?.cells ?? null,
+      drawing: ((c) => (c ? widenDoodle(c) : null))((await this.ctx.storage.get<Doodle>("doodle"))?.cells),
       // His in full, hers up to the one she has read. The count is not a secret; the words are.
       notes: youAreHer ? notes.slice(0, readSoFar + 1) : notes,
       notesInAll: notes.length,
@@ -869,7 +881,7 @@ export class Room extends DurableObject<Env> {
   private async doodleFor(me: string, seated: boolean): Promise<RoomView["doodle"]> {
     if (!seated) return null;
     const d = await this.ctx.storage.get<Doodle>("doodle");
-    return d ? { cells: d.cells, mine: d.by === me, at: d.at } : null;
+    return d ? { cells: widenDoodle(d.cells), mine: d.by === me, at: d.at } : null;
   }
 
   private async noteFor(clock: Clock, isHer: boolean, bothHere: boolean): Promise<Note | null> {
