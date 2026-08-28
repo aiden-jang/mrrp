@@ -730,8 +730,10 @@ function RoomPage({ id }: { id: string }) {
   const [shareResult, setShareResult] = useState<"copied" | "shared" | null>(null);
   const [did, setDid] = useState<string | null>(null);
   const [linking, setLinking] = useState(false);
+  const [linkErr, setLinkErr] = useState<string | null>(null);
   const link = async (on: boolean) => {
     setLinking(true);
+    setLinkErr(null);
     try {
       await doLink(id, on);
       await load();
@@ -743,7 +745,10 @@ function RoomPage({ id }: { id: string }) {
         window.location.href = loginUrl(AUTH_URL, window.location.href);
         return;
       }
-      setErr(e instanceof Error ? e.message : "Couldn't do that.");
+      // Next to the button, not in the banner at the top of the page. The account control sits far
+      // down a long room, so the shared error line for it was usually off screen: you tapped, nothing
+      // appeared to happen, and the reason was scrolled out of sight above you.
+      setLinkErr(e instanceof Error ? e.message : "Couldn't do that.");
     } finally {
       setLinking(false);
     }
@@ -1931,6 +1936,11 @@ function RoomPage({ id }: { id: string }) {
                 >
                   {view.linked ? "Take this seat off my account" : "Keep this seat on my account"}
                 </button>
+                {linkErr && (
+                  <p className={s.small} style={{ marginTop: 8, color: "var(--error)" }} role="status">
+                    {linkErr}
+                  </p>
+                )}
               </div>
             )}
 

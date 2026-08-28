@@ -429,25 +429,37 @@ describe("the thing she only does for both of you", () => {
 });
 
 describe("a drawing from before the sheet grew", () => {
-  // Real rooms have seven-by-five drawings in them. Growing the grid without widening these on the
-  // way out would have quietly blanked somebody's frame.
-  it("comes back centred in the bigger sheet rather than blank", async () => {
-    await seat();
+  // The sheet has grown twice. Every size it has ever been has to come back rather than blank, because
+  // a room nobody has opened in a year still holds whatever it held.
+  const hang = async (cells: string) => {
     const stub = env.ROOM.get(env.ROOM.idFromName(id));
-    const old = "1" + "0".repeat(34);
     await runInDurableObject(stub, async (_instance, state) => {
-      await state.storage.put("doodle", { cells: old, by: HER, at: Date.now() });
+      await state.storage.put("doodle", { cells, by: HER, at: Date.now() });
     });
+  };
 
+  it("brings a seven-by-five back, centred", async () => {
+    await seat();
+    await hang("1" + "0".repeat(34));
     const seen = (await view(HIM)).doodle;
-    expect(seen?.cells).toHaveLength(77);
-    // The old top-left corner sits at column 2, row 1 of the new sheet.
-    expect(seen?.cells[1 * 11 + 2]).toBe("1");
+    expect(seen?.cells).toHaveLength(135);
+    expect(seen?.cells[2 * 15 + 4]).toBe("1");
     expect(seen?.cells.replace(/0/g, "")).toBe("1");
   });
 
-  it("will not take a seven-by-five drawing as a new one", async () => {
+  it("brings an eleven-by-seven back, centred", async () => {
+    await seat();
+    await hang("1" + "0".repeat(76));
+    const seen = (await view(HIM)).doodle;
+    expect(seen?.cells).toHaveLength(135);
+    expect(seen?.cells[1 * 15 + 2]).toBe("1");
+    expect(seen?.cells.replace(/0/g, "")).toBe("1");
+  });
+
+  it("will not take an old size as a new drawing", async () => {
     await seat();
     expect((await post("draw", { me: HER, cells: "1" + "0".repeat(34) })).status).toBe(400);
+    expect((await post("draw", { me: HER, cells: "1" + "0".repeat(76) })).status).toBe(400);
+    expect((await post("draw", { me: HER, cells: "1" + "0".repeat(134) })).status).toBe(200);
   });
 });
