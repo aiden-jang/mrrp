@@ -1,3 +1,4 @@
+import type { BlanketKey } from "./blanket.js";
 import type { DiscoveryKey } from "./discoveries.js";
 
 export type Action = "pet" | "brush" | "bring" | "sit" | "photo";
@@ -120,6 +121,8 @@ export interface RoomView {
   monthsOld: number;
   shelfDown: boolean;
   gift: Gift | null;
+  // What she chose for her bed, or null while the room still has the one it came with.
+  blanket: { key: BlanketKey; stripe: boolean } | null;
   windowLight: boolean;
   seat: string | null;
   linked: boolean;

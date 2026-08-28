@@ -14,6 +14,7 @@ import type {
   Visit,
 } from "./types.js";
 import { NOTES } from "./notes.js";
+import { isBlanketKey, type BlanketKey } from "./blanket.js";
 import {
   arrivalsFor,
   bothFound,
@@ -109,6 +110,11 @@ interface Person {
   lastSeen: number;
   visits: number;
   account?: string;
+}
+
+interface Blanket {
+  key: BlanketKey;
+  stripe: boolean;
 }
 
 interface WindowLight {
@@ -596,6 +602,17 @@ export class Room extends DurableObject<Env> {
     else await this.ctx.storage.setAlarm(Math.min(...due));
   }
 
+  // Hers, and the only thing in the room that is. Checked here rather than only at the route, like
+  // every other rule about who may write what.
+  async setBlanket(me: string, key: unknown, stripe: unknown): Promise<boolean> {
+    await this.guard();
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (this.roles(people).her !== me) return false;
+    if (!isBlanketKey(key)) return false;
+    await this.ctx.storage.put<Blanket>("blanket", { key, stripe: stripe === true });
+    return true;
+  }
+
   async tell(me: string, mood: Mood): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -816,6 +833,7 @@ export class Room extends DurableObject<Env> {
       framed: (await this.ctx.storage.get<boolean>("framed")) ?? false,
       shelfDown: (await this.ctx.storage.get<boolean>("shelfDown")) ?? false,
       gift: me === him ? ((await this.ctx.storage.get<Gift>("gift")) ?? null) : null,
+      blanket: (await this.ctx.storage.get<Blanket>("blanket")) ?? null,
       windowLight: seated && !!windowLight && windowLight.from !== me,
       box: ((await this.ctx.storage.get<number>("boxDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
       brought:

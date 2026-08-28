@@ -791,3 +791,41 @@ details[open] > .recoverySummary::before {
   aspect-ratio: 1;
   border-radius: 1px;
 }
+
+/* Her blanket. A row of swatches, sized so a thumb hits one and not the next. */
+.blanketRow {
+  margin-top: 14px;
+  text-align: center;
+}
+.blanketLabel {
+  font-size: 12px;
+  color: var(--soft);
+  margin: 0 0 6px;
+}
+.blanketSwatches {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.blanketSwatch,
+.blanketStripe {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 2px solid;
+  cursor: pointer;
+  padding: 0;
+}
+.blanketStripe {
+  background: var(--panel);
+  display: grid;
+  grid-auto-flow: column;
+  gap: 3px;
+  place-content: center;
+}
+.blanketStripe span {
+  display: block;
+  width: 3px;
+  height: 14px;
+  border-radius: 1px;
+}

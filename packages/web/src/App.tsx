@@ -7,6 +7,7 @@ import {
   doDress,
   adoptSeat,
   doDelete,
+  doBlanket,
   doDraw,
   doLeave,
   doLink,
@@ -58,6 +59,7 @@ import { foundKeys, noticed } from "./discoveries.js";
 import { awayLine, milestoneLine, personalityLine } from "./remembers.js";
 import { myToken } from "./api.js";
 import { GoneCard, LeftCard, TheyLeftNotice } from "./screens.js";
+import { BLANKETS, BLANKET_KEYS, type BlanketKey } from "./blanket.js";
 
 const ACTION_SOUND: Record<Action, Cue> = {
   pet: "purr",
@@ -521,6 +523,20 @@ function RoomPage({ id }: { id: string }) {
       // The mug is still on the floor. Tap it again.
     }
   }, []);
+  const [bedding, setBedding] = useState(false);
+  const pickBlanket = async (key: BlanketKey, stripe: boolean) => {
+    setBedding(true);
+    // Optimistic, like the moods. She is choosing how her own bed looks and the room should change
+    // under her finger, not a round trip later.
+    setView((v) => (v ? { ...v, blanket: { key, stripe } } : v));
+    try {
+      setView(await doBlanket(id, key, stripe));
+    } catch {
+      // The bed is still whatever it was. Tapping another one is the retry.
+    }
+    setBedding(false);
+  };
+
   const [leaveArmed, setLeaveArmed] = useState(false);
   const [typedName, setTypedName] = useState("");
   const [ending, setEnding] = useState(false);
@@ -1140,6 +1156,7 @@ function RoomPage({ id }: { id: string }) {
             eyesOpen={setup}
             framed={view.framed}
             doodle={view.doodle?.cells ?? null}
+            blanket={view.blanket}
             spot={herSpot}
             doorOpenAt={doorOpenAt}
             watchDoorAt={watchDoorAt}
@@ -1660,6 +1677,10 @@ function RoomPage({ id }: { id: string }) {
 
             <FrameSheet current={view.doodle} saving={drawing} onSave={(c) => void hangUp(c)} />
 
+            {/* Beside the frame because they are the two things she makes, and the frame is the one
+                she already knows about. */}
+            <BlanketRow current={view.blanket} busy={bedding} onPick={(k, st) => void pickBlanket(k, st)} />
+
             <p className={s.tellLabel}>
               {view.catMood
                 ? `still ${MOODS.find((m) => m.id === view.catMood)?.label}?`
@@ -2043,6 +2064,60 @@ function FaviconSync({ cat }: { cat: CatLook }) {
     };
   }, [fur, furDk, belly, eyes, tabby]);
   return null;
+}
+
+/*
+ * Five blankets and a stripe, which is the whole of what she can change.
+ *
+ * Swatches rather than a list of names, because the choice is a look and reading "moss" tells you
+ * less than seeing it. Small and in a row so it reads as picking, not as a settings screen: this is
+ * the only thing in the room that is hers and it should cost one tap.
+ */
+function BlanketRow({
+  current,
+  busy,
+  onPick,
+}: {
+  current: RoomView["blanket"];
+  busy: boolean;
+  onPick: (key: BlanketKey, stripe: boolean) => void;
+}) {
+  const key = current?.key ?? "rose";
+  const stripe = current?.stripe ?? false;
+  return (
+    <div className={s.blanketRow}>
+      <p className={s.blanketLabel}>her blanket</p>
+      <div className={s.blanketSwatches}>
+        {BLANKET_KEYS.map((k) => (
+          <button
+            key={k}
+            type="button"
+            className={s.blanketSwatch}
+            aria-label={k}
+            aria-pressed={k === key}
+            disabled={busy}
+            style={{
+              background: BLANKETS[k].b,
+              borderColor: k === key ? "var(--ink)" : BLANKETS[k].d,
+            }}
+            onClick={() => onPick(k, stripe)}
+          />
+        ))}
+        <button
+          type="button"
+          className={s.blanketStripe}
+          aria-label="stripes"
+          aria-pressed={stripe}
+          disabled={busy}
+          style={{ borderColor: stripe ? "var(--ink)" : "var(--line)" }}
+          onClick={() => onPick(key, !stripe)}
+        >
+          <span style={{ background: BLANKETS[key].d }} />
+          <span style={{ background: BLANKETS[key].d }} />
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function FrameSheet({
