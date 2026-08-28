@@ -39,7 +39,15 @@ app.get("/api/room/:id", async (c) => {
   const me = c.req.query("me") ?? "";
   if (!ROOM_RE.test(id) || me.length < 8) return c.json({ error: "bad request" }, 400);
   const account = await accountOf(c.req.raw, c.env);
-  return c.json(await room(c.env, id).view(me, c.req.query("name") ?? null, account));
+  try {
+    return c.json(await room(c.env, id).view(me, c.req.query("name") ?? null, account));
+  } catch (e) {
+    // Handled here rather than by the shared handler below, because this is the one route that has to
+    // say more than "gone": the person who deleted the room can still put it back, and this is where
+    // he lands when he does not mean it.
+    if ((e as Error).message !== ROOM_GONE) throw e;
+    return c.json({ error: "gone", undoUntil: await room(c.env, id).undoUntil(me) }, 410);
+  }
 });
 
 app.post("/api/room/:id/act", async (c) => {
@@ -232,8 +240,18 @@ app.post("/api/room/:id/delete", async (c) => {
   const me = typeof body.me === "string" ? body.me : "";
   const name = typeof body.name === "string" ? body.name : "";
   if (me.length < 8 || !name) return c.json({ error: "bad request" }, 400);
-  const ok = await room(c.env, id).deleteRoom(me, name);
-  return ok ? c.json({ ok: true }) : c.json({ error: "not yours to delete" }, 403);
+  const erasesAt = await room(c.env, id).deleteRoom(me, name);
+  return erasesAt ? c.json({ ok: true, undoUntil: erasesAt }) : c.json({ error: "not yours to delete" }, 403);
+});
+
+app.post("/api/room/:id/undelete", async (c) => {
+  const id = c.req.param("id");
+  if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
+  const body = (await c.req.json().catch(() => ({}))) as { me?: unknown };
+  const me = typeof body.me === "string" ? body.me : "";
+  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+  const ok = await room(c.env, id).undelete(me);
+  return ok ? c.json({ ok: true }) : c.json({ error: "too late, or not yours" }, 403);
 });
 
 app.post("/api/room/:id/leave", async (c) => {

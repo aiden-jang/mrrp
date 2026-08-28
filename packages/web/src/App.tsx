@@ -19,9 +19,11 @@ import {
   doTidy,
   doWindowLight,
   fetchRoom,
+  doUndelete,
   forgetMe,
   forgetRoom,
   GONE,
+  GoneError,
   lastCat,
   lastRoom,
   myName,
@@ -484,7 +486,7 @@ function RoomPage({ id }: { id: string }) {
   const [found, setFound] = useState("");
   const [imageStatus, setImageStatus] = useState<"saving" | "shared" | "saved" | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [gone, setGone] = useState(false);
+  const [gone, setGone] = useState<{ undoUntil: number | null } | null>(null);
   const handleCaptureReady = useCallback((capture: () => Promise<Blob | null>) => {
     setCaptureRoom(() => capture);
   }, []);
@@ -523,12 +525,25 @@ function RoomPage({ id }: { id: string }) {
   const endRoom = async () => {
     setEnding(true);
     try {
-      await doDelete(id, typedName);
+      const undoUntil = await doDelete(id, typedName);
       forgetRoom(id);
-      setGone(true);
+      setGone({ undoUntil });
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Couldn't delete the room.");
       setEnding(false);
+    }
+  };
+  const [undoing, setUndoing] = useState(false);
+  const putBackRoom = async () => {
+    setUndoing(true);
+    try {
+      await doUndelete(id);
+      // A full reload rather than setGone(null). Everything this page holds was thrown away when the
+      // room went, and the room it comes back to is the one on the server, not the one in memory.
+      window.location.reload();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't put it back.");
+      setUndoing(false);
     }
   };
   const leave = async () => {
@@ -792,7 +807,7 @@ function RoomPage({ id }: { id: string }) {
         // "the train went into a tunnel"; this one is an answer.
         if (e instanceof Error && e.message === GONE) {
           forgetRoom(id);
-          setGone(true);
+          setGone({ undoUntil: e instanceof GoneError ? e.undoUntil : null });
           return;
         }
         setErr(`${e instanceof Error ? e.message : "Something went wrong."} Trying again in a moment.`);
@@ -985,25 +1000,59 @@ function RoomPage({ id }: { id: string }) {
   // No cat on this screen, on purpose. Every other empty state in the app draws her asleep and
   // promises to keep trying, because every other empty state is a bad connection. This one is an
   // answer, and drawing the cat here would be telling somebody she is still in there.
+  //
+  // Two versions of it. Whoever deleted the room can still put it back, so he gets the date it stops
+  // being possible. She is not offered a way back because she does not have one, and dangling one in
+  // front of her would be worse than the plain fact.
   if (gone) {
+    const undoBy = gone.undoUntil
+      ? new Date(gone.undoUntil).toLocaleDateString(undefined, { month: "long", day: "numeric" })
+      : null;
     return (
       <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
         <ChromeSync night={isNightChrome(door.sun)} />
         <div className={s.card} style={{ textAlign: "center" }}>
-          <h1 className={s.h1}>this room is gone</h1>
-          <p className={s.small} style={{ marginTop: 12 }}>
-            It was deleted. The cat, the notes, the year of it, both sides. There is nothing left in here to
-            get back.
-          </p>
-          <button
-            className={`${s.btn} ${s.btnGo}`}
-            style={{ width: "100%", marginTop: 18 }}
-            onClick={() => {
-              window.location.href = "/";
-            }}
-          >
-            Start a new one
-          </button>
+          <h1 className={s.h1}>{undoBy ? "you deleted this room" : "this room is gone"}</h1>
+          {undoBy ? (
+            <>
+              <p className={s.small} style={{ marginTop: 12 }}>
+                It is gone for both of you already. Nothing is erased until {undoBy}, so if you did not mean
+                it, you can still put it back exactly as it was.
+              </p>
+              <button
+                className={`${s.btn} ${s.btnGo}`}
+                style={{ width: "100%", marginTop: 18 }}
+                disabled={undoing}
+                onClick={() => void putBackRoom()}
+              >
+                {undoing ? "putting it back…" : "Put the room back"}
+              </button>
+              {err && (
+                <p className={s.small} style={{ marginTop: 10, color: "var(--error)" }} role="status">
+                  {err}
+                </p>
+              )}
+              <button className={s.quiet} onClick={() => (window.location.href = "/")}>
+                No, I meant it
+              </button>
+            </>
+          ) : (
+            <>
+              <p className={s.small} style={{ marginTop: 12 }}>
+                It was deleted. The cat, the notes, the year of it, both sides. There is nothing left in here
+                to get back.
+              </p>
+              <button
+                className={`${s.btn} ${s.btnGo}`}
+                style={{ width: "100%", marginTop: 18 }}
+                onClick={() => {
+                  window.location.href = "/";
+                }}
+              >
+                Start a new one
+              </button>
+            </>
+          )}
         </div>
       </main>
     );
@@ -1918,7 +1967,8 @@ function RoomPage({ id }: { id: string }) {
               <>
                 <p className={s.small} style={{ marginTop: 8 }}>
                   This deletes the whole room for both of you: {view.cat.name}, the notes, everything either
-                  of you left in here. It happens straight away and there is no getting it back.
+                  of you left in here. It happens straight away. You have a week to change your mind, and
+                  after that it is erased for good.
                 </p>
                 <p className={s.small} style={{ marginTop: 10 }}>
                   Type her name to confirm.
