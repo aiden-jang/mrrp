@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  TRAIT_MINIMUM,
+  TRAIT_MIN_DAYS,
+  TRAIT_SHARE,
+  homingWith,
+  learnedHour,
   milestoneFor,
   personalityFrom,
   roomStartedAt,
   tallyFrom,
-  TRAIT_MIN_DAYS,
-  TRAIT_MINIMUM,
-  TRAIT_SHARE,
+  type Homing,
 } from "./remembers.js";
 
 const DAY = 86_400_000;
@@ -140,5 +143,50 @@ describe("what she comes to expect", () => {
     expect(seeded).toEqual({ sit: 40 });
     const later = { ...seeded, sit: seeded.sit! + 40, photo: 6 };
     expect(personalityFrom(later, SETTLED)?.count).toBe(80);
+  });
+});
+
+describe("learning when he actually turns up", () => {
+  const build = (hours: number[]): Homing | null => {
+    let h: Homing | null = null;
+    hours.forEach((hour, day) => {
+      h = homingWith(h, hour, day) ?? h;
+    });
+    return h;
+  };
+
+  it("counts a day once, however many times he opens the room", () => {
+    const first = homingWith(null, 17, 100);
+    expect(first).toEqual({ hour: 17, days: 1, lastDay: 100 });
+    expect(homingWith(first, 22, 100)).toBeNull();
+    expect(homingWith(first, 22, 101)?.days).toBe(2);
+  });
+
+  // Three data points must not move the cat. A cat waiting at the wrong time because of one odd week
+  // is worse than a cat waiting when she was told to.
+  it("says nothing until it has watched a fortnight", () => {
+    expect(learnedHour(build([17, 17, 17]), 18)).toBeNull();
+    expect(learnedHour(build(Array(13).fill(17)), 18)).toBeNull();
+    expect(learnedHour(build(Array(14).fill(17)), 18)).toBeCloseTo(17, 1);
+  });
+
+  it("says nothing when he turns up when he said he would", () => {
+    expect(learnedHour(build(Array(20).fill(18)), 18)).toBeNull();
+    // Twenty past is the same time of day, not a habit worth a sentence.
+    expect(learnedHour(build(Array(20).fill(18.3)), 18)).toBeNull();
+  });
+
+  it("follows him when his hour moves, instead of staying anchored to the first month", () => {
+    let h = build(Array(30).fill(18));
+    expect(learnedHour(h, 18)).toBeNull();
+    for (let day = 30; day < 60; day++) h = homingWith(h, 16, day) ?? h;
+    expect(learnedHour(h, 18)).toBeLessThan(16.5);
+  });
+
+  it("keeps a whole number of days, so the count is a count", () => {
+    const h = build([17, 18, 16, 17]);
+    expect(h?.days).toBe(4);
+    expect(h?.hour).toBeGreaterThan(16);
+    expect(h?.hour).toBeLessThan(18);
   });
 });

@@ -177,6 +177,8 @@ export function sceneFor(
   spot: number | null = null,
   /** What it is doing outside her window, which is the one thing here that is not on a clock. */
   sky: RoomView["sky"] = "clear",
+  /** The hour the room has learned to expect him, which outranks the one he typed. */
+  expectAt: number | null = null,
 ): Scene {
   const hour = hourIn(clock.tz, at);
 
@@ -200,8 +202,16 @@ export function sceneFor(
   const floorLight = lightPhase === "night" ? 0 : lightPhase === "golden" ? 0.62 : 0.1 + sun * 0.45;
   const patchLight = lightPhase === "night" ? 0 : lightPhase === "golden" ? 0.82 : 0.16 + sun * 0.6;
 
-  // Waiting starts an hour before she expects you and eases off once you're in.
-  const untilHome = clock.homeHour - hour;
+  /*
+   * Waiting starts an hour before she expects you and eases off once you're in.
+   *
+   * `expectAt` is when you actually turn up, which the room works out by watching, and it beats the
+   * hour you typed once it has a fortnight of disagreeing with it. The hour you typed was true when
+   * you typed it; the cat should be waiting at the door when you get there, not when you once said
+   * you would.
+   */
+  const homeHour = expectAt ?? clock.homeHour;
+  const untilHome = homeHour - hour;
   const atDoor = untilHome <= 1 && untilHome > -0.5;
 
   const napping = hour >= NAP_FROM && hour < NAP_TO;
@@ -222,7 +232,7 @@ export function sceneFor(
   // The evening hours are hers to have a place in: after he is home, she stops following the sunbeam
   // and goes and sits in her spot. Every other hour is already spoken for (bed, door, or beam), and
   // the line under the room at this hour talks about everyone being in, not about the sun.
-  const settledIn = spot !== null && !inBed && !atDoor && hour >= clock.homeHour && hour < 21 ? spot : null;
+  const settledIn = spot !== null && !inBed && !atDoor && hour >= homeHour && hour < 21 ? spot : null;
 
   /*
    * What the weather does to her day.
@@ -284,14 +294,7 @@ export function sceneFor(
         ? sky === "snow"
           ? "at the window, watching the snow come down"
           : "at the window, watching it rain"
-        : doingAt(
-            hour,
-            atDoor,
-            sleepy,
-            clock.homeHour,
-            seasonFor(new Date(at)) === "summer",
-            closed && free,
-          )),
+        : doingAt(hour, atDoor, sleepy, homeHour, seasonFor(new Date(at)) === "summer", closed && free)),
     snug: r?.snug ?? 0,
     play: r?.play ?? 0,
     purring: r?.purring ?? false,

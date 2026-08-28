@@ -108,6 +108,9 @@ export interface RoomView {
   monthsOld: number;
   shelfDown: boolean;
   gift: Gift | null;
+  // The hour he actually turns up, once the room has watched long enough to disagree with the one
+  // he typed. Null while it still only has his word for it.
+  expectAt: number | null;
   sky: Sky;
   // What she chose for her bed, or null while the room still has the one it came with.
   blanket: { key: BlanketKey; stripe: boolean } | null;

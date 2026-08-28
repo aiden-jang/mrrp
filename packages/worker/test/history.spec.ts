@@ -1,5 +1,5 @@
 import { env } from "cloudflare:test";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { harness, HER, HIM, STRANGER } from "./harness.js";
 
 const { away, post, seat, view } = harness("historyroom");
@@ -153,5 +153,46 @@ describe("fast-forwarding a room", () => {
     await seat();
     await post("age", { me: STRANGER, days: 400 });
     expect((await view(HIM)).monthsOld).toBe(0);
+  });
+});
+
+describe("the hour she comes to expect him", () => {
+  const arriveAt = async (hour: number, days: number) => {
+    for (let d = 0; d < days; d++) {
+      // A day on, at a fixed hour of it. Her timezone is the one the room runs on.
+      away(24);
+      vi.setSystemTime(new Date(new Date().setUTCHours(hour, 0, 0, 0)));
+      await view(HIM);
+    }
+  };
+
+  it("keeps quiet until it has more than his word for it", async () => {
+    await seat();
+    await post("clock", { me: HIM, tz: "UTC", homeHour: 18 });
+    await arriveAt(16, 5);
+    expect((await view(HIM)).expectAt).toBeNull();
+  });
+
+  it("expects him when he actually turns up, not when he said he would", async () => {
+    await seat();
+    await post("clock", { me: HIM, tz: "UTC", homeHour: 18 });
+    await arriveAt(16, 16);
+
+    const learned = (await view(HIM)).expectAt;
+    expect(learned).not.toBeNull();
+    expect(learned!).toBeLessThan(17.5);
+  });
+
+  // She is the cat. The cat does not wait at the door for herself, so her visits are not evidence
+  // about when he gets in.
+  it("watches him and not her", async () => {
+    await seat();
+    await post("clock", { me: HIM, tz: "UTC", homeHour: 18 });
+    for (let d = 0; d < 20; d++) {
+      away(24);
+      vi.setSystemTime(new Date(new Date().setUTCHours(9, 0, 0, 0)));
+      await view(HER);
+    }
+    expect((await view(HER)).expectAt).toBeNull();
   });
 });

@@ -30,8 +30,11 @@ import {
   DAY_MS,
   milestoneFor,
   personalityFrom,
+  homingWith,
+  learnedHour,
   roomStartedAt,
   tallyFrom,
+  type Homing,
   type OurDay,
   type Tally,
 } from "./remembers.js";
@@ -95,6 +98,20 @@ export class RoomGone extends Error {
 const GIFT_AFTER_MS = 8 * 60 * 60 * 1000;
 const GIFTS = ["leaf", "cap", "moth"] as const;
 
+// The same arithmetic as hourIn in the web package's hours.ts. Duplicated rather than shared, like
+// everything else these two packages both need.
+function hourInZone(at: number, tz: string): number {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: tz,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date(at));
+  const h = Number(parts.find((x) => x.type === "hour")?.value ?? 12);
+  const m = Number(parts.find((x) => x.type === "minute")?.value ?? 0);
+  return (h % 24) + m / 60;
+}
+
 function localDayNumber(at: number, tz: string): number {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: tz,
@@ -144,6 +161,10 @@ export class Room extends DurableObject<Env> {
       people[me].visits += 1;
       await this.ctx.storage.put("people", people);
     }
+
+    // The first time he looks in today, in her timezone, which is the clock the whole room runs on.
+    // Only his: she is the cat, and the cat does not wait at the door for herself.
+    if (this.roles(people).him === me) await this.noteHomecoming();
 
     const handover = await this.ctx.storage.get<string>("handover");
     if (handover && handover !== me && this.roles(people).her === me) {
@@ -437,6 +458,18 @@ export class Room extends DurableObject<Env> {
     );
   }
 
+  private async noteHomecoming(): Promise<void> {
+    const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
+    const now = Date.now();
+    const day = localDayNumber(now, clock.tz);
+    const previous = (await this.ctx.storage.get<Homing>("homing")) ?? null;
+    if (previous?.lastDay === day) return;
+
+    const hour = hourInZone(now, clock.tz);
+    const next = homingWith(previous, hour, day);
+    if (next) await this.ctx.storage.put<Homing>("homing", next);
+  }
+
   private bothHere(people: Record<string, Person>): boolean {
     const { him, her } = this.roles(people);
     const now = Date.now();
@@ -706,7 +739,7 @@ export class Room extends DurableObject<Env> {
 
   async age(
     me: string,
-    want: { days?: number; tally?: Tally; noteIdx?: number; awayHours?: number },
+    want: { days?: number; tally?: Tally; noteIdx?: number; awayHours?: number; homing?: Homing },
   ): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -723,6 +756,18 @@ export class Room extends DurableObject<Env> {
       await this.ctx.storage.put("people", people);
     }
     if (want.tally) await this.ctx.storage.put("tally", want.tally);
+    // A fortnight of him turning up at the same hour, without waiting a fortnight. Nothing here puts
+    // the room in a state it could not reach on its own; this one just takes two weeks otherwise.
+    //
+    // Stamped with today, so the read that comes back with the answer does not immediately count
+    // itself as another day and drag the average toward whatever o'clock it is now.
+    if (want.homing) {
+      const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
+      await this.ctx.storage.put<Homing>("homing", {
+        ...want.homing,
+        lastDay: localDayNumber(Date.now(), clock.tz),
+      });
+    }
     if (want.noteIdx !== undefined) {
       const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
       await this.ctx.storage.put("noteIdx", Math.max(0, want.noteIdx));
@@ -880,6 +925,7 @@ export class Room extends DurableObject<Env> {
       shelfDown: (await this.ctx.storage.get<boolean>("shelfDown")) ?? false,
       gift: me === him ? ((await this.ctx.storage.get<Gift>("gift")) ?? null) : null,
       blanket: (await this.ctx.storage.get<Blanket>("blanket")) ?? null,
+      expectAt: learnedHour((await this.ctx.storage.get<Homing>("homing")) ?? null, clock.homeHour),
       sky: ((await this.ctx.storage.get<Weather>("weather"))?.sky ?? "clear") as Sky,
       windowLight: seated && !!windowLight && windowLight.from !== me,
       box: ((await this.ctx.storage.get<number>("boxDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),

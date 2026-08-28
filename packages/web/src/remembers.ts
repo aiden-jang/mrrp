@@ -53,3 +53,19 @@ export function awayLine(awayMs: number | null, catName: string): string | null 
   if (awayMs < 60 * DAY) return `${catName} has been keeping your spot warm. she will deny this.`;
   return `${catName} settles in like you never left, which is the whole trick of her.`;
 }
+
+/*
+ * That she has worked out when you actually get in.
+ *
+ * Told to him alone, because it is about him, and because to her it would read as the room reporting
+ * on somebody. Sits low in the quiet lines: rarer than the moon and less important than an
+ * anniversary, and it stops being news the moment he has read it once.
+ */
+export function homingLine(expectAt: number | null, told: number, catName: string): string | null {
+  if (expectAt === null) return null;
+  const earlier = expectAt < told;
+  const clock = `${String(Math.floor(expectAt) % 24).padStart(2, "0")}:${String(Math.round((expectAt % 1) * 60)).padStart(2, "0")}`;
+  return earlier
+    ? `${catName} has started waiting at the door around ${clock}, which is when you actually get in.`
+    : `${catName} has stopped expecting you at ${String(told).padStart(2, "0")}:00. She waits nearer ${clock} now.`;
+}
