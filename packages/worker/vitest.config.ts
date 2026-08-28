@@ -11,11 +11,15 @@ import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
  * Note the shape. As of @cloudflare/vitest-pool-workers 0.20 with Vitest 4 this is a Vite *plugin*,
  * `cloudflareTest()`. The older `defineWorkersConfig` from the "/config" subpath is gone, and the
  * error you get for using it ("Missing ./config specifier") does not hint at the replacement.
+ *
+ * Do not add `singleWorker` or `isolatedStorage` here. Both were real options before 0.20 and neither
+ * exists now; the options object is parsed with a schema that drops unknown keys, so they sit in the
+ * file looking meaningful and do nothing at all. This config carried `singleWorker: true` for a while
+ * that way.
  */
 export default defineConfig({
   plugins: [
     cloudflareTest({
-      singleWorker: true,
       wrangler: { configPath: "./wrangler.toml" },
     }),
   ],
@@ -23,15 +27,16 @@ export default defineConfig({
     /*
      * These are round trips, not unit tests, and 5s is a unit-test default.
      *
-     * Every case here drives a real Durable Object through real fetches: the slowest makes forty-five
-     * of them, and a dozen more sit between one and two seconds apiece. Measured on an idle machine
-     * the whole suite is about thirty seconds across 148 tests, so nothing is near its limit; measured
-     * with a dev server and a browser also running it stretches, and cases that normally take two
-     * seconds are the ones with the least headroom against five.
+     * The suite gets slower as it goes, and it is worth knowing why before trying to fix a slow test.
+     * Every test takes a fresh room id, so every test leaves another Durable Object alive inside the
+     * one workerd instance, and each one taxes every request after it. Measured: thirty reads cost
+     * 59ms in an empty instance, 145ms after fifty rooms, 339ms after a hundred, 513ms after a
+     * hundred and fifty. By the end of this suite a single round trip is nearer 150ms than 2ms.
      *
-     * Raised rather than left, because a suite that goes red on a busy laptop teaches you to re-run it
-     * instead of read it. It is not covering for anything slow: a genuine hang still fails, only later,
-     * and the one case that legitimately needs longer keeps its own explicit 30s.
+     * So the tests that loop are the ones with no headroom, and they are the ones that used to fail
+     * on a busy laptop under the 5s default. Raised rather than left, because a suite that goes red
+     * when you have a browser open teaches you to re-run it instead of read it. A genuine hang still
+     * fails, only later, and the one case that legitimately needs longer keeps its own explicit 30s.
      */
     testTimeout: 20_000,
   },
