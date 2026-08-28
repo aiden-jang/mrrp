@@ -159,7 +159,8 @@ const ROOM_MAX_SHARE = 0.78;
 
 // prettier-ignore
 // One row out and the collar reads as a second mouth. These came off the grids in sprites.ts with a
-// script, not by eye.
+// script, not by eye. `flop` is the odd one: she is lying on her side, so the band is two pixels at
+// the neck seen edge-on rather than twelve across a chest that is not facing you.
 const COLLAR: Record<Pose, { dx: number; w: number; dy: number; tag: number }> = {
   loaf:    { dx: -8, w: 12, dy: -7, tag: -2 },
   sit:     { dx: -6, w: 12, dy: -9, tag:  0 },
@@ -170,7 +171,7 @@ const COLLAR: Record<Pose, { dx: number; w: number; dy: number; tag: number }> =
   stretch: { dx: -6, w: 12, dy: -5, tag:  0 },
   pounce:  { dx: -7, w: 12, dy: -6, tag: -1 },
   peek:    { dx: -4, w:  8, dy: -2, tag:  0 },
-  flop:    { dx:  3, w: 12, dy: -2, tag:  0 },
+  flop:    { dx:  5, w:  2, dy: -6, tag:  5 },
 };
 const COLLAR_BAND = "#9c5468";
 const COLLAR_TAG = "#e8ad55";
@@ -1361,19 +1362,33 @@ export function Cat({
       const curtainHem = reduce ? 0 : Math.round(Math.sin(t / 2400));
       px(wx - 2 + curtainHem, 24, curtainLight);
       px(wx + WINDOW.w + 1 - curtainHem, 24, curtainLight);
-      const glass = raining
-        ? mixHex(sc.wallTop, "#718aa1", 0.58)
+      /*
+       * Night wins over weather, and then the weather is mixed into the night.
+       *
+       * Weather came first in this chain and it made a rainy 2am glow like an overcast noon: the wet
+       * grey is mixed off the wall colour, which is bright in the daytime keyframes. It went unnoticed
+       * while the only thing that set `raining` was a six-second easter egg. Now that a real forecast
+       * can hold it on all night, the order matters.
+       */
+      const nightGlass = raining
+        ? mixHex("#2b3450", "#718aa1", 0.34)
         : snowing
-          ? mixHex(sc.wallTop, "#cfd8e2", 0.62)
-          : sc.lightPhase === "night"
-            ? "#2b3450"
-            : sc.lightPhase === "dawn"
-              ? "#c79aaa"
-              : sc.lightPhase === "golden"
-                ? "#d99672"
-                : sc.lightPhase === "evening"
-                  ? "#685b7d"
-                  : mixHex("#b7d8dc", sc.beamWarm, 0.2);
+          ? mixHex("#2b3450", "#cfd8e2", 0.3)
+          : "#2b3450";
+      const glass =
+        sc.lightPhase === "night"
+          ? nightGlass
+          : raining
+            ? mixHex(sc.wallTop, "#718aa1", 0.58)
+            : snowing
+              ? mixHex(sc.wallTop, "#cfd8e2", 0.62)
+              : sc.lightPhase === "dawn"
+                ? "#c79aaa"
+                : sc.lightPhase === "golden"
+                  ? "#d99672"
+                  : sc.lightPhase === "evening"
+                    ? "#685b7d"
+                    : mixHex("#b7d8dc", sc.beamWarm, 0.2);
       blit(WINDOW, wx, 4, { w: INK, h: glass });
 
       /*
