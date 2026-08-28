@@ -394,3 +394,23 @@ is what a disclosure is for. A decision somebody has to know they can make is no
 
 Still nowhere near the front door. That part of the original reasoning holds: she taps a link and she
 is in, and signing in is something you decide afterwards, or never.
+
+## She gets one thing in the room that is hers
+
+He sets the cat, the hours, the notes, and the day the room remembers, and he has all five actions.
+She taps a mood from six and leaves one line. That asymmetry is right for a gift, and it still left
+the person the gift is for with nothing of her own in the room. A room you cannot put anything into
+is somebody else's room.
+
+So: the blanket on her bed. Five colours and a stripe, hers alone, enforced in the Durable Object
+like every other rule about who may write what. Deliberately one small object rather than a second
+editor beside his, and deliberately the bed: she is the cat, so the thing she decides is where the
+cat sleeps and what it sleeps under.
+
+It stays when she leaves, unlike her moods. What leaving promises her is "your moods, your visits,
+the days you have been in here", and a colour on a bed is none of those. It is furniture, not a
+record of her.
+
+The stripe columns are written down by hand rather than stepped by a loop. The cushion runs from
+column 3 to 16, so an even step leaves a half-width gap at one end, and on a bed that is symmetrical
+the eye reads that as a mistake rather than a pattern.

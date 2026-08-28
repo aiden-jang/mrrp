@@ -198,6 +198,7 @@ than the UI, because a rule enforced in the browser is a rule anyone can turn of
 | `POST .../leave`              | her only    | takes her side out and frees her seat. His room stands         |
 | `POST .../unleave`            | her only    | puts her side back, while the week holds and the seat is free  |
 | `POST .../draw`               | either seat | the seven-by-five sheet in the frame. 35 chars of 0-4, or 400  |
+| `POST .../blanket`            | her only    | the one thing in the room she picks. Five colours and a stripe |
 | `POST .../ourday`             | him only    | the date the room says something about, and its words          |
 | `POST .../link`               | either seat | ties the seat you hold to the account you are signed into      |
 | `POST .../found`              | either seat | records a discovery. Unknown keys are a 400, not a new secret  |
@@ -312,7 +313,7 @@ local day, so a day she doesn't visit is not a note she never sees.
 ## Tests
 
 ```bash
-pnpm check       # typecheck, lint, then 399 tests: 182 web, 217 worker
+pnpm check       # typecheck, lint, then 404 tests: 182 web, 222 worker
 ```
 
 `lint` exists for one rule. owewell shipped a `useEffect` below a component's early returns, so the
