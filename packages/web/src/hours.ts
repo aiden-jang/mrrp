@@ -1,4 +1,4 @@
-import type { Clock, Mood } from "./types.js";
+import type { Clock, Mood, RoomView } from "./types.js";
 import { RESPONSES, type MoodVisual } from "./moods.js";
 import type { Pose } from "./sprites.js";
 import { seasonFor } from "./season.js";
@@ -112,6 +112,8 @@ const NAP_FROM = 13,
 
 /** Her bed's centre as a fraction of the 100-wide room. The bed spans grid 13..33. */
 const BED_X = 0.23;
+// Under the window, which sits at grid 68 of 100. See WIN_X in Cat.tsx.
+const WINDOW_X = 0.68;
 
 /**
  * The middle of the rug, and the one place in the room she takes to on her own.
@@ -129,18 +131,29 @@ export const HER_SPOT = 0.55;
  * the beam on the cool boards, which is the same instinct pointed the other way. The copy has to
  * agree with where she is actually drawn, or the room is telling you something you can see is untrue.
  */
-function doingAt(hour: number, atDoor: boolean, sleepy: number, homeHour: number, summer: boolean): string {
+// `grey` is a closed sky where she is. Three of these lines are about the sun, and on a wet afternoon
+// they describe a room that is not there: "moving with the sunbeam" over a floor with no sunbeam on it.
+function doingAt(
+  hour: number,
+  atDoor: boolean,
+  sleepy: number,
+  homeHour: number,
+  summer: boolean,
+  grey: boolean,
+): string {
   if (atDoor) return "waiting by the door";
   if (hour < 5) return "asleep, and dreaming about something";
   if (hour < 7) return "awake before anyone, watching the window";
-  if (hour < 11) return "in the first bit of sun";
+  if (hour < 11) return grey ? "up early, with the room still grey" : "in the first bit of sun";
   if (hour >= NAP_FROM && hour < NAP_TO) {
+    if (grey) return "asleep on the rug, with nothing to move for";
     return summer
       ? "asleep on the cool boards, out of the sun"
       : "deeply asleep in the best spot in the room";
   }
   if (hour < 13) return "loafing";
   if (hour < homeHour) {
+    if (grey) return "in her own spot, with no sun to follow";
     return summer ? "lying just beside the sunbeam" : "moving with the sunbeam, one patch at a time";
   }
   if (hour < 21) return "settled, now that everyone's in";
@@ -162,6 +175,8 @@ export function sceneFor(
    * the old drifting 0.42 for a room that is a week old and has not settled into anything yet.
    */
   spot: number | null = null,
+  /** What it is doing outside her window, which is the one thing here that is not on a clock. */
+  sky: RoomView["sky"] = "clear",
 ): Scene {
   const hour = hourIn(clock.tz, at);
 
@@ -209,6 +224,25 @@ export function sceneFor(
   // the line under the room at this hour talks about everyone being in, not about the sun.
   const settledIn = spot !== null && !inBed && !atDoor && hour >= clock.homeHour && hour < 21 ? spot : null;
 
+  /*
+   * What the weather does to her day.
+   *
+   * She spends the daylight hours following the sunbeam across the floor, which is a lovely thing for
+   * her to do and a nonsense on a wet Tuesday: the beam is not there, and she was lying in a patch of
+   * light that had been drawn faint precisely because the sky is closed.
+   *
+   * Rain and snow are worth going to look at, so she does. Cloud is not, so she just gives up on the
+   * sun and goes to her own spot. Neither overrides being asleep, being at the door, or doing what
+   * you told her: the weather is the least important thing in the room, and it should lose to
+   * everything else that has an opinion.
+   */
+  const closed = sky !== "clear";
+  const free = !inBed && !atDoor && !r;
+  const daylight = sun > 0.15;
+  const watching = free && daylight && (sky === "rain" || sky === "snow");
+  // Where she goes when there is nothing to follow: her own spot, not a beam that is not there.
+  const sunnySpot = closed || !daylight ? idle : beam;
+
   const scene: Scene = {
     hour,
     lightPhase,
@@ -230,21 +264,34 @@ export function sceneFor(
       r?.catX ??
       (inBed
         ? BED_X
-        : r
-          ? sun > 0.15
-            ? beam
-            : idle
-          : atDoor
-            ? 0.19
-            : settledIn !== null
-              ? settledIn
-              : sun > 0.15
-                ? beam
-                : idle),
-    sleepy: r?.sleepy ?? sleepy,
+        : watching
+          ? WINDOW_X
+          : r
+            ? sunnySpot
+            : atDoor
+              ? 0.19
+              : settledIn !== null
+                ? settledIn
+                : sunnySpot),
+    // Awake at the window, and a little heavier than usual under a grey one. Rain is the best sleep
+    // there is and she is a cat.
+    sleepy: r?.sleepy ?? (watching ? 0.12 : closed && free ? Math.min(1, sleepy + 0.12) : sleepy),
     atDoor: r ? r.catX === 0.19 : atDoor,
     // What she's doing about what you said outranks the time of day. It's the more specific fact.
-    doing: r?.doing ?? doingAt(hour, atDoor, sleepy, clock.homeHour, seasonFor(new Date(at)) === "summer"),
+    doing:
+      r?.doing ??
+      (watching
+        ? sky === "snow"
+          ? "at the window, watching the snow come down"
+          : "at the window, watching it rain"
+        : doingAt(
+            hour,
+            atDoor,
+            sleepy,
+            clock.homeHour,
+            seasonFor(new Date(at)) === "summer",
+            closed && free,
+          )),
     snug: r?.snug ?? 0,
     play: r?.play ?? 0,
     purring: r?.purring ?? false,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MOODS, type Mood } from "../src/types.js";
+import { MOODS, type Clock, type Mood } from "../src/types.js";
 import { RESPONSES } from "../src/moods.js";
 import { FACE_KEYS } from "../src/faces.js";
 import { LOOKS, EYES, timezones } from "../src/looks.js";
@@ -267,5 +267,45 @@ describe("the setup form", () => {
     expect(zs[0]).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone);
     for (const z of zs.slice(0, 20))
       expect(() => new Intl.DateTimeFormat("en", { timeZone: z })).not.toThrow();
+  });
+});
+
+describe("what the weather does to her day", () => {
+  const noon: Clock = { tz: "UTC", homeHour: 18 };
+  const at = Date.parse("2026-04-02T13:00:00Z");
+
+  it("keeps her on the sunbeam when the sky is clear", () => {
+    const clear = sceneFor(noon, at, null, false, null, "clear");
+    expect(clear.catX).toBeCloseTo(clear.beam, 5);
+  });
+
+  // She was lying in a patch of light that had been drawn faint because the sky is closed. Following
+  // a sunbeam that is not there is the kind of thing nobody reports and everybody feels.
+  it("takes her off a sunbeam that is not there", () => {
+    const grey = sceneFor(noon, at, null, false, null, "cloud");
+    expect(grey.catX).not.toBeCloseTo(grey.beam, 5);
+    expect(grey.doing).not.toContain("sunbeam");
+  });
+
+  it("sends her to the window when there is something to watch", () => {
+    for (const sky of ["rain", "snow"] as const) {
+      const wet = sceneFor(noon, at, null, false, null, sky);
+      expect(wet.catX).toBeGreaterThan(0.6);
+      expect(wet.doing).toContain("at the window");
+      expect(wet.sleepy).toBeLessThan(0.2);
+    }
+    expect(sceneFor(noon, at, null, false, null, "snow").doing).toContain("snow");
+  });
+
+  // The weather is the least important thing in the room and loses to everything with an opinion.
+  it("never outranks her bed, the door, or what you told her", () => {
+    const night = Date.parse("2026-04-02T02:00:00Z");
+    expect(sceneFor(noon, night, null, false, null, "rain").doing).not.toContain("window, watching");
+
+    const homeTime = Date.parse("2026-04-02T17:30:00Z");
+    expect(sceneFor(noon, homeTime, null, false, null, "rain").atDoor).toBe(true);
+
+    const told = sceneFor(noon, at, "sad", false, null, "rain");
+    expect(told.doing).toBe(sceneFor(noon, at, "sad", false, null, "clear").doing);
   });
 });
