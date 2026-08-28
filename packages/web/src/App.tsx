@@ -1295,7 +1295,7 @@ function RoomPage({ id }: { id: string }) {
             id="setup-panel"
             ref={setupPanel}
             tabIndex={-1}
-            aria-label="Set up her cat"
+            aria-label="Write her notes and set up her cat"
           >
             <p className={s.panelTitle}>her cat</p>
 
@@ -1554,7 +1554,7 @@ function RoomPage({ id }: { id: string }) {
                 onClick={openSetup}
                 aria-expanded={setup}
               >
-                Set up her cat first
+                Write her notes and set up her cat
               </button>
             )}
             <button
@@ -1747,9 +1747,13 @@ function RoomPage({ id }: { id: string }) {
                 She has note {view.noteDay} waiting. Hold on {view.cat.name} to pet her.
               </p>
             )}
+            {/* Names the notes, because the notes are what is behind it. This said "change how she
+                looks, or her hours" while the one-a-day gift, the whole point of the room, sat inside
+                it unmentioned. Same bug as the sign-in buried under "show my recovery code": a label
+                that lists some of what is inside hides the rest of it completely. */}
             {iAmHim && !setup && (
               <button className={s.quiet} onClick={openSetup}>
-                Change how {view.cat.name} looks, or her hours
+                Write her notes, or change how {view.cat.name} looks
               </button>
             )}
             {/* The link was offered exactly once, on the screen that says nobody else is here yet, and
