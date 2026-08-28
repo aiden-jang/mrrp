@@ -84,7 +84,7 @@ the way it is and the code does not say, that is deliberate: it is in the doc.
 
 | file                  | what                                                               |
 | --------------------- | ------------------------------------------------------------------ |
-| `worker/src/room.ts`  | the Durable Object. One per room, two seats, no alarms, no sockets |
+| `worker/src/room.ts`  | the Durable Object. One per room, two seats, one alarm, no sockets |
 | `worker/src/notes.ts` | the default notes, used until a room writes its own                |
 | `web/src/sprites.ts`  | the cat, hand-authored pixel grids                                 |
 | `web/src/Cat.tsx`     | the room, drawn one aligned rectangle per logical pixel            |
@@ -311,7 +311,7 @@ local day, so a day she doesn't visit is not a note she never sees.
 ## Tests
 
 ```bash
-pnpm check       # typecheck, lint, then 372 tests: 161 web, 211 worker
+pnpm check       # typecheck, lint, then 374 tests: 161 web, 213 worker
 ```
 
 `lint` exists for one rule. owewell shipped a `useEffect` below a component's early returns, so the
