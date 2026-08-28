@@ -1797,19 +1797,6 @@ function RoomPage({ id }: { id: string }) {
                 Write her notes, or change how {view.cat.name} looks
               </button>
             )}
-            {/* The link was offered exactly once, on the screen that says nobody else is here yet, and
-                then never again. Installed to a home screen there is no address bar either, so a buried
-                message meant the room was unreachable and unresendable at the same time. */}
-            {iAmHim && !setup && (
-              <button className={s.quiet} onClick={() => void shareRoom()}>
-                {shareResult === "shared"
-                  ? "Sent."
-                  : shareResult === "copied"
-                    ? "Copied. Go send it."
-                    : `Send ${view.them ?? "her"} the link again`}
-              </button>
-            )}
-
             {/*
              * Somebody who only has the link. They get none of his side: not her mood, not the
              * action buttons, not the link to the setup panel. Gate every one of them, not just the
@@ -1875,9 +1862,61 @@ function RoomPage({ id }: { id: string }) {
                 </div>
               </>
             )}
+          </>
+        )}
 
+        {/* The whole sentence comes from whoever set it. Do not append "trying again in a moment"
+            here: most of these errors have nothing retrying behind them. */}
+        {err && (
+          <p
+            className={s.small}
+            style={{ textAlign: "center", marginTop: 12, color: "var(--error)" }}
+            role="status"
+          >
+            {err}
+          </p>
+        )}
+
+        {/*
+            Both ways back in, behind a summary that names the job rather than one of the answers.
+
+            This block has now made the same mistake twice. The code used to live inside "change how
+            she looks", so the one string that recovers a seat sat behind a button labelled as a
+            cosmetic editor. Moving it here fixed that and then buried signing in under "show my
+            recovery code", where nobody looking for an account would think to open it. A way back you
+            cannot find is not a way back, and the label has to name the question, not the first
+            answer somebody happened to write.
+          */}
+        {/*
+            Out in the room, not inside the panel below it.
+            Being behind a disclosure is what made it invisible, and the disclosure is the right home
+            for the code (a long string you fetch when you need it) but the wrong home for a decision
+            somebody has to know they can make. Nowhere near the front door either, which is the part
+            of the original reasoning that still holds: she taps a link and she is in, and signing in
+            is something you decide afterwards, or never.
+          */}
+        {/*
+            One block for everything that is about the room rather than about her.
+            
+            These arrived one at a time over weeks and each was a reasonable quiet link on its own. The
+            sum was eight of them stacked in a column at identical weight, so "draw something for the
+            frame" looked exactly as important as "she can't get in" and as "delete this room". Grouping
+            them under a heading is what puts the things you do back on top.
+          */}
+        {!setup && (iAmHim || view.youAreHer) && (
+          <section className={s.roomBits} aria-label="This room">
+            <p className={s.roomBitsTitle}>this room</p>
+            {iAmHim && (
+              <button className={s.quiet} onClick={() => void shareRoom()}>
+                {shareResult === "shared"
+                  ? "Sent."
+                  : shareResult === "copied"
+                    ? "Copied. Go send it."
+                    : `Send ${view.them ?? "her"} the link again`}
+              </button>
+            )}
             {/* The only recovery this app has, so it has to be findable, and it evicts her current
-                device, so it asks first. Kept quiet and last: it matters on one day out of a year. */}
+              device, so it asks first. Kept quiet and last: it matters on one day out of a year. */}
             {iAmHim &&
               !setup &&
               !view.waitingForThem &&
@@ -1914,148 +1953,119 @@ function RoomPage({ id }: { id: string }) {
                   {view.them ?? "She"} can&apos;t get in
                 </button>
               ))}
-          </>
-        )}
-
-        {/* The whole sentence comes from whoever set it. Do not append "trying again in a moment"
-            here: most of these errors have nothing retrying behind them. */}
-        {err && (
-          <p
-            className={s.small}
-            style={{ textAlign: "center", marginTop: 12, color: "var(--error)" }}
-            role="status"
-          >
-            {err}
-          </p>
-        )}
-
-        {/*
-            Both ways back in, behind a summary that names the job rather than one of the answers.
-
-            This block has now made the same mistake twice. The code used to live inside "change how
-            she looks", so the one string that recovers a seat sat behind a button labelled as a
-            cosmetic editor. Moving it here fixed that and then buried signing in under "show my
-            recovery code", where nobody looking for an account would think to open it. A way back you
-            cannot find is not a way back, and the label has to name the question, not the first
-            answer somebody happened to write.
-          */}
-        {/*
-            Out in the room, not inside the panel below it.
-            Being behind a disclosure is what made it invisible, and the disclosure is the right home
-            for the code (a long string you fetch when you need it) but the wrong home for a decision
-            somebody has to know they can make. Nowhere near the front door either, which is the part
-            of the original reasoning that still holds: she taps a link and she is in, and signing in
-            is something you decide afterwards, or never.
-          */}
-        {!setup && view.recoveryCode && (
-          <div className={s.account}>
-            <p className={s.small}>
-              {view.linked
-                ? "This seat is on your account, so signing in on a new phone brings you straight back here."
-                : "Sign in and this seat comes back on any phone you sign in on. No code to keep."}{" "}
-              {/* Beside the control rather than in the footer. This is where somebody decides to
+            {!setup && view.recoveryCode && (
+              <div className={s.accountInBits}>
+                <p className={s.small}>
+                  {view.linked
+                    ? "This seat is on your account, so signing in on a new phone brings you straight back here."
+                    : "Sign in and this seat comes back on any phone you sign in on. No code to keep."}{" "}
+                  {/* Beside the control rather than in the footer. This is where somebody decides to
                   attach a room to an identity, so it is where the question comes up. */}
-              <a
-                href={`${AUTH_URL}/privacy`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={s.creditLink}
-              >
-                What this keeps
-              </a>
-              .
-            </p>
-            <button className={s.quiet} disabled={linking} onClick={() => void link(!view.linked)}>
-              {view.linked ? "Take this seat off my account" : "Keep this seat on my account"}
-            </button>
-          </div>
-        )}
-
-        {/*
-            Out in the room for the same reason signing in is: it is a thing you have to know you can
-            do. The privacy policy's answer to "can I have a copy" was an email address, which is a
-            fine promise and a bad feature.
-
-            A plain link, not a button, because it is a GET the browser downloads. Whoever asks gets
-            their own room: hers stops at the note she has read, like every other way of looking.
-          */}
-        {!setup && (iAmHim || view.youAreHer) && (
-          <p className={s.account}>
-            <a className={s.creditLink} href={`/api/room/${id}/export?me=${encodeURIComponent(myToken())}`}>
-              Take a copy of everything in here
-            </a>
-          </p>
-        )}
-
-        {!setup && view.recoveryCode && (
-          <details className={s.recovery}>
-            <summary className={s.recoverySummary}>or keep a code instead</summary>
-            <p className={s.small} style={{ marginTop: 8 }}>
-              For getting back in without an account. Keep it somewhere that is not this phone.
-            </p>
-            <RecoveryCode code={view.recoveryCode} />
-          </details>
-        )}
-
-        {/*
-         * The way out, and it is two different doors.
-         *
-         * His ends the room for both of them, because he made it and it is his notes in it. Hers takes
-         * her side and leaves his standing, so she has a way to remove herself that does not cost him a
-         * year. Both are here rather than buried in a settings page: an app that can hold something
-         * this personal has to show you how to end it, in the room, where you are.
-         */}
-        {!setup && (iAmHim || view.youAreHer) && (
-          <details className={s.recovery} onToggle={() => setLeaveArmed(false)}>
-            <summary className={s.recoverySummary}>{iAmHim ? "delete this room" : "leave this room"}</summary>
-            {iAmHim ? (
-              <>
-                <p className={s.small} style={{ marginTop: 8 }}>
-                  This deletes the whole room for both of you: {view.cat.name}, the notes, everything either
-                  of you left in here. It happens straight away. You have a week to change your mind, and
-                  after that it is erased for good.
+                  <a
+                    href={`${AUTH_URL}/privacy`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={s.creditLink}
+                  >
+                    What this keeps
+                  </a>
+                  .
                 </p>
-                <p className={s.small} style={{ marginTop: 10 }}>
-                  Type her name to confirm.
-                </p>
-                <input
-                  className={s.input}
-                  value={typedName}
-                  placeholder={view.cat.name}
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  aria-label={`Type ${view.cat.name} to confirm deleting this room`}
-                  onChange={(e) => setTypedName(e.target.value)}
-                />
-                <button
-                  className={s.quiet}
-                  disabled={ending || typedName.trim().toLowerCase() !== view.cat.name.trim().toLowerCase()}
-                  onClick={() => void endRoom()}
-                >
-                  {ending ? "deleting…" : "Delete this room for both of us"}
+                <button className={s.quiet} disabled={linking} onClick={() => void link(!view.linked)}>
+                  {view.linked ? "Take this seat off my account" : "Keep this seat on my account"}
                 </button>
-              </>
-            ) : (
-              <>
-                <p className={s.small} style={{ marginTop: 8 }}>
-                  This takes your side out of the room: your moods, your visits, the days you have been in
-                  here. {view.them ?? "The other one"} keeps the room and {view.cat.name} stays, but she will
-                  not be you any more. You have a week to change your mind, unless the seat is taken before
-                  then.
-                </p>
-                {/* Two taps, because it costs her the same as deleting costs him and she has no name to
-                    type. Closing the panel disarms it, so a stray tap does not sit there armed. */}
-                <button
-                  className={s.quiet}
-                  disabled={ending}
-                  onClick={() => (leaveArmed ? void leave() : setLeaveArmed(true))}
-                >
-                  {ending ? "leaving…" : leaveArmed ? "Yes, take my side out of it" : "Leave this room"}
-                </button>
-              </>
+              </div>
             )}
-          </details>
+
+            {!setup && view.recoveryCode && (
+              <details className={s.recovery}>
+                <summary className={s.recoverySummary}>or keep a code instead</summary>
+                <p className={s.small} style={{ marginTop: 8 }}>
+                  For getting back in without an account. Keep it somewhere that is not this phone.
+                </p>
+                <RecoveryCode code={view.recoveryCode} />
+              </details>
+            )}
+
+            {/*
+             * The way out, and it is two different doors.
+             *
+             * His ends the room for both of them, because he made it and it is his notes in it. Hers takes
+             * her side and leaves his standing, so she has a way to remove herself that does not cost him a
+             * year. Both are here rather than buried in a settings page: an app that can hold something
+             * this personal has to show you how to end it, in the room, where you are.
+             */}
+            {!setup && (iAmHim || view.youAreHer) && (
+              <details className={s.recovery} onToggle={() => setLeaveArmed(false)}>
+                <summary className={s.recoverySummary}>
+                  {iAmHim ? "delete this room" : "leave this room"}
+                </summary>
+                {/*
+                A file of JSON is no use to anybody on an ordinary evening, so it does not sit in the
+                room. It is exactly what you want in the ten seconds before you end something, so it
+                sits here.
+              */}
+                <p className={s.small} style={{ marginTop: 8 }}>
+                  <a
+                    className={s.creditLink}
+                    href={`/api/room/${id}/export?me=${encodeURIComponent(myToken())}`}
+                  >
+                    Take a copy first
+                  </a>
+                  , if you want to keep what is in here.
+                </p>
+                {iAmHim ? (
+                  <>
+                    <p className={s.small} style={{ marginTop: 8 }}>
+                      This deletes the whole room for both of you: {view.cat.name}, the notes, everything
+                      either of you left in here. It happens straight away. You have a week to change your
+                      mind, and after that it is erased for good.
+                    </p>
+                    <p className={s.small} style={{ marginTop: 10 }}>
+                      Type her name to confirm.
+                    </p>
+                    <input
+                      className={s.input}
+                      value={typedName}
+                      placeholder={view.cat.name}
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      aria-label={`Type ${view.cat.name} to confirm deleting this room`}
+                      onChange={(e) => setTypedName(e.target.value)}
+                    />
+                    <button
+                      className={s.quiet}
+                      disabled={
+                        ending || typedName.trim().toLowerCase() !== view.cat.name.trim().toLowerCase()
+                      }
+                      onClick={() => void endRoom()}
+                    >
+                      {ending ? "deleting…" : "Delete this room for both of us"}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className={s.small} style={{ marginTop: 8 }}>
+                      This takes your side out of the room: your moods, your visits, the days you have been in
+                      here. {view.them ?? "The other one"} keeps the room and {view.cat.name} stays, but she
+                      will not be you any more. You have a week to change your mind, unless the seat is taken
+                      before then.
+                    </p>
+                    {/* Two taps, because it costs her the same as deleting costs him and she has no name to
+                    type. Closing the panel disarms it, so a stray tap does not sit there armed. */}
+                    <button
+                      className={s.quiet}
+                      disabled={ending}
+                      onClick={() => (leaveArmed ? void leave() : setLeaveArmed(true))}
+                    >
+                      {ending ? "leaving…" : leaveArmed ? "Yes, take my side out of it" : "Leave this room"}
+                    </button>
+                  </>
+                )}
+              </details>
+            )}
+          </section>
         )}
 
         <footer className={s.footer}>
@@ -2252,6 +2262,11 @@ function FrameSheet({
       </div>
 
       <div className={s.row} style={{ marginTop: 12 }}>
+        {/* Rubbing out was one of the five inks, so clearing a full sheet meant thirty-five taps with
+            the eraser selected. Nobody does that; they give up and hang up the mess. */}
+        <button className={s.btn} disabled={isBlank(sheet)} onClick={() => setSheet(BLANK)}>
+          Start over
+        </button>
         <button className={s.btn} onClick={() => setOpen(false)}>
           Never mind
         </button>
