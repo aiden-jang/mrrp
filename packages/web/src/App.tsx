@@ -1139,20 +1139,26 @@ function RoomPage({ id }: { id: string }) {
             </>
           ) : (
             <p className={s.small} style={{ marginTop: 12 }}>
-              Your side of it is gone: the moods, the visits, the days. {view.cat.name} is still in there, and
-              if the seat is free you can take it again. You would be starting from the beginning.
+              Your side of it is gone: the moods, the visits, the days.{" "}
+              {view.waitingForThem
+                ? `${view.cat.name} is still in there and the seat is empty, so you can take it again. You would be starting from the beginning.`
+                : "Somebody else is the cat now, so there is no seat to come back to."}
             </p>
           )}
-          <button
-            className={undoBy ? s.quiet : `${s.btn} ${s.btnGo}`}
-            style={undoBy ? undefined : { width: "100%", marginTop: 18 }}
-            onClick={() => {
-              forgetMe();
-              window.location.reload();
-            }}
-          >
-            {undoBy ? "No, start fresh instead" : "Take the seat again"}
-          </button>
+          {/* Offered only when there is a free seat to take. A button whose only outcome is the
+              both-seats-are-taken screen is worse than no button. */}
+          {(undoBy || view.waitingForThem) && (
+            <button
+              className={undoBy ? s.quiet : `${s.btn} ${s.btnGo}`}
+              style={undoBy ? undefined : { width: "100%", marginTop: 18 }}
+              onClick={() => {
+                forgetMe();
+                window.location.reload();
+              }}
+            >
+              {undoBy ? "No, start fresh instead" : "Take the seat again"}
+            </button>
+          )}
         </div>
       </main>
     );
@@ -2037,8 +2043,8 @@ function RoomPage({ id }: { id: string }) {
                   not be you any more. You have a week to change your mind, unless the seat is taken before
                   then.
                 </p>
-                {/* Two taps, because this is as permanent for her as deleting is for him and she has no
-                    name to type. Closing the panel disarms it, so a stray tap does not sit there armed. */}
+                {/* Two taps, because it costs her the same as deleting costs him and she has no name to
+                    type. Closing the panel disarms it, so a stray tap does not sit there armed. */}
                 <button
                   className={s.quiet}
                   disabled={ending}
