@@ -399,3 +399,31 @@ describe("the window when she moves", () => {
     expect((await view(HIM)).sky).toBe("snow");
   });
 });
+
+describe("the thing she only does for both of you", () => {
+  // Every other discovery is something you notice on your own. This one is the cat deciding the room
+  // is safe, which cannot be true with one person in it, so the room is what says so.
+  it("cannot be found by one person on their own", async () => {
+    await view(HIM, "Aiden");
+    expect((await post("found", { me: HIM, key: "belly" })).status).toBe(400);
+  });
+
+  it("is recorded when both of them have been here just now", async () => {
+    await seat();
+    expect((await post("found", { me: HER, key: "belly" })).status).toBe(200);
+    expect((await view(HER)).noticed).toBeGreaterThan(0);
+  });
+
+  it("stops counting once the other one has been gone a while", async () => {
+    await seat();
+    away(2);
+    // Her read is what moves her own clock on; his stays where it was two hours ago.
+    await view(HER);
+    expect((await post("found", { me: HER, key: "belly" })).status).toBe(400);
+  });
+
+  it("is still not a stranger's to find, however many people are in", async () => {
+    await seat();
+    expect((await post("found", { me: STRANGER, key: "belly" })).status).toBe(400);
+  });
+});

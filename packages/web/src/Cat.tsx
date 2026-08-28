@@ -170,6 +170,7 @@ const COLLAR: Record<Pose, { dx: number; w: number; dy: number; tag: number }> =
   stretch: { dx: -6, w: 12, dy: -5, tag:  0 },
   pounce:  { dx: -7, w: 12, dy: -6, tag: -1 },
   peek:    { dx: -4, w:  8, dy: -2, tag:  0 },
+  flop:    { dx:  3, w: 12, dy: -2, tag:  0 },
 };
 const COLLAR_BAND = "#9c5468";
 const COLLAR_TAG = "#e8ad55";
@@ -215,6 +216,7 @@ const WHITE = "#fffdf6";
 // Shut eyes are drawn as lines, not as recoloured open eyes. The `e` role covers two or three pixels
 // so an open eye can hold a highlight; filling all of it brown reads as sunglasses.
 const CLOSED_EYES: Record<Pose, { y: number; left: number; right: number; width: number }> = {
+  flop: { y: 7, left: 5, right: 11, width: 2 },
   loaf: { y: 7, left: 5, right: 11, width: 2 },
   sit: { y: 7, left: 5, right: 11, width: 2 },
   stand: { y: 7, left: 5, right: 11, width: 2 },
@@ -544,6 +546,7 @@ export function Cat({
   const stayingRef = useRef(staying);
   stayingRef.current = staying;
   const stayDepth = useRef(0);
+  const bellyFound = useRef(false);
   const stayPurred = useRef(false);
   const watchDoorUntil = useRef(0);
   useEffect(() => {
@@ -2050,6 +2053,22 @@ export function Cat({
         stayPurred.current = true;
         play("purr");
       }
+
+      /*
+       * The one thing she will not do for one person.
+       *
+       * Sitting with her long enough is already worth a purr. Doing it while the other one is also in
+       * the room gets her all the way over, which is the thing a cat does when it has decided nothing
+       * in here is a problem. Deeper than the purr on purpose, so it is not the first thing that
+       * happens; the room has to have been quiet for a while.
+       */
+      const flopped = togetherRef.current && stayDepth.current > 0.62;
+      if (flopped && !bellyFound.current) {
+        bellyFound.current = true;
+        onFoundRef.current?.("belly");
+        play("mrrp");
+      }
+      if (!togetherRef.current || stayDepth.current < 0.2) bellyFound.current = false;
       const settledNow = Math.max(sc.sleepy, petDepth.current, stayDepth.current * 0.75);
       if (Math.abs(settledNow - toldVoice.current) > 0.04) {
         toldVoice.current = settledNow;
@@ -2148,7 +2167,11 @@ export function Cat({
                     ? "sit"
                     : noticing
                       ? "perk"
-                      : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
+                      : // Below the games and above the clock: she will not roll over mid-chase, and
+                        // once she has, the hour of the day does not get to sit her back up.
+                        flopped
+                        ? "flop"
+                        : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
@@ -2618,6 +2641,7 @@ export function Cat({
           stretch: { l: -4, r: 2, wide: true },
           pounce: { l: -5, r: 1, wide: true },
           peek: { l: -4, r: 2, wide: true },
+          flop: { l: -5, r: 4, wide: true },
         };
         const e = EYES[pose];
         const at = mouseVisiting

@@ -13,6 +13,7 @@ export const DISCOVERY_KEYS = [
   "catnip",
   "music",
   "mouse",
+  "belly",
 ] as const;
 
 export type DiscoveryKey = (typeof DISCOVERY_KEYS)[number];

@@ -375,6 +375,15 @@ export class Room extends DurableObject<Env> {
     const { him, her } = this.roles(people);
     if (me !== him && me !== her) return false;
 
+    /*
+     * The one secret that cannot be found alone, and the only reason it is worth having.
+     *
+     * Checked here rather than in the browser, because the browser is where somebody who wanted to
+     * tick it off on their own would go. Every other discovery is a thing you notice; this one is a
+     * thing the cat only does when both of you are in the room, so the room is what has to say so.
+     */
+    if (key === "belly" && !this.bothHere(people)) return false;
+
     const before = await this.found();
     const { ledger, isNew } = recordFound(before, key as DiscoveryKey, me, Date.now());
     if (isNew) await this.ctx.storage.put("found", ledger);
@@ -426,6 +435,13 @@ export class Room extends DurableObject<Env> {
         await this.ctx.storage.put<Weather>("weather", { sky, at });
       }),
     );
+  }
+
+  private bothHere(people: Record<string, Person>): boolean {
+    const { him, her } = this.roles(people);
+    const now = Date.now();
+    if (!him || !her) return false;
+    return now - people[him]!.lastSeen < HERE_NOW_MS && now - people[her]!.lastSeen < HERE_NOW_MS;
   }
 
   private async guard(): Promise<void> {
@@ -851,12 +867,9 @@ export class Room extends DurableObject<Env> {
       them: them?.name ?? null,
       themLastAt: them?.lastSeen ?? null,
       themHereNow: !!them && Date.now() - them.lastSeen < HERE_NOW_MS,
-      bothHereNow:
-        !!him &&
-        !!her &&
-        (me === him || me === her) &&
-        Date.now() - people[him]!.lastSeen < HERE_NOW_MS &&
-        Date.now() - people[her]!.lastSeen < HERE_NOW_MS,
+      // Through the same helper the belly discovery is gated on, so the thing she is told is happening
+      // and the thing the room will accept can never drift apart.
+      bothHereNow: (me === him || me === her) && this.bothHere(people),
       herLine: seated ? ((await this.ctx.storage.get<Told2>("herLine")) ?? null) : null,
       doodle: await this.doodleFor(me, seated),
       note: youAreHer ? note : null,

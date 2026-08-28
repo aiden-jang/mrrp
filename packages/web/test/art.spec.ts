@@ -102,6 +102,7 @@ describe("sprites", () => {
       "stretch",
       "pounce",
       "peek",
+      "flop",
     ]);
     expect(POSES.stretch.w).toBeGreaterThan(POSES.sit.w);
     expect(POSES.pounce.h).toBeLessThan(POSES.sit.h);
