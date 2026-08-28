@@ -2267,13 +2267,21 @@ export function Cat({
         px(moodRight + 4, FLOOR + 17 - leafHop, "#5f824e");
         px(moodRight + 1, FLOOR + 18 - leafHop, "#8f7657");
       } else if (activeMood === "horny") {
-        // A toy she has abandoned on her way to the door. Its shadow was two pixels of the toy's own
-        // pink, offset right and a row low, which detached them: on bare boards that reads as a full
-        // stop somebody typed onto the floor. Shadows here are a floor-mixed line the width of the
-        // thing above them, sitting directly under it, the way the sad mood does its cushion.
+        /*
+         * A toy she has abandoned on her way to the door.
+         *
+         * Its shadow was two pixels of the toy's own pink, offset right and a row low, which detached
+         * them: on bare boards that reads as a full stop typed onto the floor. Shadows here are a
+         * floor-mixed line the width of the thing above them, directly under it, like the sad cushion.
+         *
+         * Pink, and staying pink. It was the most saturated thing on this floor at 0.40 against 0.24
+         * to 0.28 for the cushion, the mat and the blanket, which is most of why a stray pixel of it
+         * read as ink. Toned into that band. Not recoloured to the tan of the bored mood's toy: that
+         * one gets away with tan because it has a shape, and a plain lump in a cat's room does not.
+         */
         rect(19, FLOOR + 20, 4, 1, mixHex(sc.floorNear, INK, 0.2));
-        rect(19, FLOOR + 17, 4, 3, "#b86f84");
-        px(18, FLOOR + 16, "#d995a5");
+        rect(19, FLOOR + 17, 4, 3, "#bd8897");
+        px(18, FLOOR + 16, "#dbabb6");
       }
 
       if (treating) {
