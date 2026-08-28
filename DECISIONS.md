@@ -321,3 +321,21 @@ showed which one it was.
 
 The one-room-per-file part survived anyway, because it is the right shape once files are split, but
 it was not the thing that mattered. Do not merge these files back together.
+
+## The ending screens are pure components, so they can be tested
+
+There is no jsdom in the web package and no testing library, so React tests here render to static
+markup, the same way the auth app's do. That only works on a component that is a function of its
+props, which the delete and leave screens were not: they read three pieces of App state and called
+handlers closed over more.
+
+Pulling them into `screens.tsx` was the price of testing them, and it is worth paying for these in
+particular. Each one has two versions and picking the wrong one is the whole failure mode: telling
+her a room is gone while he can still put it back, or offering her a seat somebody else is sitting
+in. Those are one falsy prop apart, and neither is visible in a screenshot of the version that
+happens to be right.
+
+The tests were checked by breaking the component four ways on purpose (dropping the seat gate,
+always claiming he was told, forcing the undo branch, cutting the warning about giving the seat away)
+and confirming each one turned a test red. A test that cannot fail is worse than no test, because it
+reads like coverage.
