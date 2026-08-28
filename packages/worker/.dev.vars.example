@@ -10,3 +10,8 @@ DEV_TOOLS=on
 # The auth UI's own dev server, which proxies /auth to the auth Worker beside it. Production uses the
 # value in wrangler.toml. Point this at your running auth service, or leave it out and sign-in is off.
 AUTH_URL=http://localhost:34110
+
+# Where the window asks about her weather. Production uses the value in wrangler.toml. Point this at
+# a port that refuses and local development stops calling a stranger's API on every read; the window
+# just shows nothing, which is what it does whenever the lookup fails.
+# WEATHER_URL=http://127.0.0.1:1
