@@ -1906,6 +1906,44 @@ function RoomPage({ id }: { id: string }) {
         {!setup && (iAmHim || view.youAreHer) && (
           <section className={s.roomBits} aria-label="This room">
             <p className={s.roomBitsTitle}>this room</p>
+            {!setup && view.recoveryCode && (
+              <div className={s.accountInBits}>
+                <p className={s.small}>
+                  {view.linked
+                    ? "This seat is on your account, so signing in on a new phone brings you straight back here."
+                    : "Sign in and this seat comes back on any phone you sign in on. No code to keep."}{" "}
+                  {/* Beside the control rather than in the footer. This is where somebody decides to
+                  attach a room to an identity, so it is where the question comes up. */}
+                  <a
+                    href={`${AUTH_URL}/privacy`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={s.creditLink}
+                  >
+                    What this keeps
+                  </a>
+                  .
+                </p>
+                <button
+                  className={`${s.btn} ${s.accountBtn}`}
+                  disabled={linking}
+                  onClick={() => void link(!view.linked)}
+                >
+                  {view.linked ? "Take this seat off my account" : "Keep this seat on my account"}
+                </button>
+              </div>
+            )}
+
+            {!setup && view.recoveryCode && (
+              <details className={s.recovery}>
+                <summary className={s.recoverySummary}>or keep a code instead</summary>
+                <p className={s.small} style={{ marginTop: 8 }}>
+                  For getting back in without an account. Keep it somewhere that is not this phone.
+                </p>
+                <RecoveryCode code={view.recoveryCode} />
+              </details>
+            )}
+
             {iAmHim && (
               <button className={s.quiet} onClick={() => void shareRoom()}>
                 {shareResult === "shared"
@@ -1953,39 +1991,6 @@ function RoomPage({ id }: { id: string }) {
                   {view.them ?? "She"} can&apos;t get in
                 </button>
               ))}
-            {!setup && view.recoveryCode && (
-              <div className={s.accountInBits}>
-                <p className={s.small}>
-                  {view.linked
-                    ? "This seat is on your account, so signing in on a new phone brings you straight back here."
-                    : "Sign in and this seat comes back on any phone you sign in on. No code to keep."}{" "}
-                  {/* Beside the control rather than in the footer. This is where somebody decides to
-                  attach a room to an identity, so it is where the question comes up. */}
-                  <a
-                    href={`${AUTH_URL}/privacy`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={s.creditLink}
-                  >
-                    What this keeps
-                  </a>
-                  .
-                </p>
-                <button className={s.quiet} disabled={linking} onClick={() => void link(!view.linked)}>
-                  {view.linked ? "Take this seat off my account" : "Keep this seat on my account"}
-                </button>
-              </div>
-            )}
-
-            {!setup && view.recoveryCode && (
-              <details className={s.recovery}>
-                <summary className={s.recoverySummary}>or keep a code instead</summary>
-                <p className={s.small} style={{ marginTop: 8 }}>
-                  For getting back in without an account. Keep it somewhere that is not this phone.
-                </p>
-                <RecoveryCode code={view.recoveryCode} />
-              </details>
-            )}
 
             {/*
              * The way out, and it is two different doors.
@@ -1996,7 +2001,7 @@ function RoomPage({ id }: { id: string }) {
              * this personal has to show you how to end it, in the room, where you are.
              */}
             {!setup && (iAmHim || view.youAreHer) && (
-              <details className={s.recovery} onToggle={() => setLeaveArmed(false)}>
+              <details className={`${s.recovery} ${s.ending}`} onToggle={() => setLeaveArmed(false)}>
                 <summary className={s.recoverySummary}>
                   {iAmHim ? "delete this room" : "leave this room"}
                 </summary>
