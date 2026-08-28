@@ -244,6 +244,26 @@ const GROOM = { pawX: 10, pawY: 9, tipX: 11, tipY: 8, tongueX: 9, tongueY: 10 };
 const GROOM_MS = 1900;
 const GROOM_LICK_MS = 220;
 
+/*
+ * Kneading, which cats do when they have decided a thing is safe.
+ *
+ * Loaf only. Her paws are the two shaded pairs on the loaf's second-from-bottom row, at columns 4-5
+ * and 14-15, and every other pose puts them somewhere else. A behaviour that only reads in one pose
+ * belongs in that pose rather than in an average of all of them.
+ */
+const KNEAD = { y: 17, left: 4, right: 14, w: 2 };
+const KNEAD_BEAT_MS = 460;
+
+/*
+ * An ear twitch. One pixel, on the outside edge of one ear, for a tenth of a second.
+ *
+ * Additive rather than a redraw, because erasing part of a blitted sprite means knowing what was
+ * behind it, and what is behind her ear is whatever wall the hour has painted. A pixel appearing on
+ * the outside edge reads as the ear moving; a pixel missing from the inside reads as damage.
+ */
+const EAR = { y: 1, left: 2, right: 15 };
+const EAR_FLICK_MS = 110;
+
 export function Cat({
   label,
   look,
@@ -455,6 +475,8 @@ export function Cat({
   const rainHeard = useRef(-1e9);
   const yawn = useRef({ at: -1e9, next: -1e9 });
   const groom = useRef({ at: -1e9, next: 24000 + Math.random() * 30000 });
+  const chattered = useRef(-1);
+  const earFlick = useRef({ at: -1e9, next: 6000, side: 1 });
   const doorShutFrom = useRef({ at: 0, from: 0 });
   lookRef.current = look;
   clockRef.current = clock;
@@ -1516,6 +1538,17 @@ export function Cat({
       if (birding) {
         const hop = Math.floor(t / 380) % 2;
         blit(BIRD, wx + 4 + hop * 3, 16, { w: INK, b: "#8a6a48", o: "#e0a03f" });
+        /*
+         * She chatters at it. Once per visit, a beat after it lands, and never while she is asleep.
+         *
+         * The bird has hopped on that sill since the beginning and she has watched it in silence the
+         * whole time. This is the noise a cat makes at something it cannot get to, and it is the only
+         * sound in here she makes at something that is not one of you.
+         */
+        if (!reduce && sc.sleepy < 0.6 && chattered.current !== bird.current && t - bird.current > 500) {
+          chattered.current = bird.current;
+          play("chatter");
+        }
       }
       if (night) {
         // prettier-ignore
@@ -2473,6 +2506,34 @@ export function Cat({
         groom.current.at = t;
         groom.current.next = t + 52000 + Math.random() * 60000;
       }
+      /*
+       * She makes biscuits while you hold her, once she has settled right down.
+       *
+       * Deeper than the purr and shallower than the flop, so the order you get them in is purr, then
+       * kneading, then over she goes. Alternating, because both paws at once is a hop.
+       */
+      if (pose === "loaf" && !reduce && stayDepth.current > 0.34 && awake) {
+        const beat = Math.floor(t / KNEAD_BEAT_MS) % 2;
+        const paws = y + sp.oy + KNEAD.y;
+        rect(kx + sp.ox + KNEAD.left, paws - (beat ? 1 : 0), KNEAD.w, 1, L.furDk);
+        rect(kx + sp.ox + KNEAD.right, paws - (beat ? 0 : 1), KNEAD.w, 1, L.furDk);
+      }
+
+      // Ears move constantly on a real cat and never once moved on this one. Rare enough to read as
+      // a twitch rather than a tic, and either ear, because a cat that always flicks the same one is a
+      // cat with something wrong with it.
+      if (!reduce && awake && t > earFlick.current.next) {
+        earFlick.current = {
+          at: t,
+          next: t + 7000 + Math.random() * 15000,
+          side: Math.random() < 0.5 ? 1 : -1,
+        };
+      }
+      if (!reduce && awake && t - earFlick.current.at < EAR_FLICK_MS) {
+        const ex = earFlick.current.side > 0 ? EAR.right : EAR.left;
+        px(kx + sp.ox + ex, y + sp.oy + EAR.y, INK);
+      }
+
       const grooming = t - groom.current.at < GROOM_MS;
       if (grooming && awake) {
         const faceX = kx + sp.ox;

@@ -208,6 +208,7 @@ export type Cue =
   | "purr"
   | "mrrp"
   | "chirp"
+  | "chatter"
   | "brush"
   | "thump"
   | "shutter"
@@ -322,6 +323,26 @@ const CUES: Record<Cue, (g: { ctx: AudioContext; master: GainNode }, t: number) 
   },
 
   /* Shorter and higher than a mrrp. What she says when she notices, rather than when she greets. */
+  /*
+   * The stutter a cat makes at a bird it cannot reach.
+   *
+   * Six clipped chirps in a row rather than one, because the sound is the rhythm: a single chirp is
+   * her noticing something, and the machine-gun repeat is the frustration, which is the whole joke of
+   * it. Rising slightly across the run, the way it does when she works herself up.
+   */
+  chatter: (g, t) => {
+    for (let i = 0; i < 6; i++) {
+      voice(g, {
+        at: t + i * 0.07,
+        dur: 0.045,
+        gain: 0.085,
+        sweep: [(700 + i * 26) * pitch, (900 + i * 26) * pitch],
+        wobble: 70,
+        wobbleDepth: 26,
+      });
+    }
+  },
+
   chirp: (g, t) => {
     voice(g, {
       at: t,

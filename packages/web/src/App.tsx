@@ -266,6 +266,18 @@ const FOUND_NAMES: Record<string, string> = {
   belly: "that she will roll over for the two of you",
 };
 
+/*
+ * A first is about the room, not about either of them, so there is no name in it.
+ *
+ * Present perfect on purpose: "it has snowed on this room" is a thing that is now permanently true,
+ * which is what a first is. "It snowed" would be a weather report.
+ */
+const FIRSTS: Record<string, string> = {
+  snow: "it has snowed on this room, for the first time.",
+  rain: "it has rained on this room, for the first time.",
+  storm: "the first storm this room has been through.",
+};
+
 function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[]; onClose: () => void }) {
   return (
     <section className={s.arrival} aria-label="Things the room kept for you">
@@ -315,6 +327,8 @@ function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[];
                 <>
                   <b>{name}</b> took the {GIFT_NAMES[item.gift] ?? "thing"} you left.
                 </>
+              ) : item.kind === "first" ? (
+                <>{FIRSTS[item.what] ?? "something happened here for the first time."}</>
               ) : (
                 <>
                   <b>{name}</b> left: “{item.text}”
