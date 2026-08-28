@@ -1,5 +1,5 @@
-import { env, runInDurableObject } from "cloudflare:test";
-import { describe, expect, it } from "vitest";
+import { env, runInDurableObject, SELF } from "cloudflare:test";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { harness, AHEAD, BEHIND, HER, HIM, STRANGER } from "./harness.js";
 
 const { id, post, seat, view } = harness("recoveryroom");
@@ -343,5 +343,81 @@ describe("a seat tied to an account", () => {
 
     expect((await inRoom((r) => r.view(NEW_PHONE, "x", ME))).youAreHer).toBe(false);
     expect((await inRoom((r) => r.view(HER, "Bea"))).youAreHer).toBe(true);
+  });
+});
+
+/*
+ * The seam to the auth service, which the tests above skip.
+ *
+ * Everything else about accounts is tested by handing the room an account id directly, so all of it
+ * starts one step after the question "who is this". That step is `accountOf`, which forwards the
+ * session cookie and turns the answer into an id, and nothing covered it at all.
+ */
+describe("working out who is signed in", () => {
+  const room = (me: string, cookie?: string) =>
+    SELF.fetch(`https://x/api/room/${id}?me=${me}`, cookie ? { headers: { cookie } } : undefined);
+
+  const link = (me: string, cookie?: string) =>
+    SELF.fetch(`https://x/api/room/${id}/link`, {
+      method: "POST",
+      headers: { "content-type": "application/json", ...(cookie ? { cookie } : {}) },
+      body: JSON.stringify({ me, on: true }),
+    });
+
+  it("treats no cookie as signed out, and says so rather than guessing", async () => {
+    await seat();
+    const r = await room(HER);
+    expect(r.status).toBe(200);
+    expect(((await r.json()) as { linked: boolean }).linked).toBe(false);
+    expect((await link(HER)).status).toBe(401);
+  });
+
+  /*
+   * The promise in DECISIONS.md, which had never been checked: if the auth service is unreachable the
+   * answer is "not signed in", because a room has never needed an account.
+   *
+   * The failure this guards against is a 500. An outage that only costs you the optional half is a bad
+   * afternoon; an outage that takes down every room, including the ones with no account attached to
+   * them, is the whole app resting on a service it was designed not to need.
+   */
+  describe("when the auth service cannot be reached", () => {
+    const cookie = "platform_session=whatever-this-is-never-read";
+    let realUrl: string;
+
+    beforeEach(() => {
+      realUrl = env.AUTH_URL;
+      // Refused immediately rather than left hanging, so a broken promise here fails fast.
+      env.AUTH_URL = "http://127.0.0.1:1";
+    });
+    afterEach(() => {
+      env.AUTH_URL = realUrl;
+    });
+
+    it("leaves the room working for both of them", async () => {
+      await seat();
+      const r = await room(HIM, cookie);
+      expect(r.status).toBe(200);
+      const v = (await r.json()) as { you: string | null; linked: boolean };
+      expect(v.you).toBe("Aiden");
+      expect(v.linked).toBe(false);
+    });
+
+    // Reads the room WITH a cookie, so the failing lookup is actually on the path. Without one,
+    // `getSessionUser` returns null before it tries to fetch anything and the test proves nothing.
+    it("still lets her be the cat, which is the part that never needed an account", async () => {
+      await seat();
+      expect((await post("tell", { me: HER, mood: "good" })).status).toBe(200);
+
+      const r = await room(HIM, cookie);
+      expect(r.status).toBe(200);
+      expect(((await r.json()) as { catMood: string | null }).catMood).toBe("good");
+    });
+
+    it("turns down the one thing that does need one, without failing", async () => {
+      await seat();
+      const r = await link(HER, cookie);
+      expect(r.status).toBe(401);
+      expect(r.status).not.toBe(500);
+    });
   });
 });
