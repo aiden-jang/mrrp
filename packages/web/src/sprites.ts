@@ -10,7 +10,8 @@
  *  c blush (two pixels per cheek, and worth more than any other pair)
  */
 
-export type Pose = "loaf" | "sit" | "stand" | "play" | "perk" | "walk" | "stretch" | "pounce" | "peek";
+export type Pose =
+  "loaf" | "sit" | "stand" | "play" | "perk" | "walk" | "stretch" | "pounce" | "peek" | "flop";
 
 /** Parsed sprite: rows of characters, guaranteed rectangular. */
 export interface Sprite {
@@ -266,6 +267,34 @@ export const PEEK = sprite(
   -12,
 );
 
+/**
+ * On her side, belly out, all four paws loose. What a cat does when it has decided the room is safe.
+ *
+ * The head keeps the loaf's construction and faces the viewer, because a head in profile at this size
+ * loses the eyes and the blush, which are the only things carrying the expression. Belly-up with the
+ * head flat was the first attempt and it read as a dead cat.
+ */
+export const FLOP = sprite(
+  [
+    "...ww........ww...............",
+    "..wffw......wffw....ww...ww...",
+    "..wfpfw....wfpfw...wffw.wffw..",
+    "..wffffwwwwffffw...wffw.wffw..",
+    ".wfdffffdffffdfw..wwffwwwffww.",
+    ".wfbbbbbbbbbbbfwwwffffffffffww",
+    ".wfbchebbbbhecbfffbbbbbbbbbbfw",
+    ".wfbceebbbbeecbfbbbbbbbbbbbbfw",
+    ".wfbbbbnnbbbbbfbbbbbbbbbbbbbfw",
+    ".wffbbbmmmbbbffbbbbbbbbbbbbdfw",
+    "..wffbbbbbbffbbbbbbbbbbbbbdfww",
+    "...wwffffffffffffffffffffffw..",
+    ".....wwffffffffffffffffffww...",
+    ".......wwwwwwwwwwwwwwwww......",
+  ],
+  -10,
+  -13,
+);
+
 export const POSES: Record<Pose, Sprite> = {
   loaf: LOAF,
   sit: SIT,
@@ -276,6 +305,7 @@ export const POSES: Record<Pose, Sprite> = {
   stretch: STRETCH,
   pounce: POUNCE,
   peek: PEEK,
+  flop: FLOP,
 };
 
 /** The door she waits at. */

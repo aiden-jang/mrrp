@@ -224,6 +224,7 @@ export const FOUND_ANNOUNCEMENTS: Record<string, string> = {
   catnip: "the catnip has arrived.",
   music: "music is playing.",
   mouse: "a mouse just ran along the wall.",
+  belly: "she has rolled all the way over.",
 };
 
 function whenish(at: number): string {
@@ -262,6 +263,7 @@ const FOUND_NAMES: Record<string, string> = {
   catnip: "the catnip",
   music: "the music",
   mouse: "the mouse",
+  belly: "that she will roll over for the two of you",
 };
 
 function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[]; onClose: () => void }) {
