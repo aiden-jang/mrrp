@@ -320,7 +320,10 @@ instant its data arrived. Typecheck, build and the entire test suite were green 
 static rule sees that, so `react-hooks/rules-of-hooks` is an error here and CI runs it before deploying.
 
 The worker suite runs in real workerd via `@cloudflare/vitest-pool-workers`, so Durable Object
-storage and the seat rules are exercised as they actually behave rather than against a mock.
+storage and the seat rules are exercised as they actually behave rather than against a mock. It is
+split across six files, each with its own room, because a worker gets slower the more requests it has
+served and one big file is therefore quadratic in its own length. That split is what takes this suite
+from two minutes to four seconds; `test/harness.ts` has the measurements.
 
 Anything that is only true for a fraction of the time is tested numerically, never by looking.
 The moth visits for 18 seconds out of every 100; two attempts at screenshotting it missed both
