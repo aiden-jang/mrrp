@@ -252,6 +252,24 @@ app.post("/api/room/:id/delete", async (c) => {
   return erasesAt ? c.json({ ok: true, undoUntil: erasesAt }) : c.json({ error: "not yours to delete" }, 403);
 });
 
+app.get("/api/room/:id/export", async (c) => {
+  const id = c.req.param("id");
+  const me = c.req.query("me") ?? "";
+  if (!ROOM_RE.test(id) || me.length < 8) return c.json({ error: "bad request" }, 400);
+
+  const copy = await room(c.env, id).exportFor(me);
+  if (!copy) return c.json({ error: "not your room to copy" }, 403);
+
+  // Named for the room and dated, because this ends up in a downloads folder next to everything else.
+  const day = new Date().toISOString().slice(0, 10);
+  return new Response(JSON.stringify(copy, null, 2), {
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "content-disposition": `attachment; filename="mrrp-${id}-${day}.json"`,
+    },
+  });
+});
+
 app.post("/api/room/:id/blanket", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);

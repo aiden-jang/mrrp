@@ -243,3 +243,53 @@ describe("how long you were away", () => {
     expect((await view(STRANGER)).awayMs).toBeNull();
   });
 });
+
+describe("taking a copy of the room", () => {
+  const copy = async (me: string) => {
+    const r = await SELF.fetch(`https://x/api/room/${id}/export?me=${me}`);
+    return { status: r.status, disposition: r.headers.get("content-disposition"), body: await r.json() };
+  };
+
+  it("gives each of them their own room, named and dated", async () => {
+    await seat();
+    const his = await copy(HIM);
+    expect(his.status).toBe(200);
+    expect(his.disposition).toContain("attachment");
+    expect(his.disposition).toContain(".json");
+
+    const body = his.body as { you: string; them: string; youAreTheCat: boolean };
+    expect(body.you).toBe("Aiden");
+    expect(body.them).toBe("Sofia");
+    expect(body.youAreTheCat).toBe(false);
+    expect(((await copy(HER)).body as { youAreTheCat: boolean }).youAreTheCat).toBe(true);
+  });
+
+  /*
+   * The one rule this must not break.
+   *
+   * Tomorrow's words never reach her browser, and an export is a browser with a filename on it. It
+   * would also be the easiest leak in the app to miss, because nobody looks at a download twice.
+   */
+  it("stops her copy at the note she has actually read", async () => {
+    await seat();
+    await post("notes", { me: HIM, notes: ["one", "two", "three", "four"] });
+
+    const hers = (await copy(HER)).body as { notes: string[]; notesInAll: number };
+    expect(hers.notes).toEqual(["one"]);
+    expect(hers.notesInAll).toBe(4);
+
+    const his = (await copy(HIM)).body as { notes: string[] };
+    expect(his.notes).toEqual(["one", "two", "three", "four"]);
+  });
+
+  it("is not a copy a stranger holding the link can take", async () => {
+    await seat();
+    expect((await copy(STRANGER)).status).toBe(403);
+  });
+
+  it("has nothing to give once the room is gone", async () => {
+    await seat();
+    await post("delete", { me: HIM, name: "Bean" });
+    expect((await copy(HIM)).status).toBe(410);
+  });
+});
