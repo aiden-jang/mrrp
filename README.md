@@ -231,9 +231,11 @@ gets a screen with the date on it and a button that puts everything back exactly
 offered a way back, because she does not have one, and dangling one in front of her would be worse
 than the plain fact.
 
-The erasing is the one thing in this app that happens without somebody visiting. It runs off a
-Durable Object alarm, with the same check repeated on the next request in case the alarm never fired.
-A delete that only completes if one of them comes back is a promise rather than a fact.
+The erasing is the one thing in this app that happens without somebody visiting. It runs off a Durable
+Object alarm, with the same check repeated on the next request in case the alarm never fired. A delete
+that only completes if one of them comes back is a promise rather than a fact, and so is a week of her
+data in a room nobody opens again. One alarm serves both deadlines: whichever is sooner wins, and it
+reschedules itself for the other.
 
 **She can leave**, which takes her side with her and leaves his room standing: her moods, her visits,
 the days she has been in here. Her seat goes back to empty, so he can send the link on. She gets a
@@ -241,11 +243,17 @@ door of her own rather than a share of his because the alternatives are both wor
 delete, she would have to ask someone else to remove her own data. If she could delete the whole room,
 one bad evening could erase his year.
 
+She gets the same week he does, with one condition his does not have: the seat is genuinely free the
+whole time, because that is the point of leaving. If he hands it to somebody else, her way back closes
+that moment, and the screen says so before she decides. What she left is kept in one record and put
+back exactly as it was, including the `firstSeen` that decides she is the second seat and therefore
+the cat.
+
 Leaving bars that browser's token from being seated again. Without that, her own next page load walks
 back through the free seat and undoes the thing she just did, which was the first bug this feature had.
-She can still come back, on a fresh token, from a screen that says she left; the room does not pretend
-it never happened. Him freeing her seat does **not** bar the token, because that button exists so the
-right person can take a seat back.
+She can also start over on a fresh token instead of restoring, from the same screen. Him freeing her
+seat does **not** bar the token and keeps nothing back, because that button exists so the right person
+can take a seat back, and whoever held it is not returning to that browser.
 
 Once erased, a room keeps exactly one thing: the date it went. Wiping the storage outright is not enough,
 because a room with fewer than two people in it seats whoever turns up, so the next person to open a
@@ -294,7 +302,7 @@ local day, so a day she doesn't visit is not a note she never sees.
 ## Tests
 
 ```bash
-pnpm check       # typecheck, lint, then 359 tests: 161 web, 198 worker
+pnpm check       # typecheck, lint, then 365 tests: 161 web, 204 worker
 ```
 
 `lint` exists for one rule. owewell shipped a `useEffect` below a component's early returns, so the

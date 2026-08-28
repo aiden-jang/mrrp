@@ -254,9 +254,14 @@ Only he sees the way back, and only until the week is up. She is not told there 
 countdown on somebody else's decision about a room you shared is worse than being told it is gone,
 and it would make the undo his to dangle.
 
-Leaving does not get a window. Hers is a smaller wipe, it is hers alone, and it already takes two
-taps. The promise "leaving removes your side now" is worth more to her than a week of grace she did
-not ask for.
+Leaving gets the same week, with one condition his does not have. The seat is genuinely free the whole
+time, because freeing it is the point of leaving, so if he hands it to somebody else her way back
+closes at that moment. The screen tells her that before she decides rather than after.
+
+I argued for leaving being immediate and was overruled, and the overrule was right: the argument was
+that "leaving removes your side now" is a cleaner promise, but it is only cleaner to write. The person
+it is made to gets one irreversible tap on a bad evening either way, and she is the one with less of a
+claim on the room and more reason to act in a hurry.
 
 The erasing runs off a Durable Object alarm, which is the only thing in this app that happens without
 somebody visiting, and the wrangler config used to say so. It has to be an alarm: if the erasing only
