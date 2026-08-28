@@ -259,3 +259,20 @@ Leaving needed the same kind of thinking one level down. The first version freed
 undone by her own next page load, because the free seat she had just vacated was hers for the taking
 again. Leaving now bars that browser's token. Him freeing her seat does not, because that button
 exists precisely so the right person can take a seat back.
+
+## The test suite slows down as it runs, and that is what the raised timeout is for
+
+Every test takes a fresh room id, so every test leaves another Durable Object alive inside the one
+workerd instance, and each one taxes every request after it. Measured: thirty reads cost 59ms in an
+empty instance, 145ms after fifty rooms, 339ms after a hundred, 513ms after a hundred and fifty. By
+the end of the suite one round trip is nearer 150ms than 2ms.
+
+That is the whole explanation for a flake that went undiagnosed for a while. The tests that loop are
+the ones with no headroom, and under Vitest's 5s default they were the ones that went red on a busy
+laptop. The timeout is 20s now, the loop counts that were arbitrary have been cut, and the ones that
+are not arbitrary (forty-five actions, to get past a forty-entry visit log) keep their own 30s.
+
+Fixing the cause would mean not minting a room per test, which needs storage isolated between tests.
+`isolatedStorage` and `singleWorker` were options that did that before vitest-pool-workers 0.20 and
+neither exists now. Worse, the options object is parsed by a schema that drops unknown keys, so this
+config carried `singleWorker: true` for a while doing nothing at all.
