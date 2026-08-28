@@ -450,3 +450,40 @@ weather.
 The endpoint is a binding rather than a constant so the tests can point it at a port that refuses.
 Left as a constant, the suite called a stranger's public API a few hundred times a run, and one
 assertion quietly depended on whether it happened to be cloudy in New York.
+
+## The weather reaches the cat, not just the glass
+
+Putting the sky in the window created a room that contradicted itself. She spends the daylight hours
+following the sunbeam across the floor, which is lovely and a nonsense on a wet Tuesday: the beam had
+been drawn faint precisely because the sky is closed, and she was lying in a patch of light that was
+not there. The copy under the room said it out loud, too, over an empty floor: "moving with the
+sunbeam, one patch at a time".
+
+So rain and snow are worth going to look at, and she does. Cloud is not, so she gives up on the sun
+and goes to her own spot. Three of the hourly lines have sunless versions now, written per hour
+rather than replaced by one generic sentence, because the hours are hand-authored and a catch-all
+would flatten them.
+
+The weather loses to everything else with an opinion: being asleep, waiting at the door, and doing
+what you told her all outrank it. It is the least important thing in the room, and the ordering says
+so.
+
+## One secret that cannot be found alone
+
+There were fourteen discoveries and every one was solo, while the only mechanic in the app that needs
+two people, both of you being in the room at once, was spent entirely on the cat crossing to the
+middle to purr.
+
+Sitting with her long enough already earns a purr. Doing it while the other one is also here gets her
+all the way over on her side, paws up, which is the thing a cat does when it has decided nothing in
+the room is a problem. Set deeper than the purr so it is not the first thing that happens.
+
+Gated in the Durable Object, not the browser, because the browser is exactly where somebody who
+wanted to tick it off alone would go. `bothHereNow` in the view and the check on the discovery run
+through one helper, so what she is told is happening and what the room will accept cannot drift.
+
+The pose is a new hand-authored grid, and the art tests caught two things about it that a screenshot
+would not have: the eyes and highlights have to sit in the same columns in every pose, so the head is
+the loaf's head unchanged, and the pose list is asserted by name so a new one has to be acknowledged
+rather than appearing. The first attempt was belly-up with the head flat and it read as a dead cat;
+the second was a long loaf, because without paws in the air nothing says rolled over.
