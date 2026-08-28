@@ -15,7 +15,7 @@ import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
  * Do not add `singleWorker` or `isolatedStorage` here. Both were real options before 0.20 and neither
  * exists now; the options object is parsed with a schema that drops unknown keys, so they sit in the
  * file looking meaningful and do nothing at all. This config carried `singleWorker: true` for a while
- * that way.
+ * that way. Neither is the answer to a slow suite either; test/harness.ts says what is.
  */
 export default defineConfig({
   plugins: [
@@ -25,19 +25,14 @@ export default defineConfig({
   ],
   test: {
     /*
-     * These are round trips, not unit tests, and 5s is a unit-test default.
+     * Ten seconds rather than Vitest's five. These are round trips through a real Durable Object, not
+     * unit tests, and the first test in a file wears that file's import cost as well.
      *
-     * The suite gets slower as it goes, and it is worth knowing why before trying to fix a slow test.
-     * Every test takes a fresh room id, so every test leaves another Durable Object alive inside the
-     * one workerd instance, and each one taxes every request after it. Measured: thirty reads cost
-     * 59ms in an empty instance, 145ms after fifty rooms, 339ms after a hundred, 513ms after a
-     * hundred and fifty. By the end of this suite a single round trip is nearer 150ms than 2ms.
-     *
-     * So the tests that loop are the ones with no headroom, and they are the ones that used to fail
-     * on a busy laptop under the 5s default. Raised rather than left, because a suite that goes red
-     * when you have a browser open teaches you to re-run it instead of read it. A genuine hang still
-     * fails, only later, and the one case that legitimately needs longer keeps its own explicit 30s.
+     * It used to be twenty, to cover a suite that got quadratically slower as it ran. That is fixed
+     * (see test/harness.ts): the slowest test in here is now under half a second, so this is headroom
+     * for a loaded machine and nothing else. If something in here ever needs more than ten seconds,
+     * the thing to look at is the test.
      */
-    testTimeout: 20_000,
+    testTimeout: 10_000,
   },
 });
