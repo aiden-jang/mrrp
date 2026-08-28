@@ -1490,6 +1490,37 @@ export function Cat({
         px(wx + 11, wy(7), "#d99d62");
         px(wx + 14, wy(6), "#e8bd72");
       }
+      /*
+       * Breath on cold glass.
+       *
+       * Condensation gathers at the bottom of a pane, not across the middle of it, so this is the
+       * last two rows of each of the four panes and nothing else. It breathes on a slow sine because
+       * a static wash is a smudge on the sprite; moving, it is a warm room on a cold day.
+       *
+       * Drawn after the skyline and the season, because fog is on the inside of the window and
+       * everything else out there is behind it.
+       */
+      const cold = snowing || season === "winter";
+      if (cold) {
+        const swell = reduce ? 0.3 : 0.3 + Math.sin(t / 4200) * 0.07;
+        const fog = mixHex(glass, "#ffffff", swell);
+        // wy(2) and wy(7) are the last two glass rows of each pane. wy(4) and wy(9) are the frame
+        // bars between and below them, and fogging those paints over the window's own woodwork.
+        for (const paneY of [wy(2), wy(7)]) {
+          rect(wx + 1, paneY, 7, 2, fog);
+          rect(wx + 9, paneY, 7, 2, fog);
+        }
+        /*
+         * And a nose print, while she is at the window and only there.
+         *
+         * The glass colour painted back over the fog, so it reads as wiped rather than drawn. It is
+         * the one mark in this room that is evidence of her rather than a picture of her.
+         */
+        if (Math.abs(sc.catX * GW - WIN_CX) < 9 && sc.sleepy < 0.5) {
+          rect(wx + 10, wy(8), 3, 1, glass);
+          px(wx + 11, wy(7), glass);
+        }
+      }
       rect(wx - 1, 15, WINDOW.w + 2, 1, mixHex(sc.wallBottom, INK, 0.24));
       rect(wx - 2, 16, WINDOW.w + 4, 1, mixHex(sc.wallBottom, "#a77a58", 0.42));
       if (raining) {
