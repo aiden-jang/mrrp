@@ -85,6 +85,8 @@ export interface RoomView {
   // When she can still put her side back, if she can. Null once the week is up or once somebody else
   // has taken the seat she freed.
   undoLeaveUntil: number | null;
+  // Only ever sent to the one whose seat is still there, and only while she can still come back.
+  theyLeft: { name: string; until: number } | null;
   catMood: Mood | null;
   catMoodAt: number | null;
   you: string | null;

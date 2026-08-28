@@ -1608,10 +1608,30 @@ function RoomPage({ id }: { id: string }) {
           <>
             {/* The italic caption above already says she's asleep, in the room's own voice. Saying it
                 again immediately underneath read as a layout fault, because the two lines collided. */}
-            <p className={s.newsMain}>Nobody else is here yet.</p>
-            <p className={s.small} style={{ textAlign: "center" }}>
-              Send this link to the one person it's for. Whoever opens it second is the one the cat is.
-            </p>
+            {view.theyLeft ? (
+              <>
+                {/* "Nobody else is here yet" is the wrong sentence for a seat somebody has left, and
+                    the difference matters: sending the link on is what closes her way back, so he
+                    has to be told before he does it, not after. */}
+                <p className={s.newsMain}>{view.theyLeft.name} left this room.</p>
+                <p className={s.small} style={{ textAlign: "center" }}>
+                  Her side of it is kept until{" "}
+                  {new Date(view.theyLeft.until).toLocaleDateString(undefined, {
+                    month: "long",
+                    day: "numeric",
+                  })}
+                  , so she can put it back if she changes her mind. Sending this link to somebody else gives
+                  the seat away, and that ends it.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className={s.newsMain}>Nobody else is here yet.</p>
+                <p className={s.small} style={{ textAlign: "center" }}>
+                  Send this link to the one person it's for. Whoever opens it second is the one the cat is.
+                </p>
+              </>
+            )}
             {!setup && (
               <button
                 ref={setupTrigger}
@@ -1632,7 +1652,9 @@ function RoomPage({ id }: { id: string }) {
                 ? "Sent."
                 : shareResult === "copied"
                   ? "Copied. Go send it."
-                  : "Send her the link"}
+                  : view.theyLeft
+                    ? "Send the link to somebody else"
+                    : "Send her the link"}
             </button>
           </>
         ) : view.youAreHer ? (

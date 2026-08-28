@@ -732,6 +732,11 @@ export class Room extends DurableObject<Env> {
     const otherId = youAreHer ? him : her;
     const them = otherId ? (people[otherId] ?? null) : null;
     const waitingForThem = !her;
+    // Told to him and to nobody else, and only while it is still true. He is the one who can close her
+    // way back by giving the seat away, so he is the one who has to know it is open.
+    const kept = waitingForThem && me === him ? await this.ctx.storage.get<LeftSide>(LEFT_SIDE) : null;
+    const theyLeft =
+      kept && Date.now() < kept.dropsAt ? { name: kept.person.name, until: kept.dropsAt } : null;
     const windowLight = await this.ctx.storage.get<WindowLight>("windowLight");
     const startedAt = roomStartedAt(
       Object.values(people).map((person) => person.firstSeen),
@@ -783,6 +788,7 @@ export class Room extends DurableObject<Env> {
       youAreHer,
       youLeft,
       undoLeaveUntil,
+      theyLeft,
       catMood: catTold?.mood ?? null,
       catMoodAt: catTold?.at ?? null,
       you: people[me]?.name ?? null,
