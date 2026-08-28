@@ -31,8 +31,11 @@ export interface Harness {
 /**
  * One room per file, wiped between tests rather than a fresh id each time.
  *
- * Give each file its own id. The files run at the same time, and two of them sharing a room id would
- * be two tests writing to one Durable Object with no idea the other exists.
+ * The file boundary is a real one: storage and `env` are both per file, so two files using the same
+ * room id do not see each other, and one file taking DEV_TOOLS away does not disturb the rest. Both
+ * checked, rather than assumed. The ids differ anyway because it makes a failure easier to place, and
+ * because the room id has to be six characters or the router rejects it, which cost twenty-four tests
+ * once already.
  */
 export function harness(room: string): Harness {
   const id = room;
