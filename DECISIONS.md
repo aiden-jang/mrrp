@@ -261,8 +261,17 @@ closes at that moment. The screen tells her that before she decides rather than 
 He is told too: that she left, and that her side is kept until a date. Not for symmetry, and not
 because her deliberation is his business, but because he is the one holding the thing that ends it.
 The sentence sits directly above the button that would send the link on, since a warning after the
-fact is not a warning. It goes to him alone, it stops the moment somebody takes the seat or the week
-runs out, and she is not told he was told.
+fact is not a warning.
+
+And she is told he was told. The argument for keeping that from her was that it spares her the
+feeling of being watched while she decides, but it does not: he can see it either way, so all the
+silence buys is her not knowing what he can see. That is the version where finding out later feels
+like the app took a side.
+
+The two are one thing built twice, deliberately. Both are computed from the same conditions and both
+stop at the same instant, when somebody takes the seat or the week runs out, so there is no state
+where one of them is looking at something the other is not. A test asserts that pairing rather than
+each half on its own, because the pairing is the promise.
 
 I argued for leaving being immediate and was overruled, and the overrule was right: the argument was
 that "leaving removes your side now" is a cleaner promise, but it is only cleaner to write. The person
