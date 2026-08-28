@@ -1392,9 +1392,14 @@ describe("deleting the room", () => {
     "scheduleNext",
   ];
   // The one method that must answer on a dead room, because it is how the client knows it is dead.
-  // The alarm has to run on a deleted room: it is the thing that erases it. The other two are the way
+  // The alarm has to run on a deleted room: it is the thing that erases it. The other two are his way
   // back, which by definition only exists while the room is deleted.
-  const ANSWERS_WHEN_GONE = ["undoUntil", "undelete", "alarm", "undoLeaveUntil", "unleave"];
+  //
+  // Her two are NOT on this list, and putting them here is how a real bug got in: she could restore
+  // her side into a room he had already deleted, and he would find her back in it after undoing.
+  // Being on this list is an escape from the check, so a name belongs here only if a dead room must
+  // genuinely answer through it.
+  const ANSWERS_WHEN_GONE = ["undoUntil", "undelete", "alarm"];
 
   it("gives him a week to change his mind, and tells him when it runs out", async () => {
     await seat();
@@ -1663,6 +1668,32 @@ describe("her leaving on her own", () => {
     away(24 * 8);
     expect((await view(HIM)).theyLeft).toBeNull();
     expect((await view(HIM)).waitingForThem).toBe(true);
+  });
+
+  // She could once put her side back into a room he had already deleted, and he would find her in it
+  // after changing his mind. A deleted room is not a place anybody gets to write to, including her.
+  it("cannot be undone into a room he has already deleted", async () => {
+    await seat();
+    await post("leave", { me: HER });
+    await post("delete", { me: HIM, name: "Bean" });
+
+    expect((await post("unleave", { me: HER })).status).toBe(410);
+
+    await post("undelete", { me: HIM });
+    expect((await view(HIM)).waitingForThem).toBe(true);
+  });
+
+  // But his undo does not cost her hers. Her week keeps running underneath his, so if he changes his
+  // mind inside it she is still able to change hers.
+  it("still lets her come back after he puts the room back", async () => {
+    await seat();
+    await post("leave", { me: HER });
+    await post("delete", { me: HIM, name: "Bean" });
+    await post("undelete", { me: HIM });
+
+    expect((await view(HER)).undoLeaveUntil).toBeGreaterThan(Date.now());
+    expect((await post("unleave", { me: HER })).status).toBe(200);
+    expect((await view(HER)).youAreHer).toBe(true);
   });
 
   it("is not his to undo, and not a stranger's", async () => {
