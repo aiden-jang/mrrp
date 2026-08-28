@@ -1602,6 +1602,43 @@ describe("her leaving on her own", () => {
     });
   });
 
+  it("tells him she left and may be back, so he knows what giving the seat away costs", async () => {
+    await seat();
+    await post("leave", { me: HER });
+
+    const v = await view(HIM);
+    expect(v.theyLeft?.name).toBe("Sofia");
+    expect(v.theyLeft?.until).toBeGreaterThan(Date.now());
+  });
+
+  // Her deliberation is his to know only because he can end it. A spectator holding the link has no
+  // seat to give away and no business knowing she is thinking about it.
+  it("tells nobody else, not even the one who left", async () => {
+    await seat();
+    await post("leave", { me: HER });
+
+    expect((await view(STRANGER)).theyLeft).toBeNull();
+    expect((await view(HER)).theyLeft).toBeNull();
+  });
+
+  it("stops telling him once somebody else has taken the seat", async () => {
+    await seat();
+    await post("leave", { me: HER });
+    await view(STRANGER, "Someone new");
+
+    const v = await view(HIM);
+    expect(v.theyLeft).toBeNull();
+    expect(v.them).toBe("Someone new");
+  });
+
+  it("stops telling him when the week runs out", async () => {
+    await seat();
+    await post("leave", { me: HER });
+    away(24 * 8);
+    expect((await view(HIM)).theyLeft).toBeNull();
+    expect((await view(HIM)).waitingForThem).toBe(true);
+  });
+
   it("is not his to undo, and not a stranger's", async () => {
     await seat();
     await post("leave", { me: HER });
