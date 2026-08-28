@@ -293,3 +293,39 @@ describe("taking a copy of the room", () => {
     expect((await copy(HIM)).status).toBe(410);
   });
 });
+
+describe("what a copy of the room actually contains", () => {
+  const copy = async (me: string) =>
+    (await (await SELF.fetch(`https://x/api/room/${id}/export?me=${me}`)).json()) as Record<string, unknown>;
+
+  /*
+   * The privacy page says this hands you everything the room holds, so it has to.
+   *
+   * The first version quietly left out her line, her mood, what he had done and how long they had
+   * been at it, which made the promise wrong rather than the feature incomplete. This test is the
+   * tripwire for the next thing somebody stores.
+   */
+  it("brings her own words and moods with her", async () => {
+    await seat();
+    await post("say", { me: HER, text: "still here" });
+    await post("tell", { me: HER, mood: "good" });
+    await post("act", { me: HIM, action: "brush" });
+
+    for (const who of [HIM, HER]) {
+      const mine = await copy(who);
+      expect((mine.herLine as { text: string }).text).toBe("still here");
+      expect((mine.moodNow as { mood: string }).mood).toBe("good");
+      expect(mine.whatHeHasDone).toEqual({ brush: 1 });
+      expect((mine.lately as unknown[]).length).toBeGreaterThan(0);
+    }
+  });
+
+  it("tells him what she has worked out about him, and does not tell her", async () => {
+    await seat();
+    await post("clock", { me: HIM, tz: "UTC", homeHour: 18 });
+    await post("age", { me: HIM, homingHour: 16, homingDays: 20 });
+
+    expect((await copy(HIM)).expectsHimAt).toBeCloseTo(16, 1);
+    expect((await copy(HER)).expectsHimAt).toBeNull();
+  });
+});

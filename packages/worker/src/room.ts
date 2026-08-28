@@ -730,6 +730,22 @@ export class Room extends DurableObject<Env> {
       notes: youAreHer ? notes.slice(0, readSoFar + 1) : notes,
       notesInAll: notes.length,
       found: Object.keys(await this.found()),
+      /*
+       * Her words and her moods, which are the most personal things in here after his notes.
+       *
+       * These were missing from the first version of this export while the privacy page said it hands
+       * you everything, which made the page wrong rather than the code incomplete. If something new
+       * gets stored about either of them, it belongs here too.
+       */
+      herLine: (await this.ctx.storage.get<Told2>("herLine")) ?? null,
+      moodNow: (await this.ctx.storage.get<Record<string, Told>>("moods"))?.[her ?? ""] ?? null,
+      whatHeHasDone: (await this.ctx.storage.get<Tally>("tally")) ?? {},
+      lately: (await this.ctx.storage.get<Visit[]>("log")) ?? [],
+      // Only in his copy, like the line about it in the room: it is a thing the room worked out about
+      // him, and to her it would read as the room reporting on somebody.
+      expectsHimAt: youAreHer
+        ? null
+        : learnedHour((await this.ctx.storage.get<Homing>("homing")) ?? null, clock.homeHour),
       visits: Object.fromEntries(
         Object.entries(people).map(([token, person]) => [
           token === me ? "you" : "them",
