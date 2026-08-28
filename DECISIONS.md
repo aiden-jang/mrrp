@@ -585,3 +585,20 @@ appeared to happen, and the reason was scrolled out of sight above you.
 
 The same mistake had already been fixed once, in the recovery panel, with the same reasoning written
 next to it. A shared error banner is fine in a short page and a trap in a long one.
+
+Looking for more of it turned up that the account button was not the only one. One `err` is shared by
+hanging up a drawing, freeing her seat, resending the link, leaving and deleting, and the room is more
+than twice a phone screen tall. Measured: a failed drawing save put its reason at 1185px with a 720px
+viewport at the top of the page, so you tapped "hang it up", nothing happened, and the explanation was
+off screen the entire time.
+
+So the shared line is pinned to the bottom of the screen now. The app otherwise refuses to speak over
+the room, and this is the one exception worth making: a failure is the thing you need to see wherever
+you happen to be standing.
+
+## A dead connection speaks in the app's voice
+
+Eighteen actions called `fetch` directly, so a train tunnel gave the room "Failed to fetch" or "Load
+failed" in a panel that otherwise talks like a person. Only `fetchRoom` had ever handled it. They all
+go through one `send` now, which turns a refused connection into "That didn't reach the room. Try it
+again." It took ninety lines out of the file as a side effect.
