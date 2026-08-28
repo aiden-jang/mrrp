@@ -477,6 +477,8 @@ export function Cat({
   const groom = useRef({ at: -1e9, next: 24000 + Math.random() * 30000 });
   const chattered = useRef(-1);
   const earFlick = useRef({ at: -1e9, next: 6000, side: 1 });
+  const wasWalking = useRef(false);
+  const belled = useRef(-1e9);
   const doorShutFrom = useRef({ at: 0, from: 0 });
   lookRef.current = look;
   clockRef.current = clock;
@@ -2272,6 +2274,22 @@ export function Cat({
         !reduce && awake && sc.play < 0.5 && !inBox && Math.abs(wantX - kx) < 2 && stretchCycle < 1400;
       const pouncing = mouseChasing || laserPlaying || swiping;
       const walking = Math.abs(wantX - kx) > 3 && !zooming && !catnipping && !pouncing;
+
+      /*
+       * The bell, once she has a collar to hang it on.
+       *
+       * On the step into walking, not on every frame she is walking: a bell that keeps ringing while
+       * she crosses the room is a smoke alarm. The cooldown is for the case she starts and stops and
+       * starts again inside a second, which the sunbeam makes her do.
+       *
+       * It rings for the same reason the collar exists at all: both of you called her by name, and
+       * after that you can hear where she is without looking.
+       */
+      if (bothCalledRef.current && walking && !wasWalking.current && !reduce && t > belled.current) {
+        belled.current = t + 2600;
+        play("bell");
+      }
+      wasWalking.current = walking;
       const pose: Pose =
         boxPlaying || peeking
           ? "peek"

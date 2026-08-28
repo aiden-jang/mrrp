@@ -215,6 +215,7 @@ export type Cue =
   | "settle"
   | "twinkle"
   | "jingle"
+  | "bell"
   | "rain"
   | "glint"
   | "hello";
@@ -400,6 +401,18 @@ const CUES: Record<Cue, (g: { ctx: AudioContext; master: GainNode }, t: number) 
 
   /* A tiny pentatonic phrase for the room's dance secret. Five separated plucks read as a tune,
      while a longer loop would make a hidden interaction annoy everyone else in the room. */
+  /*
+   * The bell on her collar. One ting, not the five-note run `jingle` plays for the piano.
+   *
+   * Two voices a hair apart and a hair out of step, because a real bell is a small bent thing that
+   * does not ring cleanly, and a single pure sine reads as a notification. Quiet: it is meant to be
+   * the sound of her having moved, not an event.
+   */
+  bell: (g, t) => {
+    voice(g, { at: t, dur: 0.16, gain: 0.05, sweep: [1480 * pitch, 1440 * pitch], type: "sine" });
+    voice(g, { at: t + 0.02, dur: 0.11, gain: 0.03, sweep: [2210 * pitch, 2160 * pitch], type: "sine" });
+  },
+
   jingle: (g, t) => {
     const notes = [523, 659, 784, 659, 880];
     notes.forEach((freq, index) => {
