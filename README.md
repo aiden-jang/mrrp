@@ -400,8 +400,13 @@ first, and only then deploys, so a red suite cannot ship. It needs a Workers-sco
 the repo.
 
 ```bash
-pnpm --filter @mrrp/worker deploy   # by hand, if you need to
+pnpm run deploy   # by hand, if you need to
 ```
+
+Note the `run`. `pnpm deploy` is a built-in pnpm command for copying a workspace package somewhere,
+so `pnpm --filter @mrrp/worker deploy` runs _that_ and fails with `ERR_PNPM_INVALID_DEPLOY_TARGET`
+rather than the script you meant. CI never hit it because it runs `pnpm run deploy` from inside
+`packages/worker`.
 
 That script builds `packages/web` before `wrangler deploy`, because `packages/web/dist` is
 gitignored and CI runs from a fresh checkout. A bare `wrangler deploy` there has no assets to

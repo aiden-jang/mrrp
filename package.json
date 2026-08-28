@@ -9,7 +9,7 @@
     "lint": "eslint . --ext .ts,.tsx",
     "dev:worker": "pnpm --filter @mrrp/worker dev",
     "dev:web": "pnpm --filter @mrrp/web dev",
-    "deploy": "pnpm --filter @mrrp/worker deploy",
+    "deploy": "pnpm --filter @mrrp/worker run deploy",
     "test": "pnpm -r test",
     "check": "pnpm -r typecheck && pnpm lint && pnpm -r test",
     "format": "prettier --write ."
