@@ -6,6 +6,19 @@ const TOKEN_KEY = "mrrp:me";
 // thing it must never do is look like an ordinary failure the client would retry into.
 export const GONE = "mrrp: this room is gone";
 
+// `undoUntil` is set only for the one who deleted it, and only until the week runs out. Everyone else
+// gets null, because for them the room is simply gone.
+export class GoneError extends Error {
+  constructor(readonly undoUntil: number | null) {
+    super(GONE);
+  }
+}
+
+async function goneFrom(r: Response): Promise<GoneError> {
+  const body = (await r.json().catch(() => null)) as { undoUntil?: number | null } | null;
+  return new GoneError(body?.undoUntil ?? null);
+}
+
 export function myToken(): string {
   let t = localStorage.getItem(TOKEN_KEY);
   if (!t) {
@@ -97,7 +110,7 @@ export async function fetchRoom(id: string, name?: string | null): Promise<RoomV
   } catch {
     throw new Error("Can't reach the room. Still trying.");
   }
-  if (r.status === 410) throw new Error(GONE);
+  if (r.status === 410) throw await goneFrom(r);
   if (!r.ok) throw new Error("Could not find her.");
   return r.json() as Promise<RoomView>;
 }
@@ -151,15 +164,25 @@ export async function doRelease(id: string): Promise<void> {
 
 // His. The cat's name is typed rather than confirmed, because a room is both of their years and a
 // confirm dialog is one mis-tap away from gone.
-export async function doDelete(id: string, name: string): Promise<void> {
+export async function doDelete(id: string, name: string): Promise<number> {
   const r = await fetch(`/api/room/${id}/delete`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ me: myToken(), name }),
   });
-  if (r.status === 410) throw new Error(GONE);
+  if (r.status === 410) throw await goneFrom(r);
   if (r.status === 403) throw new Error("That is not her name.");
   if (!r.ok) throw new Error("Couldn't delete the room.");
+  return ((await r.json()) as { undoUntil: number }).undoUntil;
+}
+
+export async function doUndelete(id: string): Promise<void> {
+  const r = await fetch(`/api/room/${id}/undelete`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ me: myToken() }),
+  });
+  if (!r.ok) throw new Error("The week is up, so there is nothing to put back.");
 }
 
 // Hers. Takes her side with her and leaves his room standing.
@@ -169,7 +192,7 @@ export async function doLeave(id: string): Promise<void> {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ me: myToken() }),
   });
-  if (r.status === 410) throw new Error(GONE);
+  if (r.status === 410) throw await goneFrom(r);
   if (!r.ok) throw new Error("Couldn't leave the room.");
 }
 

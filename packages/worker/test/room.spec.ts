@@ -1,4 +1,4 @@
-import { env, runInDurableObject, SELF } from "cloudflare:test";
+import { env, runDurableObjectAlarm, runInDurableObject, SELF } from "cloudflare:test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NOTES } from "../src/notes.js";
 import type { Mood, RoomView } from "../src/types.js";
@@ -1323,7 +1323,9 @@ describe("deleting the room", () => {
     expect((await post("delete", { me: HIM, name: "Bean" })).status).toBe(410);
   });
 
-  it("leaves nothing behind but the date it went", async () => {
+  // Deleted and erased are two different things, a week apart. The room is unreachable from the first
+  // moment; the week only decides how long it is still possible to change your mind.
+  it("keeps the room readable to nobody, but does not erase it yet", async () => {
     await seat();
     await post("say", { me: HER, text: "something of hers" });
     await post("delete", { me: HIM, name: "Bean" });
@@ -1331,7 +1333,38 @@ describe("deleting the room", () => {
     const stub = env.ROOM.get(env.ROOM.idFromName(id));
     await runInDurableObject(stub, async (_instance, state) => {
       const left = [...(await state.storage.list()).keys()];
-      expect(left).toEqual(["deleted"]);
+      expect(left).toContain("deleted");
+      expect(left).toContain("people");
+    });
+  });
+
+  it("leaves nothing behind but the date it went, once the week is up", async () => {
+    await seat();
+    await post("say", { me: HER, text: "something of hers" });
+    await post("delete", { me: HIM, name: "Bean" });
+
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    away(24 * 8);
+    expect(await runDurableObjectAlarm(stub)).toBe(true);
+
+    await runInDurableObject(stub, async (_instance, state) => {
+      expect([...(await state.storage.list()).keys()]).toEqual(["deleted"]);
+    });
+  });
+
+  // The alarm is the only thing in this app that happens without somebody visiting, and this is why:
+  // if the erasing only happened on the next request, a room nobody ever opened again would keep
+  // everything in it forever, and the delete would be a promise rather than a fact.
+  it("erases on the next request too, in case the alarm never ran", async () => {
+    await seat();
+    await post("delete", { me: HIM, name: "Bean" });
+
+    away(24 * 8);
+    expect((await SELF.fetch(`https://x/api/room/${id}?me=${HIM}`)).status).toBe(410);
+
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    await runInDurableObject(stub, async (_instance, state) => {
+      expect([...(await state.storage.list()).keys()]).toEqual(["deleted"]);
     });
   });
 
@@ -1354,9 +1387,66 @@ describe("deleting the room", () => {
     "doodleFor",
     "noteFor",
     "build",
+    "erase",
   ];
   // The one method that must answer on a dead room, because it is how the client knows it is dead.
-  const ANSWERS_WHEN_GONE = ["deletedAt"];
+  // The alarm has to run on a deleted room: it is the thing that erases it. The other two are the way
+  // back, which by definition only exists while the room is deleted.
+  const ANSWERS_WHEN_GONE = ["deletedAt", "undoUntil", "undelete", "alarm"];
+
+  it("gives him a week to change his mind, and tells him when it runs out", async () => {
+    await seat();
+    const r = await post("delete", { me: HIM, name: "Bean" });
+    const { undoUntil } = (await r.json()) as { undoUntil: number };
+    expect(undoUntil).toBeGreaterThan(Date.now());
+
+    const gone = await SELF.fetch(`https://x/api/room/${id}?me=${HIM}`);
+    expect(gone.status).toBe(410);
+    expect(((await gone.json()) as { undoUntil: number }).undoUntil).toBe(undoUntil);
+
+    expect((await post("undelete", { me: HIM })).status).toBe(200);
+    const back = await view(HIM);
+    expect(back.you).toBe("Aiden");
+    expect(back.them).toBe("Sofia");
+  });
+
+  // She is not told there is a way back, because there is not one for her. The room is gone from her
+  // side the moment he does it, which is the only honest thing a delete can mean to the other person.
+  it("offers the way back to him and to nobody else", async () => {
+    await seat();
+    await post("delete", { me: HIM, name: "Bean" });
+
+    for (const who of [HER, STRANGER]) {
+      const r = await SELF.fetch(`https://x/api/room/${id}?me=${who}`);
+      expect(r.status).toBe(410);
+      expect(((await r.json()) as { undoUntil: number | null }).undoUntil).toBeNull();
+      expect((await post("undelete", { me: who })).status).toBe(403);
+    }
+  });
+
+  it("closes the way back when the week is up", async () => {
+    await seat();
+    await post("delete", { me: HIM, name: "Bean" });
+
+    away(24 * 8);
+    expect((await post("undelete", { me: HIM })).status).toBe(403);
+    const r = await SELF.fetch(`https://x/api/room/${id}?me=${HIM}`);
+    expect(r.status).toBe(410);
+    expect(((await r.json()) as { undoUntil: number | null }).undoUntil).toBeNull();
+  });
+
+  it("brings back what was in it, not an empty room with the same name", async () => {
+    await seat();
+    await post("say", { me: HER, text: "still here" });
+    await post("tell", { me: HER, mood: "sad" });
+    await post("delete", { me: HIM, name: "Bean" });
+    await post("undelete", { me: HIM });
+
+    const v = await view(HIM);
+    expect(v.herLine?.text).toBe("still here");
+    expect(v.catMood).toBe("sad");
+    expect((await view(HER)).youAreHer).toBe(true);
+  });
 
   it("refuses every method a route can reach, including ones added after this was written", async () => {
     await seat();

@@ -50,10 +50,20 @@ const DEFAULT_CAT: Cat = {
 };
 const DEFAULT_CLOCK: Clock = { tz: "America/New_York", homeHour: 18 };
 
-// A deleted room keeps exactly one key: the date it went. Wiping storage outright is not enough,
-// because view() seats whoever turns up when there are fewer than two people, so the next person to
-// open a dead link would silently become the maker of a brand new room at the same address.
+// A deleted room keeps exactly one key once it has been erased: the date it went. Wiping storage
+// outright is not enough, because view() seats whoever turns up when there are fewer than two people,
+// so the next person to open a dead link would silently become the maker of a brand new room at the
+// same address.
 const TOMBSTONE = "deleted";
+
+// Deleting is instant for both of them and reversible for a week by the one who did it. The room is
+// unreachable the whole time; the week only decides how long the bytes stay recoverable.
+const UNDO_MS = 7 * DAY_MS;
+
+interface Tombstone {
+  at: number;
+  erasesAt: number;
+}
 
 // Thrown by every method on a deleted room. index.ts turns it into a 410. Matched by message, not by
 // class, because a Durable Object RPC boundary carries the message across and not the prototype.
@@ -371,16 +381,49 @@ export class Room extends DurableObject<Env> {
   // Every public method calls this first. A test walks the prototype and fails if a new one does not,
   // because the one that forgets is the one that resurrects a deleted room.
   private async guard(): Promise<void> {
-    if (await this.ctx.storage.get<number>(TOMBSTONE)) throw new RoomGone();
+    const stone = await this.ctx.storage.get<Tombstone>(TOMBSTONE);
+    if (!stone) return;
+    // Belt and braces with the alarm. If the alarm never ran, the first request after the week is up
+    // does the erasing, so the promise does not depend on a timer having fired.
+    if (Date.now() >= stone.erasesAt) await this.erase(stone);
+    throw new RoomGone();
   }
 
   async deletedAt(): Promise<number | null> {
-    return (await this.ctx.storage.get<number>(TOMBSTONE)) ?? null;
+    return (await this.ctx.storage.get<Tombstone>(TOMBSTONE))?.at ?? null;
+  }
+
+  // What the maker gets instead of the plain gone screen, for as long as he can still change his mind.
+  // Null for her and for strangers: the room is simply gone to them, which is what deleting it meant.
+  async undoUntil(me: string): Promise<number | null> {
+    const stone = await this.ctx.storage.get<Tombstone>(TOMBSTONE);
+    if (!stone || Date.now() >= stone.erasesAt) return null;
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    return this.roles(people).him === me ? stone.erasesAt : null;
+  }
+
+  async undelete(me: string): Promise<boolean> {
+    if (!(await this.undoUntil(me))) return false;
+    await this.ctx.storage.delete(TOMBSTONE);
+    await this.ctx.storage.deleteAlarm();
+    return true;
+  }
+
+  // The only alarm in the app, and the only thing here that happens without somebody visiting. It has
+  // to be: a delete that only completes if one of them comes back is not a delete.
+  async alarm(): Promise<void> {
+    const stone = await this.ctx.storage.get<Tombstone>(TOMBSTONE);
+    if (stone) await this.erase(stone);
+  }
+
+  private async erase(stone: Tombstone): Promise<void> {
+    await this.ctx.storage.deleteAll();
+    await this.ctx.storage.put<Tombstone>(TOMBSTONE, stone);
   }
 
   // His to delete, because he made it. Typing the cat's name is the only thing standing between a
   // mis-tap and both of their years, so it is checked here and not only in the UI.
-  async deleteRoom(me: string, typed: string): Promise<boolean> {
+  async deleteRoom(me: string, typed: string): Promise<number | false> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (this.roles(people).him !== me) return false;
@@ -388,9 +431,10 @@ export class Room extends DurableObject<Env> {
     if (typed.trim().toLowerCase() !== cat.name.trim().toLowerCase()) return false;
 
     const at = Date.now();
-    await this.ctx.storage.deleteAll();
-    await this.ctx.storage.put(TOMBSTONE, at);
-    return true;
+    const erasesAt = at + UNDO_MS;
+    await this.ctx.storage.put<Tombstone>(TOMBSTONE, { at, erasesAt });
+    await this.ctx.storage.setAlarm(erasesAt);
+    return erasesAt;
   }
 
   // Hers to leave, so she has a way out that does not cost him the room. Same wipe as him freeing her
