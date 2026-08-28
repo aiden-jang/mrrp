@@ -39,12 +39,27 @@ export function adoptSeat(seat: string | null): void {
   if (seat && seat !== localStorage.getItem(TOKEN_KEY)) localStorage.setItem(TOKEN_KEY, seat);
 }
 
+/*
+ * One place where a dead connection becomes the app's own words.
+ *
+ * Every one of these used to call fetch directly, so a train tunnel gave the room "Failed to fetch"
+ * or "Load failed" in a panel that otherwise speaks like a person. `fetchRoom` had its own handling
+ * for this and none of the actions did.
+ */
+async function send(path: string, body: unknown): Promise<Response> {
+  try {
+    return await fetch(path, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new Error("That didn't reach the room. Try it again.");
+  }
+}
+
 export async function doLink(id: string, on: boolean): Promise<void> {
-  const r = await fetch(`/api/room/${id}/link`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ me: myToken(), on }),
-  });
+  const r = await send(`/api/room/${id}/link`, { me: myToken(), on });
   if (r.status === 401) throw new Error("Sign in first.");
   if (r.status === 409) throw new Error("That account already has a seat in this room.");
   if (!r.ok) throw new Error("Couldn't do that.");
@@ -116,60 +131,36 @@ export async function fetchRoom(id: string, name?: string | null): Promise<RoomV
 }
 
 export async function doAct(id: string, action: Action): Promise<RoomView> {
-  const r = await fetch(`/api/room/${id}/act`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ me: myToken(), action }),
-  });
+  const r = await send(`/api/room/${id}/act`, { me: myToken(), action });
   if (!r.ok) throw new Error("That didn't work.");
   return r.json() as Promise<RoomView>;
 }
 
 export async function doTell(id: string, mood: Mood): Promise<RoomView> {
-  const r = await fetch(`/api/room/${id}/tell`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ me: myToken(), mood }),
-  });
+  const r = await send(`/api/room/${id}/tell`, { me: myToken(), mood });
   if (!r.ok) throw new Error("Couldn't reach her just now.");
   return r.json() as Promise<RoomView>;
 }
 
 export async function doDress(id: string, cat: Partial<Cat>): Promise<void> {
-  const r = await fetch(`/api/room/${id}/dress`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ me: myToken(), ...cat }),
-  });
+  const r = await send(`/api/room/${id}/dress`, { me: myToken(), ...cat });
   if (!r.ok) throw new Error("Couldn't save how she looks.");
 }
 
 export async function doClock(id: string, clock: Partial<Clock>): Promise<void> {
-  const r = await fetch(`/api/room/${id}/clock`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ me: myToken(), ...clock }),
-  });
+  const r = await send(`/api/room/${id}/clock`, { me: myToken(), ...clock });
   if (!r.ok) throw new Error("Couldn't save her hours.");
 }
 
 export async function doRelease(id: string): Promise<void> {
-  const r = await fetch(`/api/room/${id}/release`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ me: myToken() }),
-  });
+  const r = await send(`/api/room/${id}/release`, { me: myToken() });
   if (!r.ok) throw new Error("Couldn't free her seat.");
 }
 
 // His. The cat's name is typed rather than confirmed, because a room is both of their years and a
 // confirm dialog is one mis-tap away from gone.
 export async function doDelete(id: string, name: string): Promise<number> {
-  const r = await fetch(`/api/room/${id}/delete`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ me: myToken(), name }),
-  });
+  const r = await send(`/api/room/${id}/delete`, { me: myToken(), name });
   if (r.status === 410) throw await goneFrom(r);
   if (r.status === 403) throw new Error("That is not her name.");
   if (!r.ok) throw new Error("Couldn't delete the room.");
@@ -177,68 +168,40 @@ export async function doDelete(id: string, name: string): Promise<number> {
 }
 
 export async function doUnleave(id: string): Promise<void> {
-  const r = await fetch(`/api/room/${id}/unleave`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ me: myToken() }),
-  });
+  const r = await send(`/api/room/${id}/unleave`, { me: myToken() });
   if (!r.ok) throw new Error("The seat has been taken, so there is nothing to come back to.");
 }
 
 export async function doUndelete(id: string): Promise<void> {
-  const r = await fetch(`/api/room/${id}/undelete`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ me: myToken() }),
-  });
+  const r = await send(`/api/room/${id}/undelete`, { me: myToken() });
   if (!r.ok) throw new Error("The week is up, so there is nothing to put back.");
 }
 
 // Hers. Takes her side with her and leaves his room standing.
 export async function doLeave(id: string): Promise<void> {
-  const r = await fetch(`/api/room/${id}/leave`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ me: myToken() }),
-  });
+  const r = await send(`/api/room/${id}/leave`, { me: myToken() });
   if (r.status === 410) throw await goneFrom(r);
   if (!r.ok) throw new Error("Couldn't leave the room.");
 }
 
 export async function doNotes(id: string, notes: string[]): Promise<void> {
-  const r = await fetch(`/api/room/${id}/notes`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ me: myToken(), notes }),
-  });
+  const r = await send(`/api/room/${id}/notes`, { me: myToken(), notes });
   if (!r.ok) throw new Error("Couldn't save the notes.");
 }
 
 export async function doRecover(id: string, code: string): Promise<void> {
-  const r = await fetch(`/api/room/${id}/recover`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ me: myToken(), code }),
-  });
+  const r = await send(`/api/room/${id}/recover`, { me: myToken(), code });
   if (!r.ok) throw new Error("That code doesn't match this room.");
 }
 
 export async function doTidy(id: string): Promise<{ again: boolean }> {
-  const r = await fetch(`/api/room/${id}/shelf`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ me: myToken() }),
-  });
+  const r = await send(`/api/room/${id}/shelf`, { me: myToken() });
   if (!r.ok) throw new Error("Couldn't reach the shelf.");
   return (await r.json()) as { again: boolean };
 }
 
 export async function doWindowLight(id: string): Promise<RoomView> {
-  const r = await fetch(`/api/room/${id}/window-light`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ me: myToken() }),
-  });
+  const r = await send(`/api/room/${id}/window-light`, { me: myToken() });
   if (!r.ok) throw new Error("Couldn't reach the window.");
   return r.json() as Promise<RoomView>;
 }
@@ -247,40 +210,24 @@ export async function doOurDay(
   id: string,
   day: { month: number; day: number; label: string } | null,
 ): Promise<void> {
-  const r = await fetch(`/api/room/${id}/ourday`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ me: myToken(), ...(day ?? { label: "" }) }),
-  });
+  const r = await send(`/api/room/${id}/ourday`, { me: myToken(), ...(day ?? { label: "" }) });
   if (!r.ok) throw new Error("Couldn't set that day.");
 }
 
 export async function doDraw(id: string, cells: string): Promise<RoomView> {
-  const r = await fetch(`/api/room/${id}/draw`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ me: myToken(), cells }),
-  });
+  const r = await send(`/api/room/${id}/draw`, { me: myToken(), cells });
   if (!r.ok) throw new Error("Couldn't hang that up.");
   return r.json() as Promise<RoomView>;
 }
 
 export async function doSay(id: string, text: string): Promise<RoomView> {
-  const r = await fetch(`/api/room/${id}/say`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ me: myToken(), text }),
-  });
+  const r = await send(`/api/room/${id}/say`, { me: myToken(), text });
   if (!r.ok) throw new Error("Couldn't leave that.");
   return r.json() as Promise<RoomView>;
 }
 
 export async function doBlanket(id: string, key: string, stripe: boolean): Promise<RoomView> {
-  const r = await fetch(`/api/room/${id}/blanket`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ me: myToken(), key, stripe }),
-  });
+  const r = await send(`/api/room/${id}/blanket`, { me: myToken(), key, stripe });
   if (r.status === 410) throw await goneFrom(r);
   if (!r.ok) throw new Error("Couldn't change her blanket.");
   return fetchRoom(id);
