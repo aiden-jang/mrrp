@@ -335,7 +335,14 @@ her a room is gone while he can still put it back, or offering her a seat somebo
 in. Those are one falsy prop apart, and neither is visible in a screenshot of the version that
 happens to be right.
 
-The tests were checked by breaking the component four ways on purpose (dropping the seat gate,
-always claiming he was told, forcing the undo branch, cutting the warning about giving the seat away)
-and confirming each one turned a test red. A test that cannot fail is worse than no test, because it
-reads like coverage.
+The tests were checked by breaking the component on purpose (dropping the seat gate, always claiming
+he was told, forcing the undo branch, cutting the warning about giving the seat away, swapping the
+two handlers on her card) and confirming each one turned a test red. A test that cannot fail is worse
+than no test, because it reads like coverage.
+
+Clicks need a DOM, so `screens.click.test.tsx` asks for jsdom in a comment at the top of the file
+rather than in the config. It is the only file in the package that needs one, and putting it in the
+config would make every other test in the package pay for it. What clicks buy over static markup is
+the wiring: "Put my side back" and "start fresh instead" sit next to each other, take the same shape
+of callback, and one restores her year while the other throws it away. Swapping them changes no
+markup and no screenshot.
