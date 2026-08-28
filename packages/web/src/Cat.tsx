@@ -2267,10 +2267,10 @@ export function Cat({
         px(moodRight + 4, FLOOR + 17 - leafHop, "#5f824e");
         px(moodRight + 1, FLOOR + 18 - leafHop, "#8f7657");
       } else if (activeMood === "horny") {
+        // Two loose pixels used to sit below and right of this, meant as something trailing off it.
+        // Detached, on a bare floor, at this scale, they read as a full stop typed onto the boards.
         rect(19, FLOOR + 17, 4, 3, "#b86f84");
         px(18, FLOOR + 16, "#d995a5");
-        px(23, FLOOR + 20, "#8f596d");
-        px(24, FLOOR + 20, "#8f596d");
       }
 
       if (treating) {
