@@ -9,8 +9,8 @@ export { Room } from "./room.js";
 
 const app = new Hono<{ Bindings: Env }>();
 const ROOM_RE = /^[a-z0-9]{6,24}$/;
-// Eleven by seven. The room checks the same thing again; this is the cheap gate at the door.
-const DOODLE_RE = /^[0-4]{77}$/;
+// Fifteen by nine. The room checks the same thing again; this is the cheap gate at the door.
+const DOODLE_RE = /^[0-4]{135}$/;
 const VALID: Action[] = ["pet", "brush", "bring", "sit", "photo"];
 const VALID_MOODS: Mood[] = ["good", "tired", "stressed", "sad", "lonely", "bored", "feral", "done", "horny"];
 

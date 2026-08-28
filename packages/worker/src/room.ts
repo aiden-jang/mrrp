@@ -39,16 +39,27 @@ import {
   type Tally,
 } from "./remembers.js";
 
-const DOODLE_CELLS = 77;
-// What the sheet used to be, seven by five. Drawings that size are hanging in real rooms, so they are
-// widened on the way out rather than thrown away.
-const OLD_DOODLE_CELLS = 35;
+const DOODLE_W = 15;
+const DOODLE_H = 9;
+const DOODLE_CELLS = DOODLE_W * DOODLE_H;
+
+// Every size the sheet has ever been. Drawings that size are hanging in real rooms, so they are
+// widened on the way out rather than thrown away, and a size never leaves this list: a room nobody
+// has opened in a year still holds whatever it held.
+const PAST_DOODLES: [number, number][] = [
+  [7, 5],
+  [11, 7],
+];
 
 function widenDoodle(cells: string): string {
-  if (cells.length !== OLD_DOODLE_CELLS) return cells;
+  const was = PAST_DOODLES.find(([w, h]) => w * h === cells.length);
+  if (!was) return cells;
+  const [oldW, oldH] = was;
+  const dx = Math.floor((DOODLE_W - oldW) / 2);
+  const dy = Math.floor((DOODLE_H - oldH) / 2);
   const out = Array.from({ length: DOODLE_CELLS }, () => "0");
-  for (let y = 0; y < 5; y++) {
-    for (let x = 0; x < 7; x++) out[(y + 1) * 11 + (x + 2)] = cells[y * 7 + x]!;
+  for (let y = 0; y < oldH; y++) {
+    for (let x = 0; x < oldW; x++) out[(y + dy) * DOODLE_W + (x + dx)] = cells[y * oldW + x]!;
   }
   return out.join("");
 }
