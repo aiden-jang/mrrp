@@ -5,4 +5,5 @@ export interface Env {
   ASSETS: Fetcher;
   DEV_TOOLS?: string;
   AUTH_URL: string;
+  WEATHER_URL: string;
 }

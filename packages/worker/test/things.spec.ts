@@ -1,4 +1,4 @@
-import { SELF } from "cloudflare:test";
+import { runInDurableObject, env, SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import type { RoomView } from "../src/types.js";
 import { harness, HER, HIM, STRANGER } from "./harness.js";
@@ -347,5 +347,55 @@ describe("the blanket on her bed", () => {
     expect((await view(HIM)).blanket).toEqual({ key: "cream", stripe: true });
     await post("unleave", { me: HER });
     expect((await view(HER)).blanket).toEqual({ key: "cream", stripe: true });
+  });
+});
+
+describe("the weather in her window", () => {
+  it("says clear until the room has managed to find out, never null", async () => {
+    await seat();
+    expect((await view(HIM)).sky).toBe("clear");
+    expect((await view(HER)).sky).toBe("clear");
+  });
+
+  // The lookup goes out behind the response. What matters here is that a room whose weather service
+  // is unreachable is a room that still opens, at the same speed, with a window that says nothing.
+  // The lookup goes out behind the response, so this is really a test that it is behind it: the whole
+  // suite points WEATHER_URL at a port that refuses, and a room still opens at full speed with a
+  // window that says nothing.
+  it("opens at full speed when the sky cannot be reached", async () => {
+    await seat();
+    const started = Date.now();
+    const v = await view(HER);
+    expect(v.sky).toBe("clear");
+    expect(v.cat).toBeTruthy();
+    expect(Date.now() - started).toBeLessThan(1500);
+  });
+});
+
+describe("the window when she moves", () => {
+  // He opens the room before he picks her timezone, so the first lookup is always for the default
+  // one. If changing it does not clear what was found, the window shows another city's sky for half
+  // an hour, on the one path every room takes.
+  it("forgets the sky it found when her timezone changes", async () => {
+    await seat();
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    await runInDurableObject(stub, async (_instance, state) => {
+      await state.storage.put("weather", { sky: "rain", at: Date.now() });
+    });
+    expect((await view(HIM)).sky).toBe("rain");
+
+    await post("clock", { me: HIM, tz: "Europe/London" });
+    expect((await view(HIM)).sky).toBe("clear");
+  });
+
+  it("keeps it when he changes only the hour she is home", async () => {
+    await seat();
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    await runInDurableObject(stub, async (_instance, state) => {
+      await state.storage.put("weather", { sky: "snow", at: Date.now() });
+    });
+
+    await post("clock", { me: HIM, homeHour: 19 });
+    expect((await view(HIM)).sky).toBe("snow");
   });
 });

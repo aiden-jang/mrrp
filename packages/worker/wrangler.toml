@@ -28,6 +28,10 @@ new_sqlite_classes = ["Room"]
 [vars]
 AUTH_URL = "https://accounts.aidenjang.com"
 
+# Keyless and free, which is why the window can show her real weather at all. A binding rather than a
+# constant so the tests can point it at a port that refuses and never call a stranger's API.
+WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
+
 [observability]
 enabled = true
 

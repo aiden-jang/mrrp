@@ -76,6 +76,20 @@ const MUG_GLOW_MS = 2600;
 const GIFT_WISH_MS = 2800;
 const BED_DREAM_MS = 3200;
 const BED_STRIPES = [5, 8, 11, 14];
+// Four streaks and four flakes, placed by hand across the two panes, each starting at a different
+// point in its fall so they never come down in step.
+const RAIN_STREAKS: [number, number][] = [
+  [2, 0],
+  [6, 0.45],
+  [10, 0.2],
+  [14, 0.7],
+];
+const SNOW_FLAKES: [number, number][] = [
+  [3, 0],
+  [7, 0.55],
+  [11, 0.3],
+  [14, 0.8],
+];
 const PURR_CHORUS_MS = 2600;
 const LASER_CHASE_MS = 2800;
 const LASER_RELEASE_MS = 900;
@@ -227,6 +241,7 @@ export function Cat({
   framed = false,
   doodle = null,
   blanket = null,
+  sky = "clear",
   spot = null,
   doorOpenAt = null,
   watchDoorAt = null,
@@ -266,6 +281,7 @@ export function Cat({
   spot?: number | null;
   doodle?: string | null;
   blanket?: RoomView["blanket"];
+  sky?: RoomView["sky"];
   reserveBelow?: number;
   staying?: boolean;
   watchDoorAt?: number | null;
@@ -306,6 +322,8 @@ export function Cat({
   doodleRef.current = doodle;
   const blanketRef = useRef(blanket);
   blanketRef.current = blanket;
+  const skyRef = useRef(sky);
+  skyRef.current = sky;
   const spotRef = useRef(spot);
   spotRef.current = spot;
   const doorRef = useRef(doorOpenAt);
@@ -1255,17 +1273,35 @@ export function Cat({
       dither(38, FLOOR + 22, 34, 1, rugThread, 1);
       for (const x of [35, 40, 69, 74]) px(x, FLOOR + 27, rugEdge);
 
+      /*
+       * Her actual weather, or the plant easter egg, which both mean water on the glass. The egg wins
+       * while it lasts, because somebody just made it happen and should see it happen.
+       *
+       * Worked out up here rather than down at the window, because a closed sky has to reach the beam
+       * as well. Rain running down the glass with a full shaft of sun across the floor is the kind of
+       * thing that reads as a bug even to somebody who could not say why.
+       */
+      const outside = skyRef.current;
+      const raining = plantTaps.current.rainUntil - t > 0 || outside === "rain";
+      const snowing = plantTaps.current.rainUntil - t <= 0 && outside === "snow";
+      const overcast = outside === "cloud";
+      // Softened, never removed. Cloud still lets light through, and taking the beam away entirely
+      // would take the room's warmth with it on a week of bad weather.
+      const dull = raining || snowing || overcast;
+      const litWall = dull ? mixHex(sc.litWall, sc.wallTop, 0.66) : sc.litWall;
+      const litPatch = dull ? mixHex(sc.patch, sc.floorNear, 0.66) : sc.patch;
+
       const beamCore = sc.lightPhase === "golden" ? 18 : sc.lightPhase === "dawn" ? 10 : 16;
       if (sc.lightPhase !== "night") {
         for (let y = 14; y < FLOOR; y++) {
           const k = (y - 14) / (FLOOR - 14);
           const cx = Math.round(WIN_CX + (beamX - WIN_CX) * k);
           const half = beamCore >> 1;
-          rect(cx - half, y, beamCore, 1, sc.litWall);
-          dither(cx - half - 3, y, 3, 1, sc.litWall);
-          dither(cx + half, y, 3, 1, sc.litWall);
+          rect(cx - half, y, beamCore, 1, litWall);
+          dither(cx - half - 3, y, 3, 1, litWall);
+          dither(cx + half, y, 3, 1, litWall);
           for (const ox of [-half - 5, -half - 4, half + 2, half + 3]) {
-            if ((ox + y) % 4 === 0) px(cx + ox, y, sc.litWall);
+            if ((ox + y) % 4 === 0) px(cx + ox, y, litWall);
           }
         }
       }
@@ -1277,7 +1313,7 @@ export function Cat({
       if (sc.lightPhase !== "night") {
         for (const [dy, w] of POOL) {
           const width = Math.round(w * poolScale);
-          rect(beamX - (width >> 1), FLOOR + dy, width, 1, sc.patch);
+          rect(beamX - (width >> 1), FLOOR + dy, width, 1, litPatch);
         }
       }
       if (sc.lightPhase !== "night") {
@@ -1308,7 +1344,6 @@ export function Cat({
       const night = sc.lightPhase === "night";
       const wx = WIN_X + shake("window");
       const rainRemaining = plantTaps.current.rainUntil - t;
-      const raining = rainRemaining > 0;
       if (raining && !reduce && rainRemaining > 700 && t > rainHeard.current) {
         rainHeard.current = t + 2100;
         play("rain");
@@ -1325,16 +1360,52 @@ export function Cat({
       px(wx + WINDOW.w + 1 - curtainHem, 24, curtainLight);
       const glass = raining
         ? mixHex(sc.wallTop, "#718aa1", 0.58)
-        : sc.lightPhase === "night"
-          ? "#2b3450"
-          : sc.lightPhase === "dawn"
-            ? "#c79aaa"
-            : sc.lightPhase === "golden"
-              ? "#d99672"
-              : sc.lightPhase === "evening"
-                ? "#685b7d"
-                : mixHex("#b7d8dc", sc.beamWarm, 0.2);
+        : snowing
+          ? mixHex(sc.wallTop, "#cfd8e2", 0.62)
+          : sc.lightPhase === "night"
+            ? "#2b3450"
+            : sc.lightPhase === "dawn"
+              ? "#c79aaa"
+              : sc.lightPhase === "golden"
+                ? "#d99672"
+                : sc.lightPhase === "evening"
+                  ? "#685b7d"
+                  : mixHex("#b7d8dc", sc.beamWarm, 0.2);
       blit(WINDOW, wx, 4, { w: INK, h: glass });
+
+      /*
+       * Weather on the glass, drawn after the window and before the skyline so it sits in front of the
+       * sky and behind the frame, which is where water on a window actually is.
+       *
+       * Positions are hand-picked and the motion is a function of the clock, not of anything random.
+       * A pane this small has room for four streaks; scattering them randomly puts two on top of each
+       * other about as often as not, and it cannot be checked by looking.
+       */
+      if (raining && !reduce) {
+        const wet = mixHex(glass, "#e8f1f4", 0.55);
+        for (const [sx, phase] of RAIN_STREAKS) {
+          const y = ((t / 420 + phase) % 1) * 9;
+          rect(wx + sx, 5 + Math.floor(y), 1, 2, wet);
+        }
+      } else if (raining) {
+        // Still weather, for anybody who asked not to be moved. Beads that sit where they are.
+        const wet = mixHex(glass, "#e8f1f4", 0.55);
+        for (const [sx] of RAIN_STREAKS) px(wx + sx, 8, wet);
+      }
+      if (snowing) {
+        const flake = mixHex(glass, "#ffffff", 0.8);
+        for (const [sx, phase] of SNOW_FLAKES) {
+          const y = reduce ? 4 + phase * 6 : ((t / 1500 + phase) % 1) * 10;
+          // Drifts one pixel sideways over its fall, which is the whole difference between snow and
+          // very slow rain.
+          const drift = Math.round(Math.sin(t / 1100 + phase * 6));
+          px(wx + sx + drift, 5 + Math.floor(y), flake);
+        }
+      }
+      if (overcast) {
+        // No streaks, nothing moving. Cloud is the sky going flat, so the panes just lose their blue.
+        rect(wx + 1, 5, WINDOW.w - 2, 9, mixHex(glass, "#b9bcc4", 0.3));
+      }
 
       if (sc.lightPhase === "dawn") {
         rect(wx + 1, wy(7), 7, 1, "#e9b39d");

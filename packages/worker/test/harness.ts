@@ -45,6 +45,10 @@ export function harness(room: string): Harness {
   // passed on my machine and failed on a fresh clone. The closed-door test takes it away itself.
   beforeEach(() => {
     env.DEV_TOOLS = "on";
+    // Refused instantly, so no test ever calls the real weather service. Left pointing at Open-Meteo
+    // this suite made a few hundred requests to a stranger's API per run, and one assertion quietly
+    // depended on whether it happened to be cloudy in New York.
+    env.WEATHER_URL = "http://127.0.0.1:1";
   });
 
   afterEach(async () => {

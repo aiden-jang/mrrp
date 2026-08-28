@@ -121,6 +121,8 @@ export interface RoomView {
   monthsOld: number;
   shelfDown: boolean;
   gift: Gift | null;
+  // What it is doing where she is. "clear" until the room has managed to find out.
+  sky: "clear" | "cloud" | "rain" | "snow";
   // What she chose for her bed, or null while the room still has the one it came with.
   blanket: { key: BlanketKey; stripe: boolean } | null;
   windowLight: boolean;

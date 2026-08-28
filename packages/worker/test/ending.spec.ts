@@ -101,6 +101,7 @@ describe("deleting the room", () => {
     "noteFor",
     "build",
     "erase",
+    "refreshWeather",
     "sweepLeftSide",
     "scheduleNext",
   ];
@@ -427,6 +428,27 @@ describe("her leaving on her own", () => {
     const stub = env.ROOM.get(env.ROOM.idFromName(id));
     away(24 * 8);
     expect(await runDurableObjectAlarm(stub)).toBe(true);
+    await runInDurableObject(stub, async (_instance, state) => {
+      expect([...(await state.storage.list()).keys()]).toEqual(["deleted"]);
+    });
+  });
+});
+
+describe("what a deleted room can still be made to keep", () => {
+  // Reading a room starts a weather lookup that finishes in a later turn. Delete the room while one
+  // is in the air and the answer used to come back and write itself into storage that had just been
+  // erased, leaving a key behind that "nothing but the date it went" says is not there.
+  it("does not let a weather lookup put a key back after erasing", async () => {
+    await seat();
+    await view(HER);
+    await post("delete", { me: HIM, name: "Bean" });
+
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    away(24 * 8);
+    expect(await runDurableObjectAlarm(stub)).toBe(true);
+
+    // Long enough for anything still in flight to land.
+    await new Promise((resolve) => setTimeout(resolve, 200));
     await runInDurableObject(stub, async (_instance, state) => {
       expect([...(await state.storage.list()).keys()]).toEqual(["deleted"]);
     });
