@@ -370,9 +370,18 @@ browser checks found them by querying for them by name rather than by looking at
 that surfaced it was a person opening the app and asking where accounts had gone.
 
 The rule that would have prevented all three: a disclosure is named after the question somebody
-arrives with, never after the first thing that happens to be inside it. "Getting back in on a new
-phone" covers both a code and an account. "Change how she looks" covers exactly one of the four
-things behind it.
+arrives with, never after the first thing that happens to be inside it. "Change how she looks" covers
+exactly one of the four things behind it.
 
 The test is not whether the label is accurate. All three were accurate. It is whether somebody who
 does not already know the feature exists would open that label to look for it.
+
+Relabelling was not enough for the account, though, and that is the second lesson. "Getting back in
+on a new phone" is an honest name for a panel holding both a code and a sign-in, and signing in was
+still two scrolls and a disclosure away from anybody who had not decided to go looking. So it came
+out of the panel altogether: the sentence and the button sit in the room, and the disclosure below
+them is now just "or keep a code instead". A code is a long string you fetch when you need it, which
+is what a disclosure is for. A decision somebody has to know they can make is not.
+
+Still nowhere near the front door. That part of the original reasoning holds: she taps a link and she
+is in, and signing in is something you decide afterwards, or never.
