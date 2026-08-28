@@ -2279,9 +2279,14 @@ export function Cat({
          * read as ink. Toned into that band. Not recoloured to the tan of the bored mood's toy: that
          * one gets away with tan because it has a shape, and a plain lump in a cat's room does not.
          */
-        rect(19, FLOOR + 20, 4, 1, mixHex(sc.floorNear, INK, 0.2));
+        rect(19, FLOOR + 20, 5, 1, mixHex(sc.floorNear, INK, 0.2));
         rect(19, FLOOR + 17, 4, 3, "#bd8897");
         px(18, FLOOR + 16, "#dbabb6");
+        // Three pixels rising off the bottom corner, each touching the last. A lump on a floor is
+        // whatever the person looking at it decides; a lump with a tail is a toy.
+        px(23, FLOOR + 19, "#946270");
+        px(24, FLOOR + 18, "#946270");
+        px(25, FLOOR + 17, "#946270");
       }
 
       if (treating) {
