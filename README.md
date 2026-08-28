@@ -183,28 +183,29 @@ That last part is enforced, not assumed. A third person with the link gets no no
 both in here", and a 403 on anything that writes. All of it lives in the Durable Object rather
 than the UI, because a rule enforced in the browser is a rule anyone can turn off.
 
-| endpoint                      | who         | notes                                                          |
-| ----------------------------- | ----------- | -------------------------------------------------------------- |
-| `GET /api/room/:id`           | anyone      | seats the first two callers. Only her read advances the note   |
-| `POST .../tell`               | her only    | her mood, one of six                                           |
-| `POST .../say`                | her only    | one line back, 140 chars, empty clears it                      |
-| `POST .../act`                | him only    | pet, brush, bring, sit, photo. Four of the five leave a mark   |
-| `POST .../shelf`              | either seat | puts the mug back. The one write both of them may make         |
-| `POST .../dress`, `.../clock` | him only    | 403 otherwise                                                  |
-| `POST .../notes`              | him only    | this room's notes, one per entry; empty restores the defaults  |
-| `POST .../window-light`       | either seat | leave one glint in the window, or collect the other person's   |
-| `POST .../release`            | him only    | frees her seat so a new device can be her                      |
-| `POST .../recover`            | his code    | takes the first seat back on a new device                      |
-| `POST .../delete`             | him only    | ends the room for both. Needs the cat's name typed, not a flag |
-| `POST .../undelete`           | him only    | puts it back, for a week. 403 after that                       |
-| `POST .../leave`              | her only    | takes her side out and frees her seat. His room stands         |
-| `POST .../unleave`            | her only    | puts her side back, while the week holds and the seat is free  |
-| `POST .../draw`               | either seat | the seven-by-five sheet in the frame. 35 chars of 0-4, or 400  |
-| `POST .../blanket`            | her only    | the one thing in the room she picks. Five colours and a stripe |
-| `POST .../ourday`             | him only    | the date the room says something about, and its words          |
-| `POST .../link`               | either seat | ties the seat you hold to the account you are signed into      |
-| `POST .../found`              | either seat | records a discovery. Unknown keys are a 400, not a new secret  |
-| `POST .../age`                | either seat | dev only, gated on DEV_TOOLS. Fast-forwards months             |
+| endpoint                      | who         | notes                                                             |
+| ----------------------------- | ----------- | ----------------------------------------------------------------- |
+| `GET /api/room/:id`           | anyone      | seats the first two callers. Only her read advances the note      |
+| `POST .../tell`               | her only    | her mood, one of six                                              |
+| `POST .../say`                | her only    | one line back, 140 chars, empty clears it                         |
+| `POST .../act`                | him only    | pet, brush, bring, sit, photo. Four of the five leave a mark      |
+| `POST .../shelf`              | either seat | puts the mug back. The one write both of them may make            |
+| `POST .../dress`, `.../clock` | him only    | 403 otherwise                                                     |
+| `POST .../notes`              | him only    | this room's notes, one per entry; empty restores the defaults     |
+| `POST .../window-light`       | either seat | leave one glint in the window, or collect the other person's      |
+| `POST .../release`            | him only    | frees her seat so a new device can be her                         |
+| `POST .../recover`            | his code    | takes the first seat back on a new device                         |
+| `POST .../delete`             | him only    | ends the room for both. Needs the cat's name typed, not a flag    |
+| `POST .../undelete`           | him only    | puts it back, for a week. 403 after that                          |
+| `POST .../leave`              | her only    | takes her side out and frees her seat. His room stands            |
+| `POST .../unleave`            | her only    | puts her side back, while the week holds and the seat is free     |
+| `POST .../draw`               | either seat | the seven-by-five sheet in the frame. 35 chars of 0-4, or 400     |
+| `POST .../blanket`            | her only    | the one thing in the room she picks. Five colours and a stripe    |
+| `GET .../export`              | either seat | the whole room as a file. Her copy stops at the note she has read |
+| `POST .../ourday`             | him only    | the date the room says something about, and its words             |
+| `POST .../link`               | either seat | ties the seat you hold to the account you are signed into         |
+| `POST .../found`              | either seat | records a discovery. Unknown keys are a 400, not a new secret     |
+| `POST .../age`                | either seat | dev only, gated on DEV_TOOLS. Fast-forwards months                |
 
 ### What his actions leave behind
 
@@ -322,7 +323,7 @@ local day, so a day she doesn't visit is not a note she never sees.
 ## Tests
 
 ```bash
-pnpm check       # typecheck, lint, then 436 tests: 191 web, 245 worker
+pnpm check       # typecheck, lint, then 440 tests: 191 web, 249 worker
 ```
 
 `lint` exists for one rule. owewell shipped a `useEffect` below a component's early returns, so the
@@ -384,8 +385,8 @@ the crossfade failed at ten of them, worst case 1.5:1. Two palettes with the tex
 one point never crosses that zone, and the worst ratio anywhere is now 4.54.
 
 **What breaks first.** Nothing, realistically. Two people per room and rooms don't talk to each other,
-so it scales by doing nothing. The real limit is that the room is the only copy of the data, and
-there's no export.
+so it scales by doing nothing. The room is still the only live copy, but either of them can now take
+one away: `GET /export` hands back everything it holds as a file, gated the same way the room is.
 
 **What I'd change.** The art is hand-authored pixel grids you can read in the source, one rectangle
 per logical pixel with no upscaling, because resampling a small canvas leaves you with pixels of two

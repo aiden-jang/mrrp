@@ -510,3 +510,18 @@ anniversary. To her it would read as the room reporting on somebody.
 The dev ageing tool grew a `homingHour` for this, because otherwise nobody could see the feature for
 two weeks, and it stamps today's date on what it writes so the read that comes back with the answer
 does not immediately count itself as another day and drag the average toward whatever o'clock it is.
+
+## Either of them can take the room away with them
+
+The room was the only copy of any of this, and the privacy policy's answer to "can I have it" was an
+email address. That is a fine promise and a bad feature, so `GET /export` now hands back everything
+the room holds as one file.
+
+It is gated exactly like the view, and one rule carries over that mattered more than the rest: her
+copy stops at the note she has actually read. Tomorrow's words never reach her browser, and an export
+is a browser with a filename on it. It would also have been the easiest leak in the app to miss,
+because nobody looks at a download twice.
+
+Offered out in the room rather than inside the delete panel. Putting it there would have been neat,
+since taking a copy matters most just before you end something, but somebody who simply wants their
+own words back should not have to open a disclosure labelled "delete this room" to find them.
