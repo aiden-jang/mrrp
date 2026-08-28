@@ -530,6 +530,7 @@ export class Room extends DurableObject<Env> {
   // Whether she can still put her side back, and until when. Null once the week is up, once somebody
   // else has taken the empty seat, or for anybody who is not her.
   async undoLeaveUntil(me: string): Promise<number | null> {
+    await this.guard();
     const kept = await this.sweepLeftSide();
     if (!kept || kept.token !== me) return null;
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -537,6 +538,7 @@ export class Room extends DurableObject<Env> {
   }
 
   async unleave(me: string): Promise<boolean> {
+    await this.guard();
     if (!(await this.undoLeaveUntil(me))) return false;
     const kept = (await this.ctx.storage.get<LeftSide>(LEFT_SIDE))!;
 
