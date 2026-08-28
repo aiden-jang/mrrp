@@ -232,6 +232,18 @@ const CLOSED_EYES: Record<Pose, { y: number; left: number; right: number; width:
 const YAWN = { y: 9, x: 6, w: 5 };
 const YAWN_MS = 900;
 
+/*
+ * Washing. A paw held up beside the mouth and a tongue that flicks out to meet it.
+ *
+ * Offsets into the face rather than a pose of her own, the same way the yawn works, which is only
+ * possible because every pose is built on the same head: eyes at columns 5, 6, 11 and 12 and the
+ * mouth at 7 to 9. The paw sits just right of the mouth, over the pale muzzle, so fur-coloured pixels
+ * there read as a paw in front of her face.
+ */
+const GROOM = { pawX: 10, pawY: 9, tipX: 11, tipY: 8, tongueX: 9, tongueY: 10 };
+const GROOM_MS = 1900;
+const GROOM_LICK_MS = 220;
+
 export function Cat({
   label,
   look,
@@ -442,6 +454,7 @@ export function Cat({
   const warmSpot = useRef<number | null>(null);
   const rainHeard = useRef(-1e9);
   const yawn = useRef({ at: -1e9, next: -1e9 });
+  const groom = useRef({ at: -1e9, next: 24000 + Math.random() * 30000 });
   const doorShutFrom = useRef({ at: 0, from: 0 });
   lookRef.current = look;
   clockRef.current = clock;
@@ -1462,6 +1475,21 @@ export function Cat({
         px(wx + 3, 17, mixHex(sc.wallBottom, glass, 0.5));
         px(wx + 12, 17, mixHex(sc.wallBottom, glass, 0.5));
       }
+      if (snowing) {
+        /*
+         * Snow that has settled, as against snow going past.
+         *
+         * The flakes drifting behind the glass say it is snowing; this says it has been snowing for a
+         * while, which is the difference between weather and a day. Uneven on purpose: a clean white
+         * line across the sill is a painted stripe, and the two extra pixels in the corners are where
+         * it gathers against the frame.
+         */
+        const settled = mixHex(glass, "#ffffff", 0.86);
+        rect(wx, 14, WINDOW.w, 1, settled);
+        px(wx, 13, settled);
+        px(wx + WINDOW.w - 1, 13, settled);
+        px(wx + 4, 13, settled);
+      }
       if (season === "spring") {
         px(wx + 3, wy(8), "#efb0ba");
         px(wx + 13, wy(3), "#f5c5ca");
@@ -2427,6 +2455,36 @@ export function Cat({
           if (edge >= 0) px(kx + sp.ox + edge, y + sp.oy + j, rim);
         }
       }
+      /*
+       * She washes when nothing else is happening, which is most of what a cat does with its day.
+       *
+       * Not while she is sleepy, not while she is being held, and never at the same time as a yawn:
+       * two overlays on one small face at once is a smudge, not two behaviours.
+       */
+      if (
+        !reduce &&
+        awake &&
+        sc.sleepy < 0.5 &&
+        !pet &&
+        stayDepth.current < 0.2 &&
+        t - yawn.current.at > YAWN_MS + 600 &&
+        t > groom.current.next
+      ) {
+        groom.current.at = t;
+        groom.current.next = t + 52000 + Math.random() * 60000;
+      }
+      const grooming = t - groom.current.at < GROOM_MS;
+      if (grooming && awake) {
+        const faceX = kx + sp.ox;
+        const faceY = y + sp.oy;
+        rect(faceX + GROOM.pawX, faceY + GROOM.pawY, 2, 2, L.fur);
+        px(faceX + GROOM.tipX, faceY + GROOM.tipY, INK);
+        // The tongue comes and goes; the paw stays up. A paw that flickers reads as a glitch.
+        if ((t - groom.current.at) % (GROOM_LICK_MS * 2) < GROOM_LICK_MS) {
+          px(faceX + GROOM.tongueX, faceY + GROOM.tongueY, PINK);
+        }
+      }
+
       if (!reduce && awake && sc.sleepy > 0.25 && sc.sleepy < 0.75 && t > yawn.current.next) {
         yawn.current.at = t;
         yawn.current.next = t + 42000 + Math.random() * 48000;
