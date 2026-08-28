@@ -244,6 +244,16 @@ app.post("/api/room/:id/delete", async (c) => {
   return erasesAt ? c.json({ ok: true, undoUntil: erasesAt }) : c.json({ error: "not yours to delete" }, 403);
 });
 
+app.post("/api/room/:id/blanket", async (c) => {
+  const id = c.req.param("id");
+  if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
+  const body = (await c.req.json().catch(() => ({}))) as { me?: unknown; key?: unknown; stripe?: unknown };
+  const me = typeof body.me === "string" ? body.me : "";
+  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+  const ok = await room(c.env, id).setBlanket(me, body.key, body.stripe);
+  return ok ? c.json({ ok: true }) : c.json({ error: "not hers to change, or not a blanket" }, 403);
+});
+
 app.post("/api/room/:id/unleave", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);

@@ -274,3 +274,14 @@ export async function doSay(id: string, text: string): Promise<RoomView> {
   if (!r.ok) throw new Error("Couldn't leave that.");
   return r.json() as Promise<RoomView>;
 }
+
+export async function doBlanket(id: string, key: string, stripe: boolean): Promise<RoomView> {
+  const r = await fetch(`/api/room/${id}/blanket`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ me: myToken(), key, stripe }),
+  });
+  if (r.status === 410) throw await goneFrom(r);
+  if (!r.ok) throw new Error("Couldn't change her blanket.");
+  return fetchRoom(id);
+}

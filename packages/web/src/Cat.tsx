@@ -7,6 +7,8 @@ import { dreamOf, type Dream, type DreamContext, type DreamScene } from "./dream
 import { catCallCode } from "./secrets.js";
 import { moonPhase, moonPixelLit } from "./moon.js";
 import { cellAt, DOODLE_INK } from "./doodle.js";
+import { blanketPalette } from "./blanket.js";
+import type { RoomView } from "./types.js";
 import { seasonFor, seasonalPlantColors } from "./season.js";
 import { mouseRunAt } from "./mouse.js";
 import { BUBBLE_GAME_MS, bubbleMomentAt, bubbleSeeds, type BubbleSeed } from "./bubbles.js";
@@ -73,6 +75,7 @@ const MUG_STEAM_MS = 2200;
 const MUG_GLOW_MS = 2600;
 const GIFT_WISH_MS = 2800;
 const BED_DREAM_MS = 3200;
+const BED_STRIPES = [5, 8, 11, 14];
 const PURR_CHORUS_MS = 2600;
 const LASER_CHASE_MS = 2800;
 const LASER_RELEASE_MS = 900;
@@ -223,6 +226,7 @@ export function Cat({
   eyesOpen = false,
   framed = false,
   doodle = null,
+  blanket = null,
   spot = null,
   doorOpenAt = null,
   watchDoorAt = null,
@@ -261,6 +265,7 @@ export function Cat({
   doorOpenAt?: number | null;
   spot?: number | null;
   doodle?: string | null;
+  blanket?: RoomView["blanket"];
   reserveBelow?: number;
   staying?: boolean;
   watchDoorAt?: number | null;
@@ -299,6 +304,8 @@ export function Cat({
   framedRef.current = framed;
   const doodleRef = useRef(doodle);
   doodleRef.current = doodle;
+  const blanketRef = useRef(blanket);
+  blanketRef.current = blanket;
   const spotRef = useRef(spot);
   spotRef.current = spot;
   const doorRef = useRef(doorOpenAt);
@@ -1741,7 +1748,21 @@ export function Cat({
         }
       }
       rect(13, FLOOR + 23, 22, 2, mixHex(sc.floorNear, INK, 0.18));
-      blit(BED, 24 + shake("bed"), FLOOR + 22, { d: "#b07f76", f: "#d8a79c", b: "#c4918a" });
+      // Her blanket. The only thing in the room she picked, so it is drawn from what she chose rather
+      // than from a constant, and a room she has not touched keeps the rose it came with.
+      const bedPal = blanketPalette(blanketRef.current?.key ?? null);
+      blit(BED, 24 + shake("bed"), FLOOR + 22, bedPal);
+      if (blanketRef.current?.stripe) {
+        // Columns picked by hand, not stepped by a loop. The cushion runs 3 to 16, so an even step
+        // leaves a half-width gap at one end, and on a bed that is symmetrical the eye reads that as
+        // a mistake rather than a pattern. These four sit evenly and mirror about the middle.
+        const bx = 24 + shake("bed") + BED.ox;
+        for (const i of BED_STRIPES) {
+          for (let j = 0; j < BED.h; j++) {
+            if (BED.rows[j]![i] === "b") px(bx + i, FLOOR + 22 + BED.oy + j, bedPal.d!);
+          }
+        }
+      }
 
       if (cakeRef.current) {
         const flame = reduce || Math.sin(t / 260) > -0.4 ? "#ffca6b" : "#ffe6a8";

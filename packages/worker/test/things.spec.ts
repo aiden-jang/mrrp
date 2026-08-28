@@ -300,3 +300,52 @@ describe("shared discoveries", () => {
     expect((await view(HIM)).noticed).toBe(1);
   });
 });
+
+describe("the blanket on her bed", () => {
+  it("is hers to choose, and nobody else's", async () => {
+    await seat();
+    expect((await post("blanket", { me: HER, key: "moss", stripe: true })).status).toBe(200);
+    expect((await post("blanket", { me: HIM, key: "dusk", stripe: false })).status).toBe(403);
+    expect((await post("blanket", { me: "strangerstranger", key: "dusk" })).status).toBe(403);
+
+    expect((await view(HIM)).blanket).toEqual({ key: "moss", stripe: true });
+  });
+
+  it("is null until she picks one, so the room keeps the bed it came with", async () => {
+    await seat();
+    expect((await view(HER)).blanket).toBeNull();
+  });
+
+  // Checked in the room and not only at the route. A colour it does not know is a bed drawn with
+  // undefined, which paints nothing and leaves a cat-shaped hole where her bed was.
+  it("refuses a colour it has never heard of", async () => {
+    await seat();
+    expect((await post("blanket", { me: HER, key: "chartreuse", stripe: false })).status).toBe(403);
+    expect((await post("blanket", { me: HER, key: 7 })).status).toBe(403);
+    expect((await view(HER)).blanket).toBeNull();
+  });
+
+  it("takes the stripe off again, since taking it off is a choice too", async () => {
+    await seat();
+    await post("blanket", { me: HER, key: "honey", stripe: true });
+    await post("blanket", { me: HER, key: "honey", stripe: false });
+    expect((await view(HER)).blanket).toEqual({ key: "honey", stripe: false });
+  });
+
+  /*
+   * Stays when she goes, like the drawing in the frame and unlike her moods.
+   *
+   * What leaving promises her is "your moods, your visits, the days you have been in here", and a
+   * colour on a bed is none of those. It is a thing in the room rather than a record of her, so it
+   * belongs to the room. If that ever changes, the sentence on the leave panel has to change with it.
+   */
+  it("stays with the room when she leaves, because it is furniture and not a record", async () => {
+    await seat();
+    await post("blanket", { me: HER, key: "cream", stripe: true });
+    await post("leave", { me: HER });
+
+    expect((await view(HIM)).blanket).toEqual({ key: "cream", stripe: true });
+    await post("unleave", { me: HER });
+    expect((await view(HER)).blanket).toEqual({ key: "cream", stripe: true });
+  });
+});
