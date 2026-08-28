@@ -25,6 +25,7 @@ export interface Harness {
   view: (me: string, name?: string) => Promise<RoomView>;
   post: (path: string, body: unknown) => Promise<Response>;
   away: (hours: number) => void;
+  tick: (ms?: number) => Promise<void>;
   seat: (tz?: string) => Promise<void>;
 }
 
@@ -80,6 +81,23 @@ export function harness(room: string): Harness {
     vi.setSystemTime(new Date(Date.now() + hours * 60 * 60 * 1000));
   }
 
+  /*
+   * Move the clock on a little, for a test that needs one thing to happen after another.
+   *
+   * "What arrived since your last visit" is `at > since`, with both sides coming from Date.now(). A
+   * test that reads the room, acts, and reads again inside one millisecond gets `at === since` and no
+   * arrival, correctly. Two people cannot do that over a network, but this suite can: round trips here
+   * used to take about 200ms and now take about 5, so splitting the files turned a collision that
+   * never happened into one that happened about one run in eight.
+   *
+   * Works either side of `away()`: with the clock faked it moves it, and without it waits for real.
+   * Two tests used to do the real wait inline with no explanation of what they were waiting for.
+   */
+  async function tick(ms = 10): Promise<void> {
+    if (vi.isFakeTimers()) vi.setSystemTime(new Date(Date.now() + ms));
+    else await new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
   // Seat both people. Pass `tz` to pin the room's clock BEFORE her first read, which the note tests
   // depend on: her day is recorded from whatever zone is in force the first time she reads. The two
   // zones above differ from each other always; that says nothing about the one the room starts on.
@@ -89,5 +107,5 @@ export function harness(room: string): Harness {
     await view(HER, "Sofia");
   }
 
-  return { id, view, post, away, seat };
+  return { id, view, post, away, tick, seat };
 }
