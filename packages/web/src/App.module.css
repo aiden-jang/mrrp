@@ -850,3 +850,19 @@ details[open] > .recoverySummary::before {
   text-align: center;
   margin-top: 6px;
 }
+
+/* The way back in is the one thing most people open this block for, so it is a button and not a link. */
+.accountBtn {
+  width: 100%;
+  margin-top: 10px;
+}
+
+/*
+ * Ending the room is not a peer of resending a link. Set apart rather than coloured red: this is a
+ * quiet app and a red button in it would be shouting, but it must not read as one more option.
+ */
+.ending {
+  margin-top: 22px;
+  border-style: dashed;
+  background: none;
+}
