@@ -176,8 +176,21 @@ const COLLAR: Record<Pose, { dx: number; w: number; dy: number; tag: number }> =
 const COLLAR_BAND = "#9c5468";
 const COLLAR_TAG = "#e8ad55";
 
-const FRAME_CENTRE = 22;
+// Derived, not typed in. It was 22, which was the middle of a thirteen-wide frame; the frame is
+// twenty-one wide since the drawing sheet grew, so her glance was aimed four pixels off the picture
+// she was supposed to be looking at.
+const FRAME_X = 16;
+const FRAME_CENTRE = FRAME_X + Math.floor(FRAME.w / 2);
 const GLANCE_MS = 2600;
+
+/*
+ * How long she goes and sits under a new drawing.
+ *
+ * The glance was only her eyes, and 2.6 seconds is not long enough to cross a room. A cat that has
+ * noticed you did something goes and sits in front of it, which is the actual behaviour this was
+ * reaching for.
+ */
+const ADMIRE_MS = 13000;
 
 const DOOR_CENTRE = 12;
 const SWIPE_MS = 620;
@@ -569,6 +582,7 @@ export function Cat({
 
   const seenDoodle = useRef<string | null | undefined>(undefined);
   const glanceUntil = useRef(0);
+  const admireUntil = useRef(0);
   useEffect(() => {
     const first = seenDoodle.current === undefined;
     const changed = seenDoodle.current !== doodle;
@@ -576,6 +590,7 @@ export function Cat({
     if (first || !changed || doodle === null) return;
     glanceUntil.current = performance.now() + GLANCE_MS;
     lookAt.current = { x: FRAME_CENTRE, until: glanceUntil.current };
+    admireUntil.current = performance.now() + ADMIRE_MS;
   }, [doodle]);
 
   const mothSwipe = useRef({ visit: -1, at: -Infinity });
@@ -1846,7 +1861,7 @@ export function Cat({
         px(nx + 2, ny + 1, `rgba(198,154,99,${a})`);
       }
       rect(18, 14, FRAME.w, FRAME.h, mixHex(sc.wallBottom, INK, 0.12));
-      const fx = 16 + shake("frame");
+      const fx = FRAME_X + shake("frame");
       const drawn = doodleRef.current;
       if (drawn) {
         blit(FRAME_EMPTY, fx, 12, { w: INK, f: "#c69a63", h: "#cfe0e4" });
@@ -2108,6 +2123,13 @@ export function Cat({
         return (warmSpot.current ?? target) + shade;
       };
 
+      /*
+       * Somebody has just hung something. She goes and sits under it.
+       *
+       * Below the games, because she will not walk off mid-chase to look at a picture, and above the
+       * sunbeam, because a new drawing is more interesting than a warm patch she has all day.
+       */
+      const admiring = t < admireUntil.current;
       let wantX = nameCalled
         ? GW / 2
         : bubblePlaying
@@ -2130,9 +2152,11 @@ export function Cat({
                           ? BOX_X + 2
                           : nesting
                             ? 24
-                            : followingLight
-                              ? warmSeat(sc.catX * GW)
-                              : sc.catX * GW;
+                            : admiring
+                              ? FRAME_CENTRE
+                              : followingLight
+                                ? warmSeat(sc.catX * GW)
+                                : sc.catX * GW;
       const bounded = (x: number) => Math.max(CAT_REACH_LEFT, Math.min(GW - CAT_REACH_RIGHT, x));
       wantX = bounded(wantX);
       if (catX.current === null) catX.current = firstEverRef.current ? 19 : wantX;
@@ -2317,7 +2341,10 @@ export function Cat({
                         // once she has, the hour of the day does not get to sit her back up.
                         flopped
                         ? "flop"
-                        : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
+                        : // Sitting is what a cat does in front of a thing it is looking at.
+                          admiring && !walking
+                          ? "sit"
+                          : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
