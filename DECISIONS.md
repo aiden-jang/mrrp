@@ -346,3 +346,25 @@ config would make every other test in the package pay for it. What clicks buy ov
 the wiring: "Put my side back" and "start fresh instead" sit next to each other, take the same shape
 of callback, and one restores her year while the other throws it away. Swapping them changes no
 markup and no screenshot.
+
+## A label has to name the question, not one of the answers
+
+This app has now hidden three features inside things labelled as something else, twice in the same
+block of code:
+
+- the recovery code lived inside "change how she looks", so the one string that recovers a seat sat
+  behind a button labelled as a cosmetic editor
+- signing in lived inside "show my recovery code", where nobody looking for an account would open it
+- the notes, which are the whole point of the room, lived inside "change how she looks, or her hours"
+
+Every one of them was in the DOM the whole time, so no test would have caught any of it, and my own
+browser checks found them by querying for them by name rather than by looking at the screen. The one
+that surfaced it was a person opening the app and asking where accounts had gone.
+
+The rule that would have prevented all three: a disclosure is named after the question somebody
+arrives with, never after the first thing that happens to be inside it. "Getting back in on a new
+phone" covers both a code and an account. "Change how she looks" covers exactly one of the four
+things behind it.
+
+The test is not whether the label is accurate. All three were accurate. It is whether somebody who
+does not already know the feature exists would open that label to look for it.
