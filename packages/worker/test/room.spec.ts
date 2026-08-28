@@ -1621,6 +1621,32 @@ describe("her leaving on her own", () => {
     expect((await view(HER)).theyLeft).toBeNull();
   });
 
+  // Neither of them is looking at something the other one is not. That is the whole reason this is a
+  // pair of flags computed from the same conditions rather than two features that drifted apart.
+  it("tells her he was told, whenever it is telling him", async () => {
+    await seat();
+    await post("leave", { me: HER });
+
+    expect((await view(HIM)).theyLeft?.name).toBe("Sofia");
+    expect((await view(HER)).theyWereTold).toBe("Aiden");
+  });
+
+  it("tells nobody else who was told", async () => {
+    await seat();
+    await post("leave", { me: HER });
+    expect((await view(STRANGER)).theyWereTold).toBeNull();
+    expect((await view(HIM)).theyWereTold).toBeNull();
+  });
+
+  it("stops telling her he knows exactly when it stops telling him", async () => {
+    await seat();
+    await post("leave", { me: HER });
+    await view(STRANGER, "Someone new");
+
+    expect((await view(HIM)).theyLeft).toBeNull();
+    expect((await view(HER)).theyWereTold).toBeNull();
+  });
+
   it("stops telling him once somebody else has taken the seat", async () => {
     await seat();
     await post("leave", { me: HER });

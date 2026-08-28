@@ -737,6 +737,9 @@ export class Room extends DurableObject<Env> {
     const kept = waitingForThem && me === him ? await this.ctx.storage.get<LeftSide>(LEFT_SIDE) : null;
     const theyLeft =
       kept && Date.now() < kept.dropsAt ? { name: kept.person.name, until: kept.dropsAt } : null;
+    // She is told he was told. The two flags open and close under exactly the same conditions, so
+    // there is no state where one of them is looking at something the other one is not.
+    const theyWereTold = undoLeaveUntil && him ? (people[him]?.name ?? null) : null;
     const windowLight = await this.ctx.storage.get<WindowLight>("windowLight");
     const startedAt = roomStartedAt(
       Object.values(people).map((person) => person.firstSeen),
@@ -789,6 +792,7 @@ export class Room extends DurableObject<Env> {
       youLeft,
       undoLeaveUntil,
       theyLeft,
+      theyWereTold,
       catMood: catTold?.mood ?? null,
       catMoodAt: catTold?.at ?? null,
       you: people[me]?.name ?? null,
