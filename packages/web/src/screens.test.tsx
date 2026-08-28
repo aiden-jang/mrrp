@@ -87,7 +87,6 @@ describe("a room she has left", () => {
     expect(html).toContain("Put my side back");
   });
 
-  // She is told he was told. The alternative is her finding out later that he could see it all along.
   it("tells her he knows, by name", () => {
     expect(text(left({ undoUntil: APRIL_2, theyWereTold: "Aiden" }))).toContain(
       "Aiden has been told the same thing",
@@ -98,7 +97,6 @@ describe("a room she has left", () => {
     expect(text(left({ undoUntil: APRIL_2 }))).not.toContain("has been told");
   });
 
-  // A button whose only outcome is the both-seats-are-taken screen is worse than no button.
   it("offers a fresh start only when there is a seat to take", () => {
     expect(left({ seatFree: true })).toContain("Take the seat again");
     expect(left({ seatFree: false })).not.toContain("Take the seat again");
@@ -109,7 +107,6 @@ describe("a room she has left", () => {
     expect(text(left({ seatFree: true }))).toContain("Bean is still in there and the seat is empty");
   });
 
-  // Both are offered while the week holds: put it back as it was, or start over.
   it("offers both doors while her side is still kept", () => {
     const html = left({ undoUntil: APRIL_2, seatFree: true });
     expect(html).toContain("Put my side back");
@@ -125,7 +122,6 @@ describe("what he is told while she can still come back", () => {
     expect(out).toContain("kept until April 2");
   });
 
-  // The warning has to reach him before he sends the link on, because sending it is what ends it.
   it("says what sending the link on would cost", () => {
     const out = text(renderToStaticMarkup(TheyLeftNotice({ name: "Sofia", until: APRIL_2 })));
     expect(out).toContain("gives the seat away, and that ends it");
