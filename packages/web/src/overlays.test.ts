@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   BED_STRIPES,
   EAR,
+  eyeHighlights,
   faceShift,
   FRAME_CENTRE,
   FRAME_X,
@@ -123,5 +124,43 @@ describe("the picture frame", () => {
     expect(FRAME_CENTRE).toBe(FRAME_X + Math.floor(FRAME.w / 2));
     expect(FRAME_CENTRE).toBeGreaterThan(FRAME_X);
     expect(FRAME_CENTRE).toBeLessThan(FRAME_X + FRAME.w);
+  });
+});
+
+describe("her eye highlights", () => {
+  /*
+   * These were a hand-written table and it was wrong for five poses out of ten: the moving highlight
+   * landed on her muzzle in a loaf, on her blush standing, and on the dark of her eye sitting. On
+   * `perk` it missed twice, because that pose's face is a row lower and the table used one row for
+   * every pose.
+   */
+  it("lands on the highlight cells the sprite already has", () => {
+    for (const pose of POSE_NAMES) {
+      const rows = poseGrid(pose);
+      const { l, r, row } = eyeHighlights(pose);
+      const ox = POSES[pose].ox;
+      expect(cellAt(rows, l - ox, row), `${pose} left highlight`).toBe("h");
+      expect(cellAt(rows, r - ox, row), `${pose} right highlight`).toBe("h");
+    }
+  });
+
+  it("finds the row the eyes are actually on, pose by pose", () => {
+    for (const pose of POSE_NAMES) {
+      const rows = poseGrid(pose);
+      const { row } = eyeHighlights(pose);
+      expect(rows[row]?.includes("e"), `${pose} highlight row has eyes on it`).toBe(true);
+    }
+  });
+
+  // One pixel either side of the highlight, because the eyes track a pointer by shifting it.
+  it("leaves room to shift without falling off her face", () => {
+    for (const pose of POSE_NAMES) {
+      const rows = poseGrid(pose);
+      const { l, r, row } = eyeHighlights(pose);
+      const ox = POSES[pose].ox;
+      for (const col of [l - ox - 1, l - ox + 1, r - ox - 1, r - ox + 1]) {
+        expect(cellAt(rows, col, row), `${pose} shifted highlight at ${col}`).not.toBe(".");
+      }
+    }
   });
 });

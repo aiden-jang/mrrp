@@ -58,6 +58,25 @@ export function faceShift(pose: Pose): number {
   return noseRow(pose) - noseRow("loaf");
 }
 
+/*
+ * Where her eye highlights are, taken off the grid.
+ *
+ * These used to be a hand-written table of offsets, and it was wrong for five of the ten poses: the
+ * moving highlight landed on her muzzle in a loaf, on her blush standing, and on the dark of the eye
+ * sitting. On `perk` it missed twice over, because that pose's face is a row lower and the table
+ * assumed one row for everybody.
+ *
+ * The sprite already says where they go: one `h` cell per eye, on the row the eyes are on. Reading it
+ * cannot drift, and a pose drawn tomorrow gets this for free.
+ */
+export function eyeHighlights(pose: Pose): { l: number; r: number; row: number } {
+  const rows = POSES[pose].rows;
+  const row = rows.findIndex((r) => r.includes("h"));
+  const cols = [...(rows[row] ?? "")].flatMap((c, i) => (c === "h" ? [i] : []));
+  const ox = POSES[pose].ox;
+  return { l: (cols[0] ?? 0) + ox, r: (cols[1] ?? 0) + ox, row };
+}
+
 /** Handy for the tests: the sprite grid a pose is drawn from. */
 export const poseGrid = (pose: Pose): string[] => POSES[pose].rows;
 export const bedGrid = (): string[] => BED.rows;

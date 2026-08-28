@@ -19,6 +19,7 @@ import {
   RAIN_STREAKS,
   SNOW_FLAKES,
   YAWN,
+  eyeHighlights,
 } from "./overlays.js";
 import type { RoomView } from "./types.js";
 import { seasonFor, seasonalPlantColors } from "./season.js";
@@ -2905,20 +2906,25 @@ export function Cat({
       }
 
       if (awake) {
-        const ey = y + sp.oy + 6;
-        const EYES: Record<Pose, { l: number; r: number; wide: boolean }> = {
-          loaf: { l: -5, r: 4, wide: true },
-          sit: { l: -3, r: 2, wide: true },
-          perk: { l: -3, r: 2, wide: true },
-          play: { l: -4, r: 3, wide: true },
-          stand: { l: -5, r: 1, wide: false },
-          walk: { l: -4, r: 2, wide: true },
-          stretch: { l: -4, r: 2, wide: true },
-          pounce: { l: -5, r: 1, wide: true },
-          peek: { l: -4, r: 2, wide: true },
-          flop: { l: -5, r: 4, wide: true },
+        const ey = y + sp.oy + eyeHighlights(pose).row;
+        /*
+         * Whether her eyes follow a pointer. Geometry comes off the sprite; this is the one part that
+         * is a decision. Standing, she is side-on and only one eye can track anything.
+         */
+        const TRACKS: Record<Pose, boolean> = {
+          loaf: true,
+          sit: true,
+          perk: true,
+          play: true,
+          stand: false,
+          walk: true,
+          stretch: true,
+          pounce: true,
+          peek: true,
+          flop: true,
         };
-        const e = EYES[pose];
+        const spot = eyeHighlights(pose);
+        const e = { l: spot.l, r: spot.r, wide: TRACKS[pose] };
         const at = mouseVisiting
           ? mouseMoment!.x
           : looking
