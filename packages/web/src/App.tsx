@@ -57,6 +57,7 @@ import { AUTH_URL } from "./config.js";
 import { foundKeys, noticed } from "./discoveries.js";
 import { awayLine, milestoneLine, personalityLine } from "./remembers.js";
 import { myToken } from "./api.js";
+import { GoneCard, LeftCard, TheyLeftNotice } from "./screens.js";
 
 const ACTION_SOUND: Record<Action, Cue> = {
   pet: "purr",
@@ -1018,55 +1019,18 @@ function RoomPage({ id }: { id: string }) {
   // being possible. She is not offered a way back because she does not have one, and dangling one in
   // front of her would be worse than the plain fact.
   if (gone) {
-    const undoBy = gone.undoUntil
-      ? new Date(gone.undoUntil).toLocaleDateString(undefined, { month: "long", day: "numeric" })
-      : null;
     return (
       <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
         <ChromeSync night={isNightChrome(door.sun)} />
-        <div className={s.card} style={{ textAlign: "center" }}>
-          <h1 className={s.h1}>{undoBy ? "you deleted this room" : "this room is gone"}</h1>
-          {undoBy ? (
-            <>
-              <p className={s.small} style={{ marginTop: 12 }}>
-                It is gone for both of you already. Nothing is erased until {undoBy}, so if you did not mean
-                it, you can still put it back exactly as it was.
-              </p>
-              <button
-                className={`${s.btn} ${s.btnGo}`}
-                style={{ width: "100%", marginTop: 18 }}
-                disabled={undoing}
-                onClick={() => void putBackRoom()}
-              >
-                {undoing ? "putting it back…" : "Put the room back"}
-              </button>
-              {err && (
-                <p className={s.small} style={{ marginTop: 10, color: "var(--error)" }} role="status">
-                  {err}
-                </p>
-              )}
-              <button className={s.quiet} onClick={() => (window.location.href = "/")}>
-                No, I meant it
-              </button>
-            </>
-          ) : (
-            <>
-              <p className={s.small} style={{ marginTop: 12 }}>
-                It was deleted. The cat, the notes, the year of it, both sides. There is nothing left in here
-                to get back.
-              </p>
-              <button
-                className={`${s.btn} ${s.btnGo}`}
-                style={{ width: "100%", marginTop: 18 }}
-                onClick={() => {
-                  window.location.href = "/";
-                }}
-              >
-                Start a new one
-              </button>
-            </>
-          )}
-        </div>
+        <GoneCard
+          undoUntil={gone.undoUntil}
+          undoing={undoing}
+          err={err}
+          onPutBack={() => void putBackRoom()}
+          onHome={() => {
+            window.location.href = "/";
+          }}
+        />
       </main>
     );
   }
@@ -1108,68 +1072,22 @@ function RoomPage({ id }: { id: string }) {
   // beats the alternative, which is the stranger screen telling her a room she was in for a year
   // belongs to two people she is not one of.
   if (view.youLeft) {
-    const undoBy = view.undoLeaveUntil
-      ? new Date(view.undoLeaveUntil).toLocaleDateString(undefined, { month: "long", day: "numeric" })
-      : null;
     return (
       <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
         <ChromeSync night={isNightChrome(door.sun)} />
-        <div className={s.card} style={{ textAlign: "center" }}>
-          <h1 className={s.h1}>you left this room</h1>
-          {/* Two different sentences, because the seat being free is the thing that decides whether
-              coming back means getting your year back or starting one. */}
-          {undoBy ? (
-            <>
-              <p className={s.small} style={{ marginTop: 12 }}>
-                Your side is out of the room: the moods, the visits, the days. It is kept until {undoBy}, so
-                you can still put it back exactly as it was, as long as nobody else has taken the seat by
-                then.
-              </p>
-              {/* Because he can see it. Leaving her to guess whether he knows is a worse thing to do
-                  than telling her, and it becomes a lie by omission the moment she finds out. */}
-              {view.theyWereTold && (
-                <p className={s.small} style={{ marginTop: 10 }}>
-                  {view.theyWereTold} has been told the same thing: that you left, and until when you can put
-                  it back.
-                </p>
-              )}
-              <button
-                className={`${s.btn} ${s.btnGo}`}
-                style={{ width: "100%", marginTop: 18 }}
-                disabled={undoing}
-                onClick={() => void putBackMySide()}
-              >
-                {undoing ? "putting it back…" : "Put my side back"}
-              </button>
-              {err && (
-                <p className={s.small} style={{ marginTop: 10, color: "var(--error)" }} role="status">
-                  {err}
-                </p>
-              )}
-            </>
-          ) : (
-            <p className={s.small} style={{ marginTop: 12 }}>
-              Your side of it is gone: the moods, the visits, the days.{" "}
-              {view.waitingForThem
-                ? `${view.cat.name} is still in there and the seat is empty, so you can take it again. You would be starting from the beginning.`
-                : "Somebody else is the cat now, so there is no seat to come back to."}
-            </p>
-          )}
-          {/* Offered only when there is a free seat to take. A button whose only outcome is the
-              both-seats-are-taken screen is worse than no button. */}
-          {(undoBy || view.waitingForThem) && (
-            <button
-              className={undoBy ? s.quiet : `${s.btn} ${s.btnGo}`}
-              style={undoBy ? undefined : { width: "100%", marginTop: 18 }}
-              onClick={() => {
-                forgetMe();
-                window.location.reload();
-              }}
-            >
-              {undoBy ? "No, start fresh instead" : "Take the seat again"}
-            </button>
-          )}
-        </div>
+        <LeftCard
+          catName={view.cat.name}
+          undoUntil={view.undoLeaveUntil}
+          theyWereTold={view.theyWereTold}
+          seatFree={view.waitingForThem}
+          undoing={undoing}
+          err={err}
+          onPutBack={() => void putBackMySide()}
+          onStartFresh={() => {
+            forgetMe();
+            window.location.reload();
+          }}
+        />
       </main>
     );
   }
@@ -1619,21 +1537,7 @@ function RoomPage({ id }: { id: string }) {
             {/* The italic caption above already says she's asleep, in the room's own voice. Saying it
                 again immediately underneath read as a layout fault, because the two lines collided. */}
             {view.theyLeft ? (
-              <>
-                {/* "Nobody else is here yet" is the wrong sentence for a seat somebody has left, and
-                    the difference matters: sending the link on is what closes her way back, so he
-                    has to be told before he does it, not after. */}
-                <p className={s.newsMain}>{view.theyLeft.name} left this room.</p>
-                <p className={s.small} style={{ textAlign: "center" }}>
-                  Her side of it is kept until{" "}
-                  {new Date(view.theyLeft.until).toLocaleDateString(undefined, {
-                    month: "long",
-                    day: "numeric",
-                  })}
-                  , so she can put it back if she changes her mind. Sending this link to somebody else gives
-                  the seat away, and that ends it.
-                </p>
-              </>
+              <TheyLeftNotice name={view.theyLeft.name} until={view.theyLeft.until} />
             ) : (
               <>
                 <p className={s.newsMain}>Nobody else is here yet.</p>
