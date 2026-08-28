@@ -192,6 +192,10 @@ const GLANCE_MS = 2600;
  */
 const ADMIRE_MS = 13000;
 
+// How long her paws stay wet after standing at the window, and how long one print takes to dry.
+const WET_PAWS_MS = 26000;
+const PRINT_FADE_MS = 9000;
+
 const DOOR_CENTRE = 12;
 const SWIPE_MS = 620;
 const WATCH_DOOR_MS = 7000;
@@ -492,6 +496,9 @@ export function Cat({
   const earFlick = useRef({ at: -1e9, next: 6000, side: 1 });
   const wasWalking = useRef(false);
   const belled = useRef(-1e9);
+  const wetPaws = useRef(-1e9);
+  const nextPrint = useRef(-1e9);
+  const prints = useRef<{ x: number; y: number; at: number; side: number }[]>([]);
   const doorShutFrom = useRef({ at: 0, from: 0 });
   lookRef.current = look;
   clockRef.current = clock;
@@ -2555,6 +2562,32 @@ export function Cat({
         pose === "loaf" ? kx + 8 : pose === "stretch" ? kx + 14 : pose === "pounce" ? kx + 9 : kx + 5;
       const tailY = pose === "loaf" ? y - 4 : pose === "perk" ? y - 9 : y - 6;
       if (pose !== "peek") blit(TAIL, pose === "stand" ? kx - 12 : tailX, tailY + wag, pal, pose === "stand");
+      /*
+       * Wet paws, after she has been standing at the window in the rain.
+       *
+       * Drawn before her, so she walks over her own prints rather than behind them. Recorded here too,
+       * because this is the only place her feet and where she is are both known.
+       *
+       * The point is that the weather gets into the room. Rain on the glass is something you look at;
+       * a trail of damp across the boards is something that happened while you were not here.
+       */
+      if (raining && atTheGlass && awake) wetPaws.current = t + WET_PAWS_MS;
+      if (walking && t < wetPaws.current && t > nextPrint.current) {
+        nextPrint.current = t + 380;
+        // `ky`, not `y`: `y` bobs with her breathing, and a paw print that breathes is not a mark on
+        // the floor, it is a mark on the cat.
+        prints.current.push({ x: kx, y: ky, at: t, side: prints.current.length % 2 });
+        if (prints.current.length > 10) prints.current.shift();
+      }
+      for (const mark of prints.current) {
+        const age = (t - mark.at) / PRINT_FADE_MS;
+        if (age >= 1) continue;
+        // Drying from the outside in, so the last thing to go is the middle of the pad.
+        const damp = mixHex(sc.floorNear, "#5b6b7a", 0.34 * (1 - age));
+        px(mark.x + (mark.side ? -2 : 1), mark.y, damp);
+        px(mark.x + (mark.side ? -1 : 2), mark.y, damp);
+      }
+
       blit(sp, kx, y, pal);
 
       if (bothCalledRef.current) {
