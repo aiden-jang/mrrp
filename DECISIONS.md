@@ -322,6 +322,14 @@ showed which one it was.
 The one-room-per-file part survived anyway, because it is the right shape once files are split, but
 it was not the thing that mattered. Do not merge these files back together.
 
+Speeding it up did surface a flake it had been hiding. "What arrived since your last visit" is
+`at > since`, both sides from `Date.now()`, and a test that reads the room, acts, and reads again
+inside one millisecond correctly gets nothing. Two people cannot do that over a network. This suite
+could, once round trips went from about 200ms to about 5, and it started failing about one run in
+eight. Two other tests already carried a bare 2ms sleep with no explanation of what it was waiting
+for, which is what an undiagnosed version of this looks like. All three now call `tick()`, which says
+why in one place.
+
 ## The ending screens are pure components, so they can be tested
 
 There is no jsdom in the web package and no testing library, so React tests here render to static
