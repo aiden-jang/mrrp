@@ -550,3 +550,23 @@ Rubbing out a drawing was one of the five inks, so clearing a full sheet meant t
 the eraser selected. Nobody does that; they give up and hang up the mess. There is a "start over" now.
 No stamps, though: the sheet is thirty-five pixels, so any pre-made shape fills most of it and the
 frame stops being a note somebody drew badly, which is the whole of its charm.
+
+## The drawing sheet grew, and the frame grew with it
+
+It was seven by five, which was the size of the hole in the picture frame that had hung on that wall
+since before anybody could draw in it. Thirty-five pixels is enough for a face and nothing else, and
+in use that turned out to be past charming and into fiddly. So the sheet is eleven by seven now, and
+the frame was redrawn around it rather than the other way round: the sheet is painted into the hole
+one pixel to one room pixel, so the frame is the constraint and the only way to a bigger drawing is a
+bigger frame.
+
+All three frames had to be redrawn, not one: the empty one, the fish, and the photo of the cat.
+
+The part that mattered is that drawings are hanging in real rooms right now. Growing the grid without
+widening them would have blanked somebody's frame, which is the sort of thing that is nobody's fault
+and unforgivable anyway. Old drawings are centred in the bigger sheet on the way out, and the room
+refuses a seven-by-five as a new one.
+
+The tripwire in `doodle.test.ts` did its job: it asserted thirty-five cells specifically so that
+changing the grid would fail and remind somebody to change the worker's regex too. It failed, and the
+regex got changed.
