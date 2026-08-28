@@ -1173,9 +1173,12 @@ describe("a seat tied to an account", () => {
 });
 
 describe("putting the mug back", () => {
+  // Twelve rather than the twenty-five this started at. Every round trip in here costs more than the
+  // one before it (see vitest.config.ts), and a dozen draws of a one-in-three chance is already a
+  // one-in-a-hundred-thousand shot at seeing only one outcome.
   it("always agrees with itself about where the mug ended up", async () => {
     await seat();
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 12; i++) {
       const said = (await (await post("shelf", { me: HIM })).json()) as { again: boolean };
       expect((await view(HIM)).shelfDown).toBe(said.again);
     }
