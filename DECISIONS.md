@@ -414,3 +414,39 @@ record of her.
 The stripe columns are written down by hand rather than stepped by a loop. The cushion runs from
 column 3 to 16, so an even step leaves a half-width gap at one end, and on a bed that is symmetrical
 the eye reads that as a mistake rather than a pattern.
+
+## The window shows her actual weather
+
+The room already knows her timezone, because the light in it follows her day. That is enough to know
+whether it is raining on her, so the window shows it: streaks on the glass, flakes drifting past, or
+the panes going flat under cloud. He looks at the room and knows what her afternoon is like without
+asking, which is the job the mood buttons do and the reason the room does it rather than saying it.
+
+Nothing new is stored about her and nothing about her is sent anywhere. The request carries a
+latitude and longitude for the middle of a timezone, identical for every room that picked it, to a
+keyless public forecast. Zones the table does not name fall back to the longitude their own offset
+implies, right to about a timezone's width; the latitude is a guess, so at worst the window shows a
+plausible sky rather than hers.
+
+Three things this needed that were not obvious:
+
+**It goes out behind the response.** A room load must never wait on a forecast, so the lookup runs in
+`waitUntil` and the read serves whatever the window last knew. The stamp is written before the
+request, not after, so a service that is down is asked every half hour instead of on every read. And
+the late write checks the tombstone again, because it lands in a later turn than the read that
+started it, and a room deleted in between would have had a key put back into storage that erasing had
+just taken out.
+
+**Changing her timezone clears it.** He opens the room before he picks her timezone, so the first
+lookup is always for the default. Without clearing, the window shows another city's sky for half an
+hour, on the one path every room takes. Found by watching a room set to London report New York's
+cloud.
+
+**A closed sky reaches the beam.** Rain running down the glass with a full shaft of sun across the
+floor reads as a bug even to somebody who could not say why. The beam is softened, never removed:
+cloud still lets light through, and taking it away would cost the room its warmth for a week of bad
+weather.
+
+The endpoint is a binding rather than a constant so the tests can point it at a port that refuses.
+Left as a constant, the suite called a stranger's public API a few hundred times a run, and one
+assertion quietly depended on whether it happened to be cloudy in New York.

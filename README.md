@@ -82,16 +82,18 @@ the way it is and the code does not say, that is deliberate: it is in the doc.
 
 ## Where things are
 
-| file                  | what                                                                  |
-| --------------------- | --------------------------------------------------------------------- |
-| `worker/src/room.ts`  | the Durable Object. One per room, two seats, one alarm, no sockets    |
-| `worker/src/notes.ts` | the default notes, used until a room writes its own                   |
-| `web/src/sprites.ts`  | the cat, hand-authored pixel grids                                    |
-| `web/src/Cat.tsx`     | the room, drawn one aligned rectangle per logical pixel               |
-| `web/src/hours.ts`    | her clock: light, palette, where she lies, keyframed by hand          |
-| `web/src/moods.ts`    | what the cat does about what you told it                              |
-| `web/src/doodle.ts`   | the seven-by-five sheet either of you can hang in the frame           |
-| `web/src/screens.tsx` | the screens for a room that is ending, kept pure so they are testable |
+| file                    | what                                                                  |
+| ----------------------- | --------------------------------------------------------------------- |
+| `worker/src/room.ts`    | the Durable Object. One per room, two seats, one alarm, no sockets    |
+| `worker/src/notes.ts`   | the default notes, used until a room writes its own                   |
+| `web/src/sprites.ts`    | the cat, hand-authored pixel grids                                    |
+| `web/src/Cat.tsx`       | the room, drawn one aligned rectangle per logical pixel               |
+| `web/src/hours.ts`      | her clock: light, palette, where she lies, keyframed by hand          |
+| `web/src/moods.ts`      | what the cat does about what you told it                              |
+| `web/src/doodle.ts`     | the seven-by-five sheet either of you can hang in the frame           |
+| `worker/src/weather.ts` | her sky, from a timezone and a keyless forecast                       |
+| `web/src/blanket.ts`    | the five blankets, the one thing in the room she picks                |
+| `web/src/screens.tsx`   | the screens for a room that is ending, kept pure so they are testable |
 
 ## Before you send it
 
@@ -313,7 +315,7 @@ local day, so a day she doesn't visit is not a note she never sees.
 ## Tests
 
 ```bash
-pnpm check       # typecheck, lint, then 404 tests: 182 web, 222 worker
+pnpm check       # typecheck, lint, then 415 tests: 182 web, 233 worker
 ```
 
 `lint` exists for one rule. owewell shipped a `useEffect` below a component's early returns, so the
