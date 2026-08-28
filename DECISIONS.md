@@ -258,6 +258,12 @@ Leaving gets the same week, with one condition his does not have. The seat is ge
 time, because freeing it is the point of leaving, so if he hands it to somebody else her way back
 closes at that moment. The screen tells her that before she decides rather than after.
 
+He is told too: that she left, and that her side is kept until a date. Not for symmetry, and not
+because her deliberation is his business, but because he is the one holding the thing that ends it.
+The sentence sits directly above the button that would send the link on, since a warning after the
+fact is not a warning. It goes to him alone, it stops the moment somebody takes the seat or the week
+runs out, and she is not told he was told.
+
 I argued for leaving being immediate and was overruled, and the overrule was right: the argument was
 that "leaving removes your side now" is a cleaner promise, but it is only cleaner to write. The person
 it is made to gets one irreversible tap on a bad evening either way, and she is the one with less of a

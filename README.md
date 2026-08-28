@@ -251,7 +251,9 @@ one bad evening could erase his year.
 
 She gets the same week he does, with one condition his does not have: the seat is genuinely free the
 whole time, because that is the point of leaving. If he hands it to somebody else, her way back closes
-that moment, and the screen says so before she decides. What she left is kept in one record and put
+that moment, and the screen says so before she decides. His side is told the same thing, right above
+the button that would do it, because he is the one who can close it and he cannot weigh that if he
+thinks the seat was never filled. What she left is kept in one record and put
 back exactly as it was, including the `firstSeen` that decides she is the second seat and therefore
 the cat.
 
@@ -308,7 +310,7 @@ local day, so a day she doesn't visit is not a note she never sees.
 ## Tests
 
 ```bash
-pnpm check       # typecheck, lint, then 365 tests: 161 web, 204 worker
+pnpm check       # typecheck, lint, then 369 tests: 161 web, 208 worker
 ```
 
 `lint` exists for one rule. owewell shipped a `useEffect` below a component's early returns, so the
