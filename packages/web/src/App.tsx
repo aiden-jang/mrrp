@@ -608,7 +608,14 @@ function RoomPage({ id }: { id: string }) {
       const roomBlob = await captureRoom();
       if (!roomBlob) throw new Error("capture unavailable");
       const currentScene = view
-        ? sceneFor(view.clock, Date.now(), view.catMood, view.bothHereNow, view.personality ? HER_SPOT : null)
+        ? sceneFor(
+            view.clock,
+            Date.now(),
+            view.catMood,
+            view.bothHereNow,
+            view.personality ? HER_SPOT : null,
+            view.sky,
+          )
         : null;
       const blob = await makeKeepsake(roomBlob, {
         catName: view?.cat.name ?? "the cat",
@@ -1110,7 +1117,7 @@ function RoomPage({ id }: { id: string }) {
 
   const last = view.theirRecent[0];
   const herSpot = view.personality ? HER_SPOT : null;
-  const scene = sceneFor(view.clock, Date.now(), view.catMood, view.bothHereNow, herSpot);
+  const scene = sceneFor(view.clock, Date.now(), view.catMood, view.bothHereNow, herSpot, view.sky);
 
   const chrome = chromeFor(scene);
   const roomTheme = chrome as React.CSSProperties;
