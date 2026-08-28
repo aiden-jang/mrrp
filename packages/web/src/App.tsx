@@ -1157,6 +1157,7 @@ function RoomPage({ id }: { id: string }) {
             framed={view.framed}
             doodle={view.doodle?.cells ?? null}
             blanket={view.blanket}
+            sky={view.sky}
             spot={herSpot}
             doorOpenAt={doorOpenAt}
             watchDoorAt={watchDoorAt}

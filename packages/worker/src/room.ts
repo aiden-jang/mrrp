@@ -15,6 +15,7 @@ import type {
 } from "./types.js";
 import { NOTES } from "./notes.js";
 import { isBlanketKey, type BlanketKey } from "./blanket.js";
+import { lookOutside, WEATHER_STALE_MS, type Sky, type Weather } from "./weather.js";
 import {
   arrivalsFor,
   bothFound,
@@ -161,6 +162,11 @@ export class Room extends DurableObject<Env> {
         await this.ctx.storage.put("gift", GIFTS[Math.floor(Math.random() * GIFTS.length)]!);
       }
     }
+
+    // Kicked off behind the response, never in front of it. This read serves whatever the window
+    // last knew, including nothing at all on the very first visit, and the next one has the answer.
+    // Weather is ambient: it is not worth a single millisecond of somebody waiting for their room.
+    void this.refreshWeather();
 
     return this.build(me, people, lastVisit);
   }
@@ -401,6 +407,27 @@ export class Room extends DurableObject<Env> {
 
   // Every public method calls this first. A test walks the prototype and fails if a new one does not,
   // because the one that forgets is the one that resurrects a deleted room.
+  private async refreshWeather(): Promise<void> {
+    const current = await this.ctx.storage.get<Weather>("weather");
+    if (current && Date.now() - current.at < WEATHER_STALE_MS) return;
+    // Stamped before the request, not after, so a service that is down is asked every half hour
+    // rather than on every single read.
+    const at = Date.now();
+    await this.ctx.storage.put<Weather>("weather", { sky: current?.sky ?? "clear", at });
+
+    const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
+    this.ctx.waitUntil(
+      lookOutside(clock.tz, this.env.WEATHER_URL).then(async (sky) => {
+        if (!sky) return;
+        // Checked again on the way back, because this lands in a later turn than the read that
+        // started it. Between the two, the room can have been deleted, and writing here would put a
+        // key back into storage that erasing had just taken out.
+        if (await this.ctx.storage.get<Tombstone>(TOMBSTONE)) return;
+        await this.ctx.storage.put<Weather>("weather", { sky, at });
+      }),
+    );
+  }
+
   private async guard(): Promise<void> {
     const stone = await this.ctx.storage.get<Tombstone>(TOMBSTONE);
     if (!stone) return;
@@ -703,6 +730,12 @@ export class Room extends DurableObject<Env> {
     if (this.roles(people).him !== me) return false;
     const current = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
     await this.ctx.storage.put("clock", { ...current, ...clock });
+
+    // Moving her to another timezone moves the window with her. Without this the room keeps showing
+    // whatever the sky was doing over the old one for up to half an hour, and on the ordinary setup
+    // path that is always wrong: he opens the room before he picks her timezone, so the first lookup
+    // is for the default and the first thing he does afterwards is change it.
+    if (clock.tz !== undefined && clock.tz !== current.tz) await this.ctx.storage.delete("weather");
     return true;
   }
 
@@ -834,6 +867,7 @@ export class Room extends DurableObject<Env> {
       shelfDown: (await this.ctx.storage.get<boolean>("shelfDown")) ?? false,
       gift: me === him ? ((await this.ctx.storage.get<Gift>("gift")) ?? null) : null,
       blanket: (await this.ctx.storage.get<Blanket>("blanket")) ?? null,
+      sky: ((await this.ctx.storage.get<Weather>("weather"))?.sky ?? "clear") as Sky,
       windowLight: seated && !!windowLight && windowLight.from !== me,
       box: ((await this.ctx.storage.get<number>("boxDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
       brought:

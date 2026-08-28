@@ -1,3 +1,4 @@
+import type { Sky } from "./weather.js";
 import type { BlanketKey } from "./blanket.js";
 import type { DiscoveryKey } from "./discoveries.js";
 import type { Milestone, Personality } from "./remembers.js";
@@ -107,6 +108,7 @@ export interface RoomView {
   monthsOld: number;
   shelfDown: boolean;
   gift: Gift | null;
+  sky: Sky;
   // What she chose for her bed, or null while the room still has the one it came with.
   blanket: { key: BlanketKey; stripe: boolean } | null;
   windowLight: boolean;
