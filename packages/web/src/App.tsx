@@ -1872,12 +1872,19 @@ function RoomPage({ id }: { id: string }) {
 
         {/* The whole sentence comes from whoever set it. Do not append "trying again in a moment"
             here: most of these errors have nothing retrying behind them. */}
+        {/*
+            Pinned to the bottom of the screen rather than sitting in the page.
+            
+            One `err` is shared by everything from hanging up a drawing to freeing her seat, and the
+            room is more than twice a phone screen tall. Measured: a failed drawing save put its
+            reason at 1185px with a 720px viewport, so somebody tapped "hang it up", nothing happened,
+            and the explanation was off screen the whole time.
+
+            The app otherwise refuses to speak over the room. An error is the exception: it is the one
+            thing you need to see wherever you happen to be standing.
+          */}
         {err && (
-          <p
-            className={s.small}
-            style={{ textAlign: "center", marginTop: 12, color: "var(--error)" }}
-            role="status"
-          >
+          <p className={s.errorBar} role="status">
             {err}
           </p>
         )}
