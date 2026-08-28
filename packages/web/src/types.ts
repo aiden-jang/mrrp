@@ -101,6 +101,9 @@ export interface RoomView {
   undoLeaveUntil: number | null;
   // Only ever sent to the one whose seat is still there, and only while she can still come back.
   theyLeft: { name: string; until: number } | null;
+  // The other side of that: who was told, sent only to the person who left. Non-null under exactly
+  // the same conditions as `theyLeft`, so neither of them can be told something the other is not.
+  theyWereTold: string | null;
   catMood: Mood | null;
   catMoodAt: number | null;
   you: string | null;

@@ -1123,6 +1123,14 @@ function RoomPage({ id }: { id: string }) {
                 you can still put it back exactly as it was, as long as nobody else has taken the seat by
                 then.
               </p>
+              {/* Because he can see it. Leaving her to guess whether he knows is a worse thing to do
+                  than telling her, and it becomes a lie by omission the moment she finds out. */}
+              {view.theyWereTold && (
+                <p className={s.small} style={{ marginTop: 10 }}>
+                  {view.theyWereTold} has been told the same thing: that you left, and until when you can put
+                  it back.
+                </p>
+              )}
               <button
                 className={`${s.btn} ${s.btnGo}`}
                 style={{ width: "100%", marginTop: 18 }}
