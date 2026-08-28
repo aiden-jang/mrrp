@@ -487,3 +487,26 @@ would not have: the eyes and highlights have to sit in the same columns in every
 the loaf's head unchanged, and the pose list is asserted by name so a new one has to be acknowledged
 rather than appearing. The first attempt was belly-up with the head flat and it read as a dead cat;
 the second was a long loaf, because without paws in the air nothing says rolled over.
+
+## The cat learns when he actually gets in
+
+He tells the room "usually home around six" once, when he makes it, and then never again. Life moves;
+the hour he typed does not. So the room watches the first time he looks in each day, works out the
+real hour, and after a fortnight of disagreeing with him by more than half an hour the cat starts
+waiting at the door then instead.
+
+The thresholds are the decision. One sample a day, so an evening spent opening the room twenty times
+counts once. A fortnight before it says anything, because a cat that starts waiting at the wrong time
+on three data points is worse than a cat that waits when she was told to. Half an hour of drift before
+it counts, because twenty past six is the same time of day and not worth a sentence. And the mean is
+capped at a fortnight of memory rather than being cumulative, so a change of job moves her instead of
+being outvoted by the first month forever.
+
+It watches him and not her. She is the cat, and the cat does not wait at the door for herself.
+
+The line telling him goes to him alone and sits low in the quiet lines, under the moon and the
+anniversary. To her it would read as the room reporting on somebody.
+
+The dev ageing tool grew a `homingHour` for this, because otherwise nobody could see the feature for
+two weeks, and it stamps today's date on what it writes so the read that comes back with the answer
+does not immediately count itself as another day and drag the average toward whatever o'clock it is.
