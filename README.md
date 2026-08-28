@@ -193,6 +193,7 @@ than the UI, because a rule enforced in the browser is a rule anyone can turn of
 | `POST .../release`            | him only    | frees her seat so a new device can be her                      |
 | `POST .../recover`            | his code    | takes the first seat back on a new device                      |
 | `POST .../delete`             | him only    | ends the room for both. Needs the cat's name typed, not a flag |
+| `POST .../undelete`           | him only    | puts it back, for a week. 403 after that                       |
 | `POST .../leave`              | her only    | takes her side out and frees her seat. His room stands         |
 
 ### What his actions leave behind
@@ -220,10 +221,19 @@ rests go pale over a year, and the plant puts out new fronds at three months and
 Both of them can get out, and the two doors are deliberately different sizes.
 
 **He can delete the room**, because he made it and most of what is in it is his: the notes, the cat,
-the day he asked it to remember. It goes for both of them, immediately, and there is no undo. The
-confirmation is the cat's name, typed. A dialog with a red button in it is one mis-tap away from both
-of their years, and the name is the one thing a person who means it can produce and a stray thumb
-cannot.
+the day he asked it to remember. It goes for both of them immediately. The confirmation is the cat's
+name, typed. A dialog with a red button in it is one mis-tap away from both of their years, and the
+name is the one thing a person who means it can produce and a stray thumb cannot.
+
+Deleted and erased are two different things, a week apart. The room is unreachable from the moment he
+confirms, to both of them; the week only decides how long it is still possible to change his mind. He
+gets a screen with the date on it and a button that puts everything back exactly as it was. She is not
+offered a way back, because she does not have one, and dangling one in front of her would be worse
+than the plain fact.
+
+The erasing is the one thing in this app that happens without somebody visiting. It runs off a
+Durable Object alarm, with the same check repeated on the next request in case the alarm never fired.
+A delete that only completes if one of them comes back is a promise rather than a fact.
 
 **She can leave**, which takes her side with her and leaves his room standing: her moods, her visits,
 the days she has been in here. Her seat goes back to empty, so he can send the link on. She gets a
@@ -237,7 +247,7 @@ She can still come back, on a fresh token, from a screen that says she left; the
 it never happened. Him freeing her seat does **not** bar the token, because that button exists so the
 right person can take a seat back.
 
-A deleted room keeps exactly one thing: the date it went. Wiping the storage outright is not enough,
+Once erased, a room keeps exactly one thing: the date it went. Wiping the storage outright is not enough,
 because a room with fewer than two people in it seats whoever turns up, so the next person to open a
 dead link would quietly become the maker of a brand new room at the same address. Every route answers
 410 afterwards, and a test walks the Durable Object's own method list to make sure a new one cannot be
@@ -284,7 +294,7 @@ local day, so a day she doesn't visit is not a note she never sees.
 ## Tests
 
 ```bash
-pnpm check       # typecheck, lint, then 353 tests: 161 web, 192 worker
+pnpm check       # typecheck, lint, then 359 tests: 161 web, 198 worker
 ```
 
 `lint` exists for one rule. owewell shipped a `useEffect` below a component's early returns, so the

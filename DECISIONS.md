@@ -243,6 +243,27 @@ His confirmation is the cat's name, typed. A dialog with a red button is one mis
 their years; a name is something a person who means it can produce and a thumb cannot. Hers is two
 taps, because it is just as permanent for her and she has no name to type.
 
+## Deleting is instant, erasing waits a week
+
+The two are separate on purpose. The room is unreachable the moment he confirms, because a delete the
+other person can still see working is not a delete. But the bytes stay for a week, because the mistake
+this protects against is not a typo, it is the decision itself: the deletes people regret are the ones
+made at eleven at night, and they regret them in the morning, not in the following second.
+
+Only he sees the way back, and only until the week is up. She is not told there is one. Being shown a
+countdown on somebody else's decision about a room you shared is worse than being told it is gone,
+and it would make the undo his to dangle.
+
+Leaving does not get a window. Hers is a smaller wipe, it is hers alone, and it already takes two
+taps. The promise "leaving removes your side now" is worth more to her than a week of grace she did
+not ask for.
+
+The erasing runs off a Durable Object alarm, which is the only thing in this app that happens without
+somebody visiting, and the wrangler config used to say so. It has to be an alarm: if the erasing only
+happened on the next request, a room nobody ever opened again would keep everything in it forever, so
+the delete would be a promise instead of a fact. The same check runs on the next request too, in case
+the alarm never fired.
+
 ## A deleted room keeps one bit, and a test hunts for the method that forgets
 
 Wiping storage is not enough. A room with fewer than two people in it seats whoever turns up, so the
