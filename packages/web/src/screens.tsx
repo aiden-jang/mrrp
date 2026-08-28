@@ -1,13 +1,8 @@
 import s from "./App.module.css";
 
 /*
- * The screens for a room that is ending, or has ended, kept apart from App so they can be rendered
- * on their own in a test. They hold no state and fetch nothing: every one of them is a function of
- * what the room said plus a couple of callbacks.
- *
- * What is worth guarding here is the copy and which branch it takes. Each of these has two versions,
- * and showing somebody the wrong one is the whole failure mode: telling her a room is gone when he
- * can still put it back, or offering her a seat that somebody else is in.
+ * The screens for a room that is ending. Apart from App so a test can render them on their own, which
+ * only works while they stay pure: no state, no fetching, every one of them a function of its props.
  */
 
 const dayOf = (at: number) => new Date(at).toLocaleDateString(undefined, { month: "long", day: "numeric" });
@@ -25,13 +20,8 @@ export function GoneCard({
   onPutBack: () => void;
   onHome: () => void;
 }) {
-  // No cat on this screen, on purpose. Every other empty state in the app draws her asleep and
-  // promises to keep trying, because every other empty state is a bad connection. This one is an
-  // answer, and drawing the cat here would be telling somebody she is still in there.
-  //
-  // Two versions. Whoever deleted the room can still put it back, so he gets the date it stops being
-  // possible. She is not offered a way back because she does not have one, and dangling one in front
-  // of her would be worse than the plain fact.
+  // No cat here, unlike every other empty state in the app. Those are bad connections and draw her
+  // asleep; this one is an answer, and drawing her would say she is still in there.
   if (undoUntil) {
     return (
       <div className={s.card} style={{ textAlign: "center" }}>
@@ -96,8 +86,7 @@ export function LeftCard({
   return (
     <div className={s.card} style={{ textAlign: "center" }}>
       <h1 className={s.h1}>you left this room</h1>
-      {/* Two different sentences, because the seat being free is the thing that decides whether coming
-          back means getting your year back or starting one. */}
+      {/* The seat being free is what decides whether coming back means her year or a new one. */}
       {undoUntil ? (
         <>
           <p className={s.small} style={{ marginTop: 12 }}>
@@ -105,8 +94,7 @@ export function LeftCard({
             , so you can still put it back exactly as it was, as long as nobody else has taken the seat by
             then.
           </p>
-          {/* Because he can see it. Leaving her to guess whether he knows is a worse thing to do than
-              telling her, and it becomes a lie by omission the moment she finds out. */}
+          {/* He can see this too, so she is told he can. See DECISIONS.md. */}
           {theyWereTold && (
             <p className={s.small} style={{ marginTop: 10 }}>
               {theyWereTold} has been told the same thing: that you left, and until when you can put it back.
@@ -149,12 +137,8 @@ export function LeftCard({
   );
 }
 
-/*
- * What he sees where "Nobody else is here yet" would be.
- *
- * The wrong sentence for a seat somebody has left, and the difference matters: sending the link on is
- * what closes her way back, so he has to be told before he does it, not after.
- */
+// Goes above the share button, not below it. Sending the link on is what closes her way back, so a
+// warning underneath it is a warning after the fact.
 export function TheyLeftNotice({ name, until }: { name: string; until: number }) {
   return (
     <>
