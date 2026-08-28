@@ -2267,8 +2267,11 @@ export function Cat({
         px(moodRight + 4, FLOOR + 17 - leafHop, "#5f824e");
         px(moodRight + 1, FLOOR + 18 - leafHop, "#8f7657");
       } else if (activeMood === "horny") {
-        // Two loose pixels used to sit below and right of this, meant as something trailing off it.
-        // Detached, on a bare floor, at this scale, they read as a full stop typed onto the boards.
+        // A toy she has abandoned on her way to the door. Its shadow was two pixels of the toy's own
+        // pink, offset right and a row low, which detached them: on bare boards that reads as a full
+        // stop somebody typed onto the floor. Shadows here are a floor-mixed line the width of the
+        // thing above them, sitting directly under it, the way the sad mood does its cushion.
+        rect(19, FLOOR + 20, 4, 1, mixHex(sc.floorNear, INK, 0.2));
         rect(19, FLOOR + 17, 4, 3, "#b86f84");
         px(18, FLOOR + 16, "#d995a5");
       }
