@@ -8,6 +8,18 @@ import { catCallCode } from "./secrets.js";
 import { moonPhase, moonPixelLit } from "./moon.js";
 import { cellAt, DOODLE_INK } from "./doodle.js";
 import { blanketPalette } from "./blanket.js";
+import {
+  BED_STRIPES,
+  EAR,
+  faceShift,
+  FRAME_CENTRE,
+  FRAME_X,
+  GROOM,
+  KNEAD,
+  RAIN_STREAKS,
+  SNOW_FLAKES,
+  YAWN,
+} from "./overlays.js";
 import type { RoomView } from "./types.js";
 import { seasonFor, seasonalPlantColors } from "./season.js";
 import { mouseRunAt } from "./mouse.js";
@@ -75,21 +87,8 @@ const MUG_STEAM_MS = 2200;
 const MUG_GLOW_MS = 2600;
 const GIFT_WISH_MS = 2800;
 const BED_DREAM_MS = 3200;
-const BED_STRIPES = [5, 8, 11, 14];
 // Four streaks and four flakes, placed by hand across the two panes, each starting at a different
 // point in its fall so they never come down in step.
-const RAIN_STREAKS: [number, number][] = [
-  [2, 0],
-  [6, 0.45],
-  [10, 0.2],
-  [14, 0.7],
-];
-const SNOW_FLAKES: [number, number][] = [
-  [3, 0],
-  [7, 0.55],
-  [11, 0.3],
-  [14, 0.8],
-];
 const PURR_CHORUS_MS = 2600;
 const LASER_CHASE_MS = 2800;
 const LASER_RELEASE_MS = 900;
@@ -179,8 +178,6 @@ const COLLAR_TAG = "#e8ad55";
 // Derived, not typed in. It was 22, which was the middle of a thirteen-wide frame; the frame is
 // twenty-one wide since the drawing sheet grew, so her glance was aimed four pixels off the picture
 // she was supposed to be looking at.
-const FRAME_X = 16;
-const FRAME_CENTRE = FRAME_X + Math.floor(FRAME.w / 2);
 const GLANCE_MS = 2600;
 
 /*
@@ -246,7 +243,6 @@ const CLOSED_EYES: Record<Pose, { y: number; left: number; right: number; width:
   peek: { y: 7, left: 5, right: 11, width: 2 },
 };
 
-const YAWN = { y: 9, x: 6, w: 5 };
 const YAWN_MS = 900;
 
 /*
@@ -257,7 +253,6 @@ const YAWN_MS = 900;
  * mouth at 7 to 9. The paw sits just right of the mouth, over the pale muzzle, so fur-coloured pixels
  * there read as a paw in front of her face.
  */
-const GROOM = { pawX: 10, pawY: 9, tipX: 11, tipY: 8, tongueX: 9, tongueY: 10 };
 const GROOM_MS = 1900;
 const GROOM_LICK_MS = 220;
 
@@ -268,7 +263,6 @@ const GROOM_LICK_MS = 220;
  * and 14-15, and every other pose puts them somewhere else. A behaviour that only reads in one pose
  * belongs in that pose rather than in an average of all of them.
  */
-const KNEAD = { y: 17, left: 4, right: 14, w: 2 };
 const KNEAD_BEAT_MS = 460;
 
 /*
@@ -278,7 +272,6 @@ const KNEAD_BEAT_MS = 460;
  * behind it, and what is behind her ear is whatever wall the hour has painted. A pixel appearing on
  * the outside edge reads as the ear moving; a pixel missing from the inside reads as damage.
  */
-const EAR = { y: 1, left: 2, right: 15 };
 const EAR_FLICK_MS = 110;
 
 export function Cat({
@@ -2667,7 +2660,9 @@ export function Cat({
       const grooming = t - groom.current.at < GROOM_MS;
       if (grooming && awake) {
         const faceX = kx + sp.ox;
-        const faceY = y + sp.oy;
+        // Every pose but `perk` has its face in the same place; that one is a row lower. Measured off
+        // the grid rather than assumed, because assuming it is what put the yawn on her nose.
+        const faceY = y + sp.oy + faceShift(pose);
         rect(faceX + GROOM.pawX, faceY + GROOM.pawY, 2, 2, L.fur);
         px(faceX + GROOM.tipX, faceY + GROOM.tipY, INK);
         // The tongue comes and goes; the paw stays up. A paw that flickers reads as a glitch.
@@ -2683,7 +2678,7 @@ export function Cat({
       const yawning = t - yawn.current.at < YAWN_MS;
       if (yawning && awake) {
         const faceX = kx + sp.ox;
-        const jawY = y + sp.oy + YAWN.y;
+        const jawY = y + sp.oy + YAWN.y + faceShift(pose);
         rect(faceX + YAWN.x, jawY, YAWN.w, 1, INK);
         rect(faceX + YAWN.x + 1, jawY + 1, YAWN.w - 2, 1, INK);
         px(faceX + YAWN.x + 2, jawY + 1, PINK);
