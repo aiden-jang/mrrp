@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { RoomView } from "../src/types.js";
 import { harness, HER, HIM, STRANGER } from "./harness.js";
 
-const { away, id, post, seat, view } = harness("thingsroom");
+const { away, id, post, seat, tick, view } = harness("thingsroom");
 
 describe("the photo on the wall", () => {
   it("starts as the fish it ships with", async () => {
@@ -195,6 +195,8 @@ describe("the thing she left, and what happens to it", () => {
     await view(HER);
     expect((await view(HIM)).gift).not.toBeNull();
 
+    // He takes it after she looked, not in the same millisecond she looked. See tick() in harness.ts.
+    await tick();
     await post("act", { me: HIM, action: "pet" });
     const hers = await view(HER);
     const kept = hers.arrivals.find((arrival) => arrival.kind === "kept");

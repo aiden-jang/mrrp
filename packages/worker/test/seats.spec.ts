@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Mood } from "../src/types.js";
 import { harness, HER, HIM, STRANGER } from "./harness.js";
 
-const { id, post, seat, view } = harness("seatsroom");
+const { id, post, seat, tick, view } = harness("seatsroom");
 
 describe("seats", () => {
   it("makes the second arrival the one the cat is", async () => {
@@ -135,7 +135,8 @@ describe("presence", () => {
   it("hands her his between-visit gestures once, as an arrival card", async () => {
     await seat();
     await view(HER);
-    await new Promise((resolve) => setTimeout(resolve, 2));
+    // So his actions land after her read, not inside the same millisecond. See harness.ts.
+    await tick(2);
     await post("act", { me: HIM, action: "brush" });
     await post("act", { me: HIM, action: "sit" });
 
@@ -150,7 +151,8 @@ describe("presence", () => {
   it("hands him her new mood and line without requiring them to overlap", async () => {
     await seat();
     await view(HIM);
-    await new Promise((resolve) => setTimeout(resolve, 2));
+    // So his actions land after her read, not inside the same millisecond. See harness.ts.
+    await tick(2);
     await post("tell", { me: HER, mood: "tired" });
     await post("say", { me: HER, text: "sleep soon please" });
 
