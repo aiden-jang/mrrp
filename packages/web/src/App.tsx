@@ -1885,31 +1885,26 @@ function RoomPage({ id }: { id: string }) {
         )}
 
         {/*
-            The recovery code, outside the setup panel.
-            It was only ever rendered inside "change how she looks", so the one string that can get a
-            seat back lived behind a button labelled as a cosmetic editor. A code you cannot find is
-            not a recovery mechanism.
+            Both ways back in, behind a summary that names the job rather than one of the answers.
 
-            Both of them now. A seat is a token in one browser, and hers was the one with no way back:
-            she had to wait for him to notice and free it. Same words for both, because it is the same
-            thing.
+            This block has now made the same mistake twice. The code used to live inside "change how
+            she looks", so the one string that recovers a seat sat behind a button labelled as a
+            cosmetic editor. Moving it here fixed that and then buried signing in under "show my
+            recovery code", where nobody looking for an account would think to open it. A way back you
+            cannot find is not a way back, and the label has to name the question, not the first
+            answer somebody happened to write.
           */}
         {!setup && view.recoveryCode && (
           <details className={s.recovery}>
-            <summary className={s.recoverySummary}>show my recovery code</summary>
+            <summary className={s.recoverySummary}>getting back in on a new phone</summary>
             <p className={s.small} style={{ marginTop: 8 }}>
-              The way back into your side of the room on a new phone. Keep it somewhere that is not this
-              phone.
+              Two ways, and you only need one. Either keep this code somewhere that is not this phone, or sign
+              in and let the room remember for you.
             </p>
             <RecoveryCode code={view.recoveryCode} />
 
-            {/*
-             * The other way back, for anybody who would rather not keep a code.
-             *
-             * Sits inside the same block because it answers the same question, and nowhere near the
-             * front door because the front door is the point: she taps a link and she is in. Signing
-             * in is something you can decide to do afterwards, or never.
-             */}
+            {/* Here and nowhere near the front door, which is the point: she taps a link and she is in.
+                Signing in is something you can decide to do afterwards, or never. */}
             <p className={s.small} style={{ marginTop: 14 }}>
               {view.linked
                 ? "This seat is on your account, so signing in on a new phone brings you straight back here."
