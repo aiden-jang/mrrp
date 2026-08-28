@@ -404,10 +404,6 @@ export class Room extends DurableObject<Env> {
     throw new RoomGone();
   }
 
-  async deletedAt(): Promise<number | null> {
-    return (await this.ctx.storage.get<Tombstone>(TOMBSTONE))?.at ?? null;
-  }
-
   // What the maker gets instead of the plain gone screen, for as long as he can still change his mind.
   // Null for her and for strangers: the room is simply gone to them, which is what deleting it meant.
   async undoUntil(me: string): Promise<number | null> {

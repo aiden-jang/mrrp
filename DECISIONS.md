@@ -241,7 +241,7 @@ neither can destroy what is not.
 
 His confirmation is the cat's name, typed. A dialog with a red button is one mis-tap from both of
 their years; a name is something a person who means it can produce and a thumb cannot. Hers is two
-taps, because it is just as permanent for her and she has no name to type.
+taps, because it costs her the same and she has no name to type.
 
 ## Deleting is instant, erasing waits a week
 

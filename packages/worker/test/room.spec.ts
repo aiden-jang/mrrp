@@ -1394,7 +1394,7 @@ describe("deleting the room", () => {
   // The one method that must answer on a dead room, because it is how the client knows it is dead.
   // The alarm has to run on a deleted room: it is the thing that erases it. The other two are the way
   // back, which by definition only exists while the room is deleted.
-  const ANSWERS_WHEN_GONE = ["deletedAt", "undoUntil", "undelete", "alarm", "undoLeaveUntil", "unleave"];
+  const ANSWERS_WHEN_GONE = ["undoUntil", "undelete", "alarm", "undoLeaveUntil", "unleave"];
 
   it("gives him a week to change his mind, and tells him when it runs out", async () => {
     await seat();
