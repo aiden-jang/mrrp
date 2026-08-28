@@ -195,6 +195,12 @@ than the UI, because a rule enforced in the browser is a rule anyone can turn of
 | `POST .../delete`             | him only    | ends the room for both. Needs the cat's name typed, not a flag |
 | `POST .../undelete`           | him only    | puts it back, for a week. 403 after that                       |
 | `POST .../leave`              | her only    | takes her side out and frees her seat. His room stands         |
+| `POST .../unleave`            | her only    | puts her side back, while the week holds and the seat is free  |
+| `POST .../draw`               | either seat | the seven-by-five sheet in the frame. 35 chars of 0-4, or 400  |
+| `POST .../ourday`             | him only    | the date the room says something about, and its words          |
+| `POST .../link`               | either seat | ties the seat you hold to the account you are signed into      |
+| `POST .../found`              | either seat | records a discovery. Unknown keys are a 400, not a new secret  |
+| `POST .../age`                | either seat | dev only, gated on DEV_TOOLS. Fast-forwards months             |
 
 ### What his actions leave behind
 
