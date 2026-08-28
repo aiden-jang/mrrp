@@ -567,6 +567,21 @@ widening them would have blanked somebody's frame, which is the sort of thing th
 and unforgivable anyway. Old drawings are centred in the bigger sheet on the way out, and the room
 refuses a seven-by-five as a new one.
 
-The tripwire in `doodle.test.ts` did its job: it asserted thirty-five cells specifically so that
-changing the grid would fail and remind somebody to change the worker's regex too. It failed, and the
-regex got changed.
+It grew again straight afterwards, to fifteen by nine, because eleven by seven was still smaller than
+it looked on paper. That second jump is why the widening is written against a list of every past size
+rather than against one previous one: a room nobody has opened in a year holds whatever it held, and
+a size never leaves that list.
+
+The tripwire in `doodle.test.ts` did its job both times: it asserts the exact cell count specifically
+so that changing the grid fails and reminds somebody to change the worker's regex too. It also caught
+a second thing on the first pass, a test using row 5 as off-grid, which stopped being off-grid.
+
+## An error belongs beside the thing that failed
+
+Clicking "keep this seat on my account" when that account already holds the other seat is refused by
+the room, correctly, with a 409. The message then appeared in the shared error line near the top of
+the page, while the button that failed sits near the bottom of a very long room. You tapped, nothing
+appeared to happen, and the reason was scrolled out of sight above you.
+
+The same mistake had already been fixed once, in the recovery panel, with the same reasoning written
+next to it. A shared error banner is fine in a short page and a trap in a long one.
