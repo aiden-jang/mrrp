@@ -75,7 +75,17 @@ export type Arrival =
   | { kind: "line"; at: number; text: string }
   | { kind: "drawn"; at: number; cells: string }
   | { kind: "found"; at: number; what: DiscoveryKey | null }
-  | { kind: "kept"; at: number; gift: Gift };
+  | { kind: "kept"; at: number; gift: Gift }
+  | { kind: "first"; at: number; what: FirstKey };
+
+/*
+ * Things that happen to the room rather than on a date.
+ *
+ * Every other milestone here is the calendar: a week, a month, an anniversary, the day he marked.
+ * These are the ones the world hands you, noted once and then never again, which is the only way a
+ * first stays a first.
+ */
+export type FirstKey = "snow" | "rain" | "storm";
 
 export type Gift = "leaf" | "cap" | "moth";
 

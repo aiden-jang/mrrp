@@ -463,3 +463,53 @@ describe("a drawing from before the sheet grew", () => {
     expect((await post("draw", { me: HER, cells: "1" + "0".repeat(134) })).status).toBe(200);
   });
 });
+
+describe("the first time the world does something here", () => {
+  const setSky = async (sky: string) => {
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    await runInDurableObject(stub, async (instance) => {
+      await (instance as unknown as { noteFirst: (w: string) => Promise<void> }).noteFirst(sky);
+    });
+  };
+
+  it("keeps the first snow, and keeps only the first", async () => {
+    await seat();
+    await view(HER);
+    await setSky("snow");
+
+    const first = (await view(HER)).arrivals.find((a) => a.kind === "first");
+    expect(first).toBeTruthy();
+    expect(first && "what" in first && first.what).toBe("snow");
+
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    const at = await runInDurableObject(stub, async (_i, state) => {
+      const f = await state.storage.get<Record<string, number>>("firsts");
+      return f!.snow;
+    });
+    await setSky("snow");
+    const again = await runInDurableObject(stub, async (_i, state) => {
+      const f = await state.storage.get<Record<string, number>>("firsts");
+      return f!.snow;
+    });
+    // A first that can happen twice is not a first.
+    expect(again).toBe(at);
+  });
+
+  it("tells both of them, because it happened to the room", async () => {
+    await seat();
+    await view(HIM);
+    await view(HER);
+    await setSky("rain");
+
+    for (const who of [HIM, HER]) {
+      expect((await view(who)).arrivals.some((a) => a.kind === "first")).toBe(true);
+    }
+  });
+
+  it("stops mentioning it once you have seen it", async () => {
+    await seat();
+    await setSky("snow");
+    expect((await view(HIM)).arrivals.some((a) => a.kind === "first")).toBe(true);
+    expect((await view(HIM)).arrivals.some((a) => a.kind === "first")).toBe(false);
+  });
+});

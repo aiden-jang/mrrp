@@ -104,6 +104,7 @@ describe("deleting the room", () => {
     "refreshWeather",
     "bothHere",
     "noteHomecoming",
+    "noteFirst",
     "sweepLeftSide",
     "scheduleNext",
   ];
@@ -453,6 +454,23 @@ describe("what a deleted room can still be made to keep", () => {
     await new Promise((resolve) => setTimeout(resolve, 200));
     await runInDurableObject(stub, async (_instance, state) => {
       expect([...(await state.storage.list()).keys()]).toEqual(["deleted"]);
+    });
+  });
+});
+
+describe("a first that lands after the room is gone", () => {
+  // Same shape as the weather write: the lookup that notices the first snow comes back in a later
+  // turn than the read that started it, so it has to look again before writing anything.
+  it("is not written into a room that has been deleted", async () => {
+    await seat();
+    await post("delete", { me: HIM, name: "Bean" });
+
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    await runInDurableObject(stub, async (instance) => {
+      await (instance as unknown as { noteFirst: (w: string) => Promise<void> }).noteFirst("snow");
+    });
+    await runInDurableObject(stub, async (_i, state) => {
+      expect([...(await state.storage.list()).keys()]).not.toContain("firsts");
     });
   });
 });

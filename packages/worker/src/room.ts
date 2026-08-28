@@ -16,6 +16,7 @@ import type {
 import { NOTES } from "./notes.js";
 import { isBlanketKey, type BlanketKey } from "./blanket.js";
 import { lookOutside, WEATHER_STALE_MS, type Sky, type Weather } from "./weather.js";
+import type { FirstKey } from "./types.js";
 import {
   arrivalsFor,
   bothFound,
@@ -460,6 +461,23 @@ export class Room extends DurableObject<Env> {
 
   // Every public method calls this first. A test walks the prototype and fails if a new one does not,
   // because the one that forgets is the one that resurrects a deleted room.
+  /*
+   * The first time the world does something to this room, kept once and never updated.
+   *
+   * Not a calendar milestone: those are all "how long has this been going", and these are "this has
+   * never happened here before". A first that can happen twice is not a first, so this only ever
+   * writes a key that is missing.
+   */
+  private async noteFirst(what: FirstKey): Promise<void> {
+    // Checked again here, not just by the caller. This runs in the turn a weather lookup came back
+    // in, and a room deleted since then must not have a key written back into it.
+    if (await this.ctx.storage.get<Tombstone>(TOMBSTONE)) return;
+    const firsts = (await this.ctx.storage.get<Record<string, number>>("firsts")) ?? {};
+    if (firsts[what]) return;
+    firsts[what] = Date.now();
+    await this.ctx.storage.put("firsts", firsts);
+  }
+
   private async refreshWeather(): Promise<void> {
     const current = await this.ctx.storage.get<Weather>("weather");
     if (current && Date.now() - current.at < WEATHER_STALE_MS) return;
@@ -477,6 +495,7 @@ export class Room extends DurableObject<Env> {
         // key back into storage that erasing had just taken out.
         if (await this.ctx.storage.get<Tombstone>(TOMBSTONE)) return;
         await this.ctx.storage.put<Weather>("weather", { sky, at });
+        if (sky === "snow" || sky === "rain") await this.noteFirst(sky);
       }),
     );
   }
@@ -975,6 +994,12 @@ export class Room extends DurableObject<Env> {
       if (youAreHer) {
         const kept = await this.ctx.storage.get<{ gift: Gift; at: number }>("giftKept");
         if (kept && kept.at > since) arrivals.push({ kind: "kept", at: kept.at, gift: kept.gift });
+      }
+      // Shown to whoever was away when it happened, like everything else on this card, and to both of
+      // them rather than only to her: it happened to the room, not to one of them.
+      const firsts = (await this.ctx.storage.get<Record<string, number>>("firsts")) ?? {};
+      for (const [what, at] of Object.entries(firsts)) {
+        if (at > since) arrivals.push({ kind: "first", at, what: what as FirstKey });
       }
       arrivals.sort((a, b) => b.at - a.at);
     }
