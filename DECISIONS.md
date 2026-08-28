@@ -525,3 +525,28 @@ because nobody looks at a download twice.
 Offered out in the room rather than inside the delete panel. Putting it there would have been neat,
 since taking a copy matters most just before you end something, but somebody who simply wants their
 own words back should not have to open a disclosure labelled "delete this room" to find them.
+
+## The room's admin is one block with three weights
+
+Eight quiet links accumulated at the bottom of the room, one commit at a time, each reasonable on its
+own. Measured together they were all 12px transparent text in a single column, so "draw something for
+the frame" carried exactly the weight of "she can't get in" and of "delete this room", and the account
+button sat seven thousand pixels down the page looking like everything around it.
+
+The fix is a rule and a heading. Above it: the things you do. Below it, under "this room": everything
+about the room rather than about her. Inside that block, three weights rather than one.
+
+- **The way back in is a button**, and it comes first. It is what most people open this block for, and
+  it was the thing nobody could find twice over: first buried in a disclosure named after the recovery
+  code, then visible but indistinguishable.
+- **Resending the link and freeing her seat stay quiet.** Each matters on one day.
+- **Ending the room is set apart**, dashed and at the bottom. Not red: this is a quiet app and a red
+  button in it would be shouting. But it is not a peer of resending a link and must not read as one.
+
+The export moved in here too, into the delete panel, phrased as "take a copy first". A file of JSON is
+no use to anybody on an ordinary evening and every use in the ten seconds before you end something.
+
+Rubbing out a drawing was one of the five inks, so clearing a full sheet meant thirty-five taps with
+the eraser selected. Nobody does that; they give up and hang up the mess. There is a "start over" now.
+No stamps, though: the sheet is thirty-five pixels, so any pre-made shape fills most of it and the
+frame stops being a note somebody drew badly, which is the whole of its charm.
