@@ -223,6 +223,13 @@ Before this, `bring` left nothing two times in three and `brush` and `sit` left 
 pressed a button, she was told he had done something, and the room was exactly as it had been. A
 present that does not exist is a worse gesture than no present.
 
+A third thing time does, which can go backwards: the cat learns when he actually turns up. He tells
+the room "usually home around six" once and then never again, so it watches the first time he looks
+in each day and quietly works out the real hour. After a fortnight of disagreeing with him by more
+than half an hour she starts waiting at the door then instead, and the room says so once. The average
+is capped at a fortnight of memory, so a change of job moves her rather than being outvoted by the
+first month forever.
+
 Two more things only time can do, and neither can go backwards: the boards where the midday sun
 rests go pale over a year, and the plant puts out new fronds at three months and again at eight.
 
@@ -315,7 +322,7 @@ local day, so a day she doesn't visit is not a note she never sees.
 ## Tests
 
 ```bash
-pnpm check       # typecheck, lint, then 425 tests: 188 web, 237 worker
+pnpm check       # typecheck, lint, then 436 tests: 191 web, 245 worker
 ```
 
 `lint` exists for one rule. owewell shipped a `useEffect` below a component's early returns, so the
