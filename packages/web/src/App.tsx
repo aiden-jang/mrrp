@@ -1898,21 +1898,20 @@ function RoomPage({ id }: { id: string }) {
             cannot find is not a way back, and the label has to name the question, not the first
             answer somebody happened to write.
           */}
+        {/*
+            Out in the room, not inside the panel below it.
+            Being behind a disclosure is what made it invisible, and the disclosure is the right home
+            for the code (a long string you fetch when you need it) but the wrong home for a decision
+            somebody has to know they can make. Nowhere near the front door either, which is the part
+            of the original reasoning that still holds: she taps a link and she is in, and signing in
+            is something you decide afterwards, or never.
+          */}
         {!setup && view.recoveryCode && (
-          <details className={s.recovery}>
-            <summary className={s.recoverySummary}>getting back in on a new phone</summary>
-            <p className={s.small} style={{ marginTop: 8 }}>
-              Two ways, and you only need one. Either keep this code somewhere that is not this phone, or sign
-              in and let the room remember for you.
-            </p>
-            <RecoveryCode code={view.recoveryCode} />
-
-            {/* Here and nowhere near the front door, which is the point: she taps a link and she is in.
-                Signing in is something you can decide to do afterwards, or never. */}
-            <p className={s.small} style={{ marginTop: 14 }}>
+          <div className={s.account}>
+            <p className={s.small}>
               {view.linked
                 ? "This seat is on your account, so signing in on a new phone brings you straight back here."
-                : "Or sign in, and this seat comes back on any phone you sign in on. No code to keep."}{" "}
+                : "Sign in and this seat comes back on any phone you sign in on. No code to keep."}{" "}
               {/* Beside the control rather than in the footer. This is where somebody decides to
                   attach a room to an identity, so it is where the question comes up. */}
               <a
@@ -1928,6 +1927,16 @@ function RoomPage({ id }: { id: string }) {
             <button className={s.quiet} disabled={linking} onClick={() => void link(!view.linked)}>
               {view.linked ? "Take this seat off my account" : "Keep this seat on my account"}
             </button>
+          </div>
+        )}
+
+        {!setup && view.recoveryCode && (
+          <details className={s.recovery}>
+            <summary className={s.recoverySummary}>or keep a code instead</summary>
+            <p className={s.small} style={{ marginTop: 8 }}>
+              For getting back in without an account. Keep it somewhere that is not this phone.
+            </p>
+            <RecoveryCode code={view.recoveryCode} />
           </details>
         )}
 

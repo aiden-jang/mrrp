@@ -149,6 +149,11 @@
 }
 
 /** The recovery-code disclosure, on his side. Closed by default: it is reassurance, not a task. */
+.account {
+  margin-top: 18px;
+  text-align: center;
+}
+
 .recovery {
   margin-top: 18px;
   padding: 10px 14px;
