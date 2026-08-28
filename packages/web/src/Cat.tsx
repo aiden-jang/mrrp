@@ -1500,6 +1500,27 @@ export function Cat({
        * Drawn after the skyline and the season, because fog is on the inside of the window and
        * everything else out there is behind it.
        */
+      /*
+       * At night the glass is a mirror, and if she is standing at it, she is what it has to show.
+       *
+       * Two eyes and the tips of two ears, and nothing else. A whole cat drawn in the pane reads as a
+       * second cat outside, which is a different and much worse feeling, and her head at full size is
+       * larger than the pane it would have to fit in. What comes back off dark glass at four in the
+       * morning is a pair of eyes anyway.
+       *
+       * Only when she is actually at the window: a cat on the floor across the room does not appear in
+       * a window up on the wall, and drawing her there would be a ghost rather than a reflection.
+       */
+      const atTheGlass = Math.abs(sc.catX * GW - WIN_CX) < 9 && sc.sleepy < 0.5;
+      if (night && atTheGlass) {
+        const shine = mixHex(glass, L.eyes, 0.42);
+        const ear = mixHex(glass, INK, 0.3);
+        px(wx + 10, wy(6), shine);
+        px(wx + 13, wy(6), shine);
+        px(wx + 9, wy(5), ear);
+        px(wx + 14, wy(5), ear);
+      }
+
       const cold = snowing || season === "winter";
       if (cold) {
         const swell = reduce ? 0.3 : 0.3 + Math.sin(t / 4200) * 0.07;
@@ -1516,7 +1537,7 @@ export function Cat({
          * The glass colour painted back over the fog, so it reads as wiped rather than drawn. It is
          * the one mark in this room that is evidence of her rather than a picture of her.
          */
-        if (Math.abs(sc.catX * GW - WIN_CX) < 9 && sc.sleepy < 0.5) {
+        if (atTheGlass) {
           rect(wx + 10, wy(8), 3, 1, glass);
           px(wx + 11, wy(7), glass);
         }
