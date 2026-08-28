@@ -20,6 +20,7 @@ import {
   doWindowLight,
   fetchRoom,
   doUndelete,
+  doUnleave,
   forgetMe,
   forgetRoom,
   GONE,
@@ -534,6 +535,16 @@ function RoomPage({ id }: { id: string }) {
     }
   };
   const [undoing, setUndoing] = useState(false);
+  const putBackMySide = async () => {
+    setUndoing(true);
+    try {
+      await doUnleave(id);
+      window.location.reload();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't put your side back.");
+      setUndoing(false);
+    }
+  };
   const putBackRoom = async () => {
     setUndoing(true);
     try {
@@ -1095,25 +1106,52 @@ function RoomPage({ id }: { id: string }) {
   // beats the alternative, which is the stranger screen telling her a room she was in for a year
   // belongs to two people she is not one of.
   if (view.youLeft) {
+    const undoBy = view.undoLeaveUntil
+      ? new Date(view.undoLeaveUntil).toLocaleDateString(undefined, { month: "long", day: "numeric" })
+      : null;
     return (
       <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
         <ChromeSync night={isNightChrome(door.sun)} />
         <div className={s.card} style={{ textAlign: "center" }}>
           <h1 className={s.h1}>you left this room</h1>
-          <p className={s.small} style={{ marginTop: 12 }}>
-            Your side of it is gone: the moods, the visits, the days. {view.cat.name} is still in there and
-            the seat is empty, so you can take it again if you want it. You would be starting from the
-            beginning.
-          </p>
+          {/* Two different sentences, because the seat being free is the thing that decides whether
+              coming back means getting your year back or starting one. */}
+          {undoBy ? (
+            <>
+              <p className={s.small} style={{ marginTop: 12 }}>
+                Your side is out of the room: the moods, the visits, the days. It is kept until {undoBy}, so
+                you can still put it back exactly as it was, as long as nobody else has taken the seat by
+                then.
+              </p>
+              <button
+                className={`${s.btn} ${s.btnGo}`}
+                style={{ width: "100%", marginTop: 18 }}
+                disabled={undoing}
+                onClick={() => void putBackMySide()}
+              >
+                {undoing ? "putting it back…" : "Put my side back"}
+              </button>
+              {err && (
+                <p className={s.small} style={{ marginTop: 10, color: "var(--error)" }} role="status">
+                  {err}
+                </p>
+              )}
+            </>
+          ) : (
+            <p className={s.small} style={{ marginTop: 12 }}>
+              Your side of it is gone: the moods, the visits, the days. {view.cat.name} is still in there, and
+              if the seat is free you can take it again. You would be starting from the beginning.
+            </p>
+          )}
           <button
-            className={`${s.btn} ${s.btnGo}`}
-            style={{ width: "100%", marginTop: 18 }}
+            className={undoBy ? s.quiet : `${s.btn} ${s.btnGo}`}
+            style={undoBy ? undefined : { width: "100%", marginTop: 18 }}
             onClick={() => {
               forgetMe();
               window.location.reload();
             }}
           >
-            Take the seat again
+            {undoBy ? "No, start fresh instead" : "Take the seat again"}
           </button>
         </div>
       </main>
@@ -1996,7 +2034,8 @@ function RoomPage({ id }: { id: string }) {
                 <p className={s.small} style={{ marginTop: 8 }}>
                   This takes your side out of the room: your moods, your visits, the days you have been in
                   here. {view.them ?? "The other one"} keeps the room and {view.cat.name} stays, but she will
-                  not be you any more.
+                  not be you any more. You have a week to change your mind, unless the seat is taken before
+                  then.
                 </p>
                 {/* Two taps, because this is as permanent for her as deleting is for him and she has no
                     name to type. Closing the panel disarms it, so a stray tap does not sit there armed. */}

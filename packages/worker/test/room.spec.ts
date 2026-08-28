@@ -1388,11 +1388,13 @@ describe("deleting the room", () => {
     "noteFor",
     "build",
     "erase",
+    "sweepLeftSide",
+    "scheduleNext",
   ];
   // The one method that must answer on a dead room, because it is how the client knows it is dead.
   // The alarm has to run on a deleted room: it is the thing that erases it. The other two are the way
   // back, which by definition only exists while the room is deleted.
-  const ANSWERS_WHEN_GONE = ["deletedAt", "undoUntil", "undelete", "alarm"];
+  const ANSWERS_WHEN_GONE = ["deletedAt", "undoUntil", "undelete", "alarm", "undoLeaveUntil", "unleave"];
 
   it("gives him a week to change his mind, and tells him when it runs out", async () => {
     await seat();
@@ -1543,5 +1545,83 @@ describe("her leaving on her own", () => {
     expect((await post("leave", { me: HIM })).status).toBe(403);
     expect((await post("leave", { me: STRANGER })).status).toBe(403);
     expect((await view(HER)).youAreHer).toBe(true);
+  });
+
+  it("gives her a week to put her side back, exactly as it was", async () => {
+    await seat();
+    await post("tell", { me: HER, mood: "sad" });
+    await post("act", { me: HIM, action: "brush" });
+    await post("leave", { me: HER });
+
+    const after = await view(HER);
+    expect(after.youLeft).toBe(true);
+    expect(after.undoLeaveUntil).toBeGreaterThan(Date.now());
+
+    expect((await post("unleave", { me: HER })).status).toBe(200);
+    const back = await view(HER);
+    expect(back.youAreHer).toBe(true);
+    expect(back.catMood).toBe("sad");
+    expect((await view(HIM)).them).toBe("Sofia");
+  });
+
+  // The seat is genuinely free the whole week, which is the point of leaving. If he hands it on, her
+  // way back closes: two people cannot be the cat, and the new one was not a mistake.
+  it("closes her way back the moment somebody else takes the seat", async () => {
+    await seat();
+    await post("leave", { me: HER });
+    expect((await view(STRANGER, "Someone new")).youAreHer).toBe(true);
+
+    expect((await view(HER)).undoLeaveUntil).toBeNull();
+    expect((await post("unleave", { me: HER })).status).toBe(403);
+    expect((await view(STRANGER)).youAreHer).toBe(true);
+  });
+
+  it("closes her way back when the week is up, and forgets what she left", async () => {
+    await seat();
+    await post("leave", { me: HER });
+
+    away(24 * 8);
+    expect((await view(HER)).undoLeaveUntil).toBeNull();
+    expect((await post("unleave", { me: HER })).status).toBe(403);
+
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    await runInDurableObject(stub, async (_instance, state) => {
+      expect([...(await state.storage.list()).keys()]).not.toContain("leftSide");
+    });
+  });
+
+  it("forgets what she left on the alarm too, in a room nobody opens again", async () => {
+    await seat();
+    await post("leave", { me: HER });
+
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    away(24 * 8);
+    expect(await runDurableObjectAlarm(stub)).toBe(true);
+    await runInDurableObject(stub, async (_instance, state) => {
+      expect([...(await state.storage.list()).keys()]).not.toContain("leftSide");
+    });
+  });
+
+  it("is not his to undo, and not a stranger's", async () => {
+    await seat();
+    await post("leave", { me: HER });
+    expect((await post("unleave", { me: HIM })).status).toBe(403);
+    expect((await post("unleave", { me: STRANGER })).status).toBe(403);
+    expect((await view(HIM)).waitingForThem).toBe(true);
+  });
+
+  // Deleting the room while her week is still running has to take her side with it. Otherwise the
+  // room is erased and a copy of her half sits in storage waiting for an alarm that will not come.
+  it("takes what she left with it when he deletes the room", async () => {
+    await seat();
+    await post("leave", { me: HER });
+    await post("delete", { me: HIM, name: "Bean" });
+
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    away(24 * 8);
+    expect(await runDurableObjectAlarm(stub)).toBe(true);
+    await runInDurableObject(stub, async (_instance, state) => {
+      expect([...(await state.storage.list()).keys()]).toEqual(["deleted"]);
+    });
   });
 });

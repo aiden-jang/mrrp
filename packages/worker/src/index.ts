@@ -244,6 +244,16 @@ app.post("/api/room/:id/delete", async (c) => {
   return erasesAt ? c.json({ ok: true, undoUntil: erasesAt }) : c.json({ error: "not yours to delete" }, 403);
 });
 
+app.post("/api/room/:id/unleave", async (c) => {
+  const id = c.req.param("id");
+  if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
+  const body = (await c.req.json().catch(() => ({}))) as { me?: unknown };
+  const me = typeof body.me === "string" ? body.me : "";
+  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+  const ok = await room(c.env, id).unleave(me);
+  return ok ? c.json({ ok: true }) : c.json({ error: "too late, or the seat is taken" }, 403);
+});
+
 app.post("/api/room/:id/undelete", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
