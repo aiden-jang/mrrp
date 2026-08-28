@@ -56,7 +56,7 @@ import { faviconFor } from "./favicon.js";
 import { loginUrl, siteFooterLinks } from "@aidenjang/auth-client";
 import { AUTH_URL } from "./config.js";
 import { foundKeys, noticed } from "./discoveries.js";
-import { awayLine, milestoneLine, personalityLine } from "./remembers.js";
+import { awayLine, homingLine, milestoneLine, personalityLine } from "./remembers.js";
 import { myToken } from "./api.js";
 import { GoneCard, LeftCard, TheyLeftNotice } from "./screens.js";
 import { BLANKETS, BLANKET_KEYS, type BlanketKey } from "./blanket.js";
@@ -617,6 +617,7 @@ function RoomPage({ id }: { id: string }) {
             view.bothHereNow,
             view.personality ? HER_SPOT : null,
             view.sky,
+            view.expectAt,
           )
         : null;
       const blob = await makeKeepsake(roomBlob, {
@@ -1119,7 +1120,15 @@ function RoomPage({ id }: { id: string }) {
 
   const last = view.theirRecent[0];
   const herSpot = view.personality ? HER_SPOT : null;
-  const scene = sceneFor(view.clock, Date.now(), view.catMood, view.bothHereNow, herSpot, view.sky);
+  const scene = sceneFor(
+    view.clock,
+    Date.now(),
+    view.catMood,
+    view.bothHereNow,
+    herSpot,
+    view.sky,
+    view.expectAt,
+  );
 
   const chrome = chromeFor(scene);
   const roomTheme = chrome as React.CSSProperties;
@@ -1296,6 +1305,7 @@ function RoomPage({ id }: { id: string }) {
             awayNote,
             moon,
             view.personality && personalityLine(view.personality, view.youAreHer, view.them),
+            iAmHim && homingLine(view.expectAt, view.clock.homeHour, view.cat.name),
             herDay &&
               (herDay === "ahead"
                 ? "it is already tomorrow where she is."

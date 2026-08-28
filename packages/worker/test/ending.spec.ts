@@ -103,6 +103,7 @@ describe("deleting the room", () => {
     "erase",
     "refreshWeather",
     "bothHere",
+    "noteHomecoming",
     "sweepLeftSide",
     "scheduleNext",
   ];

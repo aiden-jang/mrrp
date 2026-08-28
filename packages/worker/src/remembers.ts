@@ -108,3 +108,52 @@ export function personalityFrom(tally: Tally, daysKnown: number): Personality | 
 
   return { trait, count };
 }
+
+/*
+ * When he actually turns up, as against the hour he said he would.
+ *
+ * He tells the room "usually home around six" once, when he makes it, and then never again. Life
+ * moves; the hour he typed does not. So the room watches the first time he looks in each day and
+ * quietly learns the real one, and the cat starts waiting at the door then instead.
+ */
+
+/** One sample a day, so an evening spent opening the room twenty times counts once. */
+export interface Homing {
+  /** A running mean of the hour he first looked in, in her timezone. */
+  hour: number;
+  /** How many days have gone into it. */
+  days: number;
+  /** The last local day counted, so the same day cannot count twice. */
+  lastDay: number;
+}
+
+/*
+ * A fortnight to believe it, and a fortnight of memory.
+ *
+ * The mean is capped rather than cumulative so it tracks a change of job or a change of habit instead
+ * of being anchored to the first month forever. Under the threshold the room says nothing and keeps
+ * using the hour he typed: a cat that starts waiting at the wrong time because of three data points
+ * is worse than a cat that waits when she was told to.
+ */
+export const HOMING_MIN_DAYS = 14;
+export const HOMING_MEMORY = 14;
+
+/** Half an hour. Below that it is the same time of day and not worth a sentence. */
+export const HOMING_DRIFT = 0.5;
+
+export function homingWith(previous: Homing | null, hour: number, day: number): Homing | null {
+  if (previous && previous.lastDay === day) return null;
+  if (!previous) return { hour, days: 1, lastDay: day };
+  const weight = Math.min(previous.days + 1, HOMING_MEMORY);
+  return {
+    hour: previous.hour + (hour - previous.hour) / weight,
+    days: previous.days + 1,
+    lastDay: day,
+  };
+}
+
+/** The hour she should expect him, or null while the room is still only going on what he typed. */
+export function learnedHour(homing: Homing | null, told: number): number | null {
+  if (!homing || homing.days < HOMING_MIN_DAYS) return null;
+  return Math.abs(homing.hour - told) < HOMING_DRIFT ? null : homing.hour;
+}

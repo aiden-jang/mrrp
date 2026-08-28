@@ -116,6 +116,14 @@ app.post("/api/room/:id/age", async (c) => {
   return c.json(
     await room(c.env, id).age(me, {
       days: count(body.days),
+      homing:
+        typeof body.homingHour === "number"
+          ? {
+              hour: Math.max(0, Math.min(24, body.homingHour)),
+              days: Math.max(1, Math.min(400, count(body.homingDays) ?? 20)),
+              lastDay: 0,
+            }
+          : undefined,
       tally,
       noteIdx: count(body.noteIdx),
       awayHours: count(body.awayHours),

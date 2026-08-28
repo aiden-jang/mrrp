@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Milestone, Personality } from "./types.js";
-import { awayLine, AWAY_FLOOR_MS, milestoneLine, personalityLine } from "./remembers.js";
+import { AWAY_FLOOR_MS, awayLine, homingLine, milestoneLine, personalityLine } from "./remembers.js";
 
 const TRAITS: Personality["trait"][] = ["petted", "brushed", "fed", "accompanied", "photographed"];
 const MILESTONES: Milestone[] = [
@@ -141,5 +141,22 @@ describe("coming back", () => {
       expect(line).toContain("Pumpkin");
       expect(line, line).not.toContain("!");
     }
+  });
+});
+
+describe("telling him she has worked out his hour", () => {
+  it("says nothing while the room only has his word for it", () => {
+    expect(homingLine(null, 18, "Bean")).toBeNull();
+  });
+
+  it("gives the hour as a clock time, not as a decimal", () => {
+    const line = homingLine(16.5, 18, "Bean");
+    expect(line).toContain("16:30");
+    expect(line).not.toContain("16.5");
+  });
+
+  it("reads differently for turning up early and turning up late", () => {
+    expect(homingLine(16, 18, "Bean")).toContain("which is when you actually get in");
+    expect(homingLine(20, 18, "Bean")).toContain("stopped expecting you");
   });
 });
