@@ -838,7 +838,9 @@ function RoomPage({ id }: { id: string }) {
   }, [asking, view, err, gone, load]);
 
   useEffect(() => {
-    if (asking) return;
+    // Stop once the room is gone. Nothing about a deleted room changes, so a tab left open on the
+    // gone screen would sit there asking for it every fifteen seconds forever.
+    if (asking || gone) return;
     const tick = setInterval(() => {
       if (!document.hidden) void load();
     }, 15_000);
@@ -850,7 +852,7 @@ function RoomPage({ id }: { id: string }) {
       clearInterval(tick);
       document.removeEventListener("visibilitychange", onShow);
     };
-  }, [asking, load]);
+  }, [asking, gone, load]);
 
   const act = async (a: Action) => {
     setNudge((v) => v + 1);
