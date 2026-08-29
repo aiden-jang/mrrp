@@ -324,7 +324,7 @@ local day, so a day she doesn't visit is not a note she never sees.
 ## Tests
 
 ```bash
-pnpm check       # typecheck, lint, then 468 tests: 210 web, 258 worker
+pnpm check       # typecheck, lint, then 471 tests: 210 web, 261 worker
 ```
 
 `lint` exists for one rule. owewell shipped a `useEffect` below a component's early returns, so the

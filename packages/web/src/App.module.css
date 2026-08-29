@@ -726,6 +726,27 @@ details[open] > .recoverySummary::before {
 }
 
 /*
+ * The native date control, made to look like one. Sharing .input alone left it identical to the
+ * free-text field under it, so it read as a box to type a date into rather than one to pick from.
+ * Safari also collapses an empty date input to the width of its own text, hence the min-height.
+ */
+.dateInput {
+  display: block;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.dateInput::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+}
+
+.dateInput::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/*
  * The drawing sheet.
  *
  * The grid wears the frame's own mount colour so the thing you are drawing on looks like the thing it
@@ -866,6 +887,12 @@ details[open] > .recoverySummary::before {
 .accountBtn {
   width: 100%;
   margin-top: 10px;
+}
+
+/* Quieter than the seat button above it: signing out is not what anyone opens this block for. */
+.whoRow {
+  margin-top: 10px;
+  color: var(--soft);
 }
 
 /*
