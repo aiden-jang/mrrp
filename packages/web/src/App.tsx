@@ -1697,9 +1697,9 @@ function RoomPage({ id }: { id: string }) {
             )}
           </>
         )}
-        // Pinned to the bottom of the screen. One `err` is shared by everything from hanging a drawing // to
-        freeing her seat, and the room is more than twice a phone screen tall: a failed save put // its reason
-        at 1185px with a 720px viewport, so nothing appeared to happen.
+        {/* Keep this pinned to the bottom. The room is more than twice a phone screen tall, and one
+            `err` is shared by everything here, so an unpinned failure put its reason at 1185px in a
+            720px viewport and nothing appeared to happen at all. */}
         {err && (
           <p className={s.errorBar} role="status">
             {err}
@@ -1711,8 +1711,8 @@ function RoomPage({ id }: { id: string }) {
           // looked exactly as important as "delete this room".
           <section className={s.roomBits} aria-label="This room">
             <p className={s.roomBitsTitle}>this room</p>
-            // The way back in is a button and comes first: it is what most people open this block for, // and
-            it was unfindable twice over before that.
+            {/* Keep the way back in first, and a button. It is what most people open this block
+                for, and it went unfindable twice when it was neither. */}
             {!setup && view.recoveryCode && (
               <div className={s.accountInBits}>
                 <p className={s.small}>
