@@ -35,6 +35,22 @@ export function forgetMe(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
+export interface SignedInAs {
+  signedIn: boolean;
+  name: string | null;
+}
+
+/** Never throws: not knowing is the same as signed out, and the room works either way. */
+export async function whoAmI(): Promise<SignedInAs> {
+  try {
+    const r = await fetch("/api/me");
+    if (!r.ok) return { signedIn: false, name: null };
+    return (await r.json()) as SignedInAs;
+  } catch {
+    return { signedIn: false, name: null };
+  }
+}
+
 export function adoptSeat(seat: string | null): void {
   if (seat && seat !== localStorage.getItem(TOKEN_KEY)) localStorage.setItem(TOKEN_KEY, seat);
 }

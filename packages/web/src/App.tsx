@@ -31,6 +31,8 @@ import {
   myName,
   newRoomId,
   roomFromPath,
+  whoAmI,
+  type SignedInAs,
 } from "./api.js";
 import { Cat } from "./Cat.js";
 import { dayApart, HER_SPOT, mixHex, sceneFor, type Scene } from "./hours.js";
@@ -53,7 +55,7 @@ import {
   withCell,
 } from "./doodle.js";
 import { faviconFor } from "./favicon.js";
-import { loginUrl, siteFooterLinks } from "@aidenjang/auth-client";
+import { loginUrl, logoutUrl, siteFooterLinks } from "@aidenjang/auth-client";
 import { AUTH_URL } from "./config.js";
 import { foundKeys, noticed } from "./discoveries.js";
 import { awayLine, homingLine, milestoneLine, personalityLine } from "./remembers.js";
@@ -709,6 +711,10 @@ function RoomPage({ id }: { id: string }) {
   const [name, setName] = useState("");
   const [shareResult, setShareResult] = useState<"copied" | "shared" | null>(null);
   const [did, setDid] = useState<string | null>(null);
+  const [me, setMe] = useState<SignedInAs>({ signedIn: false, name: null });
+  useEffect(() => {
+    void whoAmI().then(setMe);
+  }, []);
   const [linking, setLinking] = useState(false);
   const [linkErr, setLinkErr] = useState<string | null>(null);
   const link = async (on: boolean) => {
@@ -1313,9 +1319,11 @@ function RoomPage({ id }: { id: string }) {
 
             <p className={s.fieldLabel}>a day worth remembering</p>
             <input
-              className={s.input}
+              className={`${s.input} ${s.dateInput}`}
               type="date"
               value={draft.ourDate}
+              min="1900-01-01"
+              max="2100-12-31"
               onChange={(e) => setDraft((d) => ({ ...d!, ourDate: e.target.value }))}
             />
             <input
@@ -1736,6 +1744,23 @@ function RoomPage({ id }: { id: string }) {
                 >
                   {view.linked ? "Take this seat off my account" : "Keep this seat on my account"}
                 </button>
+                <p className={`${s.small} ${s.whoRow}`}>
+                  {me.signedIn ? (
+                    <>
+                      Signed in{me.name ? ` as ${me.name}` : ""}.{" "}
+                      <a className={s.creditLink} href={logoutUrl(AUTH_URL, window.location.href)}>
+                        Sign out
+                      </a>
+                    </>
+                  ) : (
+                    <>
+                      Not signed in.{" "}
+                      <a className={s.creditLink} href={loginUrl(AUTH_URL, window.location.href)}>
+                        Sign in
+                      </a>
+                    </>
+                  )}
+                </p>
                 {linkErr && (
                   <p className={s.small} style={{ marginTop: 8, color: "var(--error)" }} role="status">
                     {linkErr}
