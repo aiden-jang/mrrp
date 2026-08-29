@@ -602,3 +602,38 @@ Eighteen actions called `fetch` directly, so a train tunnel gave the room "Faile
 failed" in a panel that otherwise talks like a person. Only `fetchRoom` had ever handled it. They all
 go through one `send` now, which turns a refused connection into "That didn't reach the room. Try it
 again." It took ninety lines out of the file as a side effect.
+
+## Numbers written down are numbers that go wrong
+
+Most of the damage in this codebase has been one bug wearing different clothes: an offset that was
+right for the sprite as it was, left behind after the sprite changed.
+
+It put the eye highlight that follows your pointer on her muzzle in a loaf, on her blush standing, and
+on the dark of her eye sitting and playing. It opened `perk`'s nose instead of her mouth every time she
+yawned, because that one pose has its face a row lower and the yawn used one row for everybody. It
+aimed her glance four pixels off the picture she was looking at, once the frame grew. Every one of
+these was live for a long time, and every one is invisible unless you already know to look.
+
+So the painted-on details live in `overlays.ts` and `overlays.test.ts` holds each of them against the
+grid it lands on, for every pose. Where the sprite already knows the answer, the code reads it: the
+face's row comes from where the nose is, and the eye highlights come from the `h` cells that are
+already in the drawing. A pose added tomorrow gets both for free.
+
+What is still written by hand is what cannot be measured: timings, colours, and whether her eyes track
+at all. Those are judgement, not geometry.
+
+## What the comments are for
+
+Every explanation of a decision belongs in this file. The comments left in the code are for three
+things only:
+
+- a trap that has actually bitten somebody, like a paw print drawn at `y` instead of `ky`, which
+  breathes with her
+- a rule that fails silently, like the seat checks in the Durable Object, or her copy of the notes
+  stopping at the one she has read
+- why not the obvious thing, where somebody would reasonably try the obvious thing and quietly break
+  something
+
+Everything else is deleted. The comment load has been cut twice now, from 3124 lines to 564, and then
+from 1381 back to 462 after a day of building. Both times the growth came the same way: a feature
+lands with a paragraph explaining why, which is a good paragraph in the wrong file.
