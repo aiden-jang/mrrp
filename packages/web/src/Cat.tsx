@@ -20,6 +20,7 @@ import {
   SNOW_FLAKES,
   YAWN,
   eyeHighlights,
+  COLLAR,
 } from "./overlays.js";
 import type { RoomView } from "./types.js";
 import { seasonFor, seasonalPlantColors } from "./season.js";
@@ -157,28 +158,10 @@ const PAW_CURSOR =
 const ROOM_RESERVE = 270;
 const ROOM_MAX_SHARE = 0.78;
 
-// prettier-ignore
-// One row out and the collar reads as a second mouth. These came off the grids in sprites.ts with a
-// script, not by eye. `flop` is the odd one: she is lying on her side, so the band is two pixels at
-// the neck seen edge-on rather than twelve across a chest that is not facing you.
-const COLLAR: Record<Pose, { dx: number; w: number; dy: number; tag: number }> = {
-  loaf:    { dx: -8, w: 12, dy: -7, tag: -2 },
-  sit:     { dx: -6, w: 12, dy: -9, tag:  0 },
-  stand:   { dx: -6, w: 12, dy: -7, tag:  0 },
-  play:    { dx: -7, w: 12, dy: -9, tag: -1 },
-  perk:    { dx: -6, w: 12, dy: -9, tag:  0 },
-  walk:    { dx: -6, w: 12, dy: -7, tag:  0 },
-  stretch: { dx: -6, w: 12, dy: -5, tag:  0 },
-  pounce:  { dx: -7, w: 12, dy: -6, tag: -1 },
-  peek:    { dx: -4, w:  8, dy: -2, tag:  0 },
-  flop:    { dx:  5, w:  2, dy: -6, tag:  5 },
-};
 const COLLAR_BAND = "#9c5468";
 const COLLAR_TAG = "#e8ad55";
 
-// Derived, not typed in. It was 22, which was the middle of a thirteen-wide frame; the frame is
-// twenty-one wide since the drawing sheet grew, so her glance was aimed four pixels off the picture
-// she was supposed to be looking at.
+// How long her eyes stay on a new drawing. Where she looks is FRAME_CENTRE, in overlays.ts.
 const GLANCE_MS = 2600;
 
 /*
