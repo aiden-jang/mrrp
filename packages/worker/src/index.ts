@@ -35,11 +35,7 @@ app.onError((err, c) => {
 
 app.get("/api/health", (c) => c.json({ ok: true }));
 
-/*
- * Who the browser is signed in as, for the sign-in row. Same-origin on purpose: the auth cookie is
- * scoped to the parent domain and only this Worker is allowed to forward it, so the page never
- * has to reach accounts.aidenjang.com itself.
- */
+// Same-origin on purpose: only this Worker may forward the auth cookie.
 app.get("/api/me", async (c) => {
   const user = await getSessionUser(c.req.raw, c.env.AUTH_URL).catch(() => null);
   return c.json({ signedIn: !!user, name: user?.displayName ?? null });

@@ -622,6 +622,53 @@ already in the drawing. A pose added tomorrow gets both for free.
 What is still written by hand is what cannot be measured: timings, colours, and whether her eyes track
 at all. Those are judgement, not geometry.
 
+## A comment that was not a comment
+
+Two blocks of prose were rendering on the page as text, under the room and inside the account block.
+They were written as `//` lines, which is a comment almost everywhere in a `.tsx` file except the one
+place they sat: between JSX children, where `//` is just characters. React printed them.
+
+They had also been cut in half. An earlier comment pass rewrapped the lines and left `//` markers
+stranded mid-sentence, so the page showed "hanging a drawing // to freeing her seat". Nothing failed:
+not the type checker, not the linter, not four hundred tests. Only reading the page catches this.
+
+JSX comments are `{/* */}` and nothing else. The check that finds these is to look at the rendered
+text for `//`, which is now the last step after any pass that touches comments in a component.
+
+## Who mrrp thinks you are
+
+Opening a room link on a phone that had ever used mrrp went straight in under the name that phone
+remembered. No prompt. It reads like a cookie or a stale sign-in and it is neither: the name lives in
+`localStorage` under one key for the whole app, and the room seats whoever asks, with `"Someone"` as
+the fallback when no name is sent.
+
+For real use that is right. If she has used mrrp before, her phone should not interrogate her again.
+It only goes wrong when one person drives both seats, which is testing. But there was no way to say
+"not me", and the fix for that was worse than the bug: forgetting the device token orphans the seat,
+leaving a person in the room who can never come back, and there is no rename because a name is
+written once when you sit down and never again.
+
+So the ask comes back whenever this browser has not been in this particular room before, with the
+remembered name filled in, so the ordinary case is one tap rather than typing. The signal is
+`mrrp:cat:<id>`, written on every successful load, plus a mark set when you make a room, because
+making one navigates before anything has loaded. `lastRoom` looks like the obvious signal and is not:
+`App` writes it for whatever id is in the path, including a link you have never opened.
+
+Because `mrrp:cat:<id>` was already being written long before this, nobody currently in a room is
+asked their name again when this ships.
+
+## The sign-in row asks this Worker, not the auth service
+
+The account block could say whether the seat was linked, but not whether you were signed in, so
+signed-in-and-unlinked looked the same as signed out. The obvious place for the answer was `RoomView`,
+which already carries `linked`. It is the wrong place: `build` is called from about a dozen action
+paths that never receive the account, so the flag would have been right on load and wrong after every
+pet, note and mood change.
+
+It is one endpoint on mrrp's own Worker instead, with one caller and one meaning. Same-origin, because
+the session cookie is scoped to the parent domain and only a Worker may forward it. It answers "signed
+out" rather than failing when auth cannot be reached, which is a state the whole app already works in.
+
 ## What the comments are for
 
 Every explanation of a decision belongs in this file. The comments left in the code are for three
@@ -634,6 +681,6 @@ things only:
 - why not the obvious thing, where somebody would reasonably try the obvious thing and quietly break
   something
 
-Everything else is deleted. The comment load has been cut twice now, from 3124 lines to 564, and then
-from 1381 back to 462 after a day of building. Both times the growth came the same way: a feature
-lands with a paragraph explaining why, which is a good paragraph in the wrong file.
+Everything else is deleted. The comment load has been cut three times now: 3124 lines to 564, then
+1381 back to 462, and most recently to 391. Every time the growth came the same way: a feature lands
+with a paragraph explaining why, which is a good paragraph in the wrong file.

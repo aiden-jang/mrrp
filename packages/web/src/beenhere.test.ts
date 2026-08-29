@@ -32,8 +32,7 @@ describe("has this browser been in this room", () => {
   });
 
   it("says yes once a room has loaded, which is what existing rooms rely on", () => {
-    // `lastCat` is written on every successful load and predates this check, so people already in a
-    // room are not asked their name again the first time this ships.
+    // `lastCat` predates this check, so nobody already in a room gets asked again when it ships.
     localStorage.setItem(`mrrp:cat:${ROOM}`, JSON.stringify({ name: "Bean" }));
     expect(beenHere(ROOM)).toBe(true);
   });

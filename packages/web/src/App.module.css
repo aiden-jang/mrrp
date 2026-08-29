@@ -34,11 +34,7 @@
   transition: background 0.9s ease;
 }
 
-/*
- * The sound toggle is fixed at the top right. On a wide screen it lands in the card's empty margin,
- * but once the room scene grows to the full card width it sits on the art instead, so give it a
- * lane of its own above the card.
- */
+/* Below this the room scene fills the card, and the fixed sound toggle lands on the art. */
 @media (max-width: 640px) {
   .page {
     padding-top: 56px;
@@ -725,11 +721,7 @@ details[open] > .recoverySummary::before {
   color: var(--ink);
 }
 
-/*
- * The native date control, made to look like one. Sharing .input alone left it identical to the
- * free-text field under it, so it read as a box to type a date into rather than one to pick from.
- * Safari also collapses an empty date input to the width of its own text, hence the min-height.
- */
+/* Safari shrinks an empty date input to the width of its own text, hence the min-height. */
 .dateInput {
   display: block;
   min-height: 44px;
@@ -889,7 +881,6 @@ details[open] > .recoverySummary::before {
   margin-top: 10px;
 }
 
-/* Quieter than the seat button above it: signing out is not what anyone opens this block for. */
 .whoRow {
   margin-top: 10px;
   color: var(--soft);
