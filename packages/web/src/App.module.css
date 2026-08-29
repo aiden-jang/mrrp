@@ -35,6 +35,17 @@
 }
 
 /*
+ * The sound toggle is fixed at the top right. On a wide screen it lands in the card's empty margin,
+ * but once the room scene grows to the full card width it sits on the art instead, so give it a
+ * lane of its own above the card.
+ */
+@media (max-width: 640px) {
+  .page {
+    padding-top: 56px;
+  }
+}
+
+/*
  * minWidth 0 + overflowWrap: a grid item defaults to min-width:auto, which is its min-content
  * width, and that silently outranks both width:100% and maxWidth. One unbroken 90-character line
  * she left him (a pasted link fits inside the 140-char limit) set that floor to ~900px, so the
