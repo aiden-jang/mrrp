@@ -22,12 +22,14 @@ import {
   fetchRoom,
   doUndelete,
   doUnleave,
+  beenHere,
   forgetMe,
   forgetRoom,
   GONE,
   GoneError,
   lastCat,
   lastRoom,
+  markMine,
   myName,
   newRoomId,
   roomFromPath,
@@ -395,7 +397,9 @@ function Landing() {
   const make = () => {
     if (!name.trim()) return;
     myName.set(name.trim());
-    location.href = `/r/${newRoomId()}`;
+    const id = newRoomId();
+    markMine(id);
+    location.href = `/r/${id}`;
   };
   return (
     <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
@@ -707,8 +711,8 @@ function RoomPage({ id }: { id: string }) {
     setNudge((v) => v + 1);
   }, [view?.bothHereNow]);
 
-  const [asking, setAsking] = useState(!myName.get());
-  const [name, setName] = useState("");
+  const [asking, setAsking] = useState(() => !myName.get() || !beenHere(id));
+  const [name, setName] = useState(myName.get() ?? "");
   const [shareResult, setShareResult] = useState<"copied" | "shared" | null>(null);
   const [did, setDid] = useState<string | null>(null);
   const [me, setMe] = useState<SignedInAs>({ signedIn: false, name: null });
