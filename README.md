@@ -305,10 +305,17 @@ nothing and cost the ability to look it up again from a device you still have. A
 left out so it survives being read aloud.
 
 **Optional sign-in.** Tie a seat to an account on `accounts.aidenjang.com` and signing in on a new
-phone hands the seat's token back, with no code to keep. One account holds at most one seat per room,
+phone hands the seat's token back, with no code to keep. The account block says whether you are signed
+in and offers the way in or out; it asks `GET /api/me` on mrrp's own Worker, because the session cookie
+is scoped to the parent domain and only a Worker may forward it. One account holds at most one seat per room,
 and as many rooms as it likes. Untying leaves the seat exactly where it is. Signing in never replaces
 the token; it only delivers the one that already holds your seat, which is why accounts touch a single
 method in the Durable Object instead of all of them.
+
+**Your name is remembered, but never assumed.** It lives under one `localStorage` key for the whole
+app, so a second room does not ask again. Arriving at a room this browser has not been in does ask,
+with the remembered name filled in, so the usual case is one tap. Without that, a link opened on a
+phone that had ever used mrrp seated you silently under the name it happened to remember.
 
 **He can free her seat,** under **"{her} can't get in"**, for the case neither code nor account
 covers: a browser that is not hers is holding it, which a private window opened to look at the room

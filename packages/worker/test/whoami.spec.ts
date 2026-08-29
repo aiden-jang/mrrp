@@ -1,10 +1,7 @@
 import { SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 
-/*
- * The sign-in row reads this. It must answer rather than fail: the tests run with no AUTH_URL
- * reachable, which is the same shape as a real auth outage, and mrrp is designed to work signed out.
- */
+// No AUTH_URL is reachable here, the same shape as a real outage: the answer is "signed out".
 
 describe("/api/me", () => {
   it("says signed out when there is no cookie", async () => {

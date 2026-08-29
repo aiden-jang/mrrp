@@ -40,7 +40,6 @@ export interface SignedInAs {
   name: string | null;
 }
 
-/** Never throws: not knowing is the same as signed out, and the room works either way. */
 export async function whoAmI(): Promise<SignedInAs> {
   try {
     const r = await fetch("/api/me");
@@ -95,14 +94,8 @@ export function forgetRoom(id: string): void {
   }
 }
 
-/*
- * Whether this browser has been inside this particular room before.
- *
- * The name is remembered per device, not per room, so without this check a link opened on a phone
- * that has ever used mrrp seats you silently under that old name. The mark is set two ways: making
- * a room, and any successful load of one. `lastRoom` cannot stand in for it, because App writes
- * that for whatever id is in the path, including a link you have never opened.
- */
+// Without this, a link opened on a phone that has ever used mrrp seats you silently under the name
+// it remembers. Don't use `lastRoom`: App writes that for any id in the path, opened or not.
 export function beenHere(id: string): boolean {
   try {
     return localStorage.getItem(`mrrp:mine:${id}`) !== null || localStorage.getItem(`mrrp:cat:${id}`) !== null;

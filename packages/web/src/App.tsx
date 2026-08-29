@@ -1709,9 +1709,8 @@ function RoomPage({ id }: { id: string }) {
             )}
           </>
         )}
-        {/* Keep this pinned to the bottom. The room is more than twice a phone screen tall, and one
-            `err` is shared by everything here, so an unpinned failure put its reason at 1185px in a
-            720px viewport and nothing appeared to happen at all. */}
+        {/* Keep this pinned. One `err` serves a room twice a phone screen tall, so unpinned it
+            lands below the fold and a failure looks like nothing happening. */}
         {err && (
           <p className={s.errorBar} role="status">
             {err}
@@ -1723,8 +1722,7 @@ function RoomPage({ id }: { id: string }) {
           // looked exactly as important as "delete this room".
           <section className={s.roomBits} aria-label="This room">
             <p className={s.roomBitsTitle}>this room</p>
-            {/* Keep the way back in first, and a button. It is what most people open this block
-                for, and it went unfindable twice when it was neither. */}
+            {/* Keep the way back in first and a button: it is what most people open this for. */}
             {!setup && view.recoveryCode && (
               <div className={s.accountInBits}>
                 <p className={s.small}>
