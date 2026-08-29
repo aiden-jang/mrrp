@@ -97,8 +97,33 @@ export function forgetRoom(id: string): void {
   try {
     if (localStorage.getItem("mrrp:room") === id) localStorage.removeItem("mrrp:room");
     localStorage.removeItem(`mrrp:cat:${id}`);
+    localStorage.removeItem(`mrrp:mine:${id}`);
   } catch {
     // Private mode. Nothing was stored to forget.
+  }
+}
+
+/*
+ * Whether this browser has been inside this particular room before.
+ *
+ * The name is remembered per device, not per room, so without this check a link opened on a phone
+ * that has ever used mrrp seats you silently under that old name. The mark is set two ways: making
+ * a room, and any successful load of one. `lastRoom` cannot stand in for it, because App writes
+ * that for whatever id is in the path, including a link you have never opened.
+ */
+export function beenHere(id: string): boolean {
+  try {
+    return localStorage.getItem(`mrrp:mine:${id}`) !== null || localStorage.getItem(`mrrp:cat:${id}`) !== null;
+  } catch {
+    return false;
+  }
+}
+
+export function markMine(id: string): void {
+  try {
+    localStorage.setItem(`mrrp:mine:${id}`, "1");
+  } catch {
+    // Private mode. They get asked their name again, which is the safe way to be wrong.
   }
 }
 
