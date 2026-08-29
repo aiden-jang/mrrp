@@ -55,15 +55,7 @@ export function adoptSeat(seat: string | null): void {
   if (seat && seat !== localStorage.getItem(TOKEN_KEY)) localStorage.setItem(TOKEN_KEY, seat);
 }
 
-/*
- * One place where a dead connection becomes the app's own words.
- *
- * Every one of these used to call fetch directly, so a train tunnel gave the room "Failed to fetch"
- * or "Load failed" in a panel that otherwise speaks like a person. `fetchRoom` had its own handling
- * for this and none of the actions did.
- */
-// One place where a dead connection becomes the app's own words. Eighteen actions called fetch
-// directly, so a tunnel gave the room "Failed to fetch" in a panel that otherwise talks like a person.
+/** Room actions post through this, so a tunnel says this instead of "Failed to fetch". */
 async function send(path: string, body: unknown): Promise<Response> {
   try {
     return await fetch(path, {
