@@ -92,6 +92,7 @@ the way it is and the code does not say, that is deliberate: it is in the doc.
 | `web/src/moods.ts`      | what the cat does about what you told it                              |
 | `web/src/doodle.ts`     | the seven-by-five sheet either of you can hang in the frame           |
 | `worker/src/weather.ts` | her sky, from a timezone and a keyless forecast                       |
+| `web/src/overlays.ts`   | where the painted-on details go, held to the sprites by its own test  |
 | `web/src/blanket.ts`    | the five blankets, the one thing in the room she picks                |
 | `web/src/screens.tsx`   | the screens for a room that is ending, kept pure so they are testable |
 
@@ -323,7 +324,7 @@ local day, so a day she doesn't visit is not a note she never sees.
 ## Tests
 
 ```bash
-pnpm check       # typecheck, lint, then 440 tests: 191 web, 249 worker
+pnpm check       # typecheck, lint, then 468 tests: 210 web, 258 worker
 ```
 
 `lint` exists for one rule. owewell shipped a `useEffect` below a component's early returns, so the
@@ -392,6 +393,23 @@ one away: `GET /export` hands back everything it holds as a file, gated the same
 per logical pixel with no upscaling, because resampling a small canvas leaves you with pixels of two
 different sizes and it reads as a mistake rather than a style. That was right, but it means adding a
 sprite is a manual job and there's no tooling for it. I'd build a tiny editor before adding many more.
+
+## What she does on her own
+
+Most of the room is things nobody asked for. She blinks, and slow-blinks at you when you sit still,
+which is what a cat does to say it trusts you. She yawns. She washes her face, a paw held up and a
+tongue coming out to meet it. Her ears flick. She kneads while you hold her, once she has settled right
+down. She chatters at the bird on the sill, which she had watched in silence since the app was written.
+If both of you are in the room and one of you holds her long enough, she rolls all the way over, which
+is the one secret here that cannot be found alone.
+
+The weather is real, from her timezone. Rain and snow are worth watching, so she goes to the window and
+watches them; cloud is not, so she gives up on the sun and sits in her own spot. On a cold day her
+breath is on the glass and she leaves a nose print in it. At night the dark pane gives her eyes back.
+Wet paws walk a trail across the boards that dries in nine seconds. Hang something in the frame and she
+goes and sits under it.
+
+None of it is announced. The room does these things and the app says nothing about them.
 
 ## Deploying
 
