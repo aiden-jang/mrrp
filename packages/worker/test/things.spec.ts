@@ -177,8 +177,6 @@ describe("the light in the window", () => {
 });
 
 describe("putting the mug back", () => {
-  // Twelve rather than the twenty-five this started at. A dozen draws of a one-in-three chance is
-  // already a one-in-a-hundred-thousand shot at seeing only one outcome, and requests are not free.
   it("always agrees with itself about where the mug ended up", async () => {
     await seat();
     for (let i = 0; i < 12; i++) {
@@ -195,7 +193,6 @@ describe("the thing she left, and what happens to it", () => {
     await view(HER);
     expect((await view(HIM)).gift).not.toBeNull();
 
-    // He takes it after she looked, not in the same millisecond she looked. See tick() in harness.ts.
     await tick();
     await post("act", { me: HIM, action: "pet" });
     const hers = await view(HER);
@@ -316,8 +313,6 @@ describe("the blanket on her bed", () => {
     expect((await view(HER)).blanket).toBeNull();
   });
 
-  // Checked in the room and not only at the route. A colour it does not know is a bed drawn with
-  // undefined, which paints nothing and leaves a cat-shaped hole where her bed was.
   it("refuses a colour it has never heard of", async () => {
     await seat();
     expect((await post("blanket", { me: HER, key: "chartreuse", stripe: false })).status).toBe(403);
@@ -332,13 +327,6 @@ describe("the blanket on her bed", () => {
     expect((await view(HER)).blanket).toEqual({ key: "honey", stripe: false });
   });
 
-  /*
-   * Stays when she goes, like the drawing in the frame and unlike her moods.
-   *
-   * What leaving promises her is "your moods, your visits, the days you have been in here", and a
-   * colour on a bed is none of those. It is a thing in the room rather than a record of her, so it
-   * belongs to the room. If that ever changes, the sentence on the leave panel has to change with it.
-   */
   it("stays with the room when she leaves, because it is furniture and not a record", async () => {
     await seat();
     await post("blanket", { me: HER, key: "cream", stripe: true });
@@ -357,11 +345,6 @@ describe("the weather in her window", () => {
     expect((await view(HER)).sky).toBe("clear");
   });
 
-  // The lookup goes out behind the response. What matters here is that a room whose weather service
-  // is unreachable is a room that still opens, at the same speed, with a window that says nothing.
-  // The lookup goes out behind the response, so this is really a test that it is behind it: the whole
-  // suite points WEATHER_URL at a port that refuses, and a room still opens at full speed with a
-  // window that says nothing.
   it("opens at full speed when the sky cannot be reached", async () => {
     await seat();
     const started = Date.now();
@@ -373,9 +356,6 @@ describe("the weather in her window", () => {
 });
 
 describe("the window when she moves", () => {
-  // He opens the room before he picks her timezone, so the first lookup is always for the default
-  // one. If changing it does not clear what was found, the window shows another city's sky for half
-  // an hour, on the one path every room takes.
   it("forgets the sky it found when her timezone changes", async () => {
     await seat();
     const stub = env.ROOM.get(env.ROOM.idFromName(id));
@@ -401,8 +381,6 @@ describe("the window when she moves", () => {
 });
 
 describe("the thing she only does for both of you", () => {
-  // Every other discovery is something you notice on your own. This one is the cat deciding the room
-  // is safe, which cannot be true with one person in it, so the room is what says so.
   it("cannot be found by one person on their own", async () => {
     await view(HIM, "Aiden");
     expect((await post("found", { me: HIM, key: "belly" })).status).toBe(400);
@@ -417,7 +395,6 @@ describe("the thing she only does for both of you", () => {
   it("stops counting once the other one has been gone a while", async () => {
     await seat();
     away(2);
-    // Her read is what moves her own clock on; his stays where it was two hours ago.
     await view(HER);
     expect((await post("found", { me: HER, key: "belly" })).status).toBe(400);
   });
@@ -429,8 +406,6 @@ describe("the thing she only does for both of you", () => {
 });
 
 describe("a drawing from before the sheet grew", () => {
-  // The sheet has grown twice. Every size it has ever been has to come back rather than blank, because
-  // a room nobody has opened in a year still holds whatever it held.
   const hang = async (cells: string) => {
     const stub = env.ROOM.get(env.ROOM.idFromName(id));
     await runInDurableObject(stub, async (_instance, state) => {
@@ -491,7 +466,6 @@ describe("the first time the world does something here", () => {
       const f = await state.storage.get<Record<string, number>>("firsts");
       return f!.snow;
     });
-    // A first that can happen twice is not a first.
     expect(again).toBe(at);
   });
 

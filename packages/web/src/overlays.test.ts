@@ -1,3 +1,10 @@
+/*
+ * Every painted-on detail, held against the grid it lands on.
+ *
+ * All of these were hand-written numbers once and several were wrong: the eye highlight sat on her
+ * muzzle in a loaf and her blush standing, and the yawn opened `perk`'s nose. A screenshot only ever
+ * proves the frame it was taken in.
+ */
 import { describe, expect, it } from "vitest";
 import {
   BED_STRIPES,
@@ -16,19 +23,10 @@ import {
 import { DOODLE_H, DOODLE_W } from "./doodle.js";
 import { FRAME, FRAME_HOLE, POSES, type Pose } from "./sprites.js";
 
-/*
- * The overlays, held against the grids they are painted onto.
- *
- * Every bug in this file's subject matter has been the same bug: an offset that was right for the
- * sprite as it was, and silently wrong after the sprite changed. A screenshot only proves the frame
- * it was taken in; these prove it for every pose, every time.
- */
 const cellAt = (rows: string[], x: number, y: number) => rows[y]?.[x] ?? ".";
 const POSE_NAMES = Object.keys(POSES) as Pose[];
 
 describe("washing", () => {
-  // The paw goes over the pale muzzle beside her mouth. On the eye it is a black eye; off her face
-  // it is a pixel floating in the room.
   it("puts the paw on her face in every pose, and never on an eye", () => {
     for (const pose of POSE_NAMES) {
       const rows = poseGrid(pose);
@@ -53,8 +51,6 @@ describe("washing", () => {
 });
 
 describe("kneading", () => {
-  // Scoped to the loaf on purpose: these are the loaf's own paws, the shaded pairs on its
-  // second-from-bottom row. If that row ever stops being paws, this stops being kneading.
   it("moves the loaf's actual paws", () => {
     const rows = poseGrid("loaf");
     for (const start of [KNEAD.left, KNEAD.right]) {
@@ -73,7 +69,6 @@ describe("kneading", () => {
 });
 
 describe("the ear twitch", () => {
-  // One pixel on the outside edge. Inside the ear it reads as damage rather than movement.
   it("lands beside an ear in every pose", () => {
     for (const pose of POSE_NAMES) {
       const rows = poseGrid(pose);
@@ -97,7 +92,6 @@ describe("the yawn", () => {
 });
 
 describe("the bed stripes", () => {
-  // Hand-placed, and they have to stay on the cushion and stay symmetrical about it.
   it("all land on the cushion", () => {
     const rows = bedGrid();
     const mid = Math.floor(rows.length / 2);
@@ -119,8 +113,6 @@ describe("the picture frame", () => {
     expect(FRAME_HOLE.h).toBe(DOODLE_H);
   });
 
-  // This was hardcoded to the middle of a narrower frame, so her glance aimed four pixels off the
-  // picture she was looking at.
   it("is looked at in its middle, wherever the middle happens to be", () => {
     expect(FRAME_CENTRE).toBe(FRAME_X + Math.floor(FRAME.w / 2));
     expect(FRAME_CENTRE).toBeGreaterThan(FRAME_X);
@@ -129,12 +121,6 @@ describe("the picture frame", () => {
 });
 
 describe("her eye highlights", () => {
-  /*
-   * These were a hand-written table and it was wrong for five poses out of ten: the moving highlight
-   * landed on her muzzle in a loaf, on her blush standing, and on the dark of her eye sitting. On
-   * `perk` it missed twice, because that pose's face is a row lower and the table used one row for
-   * every pose.
-   */
   it("lands on the highlight cells the sprite already has", () => {
     for (const pose of POSE_NAMES) {
       const rows = poseGrid(pose);
@@ -153,7 +139,6 @@ describe("her eye highlights", () => {
     }
   });
 
-  // One pixel either side of the highlight, because the eyes track a pointer by shifting it.
   it("leaves room to shift without falling off her face", () => {
     for (const pose of POSE_NAMES) {
       const rows = poseGrid(pose);
@@ -167,13 +152,6 @@ describe("her eye highlights", () => {
 });
 
 describe("the collar", () => {
-  /*
-   * Checked rather than trusted. The table was right when this was written, and so was the eye
-   * highlight table, and so was the yawn.
-   *
-   * Its own comment warns what going wrong looks like: one row out and the band reads as a second
-   * mouth. So the band has to be on her, and it has to be below her face.
-   */
   it("sits on the cat in every pose, band and tag", () => {
     for (const pose of POSE_NAMES) {
       const rows = poseGrid(pose);
@@ -187,14 +165,8 @@ describe("the collar", () => {
     }
   });
 
-  /*
-   * Never on a facial feature, which is the rule that holds for every pose.
-   *
-   * "Below the mouth" was the first way I wrote this and it is wrong: `flop` has her on her side, so
-   * her neck is beside her head rather than under it, and its collar is correctly level with her eyes
-   * and off to one side. What actually must never happen is the band crossing an eye, a nose, a mouth
-   * or a blush.
-   */
+  // "Below the mouth" was the first way this was written and it is wrong: `flop` has her on her side,
+  // so her neck is beside her head rather than under it.
   it("never covers a part of her face", () => {
     for (const pose of POSE_NAMES) {
       const rows = poseGrid(pose);

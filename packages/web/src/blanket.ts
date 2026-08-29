@@ -1,14 +1,5 @@
-/*
- * The blanket on her bed, which is the one thing in the room she chooses.
- *
- * He makes the room: the cat, the hours, the notes, the day it remembers. She taps a mood and leaves
- * a line. That asymmetry is right for a gift, but it left the person the gift is for with nothing of
- * her own in the room, and a room you cannot put anything into is somebody else's room.
- *
- * Deliberately one small object rather than a second editor. She is the cat, so the thing she gets to
- * decide is where the cat sleeps and what it sleeps under.
- */
-
+// The one thing in the room she chooses. Colours from the room's own palette, so her bed never
+// arrives in a shade the rest of the place has never heard of.
 export const BLANKETS = {
   rose: { d: "#b07f76", f: "#d8a79c", b: "#c4918a" },
   moss: { d: "#6f7f5e", f: "#9db184", b: "#839472" },
@@ -21,7 +12,6 @@ export type BlanketKey = keyof typeof BLANKETS;
 
 export const BLANKET_KEYS = Object.keys(BLANKETS) as BlanketKey[];
 
-/** What the room came with, so a room nobody has touched still has a made bed. */
 export const DEFAULT_BLANKET: BlanketKey = "rose";
 
 export function isBlanketKey(value: unknown): value is BlanketKey {

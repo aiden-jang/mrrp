@@ -1,12 +1,9 @@
 import s from "./App.module.css";
 
-/*
- * The screens for a room that is ending. Apart from App so a test can render them on their own, which
- * only works while they stay pure: no state, no fetching, every one of them a function of its props.
- */
-
 const dayOf = (at: number) => new Date(at).toLocaleDateString(undefined, { month: "long", day: "numeric" });
 
+// No cat on this screen. Every other empty state draws her asleep and promises to keep trying,
+// because those are bad connections. This one is an answer.
 export function GoneCard({
   undoUntil,
   undoing,
@@ -20,8 +17,6 @@ export function GoneCard({
   onPutBack: () => void;
   onHome: () => void;
 }) {
-  // No cat here, unlike every other empty state in the app. Those are bad connections and draw her
-  // asleep; this one is an answer, and drawing her would say she is still in there.
   if (undoUntil) {
     return (
       <div className={s.card} style={{ textAlign: "center" }}>
@@ -86,7 +81,6 @@ export function LeftCard({
   return (
     <div className={s.card} style={{ textAlign: "center" }}>
       <h1 className={s.h1}>you left this room</h1>
-      {/* The seat being free is what decides whether coming back means her year or a new one. */}
       {undoUntil ? (
         <>
           <p className={s.small} style={{ marginTop: 12 }}>
@@ -94,7 +88,6 @@ export function LeftCard({
             , so you can still put it back exactly as it was, as long as nobody else has taken the seat by
             then.
           </p>
-          {/* He can see this too, so she is told he can. See DECISIONS.md. */}
           {theyWereTold && (
             <p className={s.small} style={{ marginTop: 10 }}>
               {theyWereTold} has been told the same thing: that you left, and until when you can put it back.
@@ -122,8 +115,6 @@ export function LeftCard({
             : "Somebody else is the cat now, so there is no seat to come back to."}
         </p>
       )}
-      {/* Offered only when there is a free seat to take. A button whose only outcome is the
-          both-seats-are-taken screen is worse than no button. */}
       {(undoUntil || seatFree) && (
         <button
           className={undoUntil ? s.quiet : `${s.btn} ${s.btnGo}`}
@@ -137,8 +128,6 @@ export function LeftCard({
   );
 }
 
-// Goes above the share button, not below it. Sending the link on is what closes her way back, so a
-// warning underneath it is a warning after the fact.
 export function TheyLeftNotice({ name, until }: { name: string; until: number }) {
   return (
     <>

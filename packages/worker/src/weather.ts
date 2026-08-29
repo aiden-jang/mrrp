@@ -1,13 +1,3 @@
-/*
- * What it is doing where she is, so the window shows it.
- *
- * Coarse on purpose. The room already knows her timezone, because the light in it follows her day,
- * and a timezone is enough to know whether it is raining on her without the app ever asking anybody
- * for a location. Nothing new is stored about her and nothing about her is sent anywhere: the request
- * carries a latitude and longitude for the middle of a timezone, which is the same for every room
- * that picked it.
- */
-
 export type Sky = "clear" | "cloud" | "rain" | "snow";
 
 export interface Weather {
@@ -15,18 +5,10 @@ export interface Weather {
   at: number;
 }
 
-// Half an hour. Weather does not turn over faster than that in a way a pixel window can show, and a
-// room that is being read every fifteen seconds must not be asking a stranger's API every time.
 export const WEATHER_STALE_MS = 30 * 60_000;
 
-/*
- * Where to ask about, for the zones the setup panel offers first.
- *
- * Everything else falls back to the longitude the zone's own offset implies, which is right to about
- * a time zone's width, and a latitude of 40 degrees. That is wrong for the southern hemisphere and
- * for the far north, and it is still better than showing her somebody else's sky: at worst the window
- * is a plausible day rather than her day.
- */
+// Coarse on purpose. The room already knows her timezone, and that is enough to know if it is
+// raining on her without ever asking anyone where they live.
 const PLACES: Record<string, [number, number]> = {
   "America/New_York": [40.71, -74.01],
   "America/Chicago": [41.88, -87.63],
@@ -68,7 +50,6 @@ export function placeFor(tz: string): [number, number] {
   const known = PLACES[tz];
   if (known) return known;
 
-  // The zone's current offset in hours, times fifteen degrees, which is what an hour of longitude is.
   try {
     const name = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "longOffset" })
       .formatToParts(new Date())
@@ -83,32 +64,21 @@ export function placeFor(tz: string): [number, number] {
   }
 }
 
-/*
- * WMO weather codes, flattened to the four things the window can draw.
- *
- * Anything the table does not name is clear, which is the honest default: a window that shows nothing
- * unusual is right far more often than one that guesses.
- */
+// Anything not named here is clear. A window that says nothing is right far more often than one
+// that guesses.
 export function skyFor(code: number): Sky {
   if (code >= 71 && code <= 77) return "snow";
   if (code === 85 || code === 86) return "snow";
   if (code >= 51 && code <= 67) return "rain";
   if (code >= 80 && code <= 82) return "rain";
-  // Bounded, not open-ended. `>= 95` swallowed every number above it, so an unknown code came back
-  // as rain: the window claiming weather that is not happening, which is the one thing it must not do.
   if (code >= 95 && code <= 99) return "rain";
   if (code >= 1 && code <= 3) return "cloud";
   if (code === 45 || code === 48) return "cloud";
   return "clear";
 }
 
-/**
- * Null on anything unexpected. A window that cannot say is a window with nothing on it.
- *
- * The base URL is a binding rather than a constant so the tests can point it somewhere that refuses
- * instantly. Without that the suite calls a stranger's public API a few hundred times a run and its
- * assertions depend on the actual weather in New York.
- */
+// The base URL is a binding so tests can point it at a port that refuses. As a constant, the suite
+// called a stranger's API a few hundred times a run.
 export async function lookOutside(tz: string, baseUrl: string): Promise<Sky | null> {
   const [lat, lon] = placeFor(tz);
   const url = new URL(baseUrl);

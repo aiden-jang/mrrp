@@ -346,13 +346,6 @@ describe("a seat tied to an account", () => {
   });
 });
 
-/*
- * The seam to the auth service, which the tests above skip.
- *
- * Everything else about accounts is tested by handing the room an account id directly, so all of it
- * starts one step after the question "who is this". That step is `accountOf`, which forwards the
- * session cookie and turns the answer into an id, and nothing covered it at all.
- */
 describe("working out who is signed in", () => {
   const room = (me: string, cookie?: string) =>
     SELF.fetch(`https://x/api/room/${id}?me=${me}`, cookie ? { headers: { cookie } } : undefined);
@@ -372,21 +365,12 @@ describe("working out who is signed in", () => {
     expect((await link(HER)).status).toBe(401);
   });
 
-  /*
-   * The promise in DECISIONS.md, which had never been checked: if the auth service is unreachable the
-   * answer is "not signed in", because a room has never needed an account.
-   *
-   * The failure this guards against is a 500. An outage that only costs you the optional half is a bad
-   * afternoon; an outage that takes down every room, including the ones with no account attached to
-   * them, is the whole app resting on a service it was designed not to need.
-   */
   describe("when the auth service cannot be reached", () => {
     const cookie = "platform_session=whatever-this-is-never-read";
     let realUrl: string;
 
     beforeEach(() => {
       realUrl = env.AUTH_URL;
-      // Refused immediately rather than left hanging, so a broken promise here fails fast.
       env.AUTH_URL = "http://127.0.0.1:1";
     });
     afterEach(() => {
@@ -402,8 +386,6 @@ describe("working out who is signed in", () => {
       expect(v.linked).toBe(false);
     });
 
-    // Reads the room WITH a cookie, so the failing lookup is actually on the path. Without one,
-    // `getSessionUser` returns null before it tries to fetch anything and the test proves nothing.
     it("still lets her be the cat, which is the part that never needed an account", async () => {
       await seat();
       expect((await post("tell", { me: HER, mood: "good" })).status).toBe(200);

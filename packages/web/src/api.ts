@@ -46,6 +46,8 @@ export function adoptSeat(seat: string | null): void {
  * or "Load failed" in a panel that otherwise speaks like a person. `fetchRoom` had its own handling
  * for this and none of the actions did.
  */
+// One place where a dead connection becomes the app's own words. Eighteen actions called fetch
+// directly, so a tunnel gave the room "Failed to fetch" in a panel that otherwise talks like a person.
 async function send(path: string, body: unknown): Promise<Response> {
   try {
     return await fetch(path, {
@@ -73,6 +75,8 @@ export const lastRoom = {
 // Called when a room turns out to be gone. Without it the landing page keeps offering "back to the
 // room" and the door keeps drawing a cat that no longer exists, both of which lead to the same dead
 // end. The seat token stays: it is this browser's name, not this room's.
+// Called when a room turns out to be gone. Without it the landing page keeps offering "back to the
+// room" and the door keeps drawing a cat that no longer exists.
 export function forgetRoom(id: string): void {
   try {
     if (localStorage.getItem("mrrp:room") === id) localStorage.removeItem("mrrp:room");

@@ -29,15 +29,11 @@ describe("deleting the room", () => {
 
     const r = await SELF.fetch(`https://x/api/room/${id}?me=${HIM}`);
     expect(r.status).toBe(410);
-    // The danger is not a 500. It is a 200 with an empty room in it: view() seats whoever turns up
-    // when there are fewer than two people, so a dead link would hand the maker's chair to a stranger.
     expect((await SELF.fetch(`https://x/api/room/${id}?me=${STRANGER}`)).status).toBe(410);
     expect((await post("tell", { me: HER, mood: "good" })).status).toBe(410);
     expect((await post("delete", { me: HIM, name: "Bean" })).status).toBe(410);
   });
 
-  // Deleted and erased are two different things, a week apart. The room is unreachable from the first
-  // moment; the week only decides how long it is still possible to change your mind.
   it("keeps the room readable to nobody, but does not erase it yet", async () => {
     await seat();
     await post("say", { me: HER, text: "something of hers" });
@@ -65,9 +61,6 @@ describe("deleting the room", () => {
     });
   });
 
-  // The alarm is the only thing in this app that happens without somebody visiting, and this is why:
-  // if the erasing only happened on the next request, a room nobody ever opened again would keep
-  // everything in it forever, and the delete would be a promise rather than a fact.
   it("erases on the next request too, in case the alarm never ran", async () => {
     await seat();
     await post("delete", { me: HIM, name: "Bean" });
@@ -81,12 +74,9 @@ describe("deleting the room", () => {
     });
   });
 
-  // The tripwire. Every method reachable from a route has to refuse on a deleted room, and the one
-  // that forgets is the one that hands a dead link to a stranger as a fresh room.
-  //
-  // Adding any method to the Room fails this test until its name is put in one of the two lists
-  // below, which is the point: deciding which list is deciding whether a dead room can still be
-  // reached through it. TypeScript's `private` is gone by runtime, so the split cannot be detected.
+  // Adding any method to the Room fails this until its name goes in one of these two lists, which is
+  // the point: choosing a list is choosing whether a dead room can be reached through it. TypeScript's
+  // `private` is gone by runtime, so the split cannot be detected.
   const INTERNAL = [
     "constructor",
     "guard",
@@ -108,14 +98,6 @@ describe("deleting the room", () => {
     "sweepLeftSide",
     "scheduleNext",
   ];
-  // The one method that must answer on a dead room, because it is how the client knows it is dead.
-  // The alarm has to run on a deleted room: it is the thing that erases it. The other two are his way
-  // back, which by definition only exists while the room is deleted.
-  //
-  // Her two are NOT on this list, and putting them here is how a real bug got in: she could restore
-  // her side into a room he had already deleted, and he would find her back in it after undoing.
-  // Being on this list is an escape from the check, so a name belongs here only if a dead room must
-  // genuinely answer through it.
   const ANSWERS_WHEN_GONE = ["undoUntil", "undelete", "alarm"];
 
   it("gives him a week to change his mind, and tells him when it runs out", async () => {
@@ -134,8 +116,6 @@ describe("deleting the room", () => {
     expect(back.them).toBe("Sofia");
   });
 
-  // She is not told there is a way back, because there is not one for her. The room is gone from her
-  // side the moment he does it, which is the only honest thing a delete can mean to the other person.
   it("offers the way back to him and to nobody else", async () => {
     await seat();
     await post("delete", { me: HIM, name: "Bean" });
@@ -196,7 +176,6 @@ describe("deleting the room", () => {
         expect(message, `${name}() on a deleted room`).toMatch(/room deleted/);
       }
 
-      // And the list itself is honest: nothing in it has been renamed away.
       for (const name of [...INTERNAL.slice(1), ...ANSWERS_WHEN_GONE]) {
         expect(all, `${name} is listed but no longer exists`).toContain(name);
       }
@@ -231,8 +210,6 @@ describe("her leaving on her own", () => {
     expect((await view(STRANGER, "Someone new")).youAreHer).toBe(true);
   });
 
-  // Leaving that a page load undoes is not leaving. Her own browser is the one thing standing in
-  // front of the empty seat she just vacated, so it is the one thing that must not be seated by it.
   it("does not hand the seat straight back to the browser that just left", async () => {
     await seat();
     await post("leave", { me: HER });
@@ -252,8 +229,6 @@ describe("her leaving on her own", () => {
     expect(v.youLeft).toBe(false);
   });
 
-  // His release button exists so the right person can take a seat back. Barring the token it frees
-  // would lock out the case it was built for: her browser still holding the seat he just freed.
   it("does not bar her token when he frees the seat instead", async () => {
     await seat();
     await post("release", { me: HIM });
@@ -286,8 +261,6 @@ describe("her leaving on her own", () => {
     expect((await view(HIM)).them).toBe("Sofia");
   });
 
-  // The seat is genuinely free the whole week, which is the point of leaving. If he hands it on, her
-  // way back closes: two people cannot be the cat, and the new one was not a mistake.
   it("closes her way back the moment somebody else takes the seat", async () => {
     await seat();
     await post("leave", { me: HER });
@@ -333,8 +306,6 @@ describe("her leaving on her own", () => {
     expect(v.theyLeft?.until).toBeGreaterThan(Date.now());
   });
 
-  // Her deliberation is his to know only because he can end it. A spectator holding the link has no
-  // seat to give away and no business knowing she is thinking about it.
   it("tells nobody else, not even the one who left", async () => {
     await seat();
     await post("leave", { me: HER });
@@ -343,8 +314,6 @@ describe("her leaving on her own", () => {
     expect((await view(HER)).theyLeft).toBeNull();
   });
 
-  // Neither of them is looking at something the other one is not. That is the whole reason this is a
-  // pair of flags computed from the same conditions rather than two features that drifted apart.
   it("tells her he was told, whenever it is telling him", async () => {
     await seat();
     await post("leave", { me: HER });
@@ -387,8 +356,6 @@ describe("her leaving on her own", () => {
     expect((await view(HIM)).waitingForThem).toBe(true);
   });
 
-  // She could once put her side back into a room he had already deleted, and he would find her in it
-  // after changing his mind. A deleted room is not a place anybody gets to write to, including her.
   it("cannot be undone into a room he has already deleted", async () => {
     await seat();
     await post("leave", { me: HER });
@@ -400,8 +367,6 @@ describe("her leaving on her own", () => {
     expect((await view(HIM)).waitingForThem).toBe(true);
   });
 
-  // But his undo does not cost her hers. Her week keeps running underneath his, so if he changes his
-  // mind inside it she is still able to change hers.
   it("still lets her come back after he puts the room back", async () => {
     await seat();
     await post("leave", { me: HER });
@@ -421,8 +386,6 @@ describe("her leaving on her own", () => {
     expect((await view(HIM)).waitingForThem).toBe(true);
   });
 
-  // Deleting the room while her week is still running has to take her side with it. Otherwise the
-  // room is erased and a copy of her half sits in storage waiting for an alarm that will not come.
   it("takes what she left with it when he deletes the room", async () => {
     await seat();
     await post("leave", { me: HER });
@@ -438,9 +401,6 @@ describe("her leaving on her own", () => {
 });
 
 describe("what a deleted room can still be made to keep", () => {
-  // Reading a room starts a weather lookup that finishes in a later turn. Delete the room while one
-  // is in the air and the answer used to come back and write itself into storage that had just been
-  // erased, leaving a key behind that "nothing but the date it went" says is not there.
   it("does not let a weather lookup put a key back after erasing", async () => {
     await seat();
     await view(HER);
@@ -450,7 +410,6 @@ describe("what a deleted room can still be made to keep", () => {
     away(24 * 8);
     expect(await runDurableObjectAlarm(stub)).toBe(true);
 
-    // Long enough for anything still in flight to land.
     await new Promise((resolve) => setTimeout(resolve, 200));
     await runInDurableObject(stub, async (_instance, state) => {
       expect([...(await state.storage.list()).keys()]).toEqual(["deleted"]);
@@ -459,8 +418,6 @@ describe("what a deleted room can still be made to keep", () => {
 });
 
 describe("a first that lands after the room is gone", () => {
-  // Same shape as the weather write: the lookup that notices the first snow comes back in a later
-  // turn than the read that started it, so it has to look again before writing anything.
   it("is not written into a room that has been deleted", async () => {
     await seat();
     await post("delete", { me: HIM, name: "Bean" });
