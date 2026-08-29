@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   BED_STRIPES,
+  COLLAR,
   EAR,
   eyeHighlights,
   faceShift,
@@ -160,6 +161,50 @@ describe("her eye highlights", () => {
       const ox = POSES[pose].ox;
       for (const col of [l - ox - 1, l - ox + 1, r - ox - 1, r - ox + 1]) {
         expect(cellAt(rows, col, row), `${pose} shifted highlight at ${col}`).not.toBe(".");
+      }
+    }
+  });
+});
+
+describe("the collar", () => {
+  /*
+   * Checked rather than trusted. The table was right when this was written, and so was the eye
+   * highlight table, and so was the yawn.
+   *
+   * Its own comment warns what going wrong looks like: one row out and the band reads as a second
+   * mouth. So the band has to be on her, and it has to be below her face.
+   */
+  it("sits on the cat in every pose, band and tag", () => {
+    for (const pose of POSE_NAMES) {
+      const rows = poseGrid(pose);
+      const { ox, oy } = POSES[pose];
+      const c = COLLAR[pose];
+      const row = c.dy - oy;
+      for (let i = 0; i < c.w; i++) {
+        expect(cellAt(rows, c.dx - ox + i, row), `${pose} band cell ${i}`).not.toBe(".");
+      }
+      expect(cellAt(rows, c.tag - ox, row), `${pose} tag`).not.toBe(".");
+    }
+  });
+
+  /*
+   * Never on a facial feature, which is the rule that holds for every pose.
+   *
+   * "Below the mouth" was the first way I wrote this and it is wrong: `flop` has her on her side, so
+   * her neck is beside her head rather than under it, and its collar is correctly level with her eyes
+   * and off to one side. What actually must never happen is the band crossing an eye, a nose, a mouth
+   * or a blush.
+   */
+  it("never covers a part of her face", () => {
+    for (const pose of POSE_NAMES) {
+      const rows = poseGrid(pose);
+      const { ox, oy } = POSES[pose];
+      const c = COLLAR[pose];
+      const row = c.dy - oy;
+      for (let i = 0; i < c.w; i++) {
+        expect("emnch", `${pose} band cell ${i} is on her face`).not.toContain(
+          cellAt(rows, c.dx - ox + i, row),
+        );
       }
     }
   });
