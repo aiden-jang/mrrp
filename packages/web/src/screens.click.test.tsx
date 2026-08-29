@@ -1,8 +1,4 @@
 // @vitest-environment jsdom
-//
-// The only file in this package that needs a DOM, so it asks for one here rather than in the config.
-// Everything else renders to static markup and stays fast; loading jsdom for all of them would cost
-// every test in the package for the benefit of this one.
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GoneCard, LeftCard } from "./screens.js";
@@ -11,13 +7,6 @@ afterEach(cleanup);
 
 const APRIL_2 = Date.parse("2026-04-02T12:00:00Z");
 
-/*
- * Which button does which thing.
- *
- * Static markup cannot see this, and it is the half worth checking: "Put my side back" and "start
- * fresh instead" sit next to each other, take the same shape of callback, and one restores her year
- * while the other throws it away. Swapping them is invisible in a screenshot and in the HTML.
- */
 describe("the buttons on a deleted room", () => {
   it("puts the room back, and does not send him home instead", () => {
     const onPutBack = vi.fn();
@@ -39,7 +28,6 @@ describe("the buttons on a deleted room", () => {
     expect(onPutBack).not.toHaveBeenCalled();
   });
 
-  // Disabled is not decoration. Two taps on a slow connection would be two undo requests.
   it("cannot be pressed twice while the first undo is still going", () => {
     const onPutBack = vi.fn();
     render(<GoneCard undoUntil={APRIL_2} undoing={true} err={null} onPutBack={onPutBack} onHome={vi.fn()} />);

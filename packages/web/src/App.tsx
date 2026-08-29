@@ -194,8 +194,6 @@ function RecoveryCode({ code }: { code: string }) {
       <p className={s.code} style={{ flex: 1 }}>
         {code}
       </p>
-      {/* The label carries the result, so a screen reader hears the copy happen. A live region for a
-          button whose own text changes would announce it twice. */}
       <button
         type="button"
         className={s.btn}
@@ -266,12 +264,6 @@ const FOUND_NAMES: Record<string, string> = {
   belly: "that she will roll over for the two of you",
 };
 
-/*
- * A first is about the room, not about either of them, so there is no name in it.
- *
- * Present perfect on purpose: "it has snowed on this room" is a thing that is now permanently true,
- * which is what a first is. "It snowed" would be a weather report.
- */
 const FIRSTS: Record<string, string> = {
   snow: "it has snowed on this room, for the first time.",
   rain: "it has rained on this room, for the first time.",
@@ -295,8 +287,6 @@ function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[];
       <ul className={s.arrivalList}>
         {items.map((item, index) => (
           <li key={`${item.kind}-${item.at}-${index}`} className={s.arrivalItem}>
-            {/* Drawn, not dingbats. ✦ ✧ ❧ are whatever the device's font decides they are, and ❧ is
-                missing from plenty of them, so the list changes character between phones. */}
             <span className={s.arrivalPaw} aria-hidden>
               <ArrivalMark kind={item.kind} />
             </span>
@@ -420,9 +410,6 @@ function Landing() {
           />
         </div>
         <h1 className={s.h1}>mrrp</h1>
-        {/* Written for somebody who has never heard of this. "A cat that is her" made sense only if you
-            already knew, which was fine while it had one user and is not any more. Says the mechanism
-            first, because the mechanism is the charming part. */}
         <p className={s.lede} style={{ margin: "0 auto 14px" }}>
           One of you is the cat. You make the room; whoever you send the link to becomes her. They tap how
           their day is going and she becomes that, so you know without having to ask.
@@ -430,8 +417,6 @@ function Landing() {
         <p className={s.lede} style={{ margin: "0 auto 18px", fontSize: FS.body }}>
           Then you turn up and sit with her. No account needed, no notifications, nothing to keep up with.
         </p>
-        {/* In a browser tab this is an offer rather than a redirect, so the page you asked for is the
-            page you get, and making a second room stays possible. */}
         {back && (
           <button
             className={`${s.btn} ${s.btnGo}`}
@@ -454,10 +439,6 @@ function Landing() {
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && make()}
         />
-        {/* Whichever one you actually want is the gold one. Two gold buttons stacked is the mistake I
-            already made on his side: they compete and neither reads as the answer. Somebody with a room
-            already is almost certainly coming back to it. And it is not "her" room any more, because the
-            person on the other end is no longer assumed to be a her. */}
         <button
           className={`${s.btn} ${back ? "" : s.btnGo}`}
           style={{ width: "100%", marginTop: 10 }}
@@ -469,13 +450,6 @@ function Landing() {
         <p className={s.small} style={{ marginTop: 14 }}>
           You'll get a link. Send it to one person. That's the whole thing.
         </p>
-        {/* Links here, plain text inside a room. This page is the one strangers see, so a credit that
-            goes somewhere belongs, and it is the right place for the legal pages now that a seat can be
-            tied to an account. In the room a link pointing away from a note she is reading turns a
-            signature into a byline with a call to action, which this app has refused to be all along.
-
-            The list comes from the shared client so it stays in step with the other apps; the paw and
-            the type are mrrp's own so the footer still looks like this room. */}
         <p className={s.credit}>
           <PawMark />
           {siteFooterLinks(AUTH_URL).map((item, i) => (
@@ -510,7 +484,7 @@ function RoomPage({ id }: { id: string }) {
   const handleCaptureReady = useCallback((capture: () => Promise<Blob | null>) => {
     setCaptureRoom(() => capture);
   }, []);
-  // Memoized, and it has to be. An inline arrow here is a new function every render, which is in the
+  // Memoized, and it has to be. An inline arrow is a new function every render, which is in the
   // canvas effect's deps, which remounts the canvas, which calls this again: an infinite loop.
   const handleRoomProps = useCallback(
     (props: { key: string; label: string }[], poke: (key: string) => void) => {
@@ -523,8 +497,6 @@ function RoomPage({ id }: { id: string }) {
     if (!r) return;
     try {
       const { again } = await doTidy(r);
-      // Back on the shelf first, always. Showing her knock it off instantly reads as the tap failing
-      // rather than as her doing it.
       if (!again) {
         setView(await fetchRoom(r));
         return;
@@ -536,19 +508,17 @@ function RoomPage({ id }: { id: string }) {
         void fetchRoom(r).then(setView);
       }, MUG_AGAIN_MS);
     } catch {
-      // The mug is still on the floor. Tap it again.
+      // Nothing to say. The thing you tapped is still there to tap again.
     }
   }, []);
   const [bedding, setBedding] = useState(false);
   const pickBlanket = async (key: BlanketKey, stripe: boolean) => {
     setBedding(true);
-    // Optimistic, like the moods. She is choosing how her own bed looks and the room should change
-    // under her finger, not a round trip later.
     setView((v) => (v ? { ...v, blanket: { key, stripe } } : v));
     try {
       setView(await doBlanket(id, key, stripe));
     } catch {
-      // The bed is still whatever it was. Tapping another one is the retry.
+      // Nothing to say. The thing you tapped is still there to tap again.
     }
     setBedding(false);
   };
@@ -582,8 +552,6 @@ function RoomPage({ id }: { id: string }) {
     setUndoing(true);
     try {
       await doUndelete(id);
-      // A full reload rather than setGone(null). Everything this page holds was thrown away when the
-      // room went, and the room it comes back to is the one on the server, not the one in memory.
       window.location.reload();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Couldn't put it back.");
@@ -595,8 +563,6 @@ function RoomPage({ id }: { id: string }) {
     try {
       await doLeave(id);
       forgetRoom(id);
-      // Her seat is free and this browser is a stranger here now, so the room she would load is not
-      // hers to see. Home rather than the gone screen: the room is still standing, just not for her.
       window.location.href = "/";
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Couldn't leave the room.");
@@ -752,16 +718,11 @@ function RoomPage({ id }: { id: string }) {
       await doLink(id, on);
       await load();
     } catch (e) {
-      // Redirect only when the room says they are signed out. Redirecting on any failure sends people
-      // who are already signed in on a round trip through a login page, back to where they started.
       if (on && e instanceof Error && e.message === SIGNED_OUT) {
         sessionStorage.setItem(FINISH_LINK, id);
         window.location.href = loginUrl(AUTH_URL, window.location.href);
         return;
       }
-      // Next to the button, not in the banner at the top of the page. The account control sits far
-      // down a long room, so the shared error line for it was usually off screen: you tapped, nothing
-      // appeared to happen, and the reason was scrolled out of sight above you.
       setLinkErr(e instanceof Error ? e.message : "Couldn't do that.");
     } finally {
       setLinking(false);
@@ -797,8 +758,6 @@ function RoomPage({ id }: { id: string }) {
   useEffect(() => {
     const el = lineBox.current;
     if (!el) return;
-    // Grows to fit rather than scrolling. Two fixed rows hid most of her 140 characters and cut the
-    // last visible line through the middle of the letters.
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
   }, [line, lineOpen]);
@@ -835,8 +794,6 @@ function RoomPage({ id }: { id: string }) {
       return;
     }
     if (!called || called === heardName.current) return;
-    // Debounced, not per keystroke: reacting to every letter makes her twitchy and turns her into a
-    // progress bar. The beat of stillness before she answers is the point.
     const t = setTimeout(() => {
       heardName.current = called;
       play("chirp");
@@ -852,16 +809,13 @@ function RoomPage({ id }: { id: string }) {
         adoptSeat(next.seat);
         setView(next);
         lastCat.set(id, next.cat);
-        // Coming back is spent by the read that reports it, so latch it. Anything that reads the room
-        // twice before it paints loses the line: a retried first request, or React's double effect in
-        // development, which is why this was never once visible while building.
         const back = awayLine(next.awayMs, next.cat.name);
         if (back) setAwayNote((prev) => prev ?? back);
         if (next.arrivals.length > 0) setArrivalCard(next.arrivals);
         setErr(null);
       } catch (e) {
-        // A gone room is the one failure that must not be retried into. Everything else here is
-        // "the train went into a tunnel"; this one is an answer.
+        // The one failure that must not be retried into. Everything else here is "the train went into
+        // a tunnel"; this one is an answer.
         if (e instanceof Error && e.message === GONE) {
           forgetRoom(id);
           setGone({ undoUntil: e instanceof GoneError ? e.undoUntil : null });
@@ -884,8 +838,6 @@ function RoomPage({ id }: { id: string }) {
   }, [asking, view, err, gone, load]);
 
   useEffect(() => {
-    // Stop once the room is gone. Nothing about a deleted room changes, so a tab left open on the
-    // gone screen would sit there asking for it every fifteen seconds forever.
     if (asking || gone) return;
     const tick = setInterval(() => {
       if (!document.hidden) void load();
@@ -912,8 +864,6 @@ function RoomPage({ id }: { id: string }) {
         setTimeout(() => setDid(null), 2600);
       }
     } catch {
-      // Say so. The bounce and the sound fire before the request, so without this a failed action
-      // looked exactly like a successful one: you would believe you had petted her, and she never knew.
       setErr("That didn't reach her. Try it again.");
       setTimeout(() => setErr(null), 4000);
     }
@@ -974,13 +924,11 @@ function RoomPage({ id }: { id: string }) {
       setView(await doSay(id, line));
       setLineOpen(false);
     } catch {
-      // Her words are still in the box. The button is still there.
+      // Nothing to say. The thing you tapped is still there to tap again.
     }
     setSaving(false);
   };
 
-  // Optimistic on purpose. Waiting for the round trip makes tapping a mood feel like it did not
-  // register on anything slower than a desk connection, and the server never refuses hers.
   const tell = async (m: Mood) => {
     play("chirp");
     setNudge((v) => v + 1);
@@ -1056,13 +1004,6 @@ function RoomPage({ id }: { id: string }) {
     );
   }
 
-  // No cat on this screen, on purpose. Every other empty state in the app draws her asleep and
-  // promises to keep trying, because every other empty state is a bad connection. This one is an
-  // answer, and drawing the cat here would be telling somebody she is still in there.
-  //
-  // Two versions of it. Whoever deleted the room can still put it back, so he gets the date it stops
-  // being possible. She is not offered a way back because she does not have one, and dangling one in
-  // front of her would be worse than the plain fact.
   if (gone) {
     return (
       <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
@@ -1084,8 +1025,6 @@ function RoomPage({ id }: { id: string }) {
     return (
       <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
         <ChromeSync night={isNightChrome(door.sun)} />
-        {/* Only once this device has actually seen the room. Titling a stranger's failed first load
-            after the door's demo cat would be naming a cat that is not theirs. */}
         {remembered && (
           <>
             <DocTitle name={remembered.name} />
@@ -1093,9 +1032,6 @@ function RoomPage({ id }: { id: string }) {
           </>
         )}
         <div className={s.card} style={{ textAlign: "center" }}>
-          {/* The cat, even here. The app opens from cache on a bad connection, so this screen is what
-              she sees standing on a train with no signal, and an empty page with an error on it is a
-              worse thing to be handed than a sleeping cat and a promise to keep trying. */}
           <div className={s.stage}>
             <Cat
               label={`${knownCat.name} asleep in a sunlit room.`}
@@ -1113,9 +1049,6 @@ function RoomPage({ id }: { id: string }) {
     );
   }
 
-  // She used the leave button, so the room will not seat this browser again on its own. Saying so
-  // beats the alternative, which is the stranger screen telling her a room she was in for a year
-  // belongs to two people she is not one of.
   if (view.youLeft) {
     return (
       <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
@@ -1154,8 +1087,6 @@ function RoomPage({ id }: { id: string }) {
 
   const nightChrome = isNightChrome(scene.sun);
 
-  // Never gate on `!view.youAreHer`. That is also true for a third person holding the link, and it
-  // hands a spectator his whole side of the app.
   const iAmHim = view.you !== null && !view.youAreHer;
 
   const herDay = iAmHim ? dayApart(view.clock) : null;
@@ -1177,8 +1108,6 @@ function RoomPage({ id }: { id: string }) {
       <VoiceSync fur={view.cat.fur} monthsOld={view.monthsOld} />
       <DocTitle name={view.cat.name} />
       <FaviconSync cat={view.cat} />
-      {/* The room is the page, and it had no heading at all: the only one was the hidden <h2> over
-          the props list, which left a screen reader with an h2 and nothing above it. */}
       <h1 className={s.srOnly}>{`${view.cat.name}'s room`}</h1>
       <SoundToggle />
       <div className={s.card}>
@@ -1236,21 +1165,11 @@ function RoomPage({ id }: { id: string }) {
             onCapture={handleCaptureReady}
           />
         </div>
-
-        {/*
-         * The room, reachable without a pointer. Visually hidden and fully focusable; without these
-         * the two biggest secrets in the app cannot be found at all without a mouse. Activating one
-         * runs the real interaction, so the room reacts exactly as it would to a tap.
-         */}
-        {/* A way past the room's props. Seven of them sit in front of everything else on the page, so
-            without this a keyboard user tabs all seven on every visit before reaching anything they
-            can act on. Styled in index.css rather than here, because it has to appear on :focus. */}
         {roomProps && !setup && (
           <a href="#room-actions" data-skip="">
             Skip to what you can do
           </a>
         )}
-
         {roomProps && !setup && (
           <nav className={s.srOnly} aria-labelledby="room-things">
             <h2 id="room-things">things in the room</h2>
@@ -1265,21 +1184,13 @@ function RoomPage({ id }: { id: string }) {
             </ul>
           </nav>
         )}
-
-        {/* Anything the room does in response, spoken once. Polite so it never interrupts a reader. */}
         <p aria-live="polite" className={s.srOnly}>
           {found}
         </p>
-
-        {/* What she's doing about what you told her, in her time, not the server's. During setup she is
-            held awake so her eye colour is visible, which makes "deeply asleep" a lie, so it says what
-            is actually happening instead. */}
         <p className={s.doing}>
           {setup ? `Picking out ${previewLook.name}.` : `${previewLook.name} is ${scene.doing}.`}
         </p>
-
         <span id="room-actions" tabIndex={-1} />
-
         {captureRoom && !setup && (
           <button className={s.quiet} onClick={() => void saveRoomImage()} disabled={imageStatus !== null}>
             {imageStatus === "saving"
@@ -1291,32 +1202,9 @@ function RoomPage({ id }: { id: string }) {
                   : "Make a postcard"}
           </button>
         )}
-
-        {/*
-         * What the two of you have turned up in here. A count and nothing else: no total, no list,
-         * no progress bar. The moment it says "3 of 14" the room becomes a thing to finish.
-         *
-         * Only from two onwards. At one it reads as a score for what you just did, and at zero it
-         * advertises that there is anything to find.
-         */}
         {!setup && view.noticed >= 2 && (iAmHim || view.youAreHer) && (
           <p className={s.noticed}>Between you, you have noticed {view.noticed} things in here.</p>
         )}
-
-        {/*
-         * The quiet lines under the room, and at most two of them.
-         *
-         * They were written one at a time, each rare enough on its own to be an aside. Together they
-         * are not: a long-distance couple has the date line every single day, the personality line is
-         * permanent once earned, and on a full-moon anniversary all four land at once and turn the
-         * space under the room into eight lines of grey. That is the same mistake the milestones
-         * already avoid, where the comment reads "a room that celebrates every fortnight is not
-         * celebrating".
-         *
-         * Ordered rarest first and cut to two, so a once-a-year line is never crowded out by a daily
-         * one, and an ordinary evening still has something to say. Not shown to a spectator, who is
-         * not part of any of it.
-         */}
         {!setup &&
           (iAmHim || view.youAreHer) &&
           [
@@ -1337,14 +1225,9 @@ function RoomPage({ id }: { id: string }) {
                 {line}
               </p>
             ))}
-
-        {/* The one gesture that isn't a button was also the one nobody could find. It disappears after
-            the first touch rather than nagging, and it is never shown to a spectator, who has nothing
-            to touch. */}
         {!setup && nudge === 0 && (iAmHim || view.youAreHer) && (
           <p className={s.hint}>{iAmHim ? `Hold on ${view.cat.name} to pet her` : `Tap ${view.cat.name}`}</p>
         )}
-
         {iAmHim && setup && draft && (
           <div
             className={s.panel}
@@ -1363,8 +1246,6 @@ function RoomPage({ id }: { id: string }) {
               onChange={(e) => setDraft((d) => ({ ...d!, name: e.target.value }))}
             />
 
-            {/* Functional setDraft throughout: spreading the captured draft drops any change made
-                earlier in the same tick, which loses a tap when you pick fur and eyes quickly. */}
             <p className={s.fieldLabel}>fur</p>
             <div className={s.swatchRow}>
               {LOOKS.map((l) => (
@@ -1390,7 +1271,6 @@ function RoomPage({ id }: { id: string }) {
             </div>
 
             <p className={s.fieldLabel}>eyes</p>
-            {/* One row, however many there are, so adding an eye colour cannot leave an orphan. */}
             <div className={s.eyeRow} style={{ gridTemplateColumns: `repeat(${EYES.length}, 26px)` }}>
               {EYES.map((e) => (
                 <button
@@ -1431,18 +1311,6 @@ function RoomPage({ id }: { id: string }) {
               ))}
             </Select>
 
-            {/*
-             * Her notes, one per line. A textarea rather than add/remove fields: this gets written
-             * once and probably pasted in, and thirty inputs would be thirty things to tab through.
-             * Blank lines are dropped server-side, so pasting messy text is fine.
-             */}
-            {/*
-             * A day the room should notice, in his words.
-             *
-             * Both fields or neither: a date with no name gives the room nothing to say, and a name
-             * with no date never arrives. The year is discarded, so this never becomes a count of
-             * how long it has been.
-             */}
             <p className={s.fieldLabel}>a day worth remembering</p>
             <input
               className={s.input}
@@ -1477,10 +1345,6 @@ function RoomPage({ id }: { id: string }) {
               one stays. Leave this empty to use the ones it came with.
             </p>
 
-            {/* The advice belongs here, next to the box, not in the notes themselves. A default that
-             * sounds specific but is not true for whoever reads it lands as a form letter, so the
-             * shipped ones stay safely general and the register gets taught in the editor instead.
-             * Collapsed, because it is needed once. */}
             <details style={{ marginTop: 8 }}>
               <summary className={s.summary}>What makes a good one</summary>
               <div className={s.small} style={{ marginTop: 8, display: "grid", gap: 7 }}>
@@ -1507,11 +1371,6 @@ function RoomPage({ id }: { id: string }) {
               </div>
             </details>
 
-            {/* What she will actually see, in the real card, as you type.
-             *
-             * Thirty lines went into a plain textarea with no idea how any of them would land, and that
-             * card is the whole product: the difference between a line that works and one that does not
-             * is mostly how it sits at that width, in that type, under his name. */}
             {(() => {
               const first = draft.notes
                 .split("\n")
@@ -1532,8 +1391,6 @@ function RoomPage({ id }: { id: string }) {
               );
             })()}
 
-            {/* Errors belong next to the button that failed. At the bottom of a panel this tall, they
-                are off screen. */}
             {view.recoveryCode && (
               <>
                 <p className={s.fieldLabel} style={{ marginTop: 14 }}>
@@ -1567,15 +1424,9 @@ function RoomPage({ id }: { id: string }) {
             </div>
           </div>
         )}
-
-        {/* Both of you at once: rare in an asynchronous app, so it is worth saying. Additive, not a
-            branch — it used to replace the page, which hid her mood and her line at the exact moment
-            she was in the room. */}
         {view.bothHereNow && (
           <div className={s.together}>
             <p className={s.togetherMain}>You're both in here right now.</p>
-            {/* The card is honey in every light, so this takes the same ink as the line above it.
-                No opacity: dimming it to 0.78 drops it to 3.7:1, and the size already separates them. */}
             <p className={s.small} style={{ color: "var(--on-honey)", marginTop: 4 }}>
               {view.youAreHer
                 ? `Hold on ${view.cat.name} and he'll see it happen.`
@@ -1583,15 +1434,11 @@ function RoomPage({ id }: { id: string }) {
             </p>
           </div>
         )}
-
         {arrivalCard && arrivalCard.length > 0 && view.them && (
           <ArrivalCard name={view.them} items={arrivalCard} onClose={() => setArrivalCard(null)} />
         )}
-
         {view.waitingForThem ? (
           <>
-            {/* The italic caption above already says she's asleep, in the room's own voice. Saying it
-                again immediately underneath read as a layout fault, because the two lines collided. */}
             {view.theyLeft ? (
               <TheyLeftNotice name={view.theyLeft.name} until={view.theyLeft.until} />
             ) : (
@@ -1635,15 +1482,10 @@ function RoomPage({ id }: { id: string }) {
                   {view.note.final ? `${view.them} left this out for you` : `${view.them} left you something`}
                 </p>
                 <p className={s.noteText}>{view.note.text}</p>
-                {/* Just the day, not "day 1 of 30". The total is however many notes are in notes.ts,
-                    which is an implementation detail, and printing it turned a gift into a countdown
-                    she could watch run out. */}
                 {!view.note.final && <p className={s.noteDay}>day {view.note.day}</p>}
               </div>
             )}
 
-            {/* The banner above already says you're both in here, in bigger type. Saying it twice
-                on the same screen reads as a bug rather than as warmth. */}
             {view.bothHereNow ? null : view.themHereNow ? (
               <p className={s.came}>
                 <b>{view.them}</b> is in here right now.
@@ -1662,8 +1504,6 @@ function RoomPage({ id }: { id: string }) {
               <p className={s.came}>He came in after you said that.</p>
             )}
 
-            {/* Her sentence. Before this the app was one-directional: he wrote thirty notes and she
-                had six words to answer with. */}
             {lineOpen ? (
               <div className={s.sayBox}>
                 <textarea
@@ -1675,8 +1515,6 @@ function RoomPage({ id }: { id: string }) {
                   onChange={(e) => setLine(e.target.value)}
                   className={s.sayInput}
                 />
-                {/* Silent until it is nearly over. A counter sitting there from the first character
-                    turns a note to somebody into a form with a budget. */}
                 {LINE_MAX - line.length <= 20 && (
                   <p className={s.small} style={{ textAlign: "right", margin: "6px 2px 0" }}>
                     {LINE_MAX - line.length} left
@@ -1716,8 +1554,6 @@ function RoomPage({ id }: { id: string }) {
 
             <FrameSheet current={view.doodle} saving={drawing} onSave={(c) => void hangUp(c)} />
 
-            {/* Beside the frame because they are the two things she makes, and the frame is the one
-                she already knows about. */}
             <BlanketRow current={view.blanket} busy={bedding} onPick={(k, st) => void pickBlanket(k, st)} />
 
             <p className={s.tellLabel}>
@@ -1773,9 +1609,6 @@ function RoomPage({ id }: { id: string }) {
               </div>
             )}
 
-            {/* Above the buttons, deliberately. She wrote him a sentence; the buttons are things he
-                can do any time. Having her words sit underneath four controls got the priority exactly
-                backwards on the one screen where she has actually said something. */}
             {iAmHim && view.herLine && (
               <div className={s.note}>
                 <p className={s.noteFrom}>{view.them} left you this</p>
@@ -1807,39 +1640,20 @@ function RoomPage({ id }: { id: string }) {
                 She has note {view.noteDay} waiting. Hold on {view.cat.name} to pet her.
               </p>
             )}
-            {/* Names the notes, because the notes are what is behind it. This said "change how she
-                looks, or her hours" while the one-a-day gift, the whole point of the room, sat inside
-                it unmentioned. Same bug as the sign-in buried under "show my recovery code": a label
-                that lists some of what is inside hides the rest of it completely. */}
             {iAmHim && !setup && (
               <button className={s.quiet} onClick={openSetup}>
                 Write her notes, or change how {view.cat.name} looks
               </button>
             )}
-            {/*
-             * Somebody who only has the link. They get none of his side: not her mood, not the
-             * action buttons, not the link to the setup panel. Gate every one of them, not just the
-             * panel, or they are offered controls that 403.
-             */}
             {!iAmHim && (
               <>
                 <p className={s.small} style={{ textAlign: "center", marginTop: 16 }}>
                   This room belongs to two people, and both seats are taken. You can watch the cat.
                 </p>
-                {/*
-                 * The likelier of the two reasons somebody is standing here, so it needs words.
-                 *
-                 * A seat is a token in one browser. The second one gets spent by a private window, or
-                 * by whoever the link was forwarded to opening it once. The person the room was for
-                 * then arrives to a recovery box addressed to its maker, which reads as the app telling
-                 * her it is somebody else's room. Nothing frees a seat on its own, so say what to do.
-                 */}
                 <p className={s.small} style={{ textAlign: "center", marginTop: 10 }}>
                   If you have been in here before, your recovery code will get you back in. If a seat is being
                   held by a browser that is not yours, ask whoever sent you the link to free it.
                 </p>
-                {/* A new phone lands on exactly this screen, so this is where the way back belongs.
-                    Nothing here leaks: redeeming needs the code, and the code only ever goes to him. */}
                 <div className={s.panel} style={{ marginTop: 14 }}>
                   <p className={s.panelTitle}>is one of these seats yours?</p>
                   <p className={s.small} style={{ marginBottom: 9 }}>
@@ -1883,63 +1697,28 @@ function RoomPage({ id }: { id: string }) {
             )}
           </>
         )}
-
-        {/* The whole sentence comes from whoever set it. Do not append "trying again in a moment"
-            here: most of these errors have nothing retrying behind them. */}
-        {/*
-            Pinned to the bottom of the screen rather than sitting in the page.
-            
-            One `err` is shared by everything from hanging up a drawing to freeing her seat, and the
-            room is more than twice a phone screen tall. Measured: a failed drawing save put its
-            reason at 1185px with a 720px viewport, so somebody tapped "hang it up", nothing happened,
-            and the explanation was off screen the whole time.
-
-            The app otherwise refuses to speak over the room. An error is the exception: it is the one
-            thing you need to see wherever you happen to be standing.
-          */}
+        // Pinned to the bottom of the screen. One `err` is shared by everything from hanging a drawing // to
+        freeing her seat, and the room is more than twice a phone screen tall: a failed save put // its reason
+        at 1185px with a 720px viewport, so nothing appeared to happen.
         {err && (
           <p className={s.errorBar} role="status">
             {err}
           </p>
         )}
-
-        {/*
-            Both ways back in, behind a summary that names the job rather than one of the answers.
-
-            This block has now made the same mistake twice. The code used to live inside "change how
-            she looks", so the one string that recovers a seat sat behind a button labelled as a
-            cosmetic editor. Moving it here fixed that and then buried signing in under "show my
-            recovery code", where nobody looking for an account would think to open it. A way back you
-            cannot find is not a way back, and the label has to name the question, not the first
-            answer somebody happened to write.
-          */}
-        {/*
-            Out in the room, not inside the panel below it.
-            Being behind a disclosure is what made it invisible, and the disclosure is the right home
-            for the code (a long string you fetch when you need it) but the wrong home for a decision
-            somebody has to know they can make. Nowhere near the front door either, which is the part
-            of the original reasoning that still holds: she taps a link and she is in, and signing in
-            is something you decide afterwards, or never.
-          */}
-        {/*
-            One block for everything that is about the room rather than about her.
-            
-            These arrived one at a time over weeks and each was a reasonable quiet link on its own. The
-            sum was eight of them stacked in a column at identical weight, so "draw something for the
-            frame" looked exactly as important as "she can't get in" and as "delete this room". Grouping
-            them under a heading is what puts the things you do back on top.
-          */}
         {!setup && (iAmHim || view.youAreHer) && (
+          // Everything about the room rather than about her, under one heading. These arrived one at a
+          // time as quiet links and ended up eight in a column at identical weight, so "draw something"
+          // looked exactly as important as "delete this room".
           <section className={s.roomBits} aria-label="This room">
             <p className={s.roomBitsTitle}>this room</p>
+            // The way back in is a button and comes first: it is what most people open this block for, // and
+            it was unfindable twice over before that.
             {!setup && view.recoveryCode && (
               <div className={s.accountInBits}>
                 <p className={s.small}>
                   {view.linked
                     ? "This seat is on your account, so signing in on a new phone brings you straight back here."
                     : "Sign in and this seat comes back on any phone you sign in on. No code to keep."}{" "}
-                  {/* Beside the control rather than in the footer. This is where somebody decides to
-                  attach a room to an identity, so it is where the question comes up. */}
                   <a
                     href={`${AUTH_URL}/privacy`}
                     target="_blank"
@@ -1964,7 +1743,6 @@ function RoomPage({ id }: { id: string }) {
                 )}
               </div>
             )}
-
             {!setup && view.recoveryCode && (
               <details className={s.recovery}>
                 <summary className={s.recoverySummary}>or keep a code instead</summary>
@@ -1974,7 +1752,6 @@ function RoomPage({ id }: { id: string }) {
                 <RecoveryCode code={view.recoveryCode} />
               </details>
             )}
-
             {iAmHim && (
               <button className={s.quiet} onClick={() => void shareRoom()}>
                 {shareResult === "shared"
@@ -1984,8 +1761,6 @@ function RoomPage({ id }: { id: string }) {
                     : `Send ${view.them ?? "her"} the link again`}
               </button>
             )}
-            {/* The only recovery this app has, so it has to be findable, and it evicts her current
-              device, so it asks first. Kept quiet and last: it matters on one day out of a year. */}
             {iAmHim &&
               !setup &&
               !view.waitingForThem &&
@@ -2022,25 +1797,11 @@ function RoomPage({ id }: { id: string }) {
                   {view.them ?? "She"} can&apos;t get in
                 </button>
               ))}
-
-            {/*
-             * The way out, and it is two different doors.
-             *
-             * His ends the room for both of them, because he made it and it is his notes in it. Hers takes
-             * her side and leaves his standing, so she has a way to remove herself that does not cost him a
-             * year. Both are here rather than buried in a settings page: an app that can hold something
-             * this personal has to show you how to end it, in the room, where you are.
-             */}
             {!setup && (iAmHim || view.youAreHer) && (
               <details className={`${s.recovery} ${s.ending}`} onToggle={() => setLeaveArmed(false)}>
                 <summary className={s.recoverySummary}>
                   {iAmHim ? "delete this room" : "leave this room"}
                 </summary>
-                {/*
-                A file of JSON is no use to anybody on an ordinary evening, so it does not sit in the
-                room. It is exactly what you want in the ten seconds before you end something, so it
-                sits here.
-              */}
                 <p className={s.small} style={{ marginTop: 8 }}>
                   <a
                     className={s.creditLink}
@@ -2088,8 +1849,6 @@ function RoomPage({ id }: { id: string }) {
                       will not be you any more. You have a week to change your mind, unless the seat is taken
                       before then.
                     </p>
-                    {/* Two taps, because it costs her the same as deleting costs him and she has no name to
-                    type. Closing the panel disarms it, so a stray tap does not sit there armed. */}
                     <button
                       className={s.quiet}
                       disabled={ending}
@@ -2103,7 +1862,6 @@ function RoomPage({ id }: { id: string }) {
             )}
           </section>
         )}
-
         <footer className={s.footer}>
           <p className={s.small} style={{ textAlign: "center" }}>
             Nothing in here needs keeping up with. No streaks, no unread, and nothing that goes wrong if you
@@ -2148,13 +1906,6 @@ function FaviconSync({ cat }: { cat: CatLook }) {
   return null;
 }
 
-/*
- * Five blankets and a stripe, which is the whole of what she can change.
- *
- * Swatches rather than a list of names, because the choice is a look and reading "moss" tells you
- * less than seeing it. Small and in a row so it reads as picking, not as a settings screen: this is
- * the only thing in the room that is hers and it should cost one tap.
- */
 function BlanketRow({
   current,
   busy,
@@ -2298,8 +2049,6 @@ function FrameSheet({
       </div>
 
       <div className={s.row} style={{ marginTop: 12 }}>
-        {/* Rubbing out was one of the five inks, so clearing a full sheet meant thirty-five taps with
-            the eraser selected. Nobody does that; they give up and hang up the mess. */}
         <button className={s.btn} disabled={isBlank(sheet)} onClick={() => setSheet(BLANK)}>
           Start over
         </button>

@@ -159,7 +159,6 @@ describe("fast-forwarding a room", () => {
 describe("the hour she comes to expect him", () => {
   const arriveAt = async (hour: number, days: number) => {
     for (let d = 0; d < days; d++) {
-      // A day on, at a fixed hour of it. Her timezone is the one the room runs on.
       away(24);
       vi.setSystemTime(new Date(new Date().setUTCHours(hour, 0, 0, 0)));
       await view(HIM);
@@ -183,8 +182,6 @@ describe("the hour she comes to expect him", () => {
     expect(learned!).toBeLessThan(17.5);
   });
 
-  // She is the cat. The cat does not wait at the door for herself, so her visits are not evidence
-  // about when he gets in.
   it("watches him and not her", async () => {
     await seat();
     await post("clock", { me: HIM, tz: "UTC", homeHour: 18 });

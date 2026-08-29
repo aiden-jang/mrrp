@@ -95,7 +95,6 @@ describe("who may do what", () => {
     expect(v.clock).toEqual({ tz: "Asia/Seoul", homeHour: 20 });
   });
 
-  // Unvalidated, this string reaches Intl.DateTimeFormat inside the room and takes the room down.
   it("rejects a timezone the runtime doesn't know", async () => {
     await seat();
     expect((await post("clock", { me: HIM, tz: "Mars/Olympus" })).status).toBe(400);
@@ -135,7 +134,6 @@ describe("presence", () => {
   it("hands her his between-visit gestures once, as an arrival card", async () => {
     await seat();
     await view(HER);
-    // So his actions land after her read, not inside the same millisecond. See harness.ts.
     await tick(2);
     await post("act", { me: HIM, action: "brush" });
     await post("act", { me: HIM, action: "sit" });
@@ -151,7 +149,6 @@ describe("presence", () => {
   it("hands him her new mood and line without requiring them to overlap", async () => {
     await seat();
     await view(HIM);
-    // So his actions land after her read, not inside the same millisecond. See harness.ts.
     await tick(2);
     await post("tell", { me: HER, mood: "tired" });
     await post("say", { me: HER, text: "sleep soon please" });

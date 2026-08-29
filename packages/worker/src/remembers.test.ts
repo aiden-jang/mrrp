@@ -36,7 +36,7 @@ describe("anniversaries", () => {
   });
 
   it("answers in her timezone, not the server's", () => {
-    const started = AT("2025-08-12T15:00:00Z"); // 11:00 on the 12th in New York
+    const started = AT("2025-08-12T15:00:00Z");
     const herEveningOfThe12th = AT("2026-08-13T01:00:00Z");
     const herEarlyThe13th = AT("2026-08-13T05:00:00Z");
 
@@ -162,8 +162,6 @@ describe("learning when he actually turns up", () => {
     expect(homingWith(first, 22, 101)?.days).toBe(2);
   });
 
-  // Three data points must not move the cat. A cat waiting at the wrong time because of one odd week
-  // is worse than a cat waiting when she was told to.
   it("says nothing until it has watched a fortnight", () => {
     expect(learnedHour(build([17, 17, 17]), 18)).toBeNull();
     expect(learnedHour(build(Array(13).fill(17)), 18)).toBeNull();
@@ -172,7 +170,6 @@ describe("learning when he actually turns up", () => {
 
   it("says nothing when he turns up when he said he would", () => {
     expect(learnedHour(build(Array(20).fill(18)), 18)).toBeNull();
-    // Twenty past is the same time of day, not a habit worth a sentence.
     expect(learnedHour(build(Array(20).fill(18.3)), 18)).toBeNull();
   });
 

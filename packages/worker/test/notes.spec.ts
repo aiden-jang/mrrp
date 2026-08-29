@@ -110,7 +110,7 @@ describe("writing his own notes", () => {
     expect((await view(HER)).note!.day).toBe(2);
 
     await post("notes", { me: HIM, notes: ["one", "two edited", "three", "four"] });
-    expect((await view(HER)).note!.text).toBe("two edited"); // same day, new words
+    expect((await view(HER)).note!.text).toBe("two edited");
 
     await post("notes", { me: HIM, notes: ["only one left"] });
     const n = (await view(HER)).note!;
@@ -264,12 +264,8 @@ describe("taking a copy of the room", () => {
     expect(((await copy(HER)).body as { youAreTheCat: boolean }).youAreTheCat).toBe(true);
   });
 
-  /*
-   * The one rule this must not break.
-   *
-   * Tomorrow's words never reach her browser, and an export is a browser with a filename on it. It
-   * would also be the easiest leak in the app to miss, because nobody looks at a download twice.
-   */
+  // Tomorrow's words never reach her browser, and an export is a browser with a filename on it. It
+  // would also be the easiest leak here to miss, because nobody looks at a download twice.
   it("stops her copy at the note she has actually read", async () => {
     await seat();
     await post("notes", { me: HIM, notes: ["one", "two", "three", "four"] });
@@ -298,13 +294,6 @@ describe("what a copy of the room actually contains", () => {
   const copy = async (me: string) =>
     (await (await SELF.fetch(`https://x/api/room/${id}/export?me=${me}`)).json()) as Record<string, unknown>;
 
-  /*
-   * The privacy page says this hands you everything the room holds, so it has to.
-   *
-   * The first version quietly left out her line, her mood, what he had done and how long they had
-   * been at it, which made the promise wrong rather than the feature incomplete. This test is the
-   * tripwire for the next thing somebody stores.
-   */
   it("brings her own words and moods with her", async () => {
     await seat();
     await post("say", { me: HER, text: "still here" });

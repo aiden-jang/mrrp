@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { BLANK, DOODLE_CELLS, DOODLE_H, DOODLE_INK, cellAt, isBlank, widen, withCell } from "./doodle.js";
 
 describe("the shape of a drawing", () => {
-  // The worker checks against a literal 35 rather than importing this, because validation that
-  // imports its own bound is not validation. This test is the tripwire: change the grid and it fails,
-  // which is the reminder to change the worker's regex too.
+  // The worker checks against a literal, not this constant, because validation that imports its own
+  // bound is not validation. Change the grid and this fails, which is the reminder to change the
+  // worker's regex too.
   it("is a hundred and thirty-five cells, which is what the worker's regex allows", () => {
     expect(DOODLE_CELLS).toBe(135);
     expect(BLANK).toHaveLength(135);
@@ -39,11 +39,6 @@ describe("an empty sheet", () => {
 });
 
 describe("a drawing made when the sheet was smaller", () => {
-  /*
-   * There are drawings hanging in real rooms, and the sheet has now grown twice: seven by five, then
-   * eleven by seven, now fifteen by nine. Every past size has to keep working, because a room nobody
-   * has opened in a year still holds whatever it held.
-   */
   const drawnOn = (w: number, h: number) => {
     const cells = Array.from({ length: w * h }, () => "0");
     cells[0] = "1";

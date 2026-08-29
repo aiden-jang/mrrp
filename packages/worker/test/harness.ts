@@ -2,17 +2,6 @@ import { env, runInDurableObject, SELF } from "cloudflare:test";
 import { afterEach, beforeEach, expect, vi } from "vitest";
 import type { RoomView } from "../src/types.js";
 
-/*
- * The shared setup for the worker tests, and the reason they are split across several files.
- *
- * Cost per request grows with how many requests the worker process has already served, so a suite in
- * one file is quadratic in its own length. Measured inside a single room, with no new Durable Objects
- * at all: sixty reads cost 76ms at the start of a file and 3402ms once four hundred had gone before
- * them. Splitting the same tests across files divides that by the number of files and then runs them
- * at the same time, because each file gets its own worker and its own counter.
- *
- * So: one file per area, each with its own room. Do not merge them back into one.
- */
 export const BEHIND = "Etc/GMT+12";
 export const AHEAD = "Pacific/Kiritimati";
 
@@ -29,37 +18,28 @@ export interface Harness {
   seat: (tz?: string) => Promise<void>;
 }
 
-/**
- * One room per file, wiped between tests rather than a fresh id each time.
+/*
+ * One room per file, wiped between tests.
  *
- * The file boundary is a real one: storage and `env` are both per file, so two files using the same
- * room id do not see each other, and one file taking DEV_TOOLS away does not disturb the rest. Both
- * checked, rather than assumed. The ids differ anyway because it makes a failure easier to place, and
- * because the room id has to be six characters or the router rejects it, which cost twenty-four tests
- * once already.
+ * Requests get slower the more the worker has served, so one big file is quadratic in its own length:
+ * sixty reads cost 76ms at the start and 3402ms after four hundred. Each file gets its own worker and
+ * its own counter, so splitting them is what took this suite from two minutes to four seconds. Do not
+ * merge these files back together.
  */
 export function harness(room: string): Harness {
   const id = room;
 
-  // DEV_TOOLS is set here and not read from `.dev.vars`, which is gitignored: the fast-forward tests
-  // passed on my machine and failed on a fresh clone. The closed-door test takes it away itself.
+  // Both of these are set here, not read from `.dev.vars`: that file is gitignored, so tests that
+  // needed it passed here and failed on a fresh clone. WEATHER_URL points at a port that refuses so
+  // no test ever calls the real forecast.
   beforeEach(() => {
     env.DEV_TOOLS = "on";
-    // Refused instantly, so no test ever calls the real weather service. Left pointing at Open-Meteo
-    // this suite made a few hundred requests to a stranger's API per run, and one assertion quietly
-    // depended on whether it happened to be cloudy in New York.
     env.WEATHER_URL = "http://127.0.0.1:1";
   });
 
   afterEach(async () => {
-    // Real timers first. Wiping storage is a round trip, and it hangs under fake ones.
-    //
-    // `away()` moves the system clock, so putting it back also matters for every later test, which
-    // would otherwise inherit the jump.
     vi.useRealTimers();
     await runInDurableObject(env.ROOM.get(env.ROOM.idFromName(id)), async (_instance, state) => {
-      // The alarm is not a key, so deleteAll does not take it. Left behind, a delete scheduled by one
-      // test fires in the middle of another one.
       await state.storage.deleteAlarm();
       await state.storage.deleteAll();
     });
@@ -85,26 +65,16 @@ export function harness(room: string): Harness {
     vi.setSystemTime(new Date(Date.now() + hours * 60 * 60 * 1000));
   }
 
-  /*
-   * Move the clock on a little, for a test that needs one thing to happen after another.
-   *
-   * "What arrived since your last visit" is `at > since`, with both sides coming from Date.now(). A
-   * test that reads the room, acts, and reads again inside one millisecond gets `at === since` and no
-   * arrival, correctly. Two people cannot do that over a network, but this suite can: round trips here
-   * used to take about 200ms and now take about 5, so splitting the files turned a collision that
-   * never happened into one that happened about one run in eight.
-   *
-   * Works either side of `away()`: with the clock faked it moves it, and without it waits for real.
-   * Two tests used to do the real wait inline with no explanation of what they were waiting for.
-   */
+  // "What arrived since your last visit" is `at > since`, both from Date.now(). A test that reads,
+  // acts and reads again inside one millisecond correctly gets nothing. People cannot do that over a
+  // network; this suite can, now that it is fast.
   async function tick(ms = 10): Promise<void> {
     if (vi.isFakeTimers()) vi.setSystemTime(new Date(Date.now() + ms));
     else await new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  // Seat both people. Pass `tz` to pin the room's clock BEFORE her first read, which the note tests
-  // depend on: her day is recorded from whatever zone is in force the first time she reads. The two
-  // zones above differ from each other always; that says nothing about the one the room starts on.
+  // Pass `tz` to set the clock BEFORE her first read. Her day is recorded from whatever zone is in
+  // force the first time she looks, which the note tests depend on.
   async function seat(tz?: string) {
     await view(HIM, "Aiden");
     if (tz) await post("clock", { me: HIM, tz });

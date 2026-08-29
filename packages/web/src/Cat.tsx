@@ -68,8 +68,6 @@ const GW = 100,
   GH = 80,
   FLOOR = 48;
 const VW = 80;
-// `kx` is where she is anchored, not her left edge, and `ox` is negative. Measure reach from the
-// poses or she gets drawn through the wall.
 const CAT_REACH_LEFT = Math.max(...Object.values(POSES).map((p) => -p.ox));
 const CAT_REACH_RIGHT = Math.max(...Object.values(POSES).map((p) => p.ox + p.w));
 const WIN_X = 60,
@@ -89,8 +87,6 @@ const MUG_STEAM_MS = 2200;
 const MUG_GLOW_MS = 2600;
 const GIFT_WISH_MS = 2800;
 const BED_DREAM_MS = 3200;
-// Four streaks and four flakes, placed by hand across the two panes, each starting at a different
-// point in its fall so they never come down in step.
 const PURR_CHORUS_MS = 2600;
 const LASER_CHASE_MS = 2800;
 const LASER_RELEASE_MS = 900;
@@ -161,27 +157,16 @@ const ROOM_MAX_SHARE = 0.78;
 const COLLAR_BAND = "#9c5468";
 const COLLAR_TAG = "#e8ad55";
 
-// How long her eyes stay on a new drawing. Where she looks is FRAME_CENTRE, in overlays.ts.
 const GLANCE_MS = 2600;
 
-/*
- * How long she goes and sits under a new drawing.
- *
- * The glance was only her eyes, and 2.6 seconds is not long enough to cross a room. A cat that has
- * noticed you did something goes and sits in front of it, which is the actual behaviour this was
- * reaching for.
- */
 const ADMIRE_MS = 13000;
 
-// How long her paws stay wet after standing at the window, and how long one print takes to dry.
 const WET_PAWS_MS = 26000;
 const PRINT_FADE_MS = 9000;
 
 const DOOR_CENTRE = 12;
 const SWIPE_MS = 620;
 const WATCH_DOOR_MS = 7000;
-// Not under the shelf. The camera shows 80 of the room's 100 columns, so a mug that lands at 80 is
-// never seen.
 const MUG_FLOOR_X = 66,
   MUG_FLOOR_Y = FLOOR + 14;
 
@@ -195,8 +180,6 @@ const PROP_LABELS: Record<string, string> = {
   box: "the box",
 };
 
-// One table for drawing and for hit-testing, so the two cannot disagree. Every sprite has a zero
-// offset except BED, whose ox is -11, so its box starts left of where it is drawn.
 const PROPS = [
   { key: "window", sp: WINDOW, x: WIN_X, y: 4 },
   { key: "frame", sp: FRAME, x: 16, y: 12 },
@@ -212,8 +195,6 @@ const PINK = "#e79ba3";
 const BLUSH = "#f0aeb4";
 const WHITE = "#fffdf6";
 
-// Shut eyes are drawn as lines, not as recoloured open eyes. The `e` role covers two or three pixels
-// so an open eye can hold a highlight; filling all of it brown reads as sunglasses.
 const CLOSED_EYES: Record<Pose, { y: number; left: number; right: number; width: number }> = {
   flop: { y: 7, left: 5, right: 11, width: 2 },
   loaf: { y: 7, left: 5, right: 11, width: 2 },
@@ -229,33 +210,11 @@ const CLOSED_EYES: Record<Pose, { y: number; left: number; right: number; width:
 
 const YAWN_MS = 900;
 
-/*
- * Washing. A paw held up beside the mouth and a tongue that flicks out to meet it.
- *
- * Offsets into the face rather than a pose of her own, the same way the yawn works, which is only
- * possible because every pose is built on the same head: eyes at columns 5, 6, 11 and 12 and the
- * mouth at 7 to 9. The paw sits just right of the mouth, over the pale muzzle, so fur-coloured pixels
- * there read as a paw in front of her face.
- */
 const GROOM_MS = 1900;
 const GROOM_LICK_MS = 220;
 
-/*
- * Kneading, which cats do when they have decided a thing is safe.
- *
- * Loaf only. Her paws are the two shaded pairs on the loaf's second-from-bottom row, at columns 4-5
- * and 14-15, and every other pose puts them somewhere else. A behaviour that only reads in one pose
- * belongs in that pose rather than in an average of all of them.
- */
 const KNEAD_BEAT_MS = 460;
 
-/*
- * An ear twitch. One pixel, on the outside edge of one ear, for a tenth of a second.
- *
- * Additive rather than a redraw, because erasing part of a blitted sprite means knowing what was
- * behind it, and what is behind her ear is whatever wall the hour has painted. A pixel appearing on
- * the outside edge reads as the ear moving; a pixel missing from the inside reads as damage.
- */
 const EAR_FLICK_MS = 110;
 
 export function Cat({
@@ -529,8 +488,6 @@ export function Cat({
         isPrimary: true,
       };
       const before = document.activeElement as HTMLElement | null;
-      // A synthetic pointer event rather than a second code path. The furniture handler grows with
-      // every secret, and a parallel keyboard branch would drift from it within a week.
       cv.dispatchEvent(new PointerEvent("pointerdown", init));
       cv.dispatchEvent(new PointerEvent("pointerup", init));
       if (before && before !== cv && document.activeElement === cv) before.focus({ preventScroll: true });
@@ -608,12 +565,12 @@ export function Cat({
     const fit = () => {
       cancelAnimationFrame(refit);
       // One logical pixel has to be a whole number of device pixels, or the floorboards come out at
-      // two different widths. Hence the floor(), and the retry below when a measurement reads zero.
+      // two different widths. Hence the floor(), and the retry when a measurement reads zero.
       const d = Math.min(2, devicePixelRatio || 1);
       const wide = box ? box.clientWidth : cv.getBoundingClientRect().width;
       const h = innerHeight;
-      // The reserve is a ceiling, not a floor. It was max(62%, h - reserve) once, which meant "take at
-      // least 62% whatever is below you" and put the front door's own button under the fold at 720px.
+      // A ceiling, not a floor. It was max(62%, h - reserve) once, which meant "take at least 62%
+      // whatever is below you" and pushed the front door's own button under the fold.
       const cap = h > 0 ? Math.min(h * ROOM_MAX_SHARE, h - reserveRef.current) : Infinity;
       const avail = Math.min(wide > 0 ? wide : Infinity, cap);
       if (!Number.isFinite(avail) || avail < VW) {
@@ -1201,8 +1158,6 @@ export function Cat({
       for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) px(x + i, y + j, c);
     };
 
-    // Fixed marks, never random texture: random pixels reshuffle every frame and make a calm room
-    // shimmer.
     const dither = (x: number, y: number, w: number, h: number, c: string, phase = 0) => {
       for (let j = 0; j < h; j++) {
         for (let i = 0; i < w; i++) {
@@ -1222,8 +1177,6 @@ export function Cat({
     };
 
     let raf = 0;
-    // Reduced motion means the room is a still picture, so four frames a second keeps the clock
-    // current for a tenth of the repaint cost. The loop still runs, so a tap still gets a frame.
     const minFrameMs = reduce ? 250 : 0;
     let lastFrame = -Infinity;
 
@@ -1245,8 +1198,6 @@ export function Cat({
       }
 
       const camBase = Math.max(0, Math.min(GW - VW, Math.round((catX.current ?? GW / 2) - VW / 2)));
-      // The camera leans toward the door while it is open, or nobody ever sees it: the view is 80 of
-      // 100 columns and follows her, so the door at column 6 is usually off screen.
       const pull = doorProg / 3;
       cam = Math.round(camBase * (1 - pull) + Math.min(camBase, 2) * pull);
       camRef.current = cam;
@@ -1302,8 +1253,6 @@ export function Cat({
       if (spotRef.current !== null) {
         const wx = Math.max(41, Math.min(69, Math.round(spotRef.current * GW)));
         const worn = mixHex(rugBody, sc.beamWarm, 0.26);
-        // Under the rug's threads, not over them: worn means the pile flattened, so the weave still
-        // runs across it.
         rect(wx - 5, FLOOR + 16, 11, 1, worn);
         rect(wx - 7, FLOOR + 17, 15, 4, worn);
         rect(wx - 5, FLOOR + 21, 11, 1, worn);
@@ -1313,20 +1262,10 @@ export function Cat({
       dither(38, FLOOR + 22, 34, 1, rugThread, 1);
       for (const x of [35, 40, 69, 74]) px(x, FLOOR + 27, rugEdge);
 
-      /*
-       * Her actual weather, or the plant easter egg, which both mean water on the glass. The egg wins
-       * while it lasts, because somebody just made it happen and should see it happen.
-       *
-       * Worked out up here rather than down at the window, because a closed sky has to reach the beam
-       * as well. Rain running down the glass with a full shaft of sun across the floor is the kind of
-       * thing that reads as a bug even to somebody who could not say why.
-       */
       const outside = skyRef.current;
       const raining = plantTaps.current.rainUntil - t > 0 || outside === "rain";
       const snowing = plantTaps.current.rainUntil - t <= 0 && outside === "snow";
       const overcast = outside === "cloud";
-      // Softened, never removed. Cloud still lets light through, and taking the beam away entirely
-      // would take the room's warmth with it on a week of bad weather.
       const dull = raining || snowing || overcast;
       const litWall = dull ? mixHex(sc.litWall, sc.wallTop, 0.66) : sc.litWall;
       const litPatch = dull ? mixHex(sc.patch, sc.floorNear, 0.66) : sc.patch;
@@ -1398,14 +1337,8 @@ export function Cat({
       const curtainHem = reduce ? 0 : Math.round(Math.sin(t / 2400));
       px(wx - 2 + curtainHem, 24, curtainLight);
       px(wx + WINDOW.w + 1 - curtainHem, 24, curtainLight);
-      /*
-       * Night wins over weather, and then the weather is mixed into the night.
-       *
-       * Weather came first in this chain and it made a rainy 2am glow like an overcast noon: the wet
-       * grey is mixed off the wall colour, which is bright in the daytime keyframes. It went unnoticed
-       * while the only thing that set `raining` was a six-second easter egg. Now that a real forecast
-       * can hold it on all night, the order matters.
-       */
+      // Night beats weather, then the weather is mixed into the night. Weather came first once and a
+      // rainy 2am glowed like an overcast noon, because the wet grey is mixed off the wall colour.
       const nightGlass = raining
         ? mixHex("#2b3450", "#718aa1", 0.34)
         : snowing
@@ -1427,14 +1360,6 @@ export function Cat({
                     : mixHex("#b7d8dc", sc.beamWarm, 0.2);
       blit(WINDOW, wx, 4, { w: INK, h: glass });
 
-      /*
-       * Weather on the glass, drawn after the window and before the skyline so it sits in front of the
-       * sky and behind the frame, which is where water on a window actually is.
-       *
-       * Positions are hand-picked and the motion is a function of the clock, not of anything random.
-       * A pane this small has room for four streaks; scattering them randomly puts two on top of each
-       * other about as often as not, and it cannot be checked by looking.
-       */
       if (raining && !reduce) {
         const wet = mixHex(glass, "#e8f1f4", 0.55);
         for (const [sx, phase] of RAIN_STREAKS) {
@@ -1442,7 +1367,6 @@ export function Cat({
           rect(wx + sx, 5 + Math.floor(y), 1, 2, wet);
         }
       } else if (raining) {
-        // Still weather, for anybody who asked not to be moved. Beads that sit where they are.
         const wet = mixHex(glass, "#e8f1f4", 0.55);
         for (const [sx] of RAIN_STREAKS) px(wx + sx, 8, wet);
       }
@@ -1450,14 +1374,11 @@ export function Cat({
         const flake = mixHex(glass, "#ffffff", 0.8);
         for (const [sx, phase] of SNOW_FLAKES) {
           const y = reduce ? 4 + phase * 6 : ((t / 1500 + phase) % 1) * 10;
-          // Drifts one pixel sideways over its fall, which is the whole difference between snow and
-          // very slow rain.
           const drift = Math.round(Math.sin(t / 1100 + phase * 6));
           px(wx + sx + drift, 5 + Math.floor(y), flake);
         }
       }
       if (overcast) {
-        // No streaks, nothing moving. Cloud is the sky going flat, so the panes just lose their blue.
         rect(wx + 1, 5, WINDOW.w - 2, 9, mixHex(glass, "#b9bcc4", 0.3));
       }
 
@@ -1491,27 +1412,6 @@ export function Cat({
         px(wx + 11, wy(7), "#d99d62");
         px(wx + 14, wy(6), "#e8bd72");
       }
-      /*
-       * Breath on cold glass.
-       *
-       * Condensation gathers at the bottom of a pane, not across the middle of it, so this is the
-       * last two rows of each of the four panes and nothing else. It breathes on a slow sine because
-       * a static wash is a smudge on the sprite; moving, it is a warm room on a cold day.
-       *
-       * Drawn after the skyline and the season, because fog is on the inside of the window and
-       * everything else out there is behind it.
-       */
-      /*
-       * At night the glass is a mirror, and if she is standing at it, she is what it has to show.
-       *
-       * Two eyes and the tips of two ears, and nothing else. A whole cat drawn in the pane reads as a
-       * second cat outside, which is a different and much worse feeling, and her head at full size is
-       * larger than the pane it would have to fit in. What comes back off dark glass at four in the
-       * morning is a pair of eyes anyway.
-       *
-       * Only when she is actually at the window: a cat on the floor across the room does not appear in
-       * a window up on the wall, and drawing her there would be a ghost rather than a reflection.
-       */
       const atTheGlass = Math.abs(sc.catX * GW - WIN_CX) < 9 && sc.sleepy < 0.5;
       if (night && atTheGlass) {
         const shine = mixHex(glass, L.eyes, 0.42);
@@ -1526,18 +1426,12 @@ export function Cat({
       if (cold) {
         const swell = reduce ? 0.3 : 0.3 + Math.sin(t / 4200) * 0.07;
         const fog = mixHex(glass, "#ffffff", swell);
-        // wy(2) and wy(7) are the last two glass rows of each pane. wy(4) and wy(9) are the frame
-        // bars between and below them, and fogging those paints over the window's own woodwork.
+        // The last two glass rows of each pane. wy(4) and wy(9) are the frame bars between and below
+        // them, and fogging those paints over the window's own woodwork.
         for (const paneY of [wy(2), wy(7)]) {
           rect(wx + 1, paneY, 7, 2, fog);
           rect(wx + 9, paneY, 7, 2, fog);
         }
-        /*
-         * And a nose print, while she is at the window and only there.
-         *
-         * The glass colour painted back over the fog, so it reads as wiped rather than drawn. It is
-         * the one mark in this room that is evidence of her rather than a picture of her.
-         */
         if (atTheGlass) {
           rect(wx + 10, wy(8), 3, 1, glass);
           px(wx + 11, wy(7), glass);
@@ -1551,14 +1445,6 @@ export function Cat({
         px(wx + 12, 17, mixHex(sc.wallBottom, glass, 0.5));
       }
       if (snowing) {
-        /*
-         * Snow that has settled, as against snow going past.
-         *
-         * The flakes drifting behind the glass say it is snowing; this says it has been snowing for a
-         * while, which is the difference between weather and a day. Uneven on purpose: a clean white
-         * line across the sill is a painted stripe, and the two extra pixels in the corners are where
-         * it gathers against the frame.
-         */
         const settled = mixHex(glass, "#ffffff", 0.86);
         rect(wx, 14, WINDOW.w, 1, settled);
         px(wx, 13, settled);
@@ -1591,13 +1477,6 @@ export function Cat({
       if (birding) {
         const hop = Math.floor(t / 380) % 2;
         blit(BIRD, wx + 4 + hop * 3, 16, { w: INK, b: "#8a6a48", o: "#e0a03f" });
-        /*
-         * She chatters at it. Once per visit, a beat after it lands, and never while she is asleep.
-         *
-         * The bird has hopped on that sill since the beginning and she has watched it in silence the
-         * whole time. This is the noise a cat makes at something it cannot get to, and it is the only
-         * sound in here she makes at something that is not one of you.
-         */
         if (!reduce && sc.sleepy < 0.6 && chattered.current !== bird.current && t - bird.current > 500) {
           chattered.current = bird.current;
           play("chatter");
@@ -1951,14 +1830,9 @@ export function Cat({
         }
       }
       rect(13, FLOOR + 23, 22, 2, mixHex(sc.floorNear, INK, 0.18));
-      // Her blanket. The only thing in the room she picked, so it is drawn from what she chose rather
-      // than from a constant, and a room she has not touched keeps the rose it came with.
       const bedPal = blanketPalette(blanketRef.current?.key ?? null);
       blit(BED, 24 + shake("bed"), FLOOR + 22, bedPal);
       if (blanketRef.current?.stripe) {
-        // Columns picked by hand, not stepped by a loop. The cushion runs 3 to 16, so an even step
-        // leaves a half-width gap at one end, and on a bed that is symmetrical the eye reads that as
-        // a mistake rather than a pattern. These four sit evenly and mirror about the middle.
         const bx = 24 + shake("bed") + BED.ox;
         for (const i of BED_STRIPES) {
           for (let j = 0; j < BED.h; j++) {
@@ -2107,12 +1981,8 @@ export function Cat({
         return (warmSpot.current ?? target) + shade;
       };
 
-      /*
-       * Somebody has just hung something. She goes and sits under it.
-       *
-       * Below the games, because she will not walk off mid-chase to look at a picture, and above the
-       * sunbeam, because a new drawing is more interesting than a warm patch she has all day.
-       */
+      // Below the games, because she will not walk off mid-chase to look at a picture, and above the
+      // sunbeam, because a new drawing beats a warm patch she has all day.
       const admiring = t < admireUntil.current;
       let wantX = nameCalled
         ? GW / 2
@@ -2144,6 +2014,8 @@ export function Cat({
       const bounded = (x: number) => Math.max(CAT_REACH_LEFT, Math.min(GW - CAT_REACH_RIGHT, x));
       wantX = bounded(wantX);
       if (catX.current === null) catX.current = firstEverRef.current ? 19 : wantX;
+      // She eases toward where she wants to be, a frame at a time. Nothing about her position is
+      // instant, which is why none of this can be checked in a screenshot.
       catX.current += (wantX - catX.current) * (catnipping || zooming || mouseChasing ? 0.4 : 0.05);
       const kx = Math.round(catX.current);
 
@@ -2192,14 +2064,6 @@ export function Cat({
         play("purr");
       }
 
-      /*
-       * The one thing she will not do for one person.
-       *
-       * Sitting with her long enough is already worth a purr. Doing it while the other one is also in
-       * the room gets her all the way over, which is the thing a cat does when it has decided nothing
-       * in here is a problem. Deeper than the purr on purpose, so it is not the first thing that
-       * happens; the room has to have been quiet for a while.
-       */
       const flopped = togetherRef.current && stayDepth.current > 0.62;
       if (flopped && !bellyFound.current) {
         bellyFound.current = true;
@@ -2283,16 +2147,8 @@ export function Cat({
       const pouncing = mouseChasing || laserPlaying || swiping;
       const walking = Math.abs(wantX - kx) > 3 && !zooming && !catnipping && !pouncing;
 
-      /*
-       * The bell, once she has a collar to hang it on.
-       *
-       * On the step into walking, not on every frame she is walking: a bell that keeps ringing while
-       * she crosses the room is a smoke alarm. The cooldown is for the case she starts and stops and
-       * starts again inside a second, which the sunbeam makes her do.
-       *
-       * It rings for the same reason the collar exists at all: both of you called her by name, and
-       * after that you can hear where she is without looking.
-       */
+      // On the step into walking, not while walking. A bell that keeps ringing as she crosses the
+      // room is a smoke alarm.
       if (bothCalledRef.current && walking && !wasWalking.current && !reduce && t > belled.current) {
         belled.current = t + 2600;
         play("bell");
@@ -2321,12 +2177,9 @@ export function Cat({
                     ? "sit"
                     : noticing
                       ? "perk"
-                      : // Below the games and above the clock: she will not roll over mid-chase, and
-                        // once she has, the hour of the day does not get to sit her back up.
-                        flopped
+                      : flopped
                         ? "flop"
-                        : // Sitting is what a cat does in front of a thing it is looking at.
-                          admiring && !walking
+                        : admiring && !walking
                           ? "sit"
                           : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
@@ -2409,23 +2262,9 @@ export function Cat({
         px(moodRight + 4, FLOOR + 17 - leafHop, "#5f824e");
         px(moodRight + 1, FLOOR + 18 - leafHop, "#8f7657");
       } else if (activeMood === "horny") {
-        /*
-         * A toy she has abandoned on her way to the door.
-         *
-         * Its shadow was two pixels of the toy's own pink, offset right and a row low, which detached
-         * them: on bare boards that reads as a full stop typed onto the floor. Shadows here are a
-         * floor-mixed line the width of the thing above them, directly under it, like the sad cushion.
-         *
-         * Pink, and staying pink. It was the most saturated thing on this floor at 0.40 against 0.24
-         * to 0.28 for the cushion, the mat and the blanket, which is most of why a stray pixel of it
-         * read as ink. Toned into that band. Not recoloured to the tan of the bored mood's toy: that
-         * one gets away with tan because it has a shape, and a plain lump in a cat's room does not.
-         */
         rect(19, FLOOR + 20, 5, 1, mixHex(sc.floorNear, INK, 0.2));
         rect(19, FLOOR + 17, 4, 3, "#bd8897");
         px(18, FLOOR + 16, "#dbabb6");
-        // Three pixels rising off the bottom corner, each touching the last. A lump on a floor is
-        // whatever the person looking at it decides; a lump with a tail is a toy.
         px(23, FLOOR + 19, "#946270");
         px(24, FLOOR + 18, "#946270");
         px(25, FLOOR + 17, "#946270");
@@ -2539,27 +2378,17 @@ export function Cat({
         pose === "loaf" ? kx + 8 : pose === "stretch" ? kx + 14 : pose === "pounce" ? kx + 9 : kx + 5;
       const tailY = pose === "loaf" ? y - 4 : pose === "perk" ? y - 9 : y - 6;
       if (pose !== "peek") blit(TAIL, pose === "stand" ? kx - 12 : tailX, tailY + wag, pal, pose === "stand");
-      /*
-       * Wet paws, after she has been standing at the window in the rain.
-       *
-       * Drawn before her, so she walks over her own prints rather than behind them. Recorded here too,
-       * because this is the only place her feet and where she is are both known.
-       *
-       * The point is that the weather gets into the room. Rain on the glass is something you look at;
-       * a trail of damp across the boards is something that happened while you were not here.
-       */
       if (raining && atTheGlass && awake) wetPaws.current = t + WET_PAWS_MS;
       if (walking && t < wetPaws.current && t > nextPrint.current) {
         nextPrint.current = t + 380;
-        // `ky`, not `y`: `y` bobs with her breathing, and a paw print that breathes is not a mark on
-        // the floor, it is a mark on the cat.
+        // `ky`, not `y`: `y` bobs with her breathing, and a paw print that breathes is a mark on the
+        // cat rather than on the floor.
         prints.current.push({ x: kx, y: ky, at: t, side: prints.current.length % 2 });
         if (prints.current.length > 10) prints.current.shift();
       }
       for (const mark of prints.current) {
         const age = (t - mark.at) / PRINT_FADE_MS;
         if (age >= 1) continue;
-        // Drying from the outside in, so the last thing to go is the middle of the pad.
         const damp = mixHex(sc.floorNear, "#5b6b7a", 0.34 * (1 - age));
         px(mark.x + (mark.side ? -2 : 1), mark.y, damp);
         px(mark.x + (mark.side ? -1 : 2), mark.y, damp);
@@ -2595,12 +2424,6 @@ export function Cat({
           if (edge >= 0) px(kx + sp.ox + edge, y + sp.oy + j, rim);
         }
       }
-      /*
-       * She washes when nothing else is happening, which is most of what a cat does with its day.
-       *
-       * Not while she is sleepy, not while she is being held, and never at the same time as a yawn:
-       * two overlays on one small face at once is a smudge, not two behaviours.
-       */
       if (
         !reduce &&
         awake &&
@@ -2613,12 +2436,6 @@ export function Cat({
         groom.current.at = t;
         groom.current.next = t + 52000 + Math.random() * 60000;
       }
-      /*
-       * She makes biscuits while you hold her, once she has settled right down.
-       *
-       * Deeper than the purr and shallower than the flop, so the order you get them in is purr, then
-       * kneading, then over she goes. Alternating, because both paws at once is a hop.
-       */
       if (pose === "loaf" && !reduce && stayDepth.current > 0.34 && awake) {
         const beat = Math.floor(t / KNEAD_BEAT_MS) % 2;
         const paws = y + sp.oy + KNEAD.y;
@@ -2626,9 +2443,6 @@ export function Cat({
         rect(kx + sp.ox + KNEAD.right, paws - (beat ? 0 : 1), KNEAD.w, 1, L.furDk);
       }
 
-      // Ears move constantly on a real cat and never once moved on this one. Rare enough to read as
-      // a twitch rather than a tic, and either ear, because a cat that always flicks the same one is a
-      // cat with something wrong with it.
       if (!reduce && awake && t > earFlick.current.next) {
         earFlick.current = {
           at: t,
@@ -2644,12 +2458,11 @@ export function Cat({
       const grooming = t - groom.current.at < GROOM_MS;
       if (grooming && awake) {
         const faceX = kx + sp.ox;
-        // Every pose but `perk` has its face in the same place; that one is a row lower. Measured off
-        // the grid rather than assumed, because assuming it is what put the yawn on her nose.
+        // `perk` has its face a row lower than every other pose. Assuming otherwise is what put the
+        // yawn on her nose.
         const faceY = y + sp.oy + faceShift(pose);
         rect(faceX + GROOM.pawX, faceY + GROOM.pawY, 2, 2, L.fur);
         px(faceX + GROOM.tipX, faceY + GROOM.tipY, INK);
-        // The tongue comes and goes; the paw stays up. A paw that flickers reads as a glitch.
         if ((t - groom.current.at) % (GROOM_LICK_MS * 2) < GROOM_LICK_MS) {
           px(faceX + GROOM.tongueX, faceY + GROOM.tongueY, PINK);
         }
@@ -2890,10 +2703,6 @@ export function Cat({
 
       if (awake) {
         const ey = y + sp.oy + eyeHighlights(pose).row;
-        /*
-         * Whether her eyes follow a pointer. Geometry comes off the sprite; this is the one part that
-         * is a decision. Standing, she is side-on and only one eye can track anything.
-         */
         const TRACKS: Record<Pose, boolean> = {
           loaf: true,
           sit: true,

@@ -2,8 +2,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { GoneCard, LeftCard, TheyLeftNotice } from "./screens.js";
 
-/* No jsdom in this package, so these render to static markup, the same as the auth app's tests. */
-
 const text = (html: string) =>
   html
     .replace(/<[^>]+>/g, " ")
@@ -48,8 +46,6 @@ const left = (
   );
 
 describe("a room that has been deleted", () => {
-  // The branch is the whole point. Telling her a room is gone while he can still put it back is the
-  // one wrong thing this screen can do, and it is one falsy prop away.
   it("offers no way back to the person who cannot take one", () => {
     const html = gone(null);
     expect(text(html)).toContain("this room is gone");
