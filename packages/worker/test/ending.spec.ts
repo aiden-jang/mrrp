@@ -113,7 +113,8 @@ describe("deleting the room", () => {
     expect((await post("undelete", { me: HIM })).status).toBe(200);
     const back = await view(HIM);
     expect(back.you).toBe("Aiden");
-    expect(back.them).toBe("Sofia");
+    // He sees her as the cat, because she is the cat: the name he chose is the only one she has.
+    expect(back.them).toBe(back.cat.name);
   });
 
   it("offers the way back to him and to nobody else", async () => {
@@ -258,7 +259,9 @@ describe("her leaving on her own", () => {
     const back = await view(HER);
     expect(back.youAreHer).toBe(true);
     expect(back.catMood).toBe("sad");
-    expect((await view(HIM)).them).toBe("Sofia");
+    const his = await view(HIM);
+    // He sees her as the cat, because she is the cat: the name he chose is the only one she has.
+    expect(his.them).toBe(his.cat.name);
   });
 
   it("closes her way back the moment somebody else takes the seat", async () => {
@@ -345,7 +348,8 @@ describe("her leaving on her own", () => {
 
     const v = await view(HIM);
     expect(v.theyLeft).toBeNull();
-    expect(v.them).toBe("Someone new");
+    // He sees her as the cat, because she is the cat: the name he chose is the only one she has.
+    expect(v.them).toBe(v.cat.name);
   });
 
   it("stops telling him when the week runs out", async () => {

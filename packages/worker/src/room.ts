@@ -859,6 +859,16 @@ export class Room extends DurableObject<Env> {
     const them = otherId ? (people[otherId] ?? null) : null;
     const waitingForThem = !her;
     const kept = waitingForThem && me === him ? await this.ctx.storage.get<LeftSide>(LEFT_SIDE) : null;
+    /*
+     * What to call a seat.
+     *
+     * She is the cat, so her seat is called by the name he chose for her; she is never asked for one
+     * and the placeholder her record carries is not a name anybody should read. His seat is his own
+     * name, because he is a person in the room rather than the cat in it.
+     */
+    const nameOf = (token: string | null): string | null =>
+      token && token === her ? cat.name : token ? (people[token]?.name ?? null) : null;
+
     const theyLeft =
       kept && Date.now() < kept.dropsAt ? { name: kept.person.name, until: kept.dropsAt } : null;
     const theyWereTold = undoLeaveUntil && him ? (people[him]?.name ?? null) : null;
@@ -918,8 +928,8 @@ export class Room extends DurableObject<Env> {
       theyWereTold,
       catMood: catTold?.mood ?? null,
       catMoodAt: catTold?.at ?? null,
-      you: people[me]?.name ?? null,
-      them: them?.name ?? null,
+      you: nameOf(me),
+      them: nameOf(otherId),
       themLastAt: them?.lastSeen ?? null,
       themHereNow: !!them && Date.now() - them.lastSeen < HERE_NOW_MS,
       bothHereNow: (me === him || me === her) && this.bothHere(people),
