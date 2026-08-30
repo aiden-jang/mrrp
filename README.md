@@ -2,6 +2,11 @@
 
 One of you is the cat. One private link, two seats, and no account needed.
 
+She does not have a name of her own in here, and that is the point: he names her when he makes the
+room, and that name is what she is called everywhere, to both of them. The app used to tell her
+"someone made you a cat" and then ask her to type her own name on the same screen, so it held two
+names for one person and could not decide which she was.
+
 You tell the cat how you are. It answers, and the other person finds out.
 
 ```bash

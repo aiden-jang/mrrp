@@ -32,7 +32,8 @@ describe("taking his seat back", () => {
 
     const restored = await view(NEWPHONE);
     expect(restored.youAreHer).toBe(false);
-    expect(restored.them).toBe("Sofia");
+    // He sees her as the cat, because she is the cat: the name he chose is the only one she has.
+    expect(restored.them).toBe(restored.cat.name);
     expect(restored.recoveryCode).toBe(code);
     expect((await view(HER)).youAreHer).toBe(true);
   });
@@ -188,8 +189,10 @@ describe("freeing her seat", () => {
 
     const fresh = await view(NEWPHONE, "Sofia again");
     expect(fresh.youAreHer).toBe(true);
-    expect((await view(HIM)).youAreHer).toBe(false);
-    expect((await view(HIM)).them).toBe("Sofia again");
+    const hisView = await view(HIM);
+    expect(hisView.youAreHer).toBe(false);
+    // He sees her as the cat, because she is the cat: the name he chose is the only one she has.
+    expect(hisView.them).toBe(hisView.cat.name);
   });
 
   it("keeps her place in the notes, because a lost phone should not cost her three weeks", async () => {

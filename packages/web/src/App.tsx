@@ -711,8 +711,15 @@ function RoomPage({ id }: { id: string }) {
     setNudge((v) => v + 1);
   }, [view?.bothHereNow]);
 
-  const [asking, setAsking] = useState(() => !myName.get() || !beenHere(id));
-  const [name, setName] = useState(myName.get() ?? "");
+  /*
+   * Only ever the door, never a form.
+   *
+   * This used to say "someone made you a cat" and then ask her to type her own name, on the same
+   * screen. She is the cat: he named her when he made the room, and a second name for the same
+   * person is what made the app feel like it could not decide what she was. The gate is now whether
+   * she has been in this room, not whether the browser is holding a name for her.
+   */
+  const [asking, setAsking] = useState(() => !beenHere(id));
   const [shareResult, setShareResult] = useState<"copied" | "shared" | null>(null);
   const [did, setDid] = useState<string | null>(null);
   const [me, setMe] = useState<SignedInAs>({ signedIn: false, name: null });
@@ -985,25 +992,11 @@ function RoomPage({ id }: { id: string }) {
           <p className={s.lede} style={{ margin: "0 auto 20px" }}>
             Someone made you a cat.
           </p>
-          <input
-            className={s.input}
-            value={name}
-            maxLength={24}
-            placeholder="your name"
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && name.trim()) {
-                myName.set(name.trim());
-                setAsking(false);
-              }
-            }}
-          />
           <button
             className={`${s.btn} ${s.btnGo}`}
             style={{ width: "100%", marginTop: 10 }}
-            disabled={!name.trim()}
             onClick={() => {
-              myName.set(name.trim());
+              markMine(id);
               setAsking(false);
             }}
           >
@@ -1244,15 +1237,15 @@ function RoomPage({ id }: { id: string }) {
             id="setup-panel"
             ref={setupPanel}
             tabIndex={-1}
-            aria-label="Write her notes and set up her cat"
+            aria-label="Write her notes, name her and choose how she looks"
           >
-            <p className={s.panelTitle}>her cat</p>
+            <p className={s.panelTitle}>her</p>
 
             <input
               className={s.input}
               value={draft.name}
               maxLength={24}
-              placeholder="her cat's name"
+              placeholder="her name"
               onChange={(e) => setDraft((d) => ({ ...d!, name: e.target.value }))}
             />
 
