@@ -1,9 +1,5 @@
-/*
- * What the room looks like at each hour of HER day.
- *
- * Every value is picked by hand at an hour that means something, and the hours between are a blend of
- * the two nearest. Nothing here is a sun model. See DECISIONS.md.
- */
+// What the room looks like at each hour of HER day. Hand-picked at the hours that mean something,
+// blended in between. Nothing here is a sun model. See DECISIONS.md.
 import type { Clock, Mood, RoomView } from "./types.js";
 import { RESPONSES, type MoodVisual } from "./moods.js";
 import type { Pose } from "./sprites.js";
@@ -92,7 +88,7 @@ const WINDOW_X = 0.68;
 
 export const HER_SPOT = 0.55;
 
-// `grey` is a closed sky. Three of these lines are about the sun, and on a wet afternoon they
+// `grey` is a closed sky: three of these lines are about the sun, and on a wet afternoon they
 // describe a room that is not there.
 function doingAt(
   hour: number,
@@ -150,15 +146,14 @@ export function sceneFor(
   const floorLight = lightPhase === "night" ? 0 : lightPhase === "golden" ? 0.62 : 0.1 + sun * 0.45;
   const patchLight = lightPhase === "night" ? 0 : lightPhase === "golden" ? 0.82 : 0.16 + sun * 0.6;
 
-  // The hour he actually turns up beats the hour he typed once the room has watched a fortnight. What
-  // he typed was true when he typed it.
+  // The watched hour beats the typed one after a fortnight. What he typed was true when he typed it.
   const homeHour = expectAt ?? clock.homeHour;
   const untilHome = homeHour - hour;
   const atDoor = untilHome <= 1 && untilHome > -0.5;
 
   const napping = hour >= NAP_FROM && hour < NAP_TO;
-  // Not simply "the sun is down": 5-7am is awake at the window and the hour before he is home is spent
-  // at the door. Both are dark and neither is bed.
+  // Not just "the sun is down": 5-7am is awake at the window and the hour before he is home is
+  // spent at the door. Both are dark and neither is bed.
   const inBed = !atDoor && (hour < 5 || hour >= 21);
   const dawn = hour >= 5.5 && hour < 7.5;
   const sleepy = atDoor || dawn ? 0.1 : napping ? 1 : Math.max(0, 1 - sun * 1.15);
@@ -167,16 +162,8 @@ export function sceneFor(
   const idle = spot ?? 0.42;
   const settledIn = spot !== null && !inBed && !atDoor && hour >= homeHour && hour < 21 ? spot : null;
 
-  /*
-   * What the weather does to her day.
-   *
-   * She follows the sunbeam all afternoon, which is a nonsense when the sky is closed: the beam was
-   * drawn faint precisely because it is raining, and she was lying in light that is not there. Rain
-   * and snow are worth watching, so she does. Cloud is not, so she goes to her own spot instead.
-   *
-   * The weather loses to everything else with an opinion: asleep, at the door, or doing what you told
-   * her. It is the least important thing in the room.
-   */
+  // Weather comes last, after sleep, the door, and anything you told her to do. Without this she
+  // follows the sunbeam through a downpour, lying in light the rain already dimmed away.
   const closed = sky !== "clear";
   const free = !inBed && !atDoor && !r;
   const daylight = sun > 0.15;

@@ -48,12 +48,9 @@ const PLAIN: { scene: DreamScene; line: string }[] = [
   { scene: "moth", line: "something small she nearly caught." },
 ];
 
-// She never dreams about a secret this person has not found yet. Naming the piano tells somebody
-// there is a piano, and a sleeping cat is the last place you would look for a leak. That rule is why
-// this gathers candidates and filters them, instead of looking one up.
-//
-// `seed` is a parameter and not Math.random() so a test can pin the answer. What actually happened is
-// gathered ahead of the generic lines, and the seed only picks among what is left.
+// Never dream about a secret this reader has not found. Naming the piano tells them there is a
+// piano, and a sleeping cat is the last place you would look for a leak. That is why this gathers
+// candidates and filters, instead of looking one up. `seed` is a parameter so a test can pin it.
 export function dreamOf(context: DreamContext, seed: number): Dream {
   const found = new Set(context.found);
   const candidates: { scene: DreamScene; line: string }[] = [];

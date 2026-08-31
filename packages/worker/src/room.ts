@@ -81,8 +81,8 @@ const DEFAULT_CAT: Cat = {
 const DEFAULT_CLOCK: Clock = { tz: "America/New_York", homeHour: 18 };
 
 // A deleted room keeps one key: the date it went. Wiping storage outright is not enough, because
-// view() seats whoever turns up when there are fewer than two people, so the next person to open a
-// dead link would quietly become the maker of a new room at the same address.
+// view() seats whoever turns up when there are fewer than two people, so the next person to open
+// a dead link would quietly make a new room at the same address.
 const TOMBSTONE = "deleted";
 
 const UNDO_MS = 7 * DAY_MS;
@@ -200,14 +200,7 @@ export class Room extends DurableObject<Env> {
 
     const built = await this.build(me, people, lastVisit);
 
-    /*
-     * She finds it by being handed it, and that same read spends it.
-     *
-     * After the view is built, not before: building is what puts it in front of her, so spending it
-     * first meant she was never given the thing she had just found. No separate "take it" call --
-     * there is nothing to press, and a surprise you have to press for is a chore. He learns she
-     * found it from his arrival card, the way she learns he took her gift.
-     */
+    // Spend it after the view is built. Before, and she is never handed the thing she just found.
     if (built.forHer && this.roles(people).her === me) {
       await this.ctx.storage.delete("forHer");
       await this.ctx.storage.put<LeftOut>("forHerTaken", { treat: built.forHer, at: Date.now() });
@@ -259,13 +252,8 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  /*
-   * Her half of `act`: the things the cat does, done on purpose.
-   *
-   * Deliberately not folded into the tally. That tally is what her personality is derived from, and
-   * it is meant to describe what HE keeps doing for her -- adding her own doings to it would have
-   * her learning traits from herself.
-   */
+  // Keep these out of the tally. Her personality is built from that tally, so counting her own
+  // doings would have her learning traits from herself.
   async herAct(me: string, act: CatAct): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -291,13 +279,6 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  /*
-   * A box, out, for her to get into.
-   *
-   * Putting one out is a person's doing and getting into it is a cat's, and they were the same event
-   * until now: she summoned a box out of nowhere and was already sitting in it. "Bring her something"
-   * used to put it out a third of the time it was pressed, which hid that.
-   */
   async putBoxOut(me: string): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -334,7 +315,7 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  /** Which of the three she leaves him. The room still rolls one if she has not chosen. */
+  /** The room still rolls a gift on its own if she has not picked one. */
   async leaveGift(me: string, gift: Gift): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -342,8 +323,6 @@ export class Room extends DurableObject<Env> {
     if (this.roles(people).her !== me) return this.build(me, people);
 
     await this.ctx.storage.put("gift", gift);
-    /* Her other two acts leave a record; this one did not, so the one thing she chose deliberately
-       for him was the only thing of hers he was never told about. */
     const previous = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
     await this.ctx.storage.put("log", [{ at: Date.now(), who: me, action: "gift" as const }, ...previous].slice(0, LOG_KEEP));
     people[me].lastSeen = Date.now();
@@ -383,14 +362,8 @@ export class Room extends DurableObject<Env> {
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (this.roles(people).him !== me) return false;
     const current = (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT;
-    /*
-     * Drop the keys that were not sent.
-     *
-     * The route builds all six every time and leaves `undefined` in the ones the caller omitted, and
-     * spreading an explicit undefined overwrites. A dress that set only the name therefore wiped her
-     * fur, belly, eyes and stripes, leaving a cat the UI cannot draw. The form always sends the whole
-     * look, which is why nobody had seen it.
-     */
+    // Drop the keys nobody sent. The route builds all six every time, so spreading the undefined
+    // ones straight in would wipe her fur and leave a cat the UI cannot draw.
     const given = Object.fromEntries(Object.entries(cat).filter(([, v]) => v !== undefined));
     await this.ctx.storage.put("cat", { ...current, ...given });
     return true;
@@ -593,9 +566,8 @@ export class Room extends DurableObject<Env> {
     return now - people[him]!.lastSeen < HERE_NOW_MS && now - people[her]!.lastSeen < HERE_NOW_MS;
   }
 
-  // Every method a route can reach calls this first. A test walks the prototype and fails if a new
-  // one does not, because the one that forgets is the one that hands a dead link to a stranger as a
-  // fresh room.
+  // Every method a route can reach must call this first, or a dead link hands a stranger a fresh
+  // room. A test walks the prototype and fails on any method that skips it.
   private async guard(): Promise<void> {
     const stone = await this.ctx.storage.get<Tombstone>(TOMBSTONE);
     if (!stone) return;
@@ -636,14 +608,8 @@ export class Room extends DurableObject<Env> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (this.roles(people).him !== me) return false;
-    /*
-     * He signs his own name, not hers.
-     *
-     * This used to ask for the cat's name, which read as a nice touch while the cat was a pet. She
-     * is the cat, so it had become "type her name to erase her", which is not a thing to ask of
-     * anybody. His own name keeps the deliberateness -- you cannot do this by leaning on a key --
-     * without making the last thing he does in here be typing her out of it.
-     */
+    // His own name, never hers. She is the cat, so asking for her name here would be asking him to
+    // type her out of the room.
     const signature = people[me]?.name ?? "";
     if (!signature || typed.trim().toLowerCase() !== signature.trim().toLowerCase()) return false;
 
@@ -671,9 +637,9 @@ export class Room extends DurableObject<Env> {
     return true;
   }
 
-  // `bar` is the difference between her leaving and him freeing her seat. Leaving must stop this
-  // browser being seated again by its own next page load, or leaving undoes itself. Him freeing the
-  // seat must NOT bar anything: that button exists so the right person can take a seat back.
+  // `bar` separates her leaving from him freeing her seat. Leaving must stop this browser being
+  // reseated by its own next page load, or leaving undoes itself. Him freeing a seat must NOT bar:
+  // that button exists so the right person can take the seat.
   private async wipeHerSide(people: Record<string, Person>, bar: boolean): Promise<void> {
     const her = this.roles(people).her;
     if (!her) return;
@@ -796,8 +762,8 @@ export class Room extends DurableObject<Env> {
     const notes = await this.notes();
     const readSoFar = Math.min((await this.ctx.storage.get<number>("noteIdx")) ?? 0, notes.length - 1);
     const cat = (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT;
-    /* Same rule the room uses: her seat is called by the name he gave her. This is a keepsake, and a
-       keepsake that calls her "Someone" is worse than one that does not name her at all. */
+    // Same rule as the room: her seat goes by the name he gave her. A keepsake calling her
+    // "Someone" is worse than one that never names her.
     const nameOf = (token: string | null): string | null =>
       token && token === her ? cat.name : token ? (people[token]?.name ?? null) : null;
 
@@ -932,8 +898,8 @@ export class Room extends DurableObject<Env> {
     const current = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
     await this.ctx.storage.put("clock", { ...current, ...clock });
 
-    // Moving her timezone moves the window with her. He opens the room before he picks it, so the
-    // first lookup is always for the default and the first thing he does after is change it.
+    // Key the cache on her timezone: he opens the room before picking one, so the first lookup is
+    // always for the default and the very next thing he does is change it.
     if (clock.tz !== undefined && clock.tz !== current.tz) await this.ctx.storage.delete("weather");
     return true;
   }
@@ -984,17 +950,11 @@ export class Room extends DurableObject<Env> {
     const them = otherId ? (people[otherId] ?? null) : null;
     const waitingForThem = !her;
     const kept = waitingForThem && me === him ? await this.ctx.storage.get<LeftSide>(LEFT_SIDE) : null;
-    /*
-     * What to call a seat.
-     *
-     * She is the cat, so her seat is called by the name he chose for her; she is never asked for one
-     * and the placeholder her record carries is not a name anybody should read. His seat is his own
-     * name, because he is a person in the room rather than the cat in it.
-     */
+    // She is the cat, so her seat goes by the name he gave her. She is never asked for one, and the
+    // placeholder on her record is not a name anybody should see.
     const nameOf = (token: string | null): string | null =>
       token && token === her ? cat.name : token ? (people[token]?.name ?? null) : null;
 
-    /* The seat she left is hers, so it is her name that left, not the placeholder on her record. */
     const theyLeft =
       kept && Date.now() < kept.dropsAt ? { name: cat.name, until: kept.dropsAt } : null;
     const theyWereTold = undoLeaveUntil && him ? (people[him]?.name ?? null) : null;
@@ -1019,7 +979,6 @@ export class Room extends DurableObject<Env> {
         const line = (await this.ctx.storage.get<Told2>("herLine")) ?? null;
         if (mood && mood.at > since) arrivals.push({ kind: "mood", at: mood.at, mood: mood.mood });
         if (line && line.at > since) arrivals.push({ kind: "line", at: line.at, text: line.text });
-        // Her doings reach him the same way his reach her: the room is different when he opens it.
         arrivals.push(
           ...log
             .filter((visit) => visit.who === her && visit.at > since)
@@ -1040,13 +999,8 @@ export class Room extends DurableObject<Env> {
         const kept = await this.ctx.storage.get<{ gift: Gift; at: number }>("giftKept");
         if (kept && kept.at > since) arrivals.push({ kind: "kept", at: kept.at, gift: kept.gift });
       }
-      /*
-       * Say it in words as well as in the room.
-       *
-       * The animation is five or six seconds, once, and it is suppressed outright when the cat is at
-       * the door -- which is what she does when somebody opens the room -- and under reduced motion
-       * for two of the three. The moment is the nice part; this is the part that cannot be missed.
-       */
+      // Say it in words too. The animation runs once for six seconds and reduced motion removes
+      // most of it, so the card is the part that cannot be missed.
       if (youAreHer && leftOut) {
         arrivals.push({ kind: "brought", at: leftOut.at, treat: leftOut.treat });
       }
@@ -1089,21 +1043,10 @@ export class Room extends DurableObject<Env> {
       ourDay: seated && !youAreHer ? ((await this.ctx.storage.get<OurDay>("ourDay")) ?? null) : null,
       framed: (await this.ctx.storage.get<boolean>("framed")) ?? false,
       shelfDown: (await this.ctx.storage.get<boolean>("shelfDown")) ?? false,
-      /*
-       * Both of them, now that it is hers to choose rather than the room's to roll.
-       *
-       * It was his alone because it was a surprise he found on the floor. It still is -- he is the
-       * one who picks it up, and taking it is what tells her he was here -- but she has to be able
-       * to see what she left him, or choosing is choosing into the dark.
-       */
+      // She sees it too, or she is picking blind. He is still the one who picks it up.
       gift: seated ? ((await this.ctx.storage.get<Gift>("gift")) ?? null) : null,
-      /*
-       * Both of them, for different reasons: she finds it, and he needs to see it is still out.
-       *
-       * It was hers alone at first, on the reasoning that he knows what he left. He does not: with
-       * nothing shown on his side, leaving something out looked exactly like a button that does not
-       * work, and there was no way to tell "still waiting" from "she has been in and found it".
-       */
+      // He sees it too, or the leave-out button appears to do nothing and he cannot tell "still
+      // waiting" from "she found it".
       forHer: seated ? (leftOut?.treat ?? null) : null,
       blanket: (await this.ctx.storage.get<Blanket>("blanket")) ?? null,
       expectAt: learnedHour((await this.ctx.storage.get<Homing>("homing")) ?? null, clock.homeHour),
@@ -1112,13 +1055,7 @@ export class Room extends DurableObject<Env> {
       box: ((await this.ctx.storage.get<number>("boxDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
       boxOut:
         ((await this.ctx.storage.get<number>("boxOutDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
-      /*
-       * The thing he left out, sitting on the floor.
-       *
-       * This sprite used to be set by "bring her something", which rolled a die and could not say
-       * what it brought. It draws the thing he actually chose now, which also means she can see it
-       * waiting rather than only catching a six-second animation.
-       */
+      // Draw it on the floor so it waits there instead of only flashing past in the animation.
       brought: seated && !!leftOut,
       brushed:
         ((await this.ctx.storage.get<number>("brushedDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
@@ -1129,14 +1066,7 @@ export class Room extends DurableObject<Env> {
       recoveryCode: seated ? await this.recoveryCode(youAreHer ? "her" : "him") : null,
       seat: seated ? me : null,
       linked: seated ? (people[me]?.account ?? null) !== null : false,
-      /*
-       * Whatever the other one did, whichever seat is asking. It used to be his doings only,
-       * because only his existed; hers do now.
-       *
-       * `seated` is load-bearing: the old form keyed on youAreHer, which excluded a stranger by
-       * accident rather than on purpose. Making it symmetric handed her doings to anybody holding
-       * the link.
-       */
+      // Keep `seated` here. Without it anybody holding the link is told what she has been doing.
       theirRecent: seated && otherId ? log.filter((v) => v.who === otherId).slice(0, 4) : [],
       theyCameAfter: !!catTold && !!them && youAreHer && them.lastSeen > catTold.at,
       arrivals,

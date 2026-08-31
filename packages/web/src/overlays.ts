@@ -1,10 +1,5 @@
-/*
- * Where the painted-on bits of her go: things drawn over the sprite, not in it.
- *
- * They live here so overlays.test.ts can check each one against the grid it lands on. Every number in
- * this file has been wrong at least once, always the same way: right for the sprite as it was, and
- * still there after the sprite changed.
- */
+// Bits drawn over the sprite rather than in it. Every number here has been wrong at least once,
+// always the same way: right for the old sprite. overlays.test.ts checks each against its grid.
 import { BED, FRAME, POSES, type Pose } from "./sprites.js";
 
 // Placed by hand. Stepping them by a loop leaves a half-width gap at one end of a symmetric bed.
@@ -48,15 +43,15 @@ export const YAWN = { y: 9, x: 6, w: 5 };
 export const FRAME_X = 16;
 export const FRAME_CENTRE = FRAME_X + Math.floor(FRAME.w / 2);
 
-// Every pose has its face in the same place except `perk`, which is a row lower. Measured off the
-// grid, not written down, so a pose that moves takes the overlays with it.
+// Measure off the grid, don't write the rows down, so a pose that moves takes its overlays with
+// it. `perk` has its face a row lower than every other pose.
 export function faceShift(pose: Pose): number {
   const noseRow = (p: Pose) => POSES[p].rows.findIndex((row) => row.includes("nn"));
   return noseRow(pose) - noseRow("loaf");
 }
 
-// The sprite already knows where her eye shines: one `h` cell per eye. Reading it beats a table,
-// which was wrong for five poses out of ten.
+// Read the eye shine off the sprite's `h` cells. The table that used to hold them was wrong for
+// five poses out of ten.
 export function eyeHighlights(pose: Pose): { l: number; r: number; row: number } {
   const rows = POSES[pose].rows;
   const row = rows.findIndex((r) => r.includes("h"));

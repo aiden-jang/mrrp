@@ -70,25 +70,16 @@ export const TRAIT_MIN_DAYS = 14;
 
 export type Trait = "petted" | "brushed" | "fed" | "accompanied" | "photographed";
 
-/*
- * What he does, counted. "leaveout" is in here and not in Action because it is not a button on the
- * room: he leaves something out from his own panel, and it is what "fed" is made of now that "bring
- * her something" is gone. That button rolled a die between putting the box out and setting a flag,
- * so it could never say what he brought, because he never chose.
- */
+// "leaveout" is counted but is not an Action: he does it from his own panel, not the room. It is
+// what the "fed" trait is made of.
 export type TallyKey = Action | "leaveout";
 
 export type Tally = Partial<Record<TallyKey, number>>;
 
 const HIS_ACTIONS: TallyKey[] = ["pet", "brush", "sit", "photo", "leaveout"];
 
-/*
- * Only his doings count.
- *
- * The log carries both seats now, and her personality is derived from this tally: what he keeps
- * doing for her is what she becomes. Counting her own acts here would have her learning a trait
- * from herself.
- */
+// Only his doings. The log carries both seats, and her personality comes out of this tally, so
+// counting her own acts would have her learning traits from herself.
 export function tallyFrom(log: Visit[]): Tally {
   const tally: Tally = {};
   for (const visit of log) {
@@ -130,13 +121,8 @@ export function personalityFrom(tally: Tally, daysKnown: number): Personality | 
   return { trait, count };
 }
 
-/*
- * When he actually turns up, as against the hour he said he would.
- *
- * He tells the room "usually home around six" once, when he makes it, and then never again. Life
- * moves; the hour he typed does not. So the room watches the first time he looks in each day and
- * quietly learns the real one, and the cat starts waiting at the door then instead.
- */
+// When he actually turns up, not the hour he typed once at setup and never revised. The room
+// watches his first look-in each day so the cat waits at the door at the real time.
 
 /** One sample a day, so an evening spent opening the room twenty times counts once. */
 export interface Homing {
@@ -148,14 +134,8 @@ export interface Homing {
   lastDay: number;
 }
 
-/*
- * A fortnight to believe it, and a fortnight of memory.
- *
- * The mean is capped rather than cumulative so it tracks a change of job or a change of habit instead
- * of being anchored to the first month forever. Under the threshold the room says nothing and keeps
- * using the hour he typed: a cat that starts waiting at the wrong time because of three data points
- * is worse than a cat that waits when she was told to.
- */
+// Cap the mean rather than letting it accumulate, or a new job never moves it off the first
+// month. Under the threshold say nothing: three data points is not a habit.
 export const HOMING_MIN_DAYS = 14;
 export const HOMING_MEMORY = 14;
 
