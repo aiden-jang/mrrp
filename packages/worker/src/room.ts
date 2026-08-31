@@ -275,12 +275,42 @@ export class Room extends DurableObject<Env> {
     if (act === "shelf") await this.ctx.storage.put("shelfDown", true);
     if (act === "box") {
       const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
-      await this.ctx.storage.put("boxDay", localDayNumber(Date.now(), clock.tz));
+      const today = localDayNumber(Date.now(), clock.tz);
+      // Nothing to get into unless he has put one out.
+      if (((await this.ctx.storage.get<number>("boxOutDay")) ?? -1) !== today) {
+        return this.build(me, people);
+      }
+      await this.ctx.storage.put("boxDay", today);
     }
 
     const previous = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
     await this.ctx.storage.put("log", [{ at: Date.now(), who: me, action: act }, ...previous].slice(0, LOG_KEEP));
 
+    people[me].lastSeen = Date.now();
+    await this.ctx.storage.put("people", people);
+    return this.build(me, people);
+  }
+
+  /*
+   * A box, out, for her to get into.
+   *
+   * Putting one out is a person's doing and getting into it is a cat's, and they were the same event
+   * until now: she summoned a box out of nowhere and was already sitting in it. "Bring her something"
+   * used to put it out a third of the time it was pressed, which hid that.
+   */
+  async putBoxOut(me: string): Promise<RoomView> {
+    await this.guard();
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (!people[me]) return this.build(me, people);
+    if (this.roles(people).him !== me) return this.build(me, people);
+
+    const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
+    await this.ctx.storage.put("boxOutDay", localDayNumber(Date.now(), clock.tz));
+    const previous = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
+    await this.ctx.storage.put(
+      "log",
+      [{ at: Date.now(), who: me, action: "boxout" as const }, ...previous].slice(0, LOG_KEEP),
+    );
     people[me].lastSeen = Date.now();
     await this.ctx.storage.put("people", people);
     return this.build(me, people);
@@ -1080,6 +1110,8 @@ export class Room extends DurableObject<Env> {
       sky: ((await this.ctx.storage.get<Weather>("weather"))?.sky ?? "clear") as Sky,
       windowLight: seated && !!windowLight && windowLight.from !== me,
       box: ((await this.ctx.storage.get<number>("boxDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
+      boxOut:
+        ((await this.ctx.storage.get<number>("boxOutDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
       /*
        * The thing he left out, sitting on the floor.
        *

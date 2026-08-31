@@ -79,6 +79,13 @@ app.post("/api/room/:id/heract", async (c) => {
   return c.json(await room(c.env, id).herAct(body.me, body.act as CatAct));
 });
 
+app.post("/api/room/:id/boxout", async (c) => {
+  const id = c.req.param("id");
+  const body = (await c.req.json().catch(() => null)) as { me?: string } | null;
+  if (!ROOM_RE.test(id) || !body?.me) return c.json({ error: "bad request" }, 400);
+  return c.json(await room(c.env, id).putBoxOut(body.me));
+});
+
 app.post("/api/room/:id/leaveout", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as { me?: string; treat?: Treat } | null;

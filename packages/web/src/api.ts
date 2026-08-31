@@ -256,6 +256,12 @@ export async function doCatAct(id: string, act: CatAct): Promise<RoomView> {
   return r.json() as Promise<RoomView>;
 }
 
+export async function doBoxOut(id: string): Promise<RoomView> {
+  const r = await send(`/api/room/${id}/boxout`, { me: myToken() });
+  if (!r.ok) throw new Error("Couldn't put the box out.");
+  return r.json() as Promise<RoomView>;
+}
+
 export async function doLeaveOut(id: string, treat: Treat): Promise<RoomView> {
   const r = await send(`/api/room/${id}/leaveout`, { me: myToken(), treat });
   if (!r.ok) throw new Error("Couldn't leave that out.");

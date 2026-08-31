@@ -133,12 +133,35 @@ describe("what she leaves him", () => {
 describe("what the other one has been doing", () => {
   it("is for the two of them, and not for whoever holds the link", async () => {
     await seat();
-    await post("heract", { me: HER, act: "box" });
+    await post("heract", { me: HER, act: "shelf" });
 
-    expect((await view(HIM)).theirRecent.map((v) => v.action)).toContain("box");
+    expect((await view(HIM)).theirRecent.map((v) => v.action)).toContain("shelf");
     // She is told about him and he about her. A stranger is told nothing: this used to be keyed on
     // "am I her", which excluded strangers by accident, and making it symmetric handed her doings out.
     expect((await view("strangerstranger")).theirRecent).toEqual([]);
+  });
+});
+
+describe("the box", () => {
+  it("has to be put out by him before she can get into it", async () => {
+    await seat();
+
+    // Putting one out is a person's doing; getting into it is a cat's. They used to be one event,
+    // so she summoned a box from nowhere and was already sitting in it.
+    await post("heract", { me: HER, act: "box" });
+    expect((await view(HER)).box).toBe(false);
+
+    expect((await post("boxout", { me: HIM })).status).toBe(200);
+    expect((await view(HER)).boxOut).toBe(true);
+
+    await post("heract", { me: HER, act: "box" });
+    expect((await view(HER)).box).toBe(true);
+  });
+
+  it("is not hers to put out", async () => {
+    await seat();
+    await post("boxout", { me: HER });
+    expect((await view(HER)).boxOut).toBe(false);
   });
 });
 

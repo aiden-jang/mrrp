@@ -244,6 +244,7 @@ export function Cat({
   windowLight = false,
   onWindowLight,
   shelfDown = false,
+  boxOut = false,
   mugFell = null,
   onTidy,
   role = null,
@@ -286,6 +287,8 @@ export function Cat({
   onWindowLight?: () => void;
   mugFell?: number | null;
   shelfDown?: boolean;
+  /** A box is in the room. Separate from `box`, which is whether she is sitting in it. */
+  boxOut?: boolean;
   onTidy?: () => void;
   role?: "him" | "her" | null;
   together?: boolean;
@@ -356,6 +359,8 @@ export function Cat({
     speakUntil.current = performance.now() + 1200;
   }, [mugFell]);
 
+  const boxOutRef = useRef(boxOut);
+  boxOutRef.current = boxOut;
   const downRef = useRef(shelfDown);
   downRef.current = shelfDown;
   const tidyRef = useRef(onTidy);
@@ -1914,8 +1919,10 @@ export function Cat({
           }
         }
       }
-      const boxHere = boxRef.current || t < secretBoxUntil.current;
-      const inBox = boxHere && !sc.atDoor;
+      /* The box being in the room and her being in the box are two different things now: he puts
+         one out, and she decides whether to get into it. */
+      const boxHere = boxOutRef.current || boxRef.current || t < secretBoxUntil.current;
+      const inBox = (boxRef.current || t < secretBoxUntil.current) && boxHere && !sc.atDoor;
       const peeking = !reduce && boxHere && t < boxPeekUntil.current;
       const boxPlaying = !reduce && boxHere && t < boxTaps.current.playUntil;
       if (boxHere) {

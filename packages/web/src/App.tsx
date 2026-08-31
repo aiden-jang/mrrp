@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import type { Action, CatAct, Arrival, Cat as CatLook, Gift, Mood, RoomView, Treat } from "./types.js";
+import type { Action, CatAct, Arrival, Cat as CatLook, Gift, LogAction, Mood, RoomView, Treat } from "./types.js";
 import { ACTIONS, CAT_ACTS, MOODS, TREATS } from "./types.js";
 import {
   doAct,
@@ -15,6 +15,7 @@ import {
   doOurDay,
   doRecover,
   doRelease,
+  doBoxOut,
   doCatAct,
   doLeaveGift,
   doLeaveOut,
@@ -244,10 +245,12 @@ function whenish(at: number): string {
   return `${days} days ago`;
 }
 
-const pastTense = (a: Action | CatAct | "leaveout") =>
+const pastTense = (a: LogAction) =>
   a === "leaveout"
     ? "left something out for you"
-    : (ACTIONS.find((x) => x.id === a)?.past ?? CAT_ACTS.find((x) => x.id === a)?.past ?? "was here");
+    : a === "boxout"
+      ? "put a box out for you"
+      : (ACTIONS.find((x) => x.id === a)?.past ?? CAT_ACTS.find((x) => x.id === a)?.past ?? "was here");
 
 const GIFT_NAMES: Record<string, string> = {
   leaf: "leaf",
@@ -966,6 +969,15 @@ function RoomPage({ id }: { id: string }) {
     }
   };
 
+  const boxOut = async () => {
+    play("thump");
+    try {
+      setView(await doBoxOut(id));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't put the box out.");
+    }
+  };
+
   const leaveOut = async (treat: Treat) => {
     play("settle");
     try {
@@ -1191,6 +1203,7 @@ function RoomPage({ id }: { id: string }) {
             windowLight={view.windowLight}
             onWindowLight={() => void touchWindowLight()}
             shelfDown={view.shelfDown}
+            boxOut={view.boxOut}
             onTidy={() => void tidy()}
             mugFell={mugFell}
             role={iAmHim ? "him" : view.youAreHer ? "her" : null}
@@ -1629,16 +1642,26 @@ function RoomPage({ id }: { id: string }) {
                 18% chance when she looked in, the box once a day on its own. */}
             <p className={s.tellLabel}>Be a cat about it</p>
             <div className={s.moodRow}>
-              {CAT_ACTS.filter((a) => a.id !== "gift").map((a) => (
-                <button
-                  key={a.id}
-                  className={s.mood}
-                  style={{ justifyContent: "center", padding: "9px 8px" }}
-                  onClick={() => void catAct(a.id)}
-                >
-                  {a.label}
-                </button>
-              ))}
+              {CAT_ACTS.filter((a) => a.id !== "gift").map((a) => {
+                // She cannot get into a box that is not there, and a button that silently does
+                // nothing is worse than one that is plainly not available yet.
+                const noBox = a.id === "box" && !view.boxOut;
+                return (
+                  <button
+                    key={a.id}
+                    disabled={noBox}
+                    className={s.mood}
+                    style={{
+                      justifyContent: "center",
+                      padding: "9px 8px",
+                      opacity: noBox ? 0.45 : undefined,
+                    }}
+                    onClick={() => void catAct(a.id)}
+                  >
+                    {noBox ? "no box to get into" : a.label}
+                  </button>
+                );
+              })}
             </div>
 
             <p className={s.tellLabel}>Leave him something</p>
@@ -1710,6 +1733,14 @@ function RoomPage({ id }: { id: string }) {
                     : "Leave something out for her"}
                 </p>
                 <div className={s.moodRow}>
+                  <button
+                    aria-pressed={view.boxOut}
+                    className={`${s.mood} ${view.boxOut ? s.moodOn : ""}`}
+                    style={{ justifyContent: "center", padding: "9px 8px" }}
+                    onClick={() => void boxOut()}
+                  >
+                    {view.boxOut ? "a box is out" : "a box"}
+                  </button>
                   {TREATS.map((t) => (
                     <button
                       key={t.id}
