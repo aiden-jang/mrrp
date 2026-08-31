@@ -1072,9 +1072,15 @@ export class Room extends DurableObject<Env> {
       recoveryCode: seated ? await this.recoveryCode(youAreHer ? "her" : "him") : null,
       seat: seated ? me : null,
       linked: seated ? (people[me]?.account ?? null) !== null : false,
-      /* Whatever the other one did, whichever seat is asking. It used to be his doings only,
-         because only his existed; hers do now. */
-      theirRecent: otherId ? log.filter((v) => v.who === otherId).slice(0, 4) : [],
+      /*
+       * Whatever the other one did, whichever seat is asking. It used to be his doings only,
+       * because only his existed; hers do now.
+       *
+       * `seated` is load-bearing: the old form keyed on youAreHer, which excluded a stranger by
+       * accident rather than on purpose. Making it symmetric handed her doings to anybody holding
+       * the link.
+       */
+      theirRecent: seated && otherId ? log.filter((v) => v.who === otherId).slice(0, 4) : [],
       theyCameAfter: !!catTold && !!them && youAreHer && them.lastSeen > catTold.at,
       arrivals,
       noticed: seated ? foundCount(await this.found()) : 0,

@@ -130,6 +130,18 @@ describe("what she leaves him", () => {
   });
 });
 
+describe("what the other one has been doing", () => {
+  it("is for the two of them, and not for whoever holds the link", async () => {
+    await seat();
+    await post("heract", { me: HER, act: "box" });
+
+    expect((await view(HIM)).theirRecent.map((v) => v.action)).toContain("box");
+    // She is told about him and he about her. A stranger is told nothing: this used to be keyed on
+    // "am I her", which excluded strangers by accident, and making it symmetric handed her doings out.
+    expect((await view("strangerstranger")).theirRecent).toEqual([]);
+  });
+});
+
 describe("what he leaves out for her", () => {
   it("waits for her, is his to leave, and is found exactly once", async () => {
     await seat();
