@@ -3,10 +3,8 @@ import type { DiscoveryKey } from "./discoveries.js";
 
 export type Action = "pet" | "brush" | "sit" | "photo";
 
-// Two phrasings for the same act, because the two seats read different sentences.
-//   `past` finishes "<visitor> ___", which SHE reads.
-//   `mine` finishes "She'll see that you ___", which HE reads.
-// One shared string gave us "you brushed you".
+// Two phrasings, because the seats read different sentences. `past` finishes "<visitor> ___" for
+// her; `mine` finishes "She'll see that you ___" for him. One shared string gave "you brushed you".
 export const ACTIONS: { id: Action; label: string; past: string; mine: string }[] = [
   { id: "pet", label: "Pet her", past: "petted you", mine: "petted her" },
   { id: "brush", label: "Brush her", past: "brushed you", mine: "brushed her" },
@@ -14,21 +12,10 @@ export const ACTIONS: { id: Action; label: string; past: string; mine: string }[
   { id: "photo", label: "Take her photo", past: "took a photo of you", mine: "took her photo" },
 ];
 
-/*
- * The things she does as the cat, chosen rather than rolled.
- *
- * Everything the cat did used to be the room's dice: the shelf came down on an 18% chance when she
- * visited, the box happened once a day on its own. She is the cat, so these are hers to decide, and
- * he finds out the same way she finds out about him -- by the room being different when he opens it.
- *
- * `past` finishes "<she> ___", which HE reads. `mine` finishes "He'll see that you ___", hers.
- */
+// `past` finishes "<she> ___", which HE reads. `mine` finishes "He'll see that you ___", hers.
 export type CatAct = "shelf" | "box" | "gift";
 
-/*
- * Everything the log can hold. His buttons, her cat acts, and the two things he does from his own
- * panel: leaving something out, and putting a box out for her to get into.
- */
+/** Everything the log can hold: his buttons, her cat acts, and what he does from his own panel. */
 export type LogAction = Action | CatAct | "leaveout" | "boxout";
 
 export const CAT_ACTS: { id: CatAct; label: string; past: string; mine: string }[] = [
@@ -39,17 +26,11 @@ export const CAT_ACTS: { id: CatAct; label: string; past: string; mine: string }
     mine: "knocked something off the shelf",
   },
   { id: "box", label: "Get in the box", past: "got in the box", mine: "got in the box" },
-  // Not offered as a button: she picks the gift itself below, and this is how that reaches him.
+  // Not a button: she picks the gift itself, and this is how that reaches him.
   { id: "gift", label: "Leave him something", past: "left you something", mine: "left him something" },
 ];
 
-/*
- * What he leaves out for her, mirroring the gift she leaves him.
- *
- * The room already knows how to draw all three: they were typed easter eggs, animations with no
- * state behind them. Left out on purpose they become the other half of the gift -- she finds it
- * waiting the next time she opens the room, and him being told she took it is the point.
- */
+/** What he leaves out for her, mirroring the gift she leaves him. */
 export type Treat = "yarn" | "treat" | "catnip";
 
 export const TREATS: { id: Treat; label: string; found: string }[] = [
@@ -87,8 +68,7 @@ export interface Clock {
   homeHour: number;
 }
 
-// Today's note and no other. Tomorrow's text never reaches the browser, which is why the day index
-// is worked out on the server.
+// Today's note only. Tomorrow's text must not reach the browser, so the server picks the day.
 export interface Note {
   day: number;
   total: number;
@@ -123,13 +103,7 @@ export type Arrival =
   | { kind: "brought"; at: number; treat: Treat }
   | { kind: "first"; at: number; what: FirstKey };
 
-/*
- * Things that happen to the room rather than on a date.
- *
- * Every other milestone here is the calendar: a week, a month, an anniversary, the day he marked.
- * These are the ones the world hands you, noted once and then never again, which is the only way a
- * first stays a first.
- */
+/** Milestones the world hands the room rather than the calendar: first snow, first rain. */
 export type FirstKey = "snow" | "rain" | "storm";
 
 export type Gift = "leaf" | "cap" | "moth";
@@ -149,16 +123,14 @@ export interface RoomView {
   cat: Cat;
   clock: Clock;
   youAreHer: boolean;
-  // True only for a browser that used the leave button. It is why the room does not simply seat her
-  // again on her next visit, and it is what the client shows the way back on.
+  // Set by the leave button. It is why the room does not just seat her again next visit.
   youLeft: boolean;
-  // When she can still put her side back, if she can. Null once the week is up or once somebody else
-  // has taken the seat she freed.
+  // How long she can still undo it. Null once the week is up or someone took the freed seat.
   undoLeaveUntil: number | null;
-  // Only ever sent to the one whose seat is still there, and only while she can still come back.
+  // Sent only to the one still seated, and only while she can still come back.
   theyLeft: { name: string; until: number } | null;
-  // The other side of that: who was told, sent only to the person who left. Non-null under exactly
-  // the same conditions as `theyLeft`, so neither of them can be told something the other is not.
+  // The mirror, sent only to the one who left. Same conditions as `theyLeft`, so neither seat
+  // learns something the other has not.
   theyWereTold: string | null;
   catMood: Mood | null;
   catMoodAt: number | null;
@@ -180,12 +152,11 @@ export interface RoomView {
   boxOut: boolean;
   /** What he left out for her, until she opens the room and finds it. Null on his side. */
   forHer: Treat | null;
-  // The hour he actually turns up, once the room has watched long enough to disagree with the one
-  // he typed. Null while it still only has his word for it.
+  // The hour he really turns up. Null until the room has watched long enough to disagree with him.
   expectAt: number | null;
-  // What it is doing where she is. "clear" until the room has managed to find out.
+  // Weather where she is. "clear" until the room manages to find out.
   sky: "clear" | "cloud" | "rain" | "snow";
-  // What she chose for her bed, or null while the room still has the one it came with.
+  // Her chosen bed, or null while the room still has the default.
   blanket: { key: BlanketKey; stripe: boolean } | null;
   windowLight: boolean;
   seat: string | null;

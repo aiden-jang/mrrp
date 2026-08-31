@@ -513,8 +513,8 @@ function RoomPage({ id }: { id: string }) {
   const handleCaptureReady = useCallback((capture: () => Promise<Blob | null>) => {
     setCaptureRoom(() => capture);
   }, []);
-  // Memoized, and it has to be. An inline arrow is a new function every render, which is in the
-  // canvas effect's deps, which remounts the canvas, which calls this again: an infinite loop.
+  // Keep this memoized. An inline arrow is a new function every render, and it is in the canvas
+  // effect's deps, so the canvas remounts and calls this again forever.
   const handleRoomProps = useCallback(
     (props: { key: string; label: string }[], poke: (key: string) => void) => {
       setRoomProps({ props, poke });
@@ -734,14 +734,8 @@ function RoomPage({ id }: { id: string }) {
     setNudge((v) => v + 1);
   }, [view?.bothHereNow]);
 
-  /*
-   * Only ever the door, never a form.
-   *
-   * This used to say "someone made you a cat" and then ask her to type her own name, on the same
-   * screen. She is the cat: he named her when he made the room, and a second name for the same
-   * person is what made the app feel like it could not decide what she was. The gate is now whether
-   * she has been in this room, not whether the browser is holding a name for her.
-   */
+  // Only ever the door, never a form. She is the cat and he named her when he made the room, so
+  // never ask her for a name. Gate on whether she has been in this room, not on a stored name.
   const [asking, setAsking] = useState(() => !beenHere(id));
   const [shareResult, setShareResult] = useState<"copied" | "shared" | null>(null);
   const [did, setDid] = useState<string | null>(null);
@@ -849,15 +843,14 @@ function RoomPage({ id }: { id: string }) {
         adoptSeat(next.seat);
         setView(next);
         lastCat.set(id, next.cat);
-        /* Him only, for the reason homingLine already gives: to her this is the room reporting
-           her own arrival back to her, in her own name. She is the one looking up. */
+        // Him only. To her this would be the room reporting her own arrival back to her.
         const back = next.youAreHer ? null : awayLine(next.awayMs, next.cat.name);
         if (back) setAwayNote((prev) => prev ?? back);
         if (next.arrivals.length > 0) setArrivalCard(next.arrivals);
         setErr(null);
       } catch (e) {
-        // The one failure that must not be retried into. Everything else here is "the train went into
-        // a tunnel"; this one is an answer.
+        // The one failure that must not be retried into. Everything else here is a dropped
+        // connection; this one is an answer.
         if (e instanceof Error && e.message === GONE) {
           forgetRoom(id);
           setGone({ undoUntil: e instanceof GoneError ? e.undoUntil : null });
@@ -1220,8 +1213,7 @@ function RoomPage({ id }: { id: string }) {
             onProps={handleRoomProps}
             dreamContext={{
               found: foundKeys(),
-              // What she dreams about is what he does for her. Her own doings are in this log now
-              // and are not dream material: she is the one who did them.
+              // She dreams about what he does for her, never her own doings: she did those.
               recent: view.theirRecent
                 .map((visit) => visit.action)
                 .filter((a): a is Action | "leaveout" =>
@@ -1298,8 +1290,8 @@ function RoomPage({ id }: { id: string }) {
               </p>
             ))}
         {!setup && nudge === 0 && (iAmHim || view.youAreHer) && (
-          /* "Tap {her own name}" is not something to say to her. His first move is on her; hers is
-             telling him how she is, which is the only thing in here that leaves her side. */
+          // Never say "tap {her own name}" to her. His first move is on her; hers is telling him
+          // how she is.
           <p className={s.hint}>{iAmHim ? `Hold on ${view.cat.name} to pet her` : "Tell him how you are"}</p>
         )}
         {iAmHim && setup && draft && (
@@ -1332,9 +1324,8 @@ function RoomPage({ id }: { id: string }) {
                   className={s.swatch}
                   style={{
                     background: l.cat.fur /*
-                     * Selection is drawn with a shadow, never an outline. An inline outline outranks
-                     * any stylesheet rule, so the focus ring could never appear on the one row where
-                     * you are actually choosing something.
+                     * Draw selection with a shadow, never an outline. An inline outline outranks
+                     * any stylesheet rule, so the focus ring would never show on this row.
                      */,
                     boxShadow:
                       `inset 0 -7px 0 ${l.cat.furDk}, inset 0 7px 0 ${l.cat.belly}` +
@@ -1504,12 +1495,6 @@ function RoomPage({ id }: { id: string }) {
           <div className={s.together}>
             <p className={s.togetherMain}>You're both in here right now.</p>
             <p className={s.small} style={{ color: "var(--on-honey)", marginTop: 4 }}>
-              {/*
-                Her half used to read "hold on {her own name} and he'll see it happen", which told
-                her to hold herself and promised something that does not happen: his touch is
-                act("pet") and reaches her, hers is a local sound and reaches nobody. She is the cat.
-                She is not holding it.
-              */}
               {view.youAreHer
                 ? `${view.them ?? "He"} is right there. He can reach you.`
                 : `Hold on ${view.cat.name}. She's right there.`}
@@ -1638,13 +1623,12 @@ function RoomPage({ id }: { id: string }) {
 
             <BlanketRow current={view.blanket} busy={bedding} onPick={(k, st) => void pickBlanket(k, st)} />
 
-            {/* The cat's own doings, hers to choose. The room used to roll these: the shelf on an
-                18% chance when she looked in, the box once a day on its own. */}
+            {/* The cat's own doings, hers to choose rather than the room's to roll. */}
             <p className={s.tellLabel}>Be a cat about it</p>
             <div className={s.moodRow}>
               {CAT_ACTS.filter((a) => a.id !== "gift").map((a) => {
                 // She cannot get into a box that is not there, and a button that silently does
-                // nothing is worse than one that is plainly not available yet.
+                // nothing is worse than one visibly not ready.
                 const noBox = a.id === "box" && !view.boxOut;
                 return (
                   <button
@@ -1862,9 +1846,8 @@ function RoomPage({ id }: { id: string }) {
           </p>
         )}
         {!setup && (iAmHim || view.youAreHer) && (
-          // Everything about the room rather than about her, under one heading. These arrived one at a
-          // time as quiet links and ended up eight in a column at identical weight, so "draw something"
-          // looked exactly as important as "delete this room".
+          // Everything about the room rather than about her, under one heading. Loose, these run
+          // eight deep at identical weight and "draw something" reads as big as "delete this room".
           <section className={s.roomBits} aria-label="This room">
             <p className={s.roomBitsTitle}>this room</p>
             {/* Keep the way back in first and a button: it is what most people open this for. */}
@@ -1990,8 +1973,7 @@ function RoomPage({ id }: { id: string }) {
                       either of you left in here. It happens straight away. You have a week to change your
                       mind, and after that it is erased for good.
                     </p>
-                    {/* His name, not hers. Asking him to type hers had become "type her name to
-                        erase her" the moment she became the cat. */}
+                    {/* His name, not hers: she is the cat, so typing hers reads as erasing her. */}
                     <p className={s.small} style={{ marginTop: 10 }}>
                       Sign your own name to confirm.
                     </p>

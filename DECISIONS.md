@@ -7,6 +7,87 @@ already on this list.
 Written plainly on purpose. Every entry is a decision somebody could reasonably disagree with, so each
 one says what was tried and what went wrong.
 
+## She is the cat, she does not have one
+
+The app held two names for one person. He made the room and named the cat; then it told her "someone
+made you a cat" and asked her to type her own name on the next screen. So the mood she picked was
+hers, but the cat that answered it was a third thing in the room with a name he had chosen, and
+nothing in the app could say which of the two she was.
+
+She is the cat. He names her when he makes the room, and that name is what she is called everywhere,
+to both of them. She is never asked for a name of her own.
+
+The change is one sentence and it reaches most of the app, because a sentence about a pet is rarely
+the same sentence about a person:
+
+- "Hold on Sofia to pet her" told her to hold herself, and promised he would see it. He would not:
+  his touch on her is a recorded action, hers is a local sound that reaches nobody.
+- Deleting the room asked for the cat's name typed. That is a good confirmation while the cat is a
+  pet and reads as "type her name to erase her" the moment she is not. It asks for his own name now.
+- "She has no idea what that means" is fond about a cat and unkind about a person, so her side of
+  that milestone points at him remembering instead.
+- `awayLine` is his alone, like `homingLine` already was: to her it is the room reporting her own
+  arrival back to her, in her own name. The full moon is the only ambient line both seats read, and
+  on her side it is her window.
+
+The seat-awareness tests cover milestones for this reason, and they caught a draft that read "you
+have not once thanked". The room never implies anything owed.
+
+## She acts as the cat, the room does not roll for her
+
+Everything the cat did was the room's dice. The shelf came down on an 18% roll when she looked in,
+the box appeared once a day on its own, and the gift she left him was picked at random from three.
+
+If she is the cat, those are hers. She knocks the shelf off because she means to, gets into the box
+he put out, and chooses which of the three things he finds. He is told the same way she is told about
+him: the room is different when he opens it, and a line says what she did.
+
+Her acts are deliberately kept out of two places. They do not count toward the tally, because her
+personality is derived from that tally and she would be learning traits from herself. They are not
+dream material either, for the same reason: she is the one who did them. TypeScript caught both the
+moment the log started carrying two vocabularies.
+
+## Finding a thing is being handed it
+
+He can leave the yarn, a treat or the catnip out for her. All three were typed easter eggs: animations
+the room already knew how to draw, with no state behind them and no way to mean anything. Left out on
+purpose they become an object with a life.
+
+There is no button for her to press when she finds one, because a surprise you have to press for is a
+chore. The view that carries it is the view that spends it. That spend has to happen after the view is
+built, not before, which is the bug the first version had: it spent the thing on the way past and she
+was never handed what she had just found.
+
+Three things follow, each of which was wrong in the first version:
+
+**He is shown it too.** It was hers alone at first, reasoning that he knows what he left. He does not:
+with nothing on his side, leaving something out is a button that appears to do nothing, and there is
+no way to tell "still waiting" from "she has been in and found it". He can look as often as he likes
+without spending it, because only handing it to her counts.
+
+**She is told in words as well as shown.** The animation runs once for about six seconds, and reduced
+motion removes most of it, so a one-shot surprise can be spent and never seen. The moment is the nice
+part; the card is the part that cannot be missed.
+
+**It does not lose to the door pose.** That guard exists so typed easter eggs do not fight the
+waiting-by-the-door animation, and it is not the arrival greeting it looks like: it holds for the
+90 minutes around the hour he is expected home, which is exactly when she is most likely to look in.
+A thing he left out on purpose is not an easter egg, so it plays through the pose.
+
+**And "what the other one has been doing" is gated on holding a seat.** It was keyed on "am I her",
+which shut strangers out by accident rather than on purpose. Making it symmetric so both seats could
+read it removed the accident along with the asymmetry, and opened her doings to anybody holding the
+link. An existing test caught it.
+
+## "Bring her something" was cut rather than fixed
+
+It rolled a die between putting a box out and leaving a bow, so it could never say what he brought,
+because he never chose. Two of its three outcomes are now things he does on purpose: he puts the box
+out, or he leaves one of three things out for her. The `fed` trait is counted off `leaveout` instead.
+
+`leaveout` is in the tally and not in `Action` for that reason: it is something he does from his own
+panel, not a button on the room.
+
 ## The cat cannot be neglected
 
 There is no hunger, no sadness, no streak, no decay. Nothing in the room gets worse if nobody visits.
@@ -248,9 +329,10 @@ So: his door ends the room for both, because he made it and most of what is in i
 takes her side out and leaves his standing. Each of them can remove everything that is theirs, and
 neither can destroy what is not.
 
-His confirmation is the cat's name, typed. A dialog with a red button is one mis-tap from both of
-their years; a name is something a person who means it can produce and a thumb cannot. Hers is two
-taps, because it costs her the same and she has no name to type.
+His confirmation is his own name, typed. A dialog with a red button is one mis-tap from both of their
+years; a name is something a person who means it can produce and a thumb cannot. It asks for his and
+not the cat's because she is the cat, and "type her name to erase her" is a different sentence. Hers
+is two taps, because it costs her the same and the name to type would be her own.
 
 ## Deleting is instant, erasing waits a week
 
@@ -681,6 +763,8 @@ things only:
 - why not the obvious thing, where somebody would reasonably try the obvious thing and quietly break
   something
 
-Everything else is deleted. The comment load has been cut three times now: 3124 lines to 564, then
-1381 back to 462, and most recently to 391. Every time the growth came the same way: a feature lands
-with a paragraph explaining why, which is a good paragraph in the wrong file.
+Everything else is deleted. The comment load has been cut four times now: 3124 lines to 564, then
+1381 back to 462, then to 391, and most recently 630 back to 384. Every time the growth came the same
+way: a feature lands with a paragraph explaining why, which is a good paragraph in the wrong file.
+The other repeat offender is a comment that narrates what the code used to do. The reader has no
+access to the old version, so it costs attention and returns nothing, and it rots on the next edit.

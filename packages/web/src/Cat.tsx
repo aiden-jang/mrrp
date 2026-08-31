@@ -397,16 +397,10 @@ export function Cat({
   const auroraUntil = useRef(-1e9);
   const summonUntil = useRef(-1e9);
   const secretBoxUntil = useRef(-1e9);
-  /*
-   * Play what he left out, once, on arrival.
-   *
-   * These three were typed easter eggs with no state behind them, so the drawing already exists and
-   * this only has to start the same timers a typed code does. The server has already spent it by the
-   * time this runs -- being handed it is what counts as finding it -- so this fires on the view that
-   * carries it and never again.
-   */
+  // Play what he left out, once, on arrival. The server spends it as it hands it over, so this
+  // fires on the view carrying it and never again.
   const playedLeftOut = useRef<string | null>(null);
-  /* While this is running, the door pose does not get to suppress it. */
+  // While this runs, the door pose must not suppress it.
   const leftOutUntil = useRef(-1e9);
   const yarnUntil = useRef(-1e9);
   const treatUntil = useRef(-1e9);
@@ -600,8 +594,8 @@ export function Cat({
       const d = Math.min(2, devicePixelRatio || 1);
       const wide = box ? box.clientWidth : cv.getBoundingClientRect().width;
       const h = innerHeight;
-      // A ceiling, not a floor. It was max(62%, h - reserve) once, which meant "take at least 62%
-      // whatever is below you" and pushed the front door's own button under the fold.
+      // A ceiling, not a floor. max() here means "take 62% whatever is below you", which puts the
+      // front door's own button under the fold.
       const cap = h > 0 ? Math.min(h * ROOM_MAX_SHARE, h - reserveRef.current) : Infinity;
       const avail = Math.min(wide > 0 ? wide : Infinity, cap);
       if (!Number.isFinite(avail) || avail < VW) {
@@ -1368,8 +1362,8 @@ export function Cat({
       const curtainHem = reduce ? 0 : Math.round(Math.sin(t / 2400));
       px(wx - 2 + curtainHem, 24, curtainLight);
       px(wx + WINDOW.w + 1 - curtainHem, 24, curtainLight);
-      // Night beats weather, then the weather is mixed into the night. Weather came first once and a
-      // rainy 2am glowed like an overcast noon, because the wet grey is mixed off the wall colour.
+      // Night first, then mix the weather into it. The other order makes a rainy 2am glow like an
+      // overcast noon, because the wet grey is mixed off the wall colour.
       const nightGlass = raining
         ? mixHex("#2b3450", "#718aa1", 0.34)
         : snowing
@@ -1457,8 +1451,8 @@ export function Cat({
       if (cold) {
         const swell = reduce ? 0.3 : 0.3 + Math.sin(t / 4200) * 0.07;
         const fog = mixHex(glass, "#ffffff", swell);
-        // The last two glass rows of each pane. wy(4) and wy(9) are the frame bars between and below
-        // them, and fogging those paints over the window's own woodwork.
+        // Only the last two glass rows of each pane. wy(4) and wy(9) are frame bars, and fogging
+        // those paints over the window's own woodwork.
         for (const paneY of [wy(2), wy(7)]) {
           rect(wx + 1, paneY, 7, 2, fog);
           rect(wx + 9, paneY, 7, 2, fog);
@@ -1919,8 +1913,7 @@ export function Cat({
           }
         }
       }
-      /* The box being in the room and her being in the box are two different things now: he puts
-         one out, and she decides whether to get into it. */
+      // A box in the room and her being in it are different things: he puts one out, she decides.
       const boxHere = boxOutRef.current || boxRef.current || t < secretBoxUntil.current;
       const inBox = (boxRef.current || t < secretBoxUntil.current) && boxHere && !sc.atDoor;
       const peeking = !reduce && boxHere && t < boxPeekUntil.current;
@@ -1970,13 +1963,9 @@ export function Cat({
       const nesting = t < bedNestUntil.current && !sc.atDoor && !zooming;
       const laserPlaying = !reduce && t < laser.current.until && !sc.atDoor;
       const summoning = !reduce && t < summonUntil.current && !sc.atDoor;
-      /*
-       * A thing he left out is not an easter egg and does not lose to the door.
-       *
-       * The door pose holds for the hour and a half around the time he is expected home, which is
-       * exactly when she is most likely to look in, so suppressing this would have hidden it on the
-       * visits that matter most -- and the server spends it whether or not it drew.
-       */
+      // Don't let the door pose suppress this the way it suppresses easter eggs. The door holds
+      // for 90 minutes around his expected hour, which is exactly when she is most likely to look
+      // in, and the server spends the treat whether or not it drew.
       const showingLeftOut = t < leftOutUntil.current;
       const doorBlocks = sc.atDoor && !showingLeftOut;
       const yarnPlaying = !reduce && t < yarnUntil.current && !doorBlocks;
@@ -2023,8 +2012,8 @@ export function Cat({
         return (warmSpot.current ?? target) + shade;
       };
 
-      // Below the games, because she will not walk off mid-chase to look at a picture, and above the
-      // sunbeam, because a new drawing beats a warm patch she has all day.
+      // Below the games, above the sunbeam: she will not leave a chase to look at a picture, but a
+      // new drawing beats a warm patch she has all day.
       const admiring = t < admireUntil.current;
       let wantX = nameCalled
         ? GW / 2
@@ -2056,8 +2045,8 @@ export function Cat({
       const bounded = (x: number) => Math.max(CAT_REACH_LEFT, Math.min(GW - CAT_REACH_RIGHT, x));
       wantX = bounded(wantX);
       if (catX.current === null) catX.current = firstEverRef.current ? 19 : wantX;
-      // She eases toward where she wants to be, a frame at a time. Nothing about her position is
-      // instant, which is why none of this can be checked in a screenshot.
+      // She eases toward where she wants to be a frame at a time, so a single screenshot never
+      // shows her final position.
       catX.current += (wantX - catX.current) * (catnipping || zooming || mouseChasing ? 0.4 : 0.05);
       const kx = Math.round(catX.current);
 
@@ -2189,7 +2178,7 @@ export function Cat({
       const pouncing = mouseChasing || laserPlaying || swiping;
       const walking = Math.abs(wantX - kx) > 3 && !zooming && !catnipping && !pouncing;
 
-      // On the step into walking, not while walking. A bell that keeps ringing as she crosses the
+      // On the step into walking, not while walking: a bell that rings the whole way across the
       // room is a smoke alarm.
       if (bothCalledRef.current && walking && !wasWalking.current && !reduce && t > belled.current) {
         belled.current = t + 2600;
@@ -2423,7 +2412,7 @@ export function Cat({
       if (raining && atTheGlass && awake) wetPaws.current = t + WET_PAWS_MS;
       if (walking && t < wetPaws.current && t > nextPrint.current) {
         nextPrint.current = t + 380;
-        // `ky`, not `y`: `y` bobs with her breathing, and a paw print that breathes is a mark on the
+        // `ky`, not `y`. `y` bobs with her breathing, and a breathing paw print is a mark on the
         // cat rather than on the floor.
         prints.current.push({ x: kx, y: ky, at: t, side: prints.current.length % 2 });
         if (prints.current.length > 10) prints.current.shift();
@@ -2500,8 +2489,8 @@ export function Cat({
       const grooming = t - groom.current.at < GROOM_MS;
       if (grooming && awake) {
         const faceX = kx + sp.ox;
-        // `perk` has its face a row lower than every other pose. Assuming otherwise is what put the
-        // yawn on her nose.
+        // `perk` has its face a row lower than every other pose. Assuming otherwise puts the yawn
+        // on her nose.
         const faceY = y + sp.oy + faceShift(pose);
         rect(faceX + GROOM.pawX, faceY + GROOM.pawY, 2, 2, L.fur);
         px(faceX + GROOM.tipX, faceY + GROOM.tipY, INK);

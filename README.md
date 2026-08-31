@@ -2,72 +2,56 @@
 
 One of you is the cat. One private link, two seats, and no account needed.
 
-She does not have a name of her own in here, and that is the point: he names her when he makes the
-room, and that name is what she is called everywhere, to both of them. The app used to tell her
-"someone made you a cat" and then ask her to type her own name on the same screen, so it held two
-names for one person and could not decide which she was.
+## She is the cat
 
-Ending the room asks him to sign his own name. It used to ask for the cat's name, which was a nice
-touch while the cat was a pet and became "type her name to erase her" the moment she was not.
+Not "she has a cat". He makes the room and names her, and that name is what she is called
+everywhere, to both of them. She is never asked for a name of her own, because a second name for the
+same person is what makes the app unable to say what she is.
 
-Her half of the copy had to change with her. It told her to "hold on Sofia" -- her own name -- and
-promised he would see it, which he would not: his touch on her is a recorded action and reaches her,
-hers is a local sound and reaches nobody. Her first-time hint said "tap Sofia" for the same reason.
-She is the cat; she is not holding it.
+Everything else follows from that one sentence:
 
-The milestones needed the same split the personality lines already had, and the jokes do not all
-survive the turn: "she has no idea what that means" is fond about a cat and unkind about a person, so
-her side points at him remembering instead. The seat-awareness tests now cover milestones too, which
-is what caught a draft that read "you have not once thanked" -- the room never implies anything owed.
+- **She acts as the cat, the room does not roll for her.** She knocks something off the shelf
+  because she means to, gets into the box he put out, and picks which of the three things he finds.
+- **Her own acts do not count toward the tally.** Her personality is derived from that tally, so
+  counting them would have her learning traits from herself. They are not dream material either, for
+  the same reason: she is the one who did them.
+- **Nothing in the copy tells her to touch herself.** No "hold on Sofia", no "tap Sofia". His touch
+  on her is a recorded action that reaches her; hers is a local sound that reaches nobody.
+- **Ending the room asks him to sign his own name.** Asking for the cat's name was a nice touch
+  while the cat was a pet, and reads as "type her name to erase her" once she is not.
+- **A joke about a cat is not always a joke about a person.** "She has no idea what that means" is
+  fond about a cat and unkind about a person, so her side of that milestone points at him
+  remembering instead. The seat-awareness tests cover milestones for this reason.
+- **`awayLine` is told to him alone**, the way `homingLine` already was. To her it would be the room
+  reporting her own arrival back to her, in her own name. The full moon is the only ambient line both
+  seats read, and on her side it is her window.
 
-`awayLine` is told to him alone now, for the reason `homingLine` already gives: to her it is the room
-reporting her own arrival back to her, in her own name.
+## Leaving things for each other
 
-The full moon was the last one: it is the only ambient line both seats read, and it told her the moon
-was in a window belonging to somebody with her name. It is her window on her side.
+She leaves him a gift. He leaves her the yarn, a treat, or the catnip, and she finds it the next time
+she opens the room.
 
-**She acts as the cat now, instead of the room acting for her.** Everything the cat did was the
-room's dice: the shelf came down on an 18% roll when she looked in, the box happened once a day on
-its own, and the gift she left him was picked at random from three. She is the cat, so those are
-hers: she knocks the shelf off because she means to, gets in the box, and chooses which of the three
-he finds. He is told the same way she is told about him -- the room is different when he opens it,
-and a line says what she did.
+**Finding it is being handed it.** There is no button for her to press, because a surprise you have
+to press for is a chore. The view that carries it is the view that spends it, and the spend happens
+after that view is built: doing it before means she is never handed the thing she just found.
 
-Deliberately kept out of two places. Her acts do not count toward the tally, because that tally is
-what her personality is derived from and she would be learning traits from herself; and they are not
-dream material, for the same reason. TypeScript caught both the moment the log started carrying two
-vocabularies.
+**He is shown it too.** Without that, leaving something out is a button that appears to do nothing,
+and he cannot tell "still waiting" from "she has been in and found it". He can look as often as he
+likes without spending it; only handing it to her counts.
 
-**And he can leave something out for her**, which is the other half of the gift. The yarn, a treat
-and the catnip were typed easter eggs: animations the room already knew how to draw, with no state
-behind them and no way to mean anything. Left out on purpose they become an object with a life --
-she finds it the next time she opens the room, and he is told she did.
+**She is told in words as well as shown.** The animation runs once for about six seconds and reduced
+motion removes most of it, so a one-shot surprise can be spent and never seen. The moment is the nice
+part; the card is the part that cannot be missed.
 
-Finding it is being handed it. There is no button for her to press, because a surprise you have to
-press for is a chore, so the view that carries it is the one that spends it. That has to happen after
-the view is built rather than before, which is the bug the first version had: it spent the thing on
-the way past and she was never given what she had just found.
+**A thing he left out does not lose to the door pose.** That guard exists so typed easter eggs do not
+fight the waiting-by-the-door animation, and the door pose holds for 90 minutes around the hour he is
+expected home, which is exactly when she is most likely to look in. So this plays through it.
 
-Making "what the other one has been doing" symmetric quietly opened it to anybody holding the link.
-It had been keyed on "am I her", which excluded a stranger by accident rather than on purpose, and
-the accident was the only thing keeping it shut. It is gated on holding a seat now.
+**"What the other one has been doing" is gated on holding a seat.** It used to be keyed on "am I
+her", which shut strangers out by accident rather than on purpose. Making it symmetric removed the
+accident and opened her doings to anybody holding the link.
 
-What he leaves out is shown to him too. It was hers alone at first, reasoning that he knows what he
-left; he does not. With nothing on his side, leaving something out was a button that appeared to do
-nothing, and there was no way to tell "still waiting" from "she has been in and found it". He can
-look at it as often as he likes without spending it: only being handed it to her counts as finding
-it, and that guard is the whole mechanic.
-
-She is told in words as well as shown. The animation is 5.2 to 6.2 seconds and plays once, it is
-suppressed entirely while the cat is at the door -- which is what she does when somebody opens the
-room -- and reduced motion removes two of the three. So a one-shot surprise could be spent and never
-seen. The moment is still the nice part; the card is the part that cannot be missed.
-
-The door no longer suppresses it. That guard exists so the typed easter eggs do not fight the
-waiting-by-the-door pose, and it is not the arrival greeting it looks like: it holds for the hour and
-a half around the time he is expected home, which is exactly when she is most likely to look in. A
-thing he left out on purpose is not an easter egg and does not lose to a pose, so it plays through
-it.
+## Running it
 
 You tell the cat how you are. It answers, and the other person finds out.
 
@@ -256,14 +240,18 @@ than the UI, because a rule enforced in the browser is a rule anyone can turn of
 | `GET /api/room/:id`           | anyone      | seats the first two callers. Only her read advances the note      |
 | `POST .../tell`               | her only    | her mood, one of six                                              |
 | `POST .../say`                | her only    | one line back, 140 chars, empty clears it                         |
-| `POST .../act`                | him only    | pet, brush, bring, sit, photo. Four of the five leave a mark      |
+| `POST .../act`                | him only    | pet, brush, sit, photo. Each one leaves a mark                    |
+| `POST .../heract`             | her only    | what she does as the cat: shelf, box, gift                        |
+| `POST .../boxout`             | him only    | puts a box in the room. She decides whether to get in             |
+| `POST .../leaveout`           | him only    | leaves the yarn, a treat or the catnip for her to find            |
+| `POST .../gift`               | her only    | picks which of the three he finds                                 |
 | `POST .../shelf`              | either seat | puts the mug back. The one write both of them may make            |
 | `POST .../dress`, `.../clock` | him only    | 403 otherwise                                                     |
 | `POST .../notes`              | him only    | this room's notes, one per entry; empty restores the defaults     |
 | `POST .../window-light`       | either seat | leave one glint in the window, or collect the other person's      |
 | `POST .../release`            | him only    | frees her seat so a new device can be her                         |
 | `POST .../recover`            | his code    | takes the first seat back on a new device                         |
-| `POST .../delete`             | him only    | ends the room for both. Needs the cat's name typed, not a flag    |
+| `POST .../delete`             | him only    | ends the room for both. Needs his own name typed, not a flag      |
 | `POST .../undelete`           | him only    | puts it back, for a week. 403 after that                          |
 | `POST .../leave`              | her only    | takes her side out and frees her seat. His room stands            |
 | `POST .../unleave`            | her only    | puts her side back, while the week holds and the seat is free     |
@@ -277,20 +265,23 @@ than the UI, because a rule enforced in the browser is a rule anyone can turn of
 
 ### What his actions leave behind
 
-Four of the five things he can do put something in the room, and all of them last **her** local day
-and no longer, like the notes. Nothing in here may pile up on her.
+Everything he does puts something in the room, and all of it lasts **her** local day and no longer,
+like the notes. Nothing in here may pile up on her.
 
-| action | what she finds                                               |
-| ------ | ------------------------------------------------------------ |
-| photo  | the picture on the wall, which is the one permanent one      |
-| bring  | a box one time in three, a small bow on her bed the rest     |
-| brush  | a tuft of her on the rug                                     |
-| sit    | the dent he left beside her bed                              |
-| pet    | nothing to find, but the purr deepens the longer he holds on |
+| action   | what she finds                                                    |
+| -------- | ----------------------------------------------------------------- |
+| photo    | the picture on the wall, which is the one permanent one           |
+| brush    | a tuft of her on the rug                                          |
+| sit      | the dent he left beside her bed                                   |
+| pet      | nothing to find, but the purr deepens the longer he holds on      |
+| leaveout | the yarn, a treat or the catnip on the floor, waiting to be found |
+| boxout   | a box in the room, which she can then decide to get into          |
 
-Before this, `bring` left nothing two times in three and `brush` and `sit` left nothing at all: he
-pressed a button, she was told he had done something, and the room was exactly as it had been. A
-present that does not exist is a worse gesture than no present.
+An action that leaves nothing is a button he presses, a line she is told, and a room exactly as it
+was. A present that does not exist is a worse gesture than no present, which is why `brush` and `sit`
+each got a mark and why `bring her something` was cut: it rolled a die between a box and a bow, so it
+could never say what he brought, because he never chose. `leaveout` replaced it and the `fed` trait
+is now counted off that.
 
 A third thing time does, which can go backwards: the cat learns when he actually turns up. He tells
 the room "usually home around six" once and then never again, so it watches the first time he looks
@@ -307,9 +298,10 @@ rests go pale over a year, and the plant puts out new fronds at three months and
 Both of them can get out, and the two doors are deliberately different sizes.
 
 **He can delete the room**, because he made it and most of what is in it is his: the notes, the cat,
-the day he asked it to remember. It goes for both of them immediately. The confirmation is the cat's
-name, typed. A dialog with a red button in it is one mis-tap away from both of their years, and the
-name is the one thing a person who means it can produce and a stray thumb cannot.
+the day he asked it to remember. It goes for both of them immediately. The confirmation is his own
+name, typed. A dialog with a red button in it is one mis-tap away from both of their years, and a
+typed name is the one thing a person who means it can produce and a stray thumb cannot. It asks for
+his and not hers because she is the cat, and "type her name to erase her" is a different sentence.
 
 Deleted and erased are two different things, a week apart. The room is unreachable from the moment he
 confirms, to both of them; the week only decides how long it is still possible to change his mind. He
@@ -437,6 +429,14 @@ it becomes a chore and the other person becomes someone you're letting down. She
 low mood, she comes over and stays. And you only ever see what the other person did, never whether
 they saw yours, because knowing someone saw and did nothing is worse than not knowing.
 
+**The one I got wrong first.** The app let him name a cat and then asked her to name herself, so it
+held two names for one person and could not say which of them she was. She is the cat. That is one
+sentence and it reached most of the copy in the app, because a sentence about a pet is rarely the
+same sentence about a person: "hold on Sofia to pet her" told her to hold herself, and typing the
+cat's name to delete the room became "type her name to erase her". It also moved the cat's own
+behaviour out of the room's dice and into her hands, which then had to be kept out of the tally her
+personality is derived from, or she would be learning traits from herself.
+
 **The interesting technical bit.** She learns what you usually do. That needed the whole history, but
 the visit log is capped at 40 entries to keep the object small, so a naive count over the log silently
 stopped being true once you passed 40 visits. There's a running tally alongside the log now. The bug
@@ -482,6 +482,10 @@ watches them; cloud is not, so she gives up on the sun and sits in her own spot.
 breath is on the glass and she leaves a nose print in it. At night the dark pane gives her eyes back.
 Wet paws walk a trail across the boards that dries in nine seconds. Hang something in the frame and she
 goes and sits under it.
+
+She also does things because she means to. She knocks something off the shelf, gets into the box he
+put out, and picks which of three things he finds. He is told the way she is told about him: the room
+is different when he opens it.
 
 None of it is announced. The room does these things and the app says nothing about them.
 

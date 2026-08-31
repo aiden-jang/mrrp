@@ -2,12 +2,12 @@ import type { Action, Cat, CatAct, Clock, Gift, Mood, RoomView, Treat } from "./
 
 const TOKEN_KEY = "mrrp:me";
 
-// Matched by App to show the room-is-gone screen. A deleted room answers 410 on every route, and the
-// thing it must never do is look like an ordinary failure the client would retry into.
+// App matches on this to show the room-is-gone screen. A deleted room answers 410 everywhere, and
+// must never look like an ordinary failure the client would retry into.
 export const GONE = "mrrp: this room is gone";
 
-// `undoUntil` is set only for the one who deleted it, and only until the week runs out. Everyone else
-// gets null, because for them the room is simply gone.
+// `undoUntil` is set only for the one who deleted it, and only for the week. Everyone else gets
+// null, because for them the room is simply gone.
 export class GoneError extends Error {
   constructor(readonly undoUntil: number | null) {
     super(GONE);
@@ -28,9 +28,8 @@ export function myToken(): string {
   return t;
 }
 
-// A brand new identity for this browser. Only used by the way back after leaving: her old token is
-// barred by the room on purpose, so coming back has to be a new one rather than an unbarring, which
-// would make the bar meaningless.
+// A brand new identity for this browser. The room bars her old token on purpose, so coming back
+// has to mint a new one; unbarring the old one would make the bar meaningless.
 export function forgetMe(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
@@ -79,11 +78,8 @@ export const lastRoom = {
   set: (id: string) => localStorage.setItem("mrrp:room", id),
 };
 
-// Called when a room turns out to be gone. Without it the landing page keeps offering "back to the
-// room" and the door keeps drawing a cat that no longer exists, both of which lead to the same dead
-// end. The seat token stays: it is this browser's name, not this room's.
-// Called when a room turns out to be gone. Without it the landing page keeps offering "back to the
-// room" and the door keeps drawing a cat that no longer exists.
+// Call when a room turns out to be gone, or the landing page keeps offering "back to the room".
+// Keep the seat token: it is this browser's name, not this room's.
 export function forgetRoom(id: string): void {
   try {
     if (localStorage.getItem("mrrp:room") === id) localStorage.removeItem("mrrp:room");
@@ -94,8 +90,8 @@ export function forgetRoom(id: string): void {
   }
 }
 
-// Without this, a link opened on a phone that has ever used mrrp seats you silently under the name
-// it remembers. Don't use `lastRoom`: App writes that for any id in the path, opened or not.
+// Without this, a link opened on a phone that has used mrrp before seats you silently under the
+// remembered name. Don't use `lastRoom`: App writes that for any id in the path, opened or not.
 export function beenHere(id: string): boolean {
   try {
     return localStorage.getItem(`mrrp:mine:${id}`) !== null || localStorage.getItem(`mrrp:cat:${id}`) !== null;
@@ -187,8 +183,8 @@ export async function doRelease(id: string): Promise<void> {
   if (!r.ok) throw new Error("Couldn't free her seat.");
 }
 
-// His. The cat's name is typed rather than confirmed, because a room is both of their years and a
-// confirm dialog is one mis-tap away from gone.
+// His. Typing the cat's name beats a confirm dialog: the room is both of their years, and a
+// dialog is one mis-tap from gone.
 export async function doDelete(id: string, name: string): Promise<number> {
   const r = await send(`/api/room/${id}/delete`, { me: myToken(), name });
   if (r.status === 410) throw await goneFrom(r);

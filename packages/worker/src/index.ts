@@ -20,8 +20,8 @@ const VALID_MOODS: Mood[] = ["good", "tired", "stressed", "sad", "lonely", "bore
 
 const room = (env: Env, id: string) => env.ROOM.get(env.ROOM.idFromName(id));
 
-// Forwarded, not parsed: this Worker never holds the session secret. An outage means "not signed
-// in", which is a state the whole app works in.
+// Forward, never parse: this Worker must not hold the session secret. An outage reads as "not
+// signed in", which the whole app works in.
 async function accountOf(request: Request, env: Env): Promise<string | null> {
   try {
     const user = await getSessionUser(request, env.AUTH_URL);
@@ -53,9 +53,8 @@ app.get("/api/room/:id", async (c) => {
   try {
     return c.json(await room(c.env, id).view(me, c.req.query("name") ?? null, account));
   } catch (e) {
-    // Handled here rather than by the shared handler below, because this is the one route that has to
-    // say more than "gone": the person who deleted the room can still put it back, and this is where
-    // he lands when he does not mean it.
+    // Not the shared gone-handler below: this is the one route that says more than "gone", because
+    // whoever deleted the room can still put it back and lands here when he did not mean it.
     if ((e as Error).message !== ROOM_GONE) throw e;
     return c.json({ error: "gone", undoUntil: await room(c.env, id).undoUntil(me) }, 410);
   }
@@ -135,9 +134,8 @@ app.post("/api/room/:id/link", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "that account already has a seat here" }, 409);
 });
 
-// Dev only. DEV_TOOLS lives in `.dev.vars`, which `wrangler deploy` never uploads. Do not gate this
-// on the hostname: `wrangler dev` rewrites the URL to the configured route, so local looks exactly
-// like production. Holding a seat is checked again inside the room.
+// Dev only, gated on DEV_TOOLS in `.dev.vars`, which `wrangler deploy` never uploads. Don't gate
+// on hostname: `wrangler dev` rewrites the URL to the configured route, so local looks like prod.
 app.post("/api/room/:id/age", async (c) => {
   if (c.env.DEV_TOOLS !== "on") return c.json({ error: "not found" }, 404);
 
@@ -306,7 +304,7 @@ app.get("/api/room/:id/export", async (c) => {
   const copy = await room(c.env, id).exportFor(me);
   if (!copy) return c.json({ error: "not your room to copy" }, 403);
 
-  // Named for the room and dated, because this ends up in a downloads folder next to everything else.
+  // Name it for the room and date it: this lands in a downloads folder next to everything else.
   const day = new Date().toISOString().slice(0, 10);
   return new Response(JSON.stringify(copy, null, 2), {
     headers: {

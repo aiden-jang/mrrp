@@ -15,21 +15,10 @@ export const ACTIONS: { id: Action; label: string; past: string; mine: string }[
   { id: "photo", label: "Take her photo", past: "took a photo of you", mine: "took her photo" },
 ];
 
-/*
- * The things she does as the cat, chosen rather than rolled.
- *
- * Everything the cat did used to be the room's dice: the shelf came down on an 18% chance when she
- * visited, the box happened once a day on its own. She is the cat, so these are hers to decide, and
- * he finds out the same way she finds out about him -- by the room being different when he opens it.
- *
- * `past` finishes "<she> ___", which HE reads. `mine` finishes "He'll see that you ___", hers.
- */
+// `past` finishes "<she> ___", which HE reads. `mine` finishes "He'll see that you ___", hers.
 export type CatAct = "shelf" | "box" | "gift";
 
-/*
- * Everything the log can hold. His buttons, her cat acts, and the two things he does from his own
- * panel: leaving something out, and putting a box out for her to get into.
- */
+/** Everything the log can hold: his buttons, her cat acts, and what he does from his own panel. */
 export type LogAction = Action | CatAct | "leaveout" | "boxout";
 
 export const CAT_ACTS: { id: CatAct; label: string; past: string; mine: string }[] = [
@@ -40,17 +29,11 @@ export const CAT_ACTS: { id: CatAct; label: string; past: string; mine: string }
     mine: "knocked something off the shelf",
   },
   { id: "box", label: "Get in the box", past: "got in the box", mine: "got in the box" },
-  // Not offered as a button: she picks the gift itself below, and this is how that reaches him.
+  // Not a button: she picks the gift itself, and this is how that reaches him.
   { id: "gift", label: "Leave him something", past: "left you something", mine: "left him something" },
 ];
 
-/*
- * What he leaves out for her, mirroring the gift she leaves him.
- *
- * The room already knows how to draw all three: they were typed easter eggs, animations with no
- * state behind them. Left out on purpose they become the other half of the gift -- she finds it
- * waiting the next time she opens the room, and him being told she took it is the point.
- */
+/** What he leaves out for her, mirroring the gift she leaves him. */
 export type Treat = "yarn" | "treat" | "catnip";
 
 export interface LeftOut {
@@ -126,13 +109,7 @@ export type Arrival =
   | { kind: "brought"; at: number; treat: Treat }
   | { kind: "first"; at: number; what: FirstKey };
 
-/*
- * Things that happen to the room rather than on a date.
- *
- * Every other milestone here is the calendar: a week, a month, an anniversary, the day he marked.
- * These are the ones the world hands you, noted once and then never again, which is the only way a
- * first stays a first.
- */
+/** Milestones the world hands the room rather than the calendar: first snow, first rain. */
 export type FirstKey = "snow" | "rain" | "storm";
 
 export type Gift = "leaf" | "cap" | "moth";
