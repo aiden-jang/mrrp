@@ -87,6 +87,21 @@ describe("who may do what", () => {
     expect((await view(HER)).cat.name).toBe("Miso");
   });
 
+  it("keeps the rest of her when he changes only her name", async () => {
+    // The route sends all six fields every time and leaves undefined in the ones nobody set, and a
+    // spread of undefined overwrites. Renaming her used to leave a cat with no fur to draw.
+    await seat();
+    const before = (await view(HIM)).cat;
+    expect((await post("dress", { me: HIM, name: "Miso" })).status).toBe(200);
+
+    const after = (await view(HIM)).cat;
+    expect(after.name).toBe("Miso");
+    expect(after.fur).toBe(before.fur);
+    expect(after.belly).toBe(before.belly);
+    expect(after.eyes).toBe(before.eyes);
+    expect(after.tabby).toBe(before.tabby);
+  });
+
   it("only lets him set whose day the room runs on", async () => {
     await seat();
     expect((await post("clock", { me: HER, tz: "Asia/Tokyo" })).status).toBe(403);

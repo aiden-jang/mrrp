@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import type { Action, Arrival, Cat as CatLook, Mood, RoomView } from "./types.js";
-import { ACTIONS, MOODS } from "./types.js";
+import type { Action, CatAct, Arrival, Cat as CatLook, Gift, Mood, RoomView } from "./types.js";
+import { ACTIONS, CAT_ACTS, MOODS } from "./types.js";
 import {
   doAct,
   doClock,
@@ -15,6 +15,8 @@ import {
   doOurDay,
   doRecover,
   doRelease,
+  doCatAct,
+  doLeaveGift,
   doSay,
   doTell,
   doTidy,
@@ -242,13 +244,21 @@ function whenish(at: number): string {
   return `${days} days ago`;
 }
 
-const pastTense = (a: Action) => ACTIONS.find((x) => x.id === a)?.past ?? "was here";
+const pastTense = (a: Action | CatAct) =>
+  ACTIONS.find((x) => x.id === a)?.past ?? CAT_ACTS.find((x) => x.id === a)?.past ?? "was here";
 
 const GIFT_NAMES: Record<string, string> = {
   leaf: "leaf",
   cap: "bottle cap",
   moth: "moth",
 };
+
+/** The same three, as something to pick rather than something the room rolls. */
+const GIFT_CHOICES: { id: Gift; label: string }[] = [
+  { id: "leaf", label: "a leaf" },
+  { id: "cap", label: "a bottle cap" },
+  { id: "moth", label: "a moth" },
+];
 
 const FOUND_NAMES: Record<string, string> = {
   constellation: "the stars in the window",
@@ -937,6 +947,24 @@ function RoomPage({ id }: { id: string }) {
     setSavingSetup(false);
   };
 
+  const catAct = async (act: CatAct) => {
+    play("mrrp");
+    try {
+      setView(await doCatAct(id, act));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't do that.");
+    }
+  };
+
+  const leaveGift = async (gift: Gift) => {
+    play("settle");
+    try {
+      setView(await doLeaveGift(id, gift));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't leave that.");
+    }
+  };
+
   const say = async () => {
     setSaving(true);
     try {
@@ -1159,7 +1187,11 @@ function RoomPage({ id }: { id: string }) {
             onProps={handleRoomProps}
             dreamContext={{
               found: foundKeys(),
-              recent: view.theirRecent.map((visit) => visit.action),
+              // What she dreams about is what he does for her. Her own doings are in this log now
+              // and are not dream material: she is the one who did them.
+              recent: view.theirRecent
+                .map((visit) => visit.action)
+                .filter((a): a is Action => ACTIONS.some((x) => x.id === a)),
               trait: view.personality?.trait ?? null,
               framed: view.framed,
               hasBox: view.box,
@@ -1571,6 +1603,37 @@ function RoomPage({ id }: { id: string }) {
 
             <BlanketRow current={view.blanket} busy={bedding} onPick={(k, st) => void pickBlanket(k, st)} />
 
+            {/* The cat's own doings, hers to choose. The room used to roll these: the shelf on an
+                18% chance when she looked in, the box once a day on its own. */}
+            <p className={s.tellLabel}>Be a cat about it</p>
+            <div className={s.moodRow}>
+              {CAT_ACTS.map((a) => (
+                <button
+                  key={a.id}
+                  className={s.mood}
+                  style={{ justifyContent: "center", padding: "9px 8px" }}
+                  onClick={() => void catAct(a.id)}
+                >
+                  {a.label}
+                </button>
+              ))}
+            </div>
+
+            <p className={s.tellLabel}>Leave him something</p>
+            <div className={s.moodRow}>
+              {GIFT_CHOICES.map((g) => (
+                <button
+                  key={g.id}
+                  aria-pressed={view.gift === g.id}
+                  className={`${s.mood} ${view.gift === g.id ? s.moodOn : ""}`}
+                  style={{ justifyContent: "center", padding: "9px 8px" }}
+                  onClick={() => void leaveGift(g.id)}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
+
             <p className={s.tellLabel}>
               {view.catMood
                 ? `still ${MOODS.find((m) => m.id === view.catMood)?.label}?`
@@ -1618,6 +1681,12 @@ function RoomPage({ id }: { id: string }) {
                     </>
                   )}
                 </p>
+                {/* What she has been doing in there, the way she is told what he did. */}
+                {last && (
+                  <p className={s.small} style={{ marginTop: 4 }}>
+                    She {pastTense(last.action)}, {whenish(last.at)}.
+                  </p>
+                )}
                 <p className={s.small} style={{ marginTop: 4 }}>
                   Go and be in there. That's all it takes.
                 </p>

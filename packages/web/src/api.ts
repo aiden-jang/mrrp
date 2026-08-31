@@ -1,4 +1,4 @@
-import type { Action, Cat, Clock, Mood, RoomView } from "./types.js";
+import type { Action, Cat, CatAct, Clock, Gift, Mood, RoomView } from "./types.js";
 
 const TOKEN_KEY = "mrrp:me";
 
@@ -247,6 +247,18 @@ export async function doOurDay(
 export async function doDraw(id: string, cells: string): Promise<RoomView> {
   const r = await send(`/api/room/${id}/draw`, { me: myToken(), cells });
   if (!r.ok) throw new Error("Couldn't hang that up.");
+  return r.json() as Promise<RoomView>;
+}
+
+export async function doCatAct(id: string, act: CatAct): Promise<RoomView> {
+  const r = await send(`/api/room/${id}/heract`, { me: myToken(), act });
+  if (!r.ok) throw new Error("Couldn't do that.");
+  return r.json() as Promise<RoomView>;
+}
+
+export async function doLeaveGift(id: string, gift: Gift): Promise<RoomView> {
+  const r = await send(`/api/room/${id}/gift`, { me: myToken(), gift });
+  if (!r.ok) throw new Error("Couldn't leave that.");
   return r.json() as Promise<RoomView>;
 }
 

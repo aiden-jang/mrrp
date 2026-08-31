@@ -16,6 +16,27 @@ export const ACTIONS: { id: Action; label: string; past: string; mine: string }[
   { id: "photo", label: "Take her photo", past: "took a photo of you", mine: "took her photo" },
 ];
 
+/*
+ * The things she does as the cat, chosen rather than rolled.
+ *
+ * Everything the cat did used to be the room's dice: the shelf came down on an 18% chance when she
+ * visited, the box happened once a day on its own. She is the cat, so these are hers to decide, and
+ * he finds out the same way she finds out about him -- by the room being different when he opens it.
+ *
+ * `past` finishes "<she> ___", which HE reads. `mine` finishes "He'll see that you ___", hers.
+ */
+export type CatAct = "shelf" | "box";
+
+export const CAT_ACTS: { id: CatAct; label: string; past: string; mine: string }[] = [
+  {
+    id: "shelf",
+    label: "Knock something off the shelf",
+    past: "knocked something off the shelf",
+    mine: "knocked something off the shelf",
+  },
+  { id: "box", label: "Get in the box", past: "got in the box", mine: "got in the box" },
+];
+
 export type Mood = "good" | "tired" | "stressed" | "sad" | "lonely" | "bored" | "feral" | "done" | "horny";
 
 export const MOODS: { id: Mood; label: string; said: string }[] = [
@@ -54,7 +75,7 @@ export interface Note {
 export interface Visit {
   at: number;
   who: string;
-  action: Action;
+  action: Action | CatAct;
 }
 
 export interface Told2 {
@@ -68,7 +89,7 @@ export interface Told {
 }
 
 export type Arrival =
-  | { kind: "action"; at: number; action: Action }
+  | { kind: "action"; at: number; action: Action | CatAct }
   | { kind: "mood"; at: number; mood: Mood }
   | { kind: "line"; at: number; text: string }
   | { kind: "drawn"; at: number; cells: string }

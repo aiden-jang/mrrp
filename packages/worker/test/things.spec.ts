@@ -101,13 +101,15 @@ describe("her line back", () => {
 });
 
 describe("what she leaves him", () => {
-  it("is his to find, and never hers or a stranger's", async () => {
+  it("is his to find, hers to see she left it, and never a stranger's", async () => {
     await seat();
     away(9);
     await view(HER);
 
+    // He is the one who finds it and picks it up. She can see it because she chooses it now, and
+    // choosing something you cannot see is choosing into the dark.
     expect((await view(HIM)).gift).not.toBeNull();
-    expect((await view(HER)).gift).toBeNull();
+    expect((await view(HER)).gift).not.toBeNull();
     expect((await view("strangerstranger")).gift).toBeNull();
   });
 

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { getSessionUser } from "@aidenjang/auth-client";
-import type { Action, Mood } from "./types.js";
+import type { Action, CatAct, Gift, Mood } from "./types.js";
 import type { Tally } from "./remembers.js";
 import type { Env } from "./env.js";
 import { ROOM_GONE } from "./room.js";
@@ -12,6 +12,8 @@ const ROOM_RE = /^[a-z0-9]{6,24}$/;
 // Fifteen by nine. The room checks the same thing again; this is the cheap gate at the door.
 const DOODLE_RE = /^[0-4]{135}$/;
 const VALID: Action[] = ["pet", "brush", "bring", "sit", "photo"];
+const VALID_CAT_ACTS: CatAct[] = ["shelf", "box"];
+const VALID_GIFTS: Gift[] = ["leaf", "cap", "moth"];
 const VALID_MOODS: Mood[] = ["good", "tired", "stressed", "sad", "lonely", "bored", "feral", "done", "horny"];
 
 const room = (env: Env, id: string) => env.ROOM.get(env.ROOM.idFromName(id));
@@ -64,6 +66,24 @@ app.post("/api/room/:id/act", async (c) => {
     return c.json({ error: "bad request" }, 400);
   }
   return c.json(await room(c.env, id).act(body.me, body.action as Action));
+});
+
+app.post("/api/room/:id/heract", async (c) => {
+  const id = c.req.param("id");
+  const body = (await c.req.json().catch(() => null)) as { me?: string; act?: CatAct } | null;
+  if (!ROOM_RE.test(id) || !body?.me || !VALID_CAT_ACTS.includes(body.act as CatAct)) {
+    return c.json({ error: "bad request" }, 400);
+  }
+  return c.json(await room(c.env, id).herAct(body.me, body.act as CatAct));
+});
+
+app.post("/api/room/:id/gift", async (c) => {
+  const id = c.req.param("id");
+  const body = (await c.req.json().catch(() => null)) as { me?: string; gift?: Gift } | null;
+  if (!ROOM_RE.test(id) || !body?.me || !VALID_GIFTS.includes(body.gift as Gift)) {
+    return c.json({ error: "bad request" }, 400);
+  }
+  return c.json(await room(c.env, id).leaveGift(body.me, body.gift as Gift));
 });
 
 app.post("/api/room/:id/tell", async (c) => {

@@ -1,6 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import type {
   Action,
+  CatAct,
   Arrival,
   Cat,
   Clock,
@@ -248,6 +249,46 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
+  /*
+   * Her half of `act`: the things the cat does, done on purpose.
+   *
+   * Deliberately not folded into the tally. That tally is what her personality is derived from, and
+   * it is meant to describe what HE keeps doing for her -- adding her own doings to it would have
+   * her learning traits from herself.
+   */
+  async herAct(me: string, act: CatAct): Promise<RoomView> {
+    await this.guard();
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (!people[me]) return this.build(me, people);
+    if (this.roles(people).her !== me) return this.build(me, people);
+
+    if (act === "shelf") await this.ctx.storage.put("shelfDown", true);
+    if (act === "box") {
+      const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
+      await this.ctx.storage.put("boxDay", localDayNumber(Date.now(), clock.tz));
+    }
+
+    const previous = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
+    await this.ctx.storage.put("log", [{ at: Date.now(), who: me, action: act }, ...previous].slice(0, LOG_KEEP));
+
+    people[me].lastSeen = Date.now();
+    await this.ctx.storage.put("people", people);
+    return this.build(me, people);
+  }
+
+  /** Which of the three she leaves him. The room still rolls one if she has not chosen. */
+  async leaveGift(me: string, gift: Gift): Promise<RoomView> {
+    await this.guard();
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (!people[me]) return this.build(me, people);
+    if (this.roles(people).her !== me) return this.build(me, people);
+
+    await this.ctx.storage.put("gift", gift);
+    people[me].lastSeen = Date.now();
+    await this.ctx.storage.put("people", people);
+    return this.build(me, people);
+  }
+
   async putBack(me: string): Promise<false | "tidy" | "again"> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -280,7 +321,16 @@ export class Room extends DurableObject<Env> {
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (this.roles(people).him !== me) return false;
     const current = (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT;
-    await this.ctx.storage.put("cat", { ...current, ...cat });
+    /*
+     * Drop the keys that were not sent.
+     *
+     * The route builds all six every time and leaves `undefined` in the ones the caller omitted, and
+     * spreading an explicit undefined overwrites. A dress that set only the name therefore wiped her
+     * fur, belly, eyes and stripes, leaving a cat the UI cannot draw. The form always sends the whole
+     * look, which is why nobody had seen it.
+     */
+    const given = Object.fromEntries(Object.entries(cat).filter(([, v]) => v !== undefined));
+    await this.ctx.storage.put("cat", { ...current, ...given });
     return true;
   }
 
@@ -906,6 +956,13 @@ export class Room extends DurableObject<Env> {
         const line = (await this.ctx.storage.get<Told2>("herLine")) ?? null;
         if (mood && mood.at > since) arrivals.push({ kind: "mood", at: mood.at, mood: mood.mood });
         if (line && line.at > since) arrivals.push({ kind: "line", at: line.at, text: line.text });
+        // Her doings reach him the same way his reach her: the room is different when he opens it.
+        arrivals.push(
+          ...log
+            .filter((visit) => visit.who === her && visit.at > since)
+            .slice(0, 4)
+            .map((visit) => ({ kind: "action" as const, at: visit.at, action: visit.action })),
+        );
       }
       const hung = await this.ctx.storage.get<Doodle>("doodle");
       if (hung && hung.by !== me && hung.at > since) {
@@ -955,7 +1012,14 @@ export class Room extends DurableObject<Env> {
       ourDay: seated && !youAreHer ? ((await this.ctx.storage.get<OurDay>("ourDay")) ?? null) : null,
       framed: (await this.ctx.storage.get<boolean>("framed")) ?? false,
       shelfDown: (await this.ctx.storage.get<boolean>("shelfDown")) ?? false,
-      gift: me === him ? ((await this.ctx.storage.get<Gift>("gift")) ?? null) : null,
+      /*
+       * Both of them, now that it is hers to choose rather than the room's to roll.
+       *
+       * It was his alone because it was a surprise he found on the floor. It still is -- he is the
+       * one who picks it up, and taking it is what tells her he was here -- but she has to be able
+       * to see what she left him, or choosing is choosing into the dark.
+       */
+      gift: seated ? ((await this.ctx.storage.get<Gift>("gift")) ?? null) : null,
       blanket: (await this.ctx.storage.get<Blanket>("blanket")) ?? null,
       expectAt: learnedHour((await this.ctx.storage.get<Homing>("homing")) ?? null, clock.homeHour),
       sky: ((await this.ctx.storage.get<Weather>("weather"))?.sky ?? "clear") as Sky,
@@ -972,7 +1036,9 @@ export class Room extends DurableObject<Env> {
       recoveryCode: seated ? await this.recoveryCode(youAreHer ? "her" : "him") : null,
       seat: seated ? me : null,
       linked: seated ? (people[me]?.account ?? null) !== null : false,
-      theirRecent: youAreHer && him ? log.filter((v) => v.who === him).slice(0, 4) : [],
+      /* Whatever the other one did, whichever seat is asking. It used to be his doings only,
+         because only his existed; hers do now. */
+      theirRecent: otherId ? log.filter((v) => v.who === otherId).slice(0, 4) : [],
       theyCameAfter: !!catTold && !!them && youAreHer && them.lastSeen > catTold.at,
       arrivals,
       noticed: seated ? foundCount(await this.found()) : 0,

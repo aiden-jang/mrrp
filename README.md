@@ -26,6 +26,18 @@ reporting her own arrival back to her, in her own name.
 The full moon was the last one: it is the only ambient line both seats read, and it told her the moon
 was in a window belonging to somebody with her name. It is her window on her side.
 
+**She acts as the cat now, instead of the room acting for her.** Everything the cat did was the
+room's dice: the shelf came down on an 18% roll when she looked in, the box happened once a day on
+its own, and the gift she left him was picked at random from three. She is the cat, so those are
+hers: she knocks the shelf off because she means to, gets in the box, and chooses which of the three
+he finds. He is told the same way she is told about him -- the room is different when he opens it,
+and a line says what she did.
+
+Deliberately kept out of two places. Her acts do not count toward the tally, because that tally is
+what her personality is derived from and she would be learning traits from herself; and they are not
+dream material, for the same reason. TypeScript caught both the moment the log started carrying two
+vocabularies.
+
 You tell the cat how you are. It answers, and the other person finds out.
 
 ```bash
