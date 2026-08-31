@@ -287,6 +287,27 @@ perfectly good view of an empty room and push it to whatever tabs were still ope
 dead-link-becomes-a-fresh-room bug with a socket in place of a page load. Those tabs are told the
 room is gone and closed instead.
 
+## A pet has to be felt, because there is nothing to draw
+
+Every other thing he does leaves a mark: a tuft, a dent, a picture, a box, something on the floor.
+The socket carries those to her in the same second and the room simply looks different. Petting
+leaves nothing on purpose, so once the room was live it was the one action that still arrived as
+silence.
+
+Two things were in the way. Nothing on her side listened for "they just did something": every
+`setNudge` in the app fires on the local person's own tap. And the line that would have said so was
+switched off while both seats were present, which was right when the room was fifteen seconds stale
+and that line could only offer "looked in a while ago", and wrong the moment it became the live one.
+
+A rising `theirRecent[0].at` on a pushed view is the signal, and it costs nothing because the room
+already sends it. It fires the same bounce and the same cue their own tap makes, so a pet sounds the
+same from either side of it.
+
+The trap is the first view. It carries whatever they last did, which could be from an hour ago, so
+firing on it would greet you with a purr for something you already knew about. `heard()` in
+`heard.ts` returns false until it has a previous timestamp to compare against, and that rule is what
+its tests are mostly about.
+
 ## Nothing accumulates into an inbox
 
 The arrival card is capped and clears itself. The visit log is bounded. There is no unread count, no
