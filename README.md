@@ -277,6 +277,13 @@ like the notes. Nothing in here may pile up on her.
 | leaveout | the yarn, a treat or the catnip on the floor, waiting to be found |
 | boxout   | a box in the room, which she can then decide to get into          |
 
+Every one of these is also reported back in words, under the buttons that made it: "She'll find a
+tuft of her on the rug and the picture on the wall." Her two cat acts get the same, and both rows
+light the buttons whose mark is currently in the room. The marks themselves are a few pixels on a
+canvas the size of a postcard, so a button whose only effect was on the drawing read as a button that
+did nothing. The line says what is in the room now rather than who did it, which keeps it clear of
+rule 3.
+
 An action that leaves nothing is a button he presses, a line she is told, and a room exactly as it
 was. A present that does not exist is a worse gesture than no present, which is why `brush` and `sit`
 each got a mark and why `bring her something` was cut: it rolled a die between a box and a bow, so it

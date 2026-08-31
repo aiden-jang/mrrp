@@ -629,6 +629,12 @@
   cursor: pointer;
 }
 
+/* Quieter than .btnGo: this marks something already in the room, not the thing to press next. */
+.btnOn {
+  border-color: var(--honey);
+  box-shadow: inset 0 0 0 1px var(--honey);
+}
+
 .btnGo {
   background: var(--honey);
   border-color: var(--honey);
