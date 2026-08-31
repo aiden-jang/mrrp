@@ -331,6 +331,14 @@ was enough while the room was polled, because whatever arrived replaced it and y
 things at once. Live, they can do three things in a minute, and a self-replacing line loses the first
 two.
 
+They still overlapped on the first open after being away, because a thing you missed is also a thing
+that just happened, so both claimed it. The split is a high-water mark: the card owns everything up
+to the moment you opened the room, the list owns everything after. It has to be a mark and not a flag
+tied to whether the card is on screen, or dismissing the card would put everything it showed straight
+back into the list, which is the duplication again with an extra step. Only `action` arrivals move
+the mark, because a mood or a line she left is not in `theirRecent` and letting one of those move it
+would hide a real action from just before.
+
 Collapsing the old branch turned up dead code. It read "both here, else they are here, else what they
 last did", and once presence counted an open socket, `bothHereNow` and `themHereNow` became the same
 question for anyone holding a seat, so the middle branch could never be reached.

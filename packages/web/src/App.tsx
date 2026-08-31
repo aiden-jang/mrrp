@@ -54,6 +54,7 @@ import {
 import { Cat } from "./Cat.js";
 import { useLive } from "./live.js";
 import { heard } from "./heard.js";
+import { coveredBy, liveOnly } from "./recent.js";
 import { dayApart, HER_SPOT, mixHex, sceneFor, type Scene } from "./hours.js";
 import { moonLine } from "./moon.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
@@ -834,6 +835,14 @@ function RoomPage({ id }: { id: string }) {
   }, [line, lineOpen]);
   const [awayNote, setAwayNote] = useState<string | null>(null);
   const [arrivalCard, setArrivalCard] = useState<Arrival[] | null>(null);
+  // How far the card has already told them. See recent.ts: it is a mark rather than a flag so that
+  // dismissing the card does not put everything it showed back into the list.
+  const covered = useRef(0);
+  const showArrivals = useCallback((arrivals: Arrival[]) => {
+    if (arrivals.length === 0) return;
+    covered.current = coveredBy(arrivals, covered.current);
+    setArrivalCard(arrivals);
+  }, []);
   const [saving, setSaving] = useState(false);
   const [setup, setSetup] = useState(false);
   const [releasing, setReleasing] = useState(false);
@@ -883,7 +892,7 @@ function RoomPage({ id }: { id: string }) {
         // Him only. To her this would be the room reporting her own arrival back to her.
         const back = next.youAreHer ? null : awayLine(next.awayMs, next.cat.name);
         if (back) setAwayNote((prev) => prev ?? back);
-        if (next.arrivals.length > 0) setArrivalCard(next.arrivals);
+        showArrivals(next.arrivals);
         setErr(null);
       } catch (e) {
         // The one failure that must not be retried into. Everything else here is a dropped
@@ -896,7 +905,7 @@ function RoomPage({ id }: { id: string }) {
         setErr(`${e instanceof Error ? e.message : "Something went wrong."} Trying again in a moment.`);
       }
     },
-    [id],
+    [id, showArrivals],
   );
 
   /*
@@ -910,10 +919,10 @@ function RoomPage({ id }: { id: string }) {
     (next: RoomView) => {
       setView(next);
       lastCat.set(id, next.cat);
-      if (next.arrivals.length > 0) setArrivalCard(next.arrivals);
+      showArrivals(next.arrivals);
       setErr(null);
     },
-    [id],
+    [id, showArrivals],
   );
   const liveGone = useCallback(() => {
     forgetRoom(id);
@@ -1223,6 +1232,8 @@ function RoomPage({ id }: { id: string }) {
   const nightChrome = isNightChrome(scene.sun);
 
   const iAmHim = view.you !== null && !view.youAreHer;
+  // What they have done since the arrival card's last word, so the two never say the same thing.
+  const theirLive = liveOnly(view.theirRecent, covered.current);
   const hisMarks = listOf([
     view.brushed && "a tuft of her on the rug",
     view.satWith && "the dent beside her bed",
@@ -1640,8 +1651,8 @@ function RoomPage({ id }: { id: string }) {
             {/* Not hidden while you are both here. That was right when the room was 15 seconds
                 stale and this could only say "looked in a while ago"; now it is the live one, and
                 suppressing it muted the moment they are most likely to be watching. */}
-            {view.theirRecent.length > 0 ? (
-              <TheirRecent subject={<b>{view.them}</b>} items={view.theirRecent} />
+            {theirLive.length > 0 ? (
+              <TheirRecent subject={<b>{view.them}</b>} items={theirLive} />
             ) : view.themHereNow ? null : view.themLastAt ? (
               <p className={s.came}>
                 <b>{view.them}</b> looked in {whenish(view.themLastAt)}.
@@ -1827,7 +1838,7 @@ function RoomPage({ id }: { id: string }) {
                 </div>
 
                 {/* What she has been doing in there, the way she is told what he did. */}
-                <TheirRecent subject="She" items={view.theirRecent} />
+                <TheirRecent subject="She" items={theirLive} />
                 <p className={s.small} style={{ marginTop: 4 }}>
                   Go and be in there. That's all it takes.
                 </p>
