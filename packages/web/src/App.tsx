@@ -71,7 +71,6 @@ import { BLANKETS, BLANKET_KEYS, type BlanketKey } from "./blanket.js";
 const ACTION_SOUND: Record<Action, Cue> = {
   pet: "purr",
   brush: "brush",
-  bring: "thump",
   sit: "settle",
   photo: "shutter",
 };
@@ -245,8 +244,10 @@ function whenish(at: number): string {
   return `${days} days ago`;
 }
 
-const pastTense = (a: Action | CatAct) =>
-  ACTIONS.find((x) => x.id === a)?.past ?? CAT_ACTS.find((x) => x.id === a)?.past ?? "was here";
+const pastTense = (a: Action | CatAct | "leaveout") =>
+  a === "leaveout"
+    ? "left something out for you"
+    : (ACTIONS.find((x) => x.id === a)?.past ?? CAT_ACTS.find((x) => x.id === a)?.past ?? "was here");
 
 const GIFT_NAMES: Record<string, string> = {
   leaf: "leaf",
@@ -1210,7 +1211,9 @@ function RoomPage({ id }: { id: string }) {
               // and are not dream material: she is the one who did them.
               recent: view.theirRecent
                 .map((visit) => visit.action)
-                .filter((a): a is Action => ACTIONS.some((x) => x.id === a)),
+                .filter((a): a is Action | "leaveout" =>
+                  a === "leaveout" || ACTIONS.some((x) => x.id === a),
+                ),
               trait: view.personality?.trait ?? null,
               framed: view.framed,
               hasBox: view.box,

@@ -118,7 +118,7 @@ describe("what she comes to expect", () => {
   });
 
   it("stays silent when nothing really dominates", () => {
-    const spread = { pet: 5, brush: 4, sit: 4, bring: 4 };
+    const spread = { pet: 5, brush: 4, sit: 4, leaveout: 4 };
     expect(5 / 17).toBeLessThan(TRAIT_SHARE);
     expect(personalityFrom(spread, SETTLED)).toBeNull();
   });

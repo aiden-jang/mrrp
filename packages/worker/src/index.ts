@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { getSessionUser } from "@aidenjang/auth-client";
 import type { Action, CatAct, Gift, Mood, Treat } from "./types.js";
-import type { Tally } from "./remembers.js";
+import type { Tally, TallyKey } from "./remembers.js";
 import type { Env } from "./env.js";
 import { ROOM_GONE } from "./room.js";
 
@@ -11,10 +11,11 @@ const app = new Hono<{ Bindings: Env }>();
 const ROOM_RE = /^[a-z0-9]{6,24}$/;
 // Fifteen by nine. The room checks the same thing again; this is the cheap gate at the door.
 const DOODLE_RE = /^[0-4]{135}$/;
-const VALID: Action[] = ["pet", "brush", "bring", "sit", "photo"];
+const VALID: Action[] = ["pet", "brush", "sit", "photo"];
 const VALID_CAT_ACTS: CatAct[] = ["shelf", "box"];
 const VALID_GIFTS: Gift[] = ["leaf", "cap", "moth"];
 const VALID_TREATS: Treat[] = ["yarn", "treat", "catnip"];
+const TALLY_KEYS: TallyKey[] = ["pet", "brush", "sit", "photo", "leaveout"];
 const VALID_MOODS: Mood[] = ["good", "tired", "stressed", "sad", "lonely", "bored", "feral", "done", "horny"];
 
 const room = (env: Env, id: string) => env.ROOM.get(env.ROOM.idFromName(id));
@@ -143,9 +144,10 @@ app.post("/api/room/:id/age", async (c) => {
   const rawTally = (body.tally ?? null) as Record<string, unknown> | null;
   const tally: Tally | undefined = rawTally
     ? Object.fromEntries(
-        VALID.filter((action) => count(rawTally[action]) !== undefined).map((action) => [
-          action,
-          Math.floor(rawTally[action] as number),
+        // The tally keys, not the buttons: "leaveout" is what "fed" is made of and is not an action.
+        TALLY_KEYS.filter((key) => count(rawTally[key]) !== undefined).map((key) => [
+          key,
+          Math.floor(rawTally[key] as number),
         ]),
       )
     : undefined;

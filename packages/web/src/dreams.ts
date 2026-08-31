@@ -13,7 +13,7 @@ export interface Dream {
 
 export interface DreamContext {
   found: readonly DiscoveryKey[];
-  recent: readonly Action[];
+  recent: readonly (Action | "leaveout")[];
   trait: Trait | null;
   framed: boolean;
   hasBox: boolean;
@@ -28,9 +28,9 @@ const FROM_FOUND: Partial<Record<DiscoveryKey, { scene: DreamScene; line: string
   catnip: { scene: "fish", line: "whatever this one is, she is enjoying it." },
 };
 
-const FROM_ACTION: Partial<Record<Action, { scene: DreamScene; line: string }>> = {
+const FROM_ACTION: Partial<Record<Action | "leaveout", { scene: DreamScene; line: string }>> = {
   brush: { scene: "brush", line: "she is being brushed, somewhere behind her eyes." },
-  bring: { scene: "fish", line: "she is dreaming about food. this is not a surprise." },
+  leaveout: { scene: "fish", line: "she is dreaming about food. this is not a surprise." },
   photo: { scene: "sun", line: "a bright square of light, and somebody holding still." },
 };
 

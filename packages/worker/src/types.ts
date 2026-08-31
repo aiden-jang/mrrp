@@ -6,12 +6,11 @@ import type { Milestone, Personality } from "./remembers.js";
 export type { DiscoveryKey };
 export type { Milestone, Personality };
 
-export type Action = "pet" | "brush" | "bring" | "sit" | "photo";
+export type Action = "pet" | "brush" | "sit" | "photo";
 
 export const ACTIONS: { id: Action; label: string; past: string; mine: string }[] = [
   { id: "pet", label: "Pet her", past: "petted you", mine: "petted her" },
   { id: "brush", label: "Brush her", past: "brushed you", mine: "brushed her" },
-  { id: "bring", label: "Bring her something", past: "brought you something", mine: "brought her something" },
   { id: "sit", label: "Sit with her", past: "sat with you a while", mine: "sat with her" },
   { id: "photo", label: "Take her photo", past: "took a photo of you", mine: "took her photo" },
 ];
@@ -97,7 +96,7 @@ export interface Note {
 export interface Visit {
   at: number;
   who: string;
-  action: Action | CatAct;
+  action: Action | CatAct | "leaveout";
 }
 
 export interface Told2 {
@@ -111,7 +110,7 @@ export interface Told {
 }
 
 export type Arrival =
-  | { kind: "action"; at: number; action: Action | CatAct }
+  | { kind: "action"; at: number; action: Action | CatAct | "leaveout" }
   | { kind: "mood"; at: number; mood: Mood }
   | { kind: "line"; at: number; text: string }
   | { kind: "drawn"; at: number; cells: string }

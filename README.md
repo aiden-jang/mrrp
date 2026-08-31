@@ -508,6 +508,13 @@ The Worker is served only on its custom domain, with `workers_dev = false`. The 
 one private link sent to one person, so a second guessable `*.workers.dev` address should not
 exist for it.
 
+**"Bring her something" is gone.** It rolled a die between putting the box out and setting a flag, so
+the button could never say what he brought, because he never chose. What he leaves out replaces it
+and does the same job better: he picks the thing, she finds it, and he is told. Her personality's
+"fed" trait comes from the treats now, and so does the dream about food. The floor sprite that button
+used to set draws the thing he actually left, which also means it sits there waiting rather than
+existing only inside a six-second animation.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
