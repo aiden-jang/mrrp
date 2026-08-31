@@ -47,6 +47,35 @@ personality is derived from that tally and she would be learning traits from her
 dream material either, for the same reason: she is the one who did them. TypeScript caught both the
 moment the log started carrying two vocabularies.
 
+## Every button says what it left behind
+
+The marks his actions leave are two to four pixels on a hundred-by-eighty grid: a tuft on the rug, a
+dent by the bed, a mug moved to the floor. On a phone that is not feedback. Four separate reports of
+"I press it and nothing happens" were all this: the write landed, the log recorded it, and the room
+changed in a way nobody could see.
+
+So both action rows now light the button whose mark is in the room, the way the gift and treat
+buttons already did, and print one line under them: "She'll find a tuft of her on the rug and the
+picture on the wall." It names what is in the room rather than who did it, which is what keeps it
+clear of the rule that you never see your own actions echoed back.
+
+Petting is the exception and stays unlit, because it genuinely leaves nothing: the purr is the whole
+of it.
+
+## The box's near wall covered the treats
+
+`BOX_FRONT` is drawn after the cat, which is what puts her inside the box rather than behind it. It
+is 28 pixels wide at `BOX_X = 44`, so it covers x 44-71 at floor level. The treat sits at x 68 and
+the catnip at x 54, both on the floor, and both were drawn earlier in the frame. Any day he had put a
+box out, the box painted straight over whatever he left out for her.
+
+The floor props are drawn after the box now, in the same layer the yarn was already in. A test pins
+that order, because the symptom is invisible in a screenshot of a room with no box in it.
+
+The tap target had the same shape of bug: the draw gate read `boxOut || box || secretBox` and the hit
+test read `box || secretBox`, so a box he put out was drawn and could not be tapped. The test checks
+the two gates name the same three things.
+
 ## Finding a thing is being handed it
 
 He can leave the yarn, a treat or the catnip out for her. All three were typed easter eggs: animations

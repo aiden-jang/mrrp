@@ -778,7 +778,9 @@ export function Cat({
         }
         return;
       }
-      const boxIsHere = boxRef.current || performance.now() < secretBoxUntil.current;
+      // Must match `boxHere` in the draw loop. Without boxOut a box he put out is drawn and cannot
+      // be tapped.
+      const boxIsHere = boxOutRef.current || boxRef.current || performance.now() < secretBoxUntil.current;
       const hit = PROPS.find(
         (q) => (q.key !== "box" || boxIsHere) && x >= q.x && x < q.x + q.sp.w && y >= q.y && y < q.y + q.sp.h,
       );
@@ -2301,28 +2303,6 @@ export function Cat({
         px(25, FLOOR + 17, "#946270");
       }
 
-      if (treating) {
-        const ty = FLOOR + 18;
-        if (treatProgress < 0.68) {
-          const wiggle = reduce ? 0 : Math.round(Math.sin(t / 95));
-          rect(TREAT_X - 2, ty - 1, 5, 3, "#d78761");
-          px(TREAT_X - 3, ty + wiggle, "#d78761");
-          px(TREAT_X + 3, ty - wiggle, "#d78761");
-          px(TREAT_X, ty, "#f2b47e");
-        } else {
-          px(TREAT_X - 3, ty + 1, "#c87958");
-          px(TREAT_X + 2, ty, "#d99a6f");
-          px(TREAT_X + 4, ty + 1, "#c87958");
-        }
-      }
-      if (catnipActive && catnipProgress < 0.28) {
-        const cy = FLOOR + 18;
-        rect(CATNIP_X - 3, cy - 1, 7, 3, "#dbc499");
-        px(CATNIP_X - 2, cy - 2, "#6c9b57");
-        px(CATNIP_X, cy - 3, "#83ad64");
-        px(CATNIP_X + 2, cy - 2, "#5e8d4e");
-      }
-
       if (pianoPlaying) {
         const nextNote = pianoGame.current.history.length;
         for (const key of pianoKeysNow) {
@@ -2667,6 +2647,31 @@ export function Cat({
           px(Math.round(point.x), Math.round(point.y), `rgba(255,107,107,${opacity})`);
         }
       }
+      // Below BOX_FRONT, not above it. The box's near wall covers x 44-71 at floor level, which is
+      // exactly where the treat (68) and the catnip (54) sit, so drawn any earlier a box he put out
+      // paints straight over both of them.
+      if (treating) {
+        const ty = FLOOR + 18;
+        if (treatProgress < 0.68) {
+          const wiggle = reduce ? 0 : Math.round(Math.sin(t / 95));
+          rect(TREAT_X - 2, ty - 1, 5, 3, "#d78761");
+          px(TREAT_X - 3, ty + wiggle, "#d78761");
+          px(TREAT_X + 3, ty - wiggle, "#d78761");
+          px(TREAT_X, ty, "#f2b47e");
+        } else {
+          px(TREAT_X - 3, ty + 1, "#c87958");
+          px(TREAT_X + 2, ty, "#d99a6f");
+          px(TREAT_X + 4, ty + 1, "#c87958");
+        }
+      }
+      if (catnipActive && catnipProgress < 0.28) {
+        const cy = FLOOR + 18;
+        rect(CATNIP_X - 3, cy - 1, 7, 3, "#dbc499");
+        px(CATNIP_X - 2, cy - 2, "#6c9b57");
+        px(CATNIP_X, cy - 3, "#83ad64");
+        px(CATNIP_X + 2, cy - 2, "#5e8d4e");
+      }
+
       if (yarnPlaying) {
         const yarnY = FLOOR + 17 - Math.round(Math.abs(Math.sin(yarnProgress * Math.PI * 8)) * 2);
         const yc = "#d78aa0";

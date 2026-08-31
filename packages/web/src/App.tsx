@@ -1145,6 +1145,14 @@ function RoomPage({ id }: { id: string }) {
   const nightChrome = isNightChrome(scene.sun);
 
   const iAmHim = view.you !== null && !view.youAreHer;
+  const hisMarks = listOf([
+    view.brushed && "a tuft of her on the rug",
+    view.satWith && "the dent beside her bed",
+    view.framed && "the picture on the wall",
+    view.forHer && (TREATS.find((t) => t.id === view.forHer)?.label ?? null),
+    view.boxOut && "a box",
+  ]);
+  const herMarks = listOf([view.shelfDown && "the mug on the floor", view.box && "you in the box"]);
 
   const herDay = iAmHim ? dayApart(view.clock) : null;
   const moon = nightChrome ? moonLine(new Date(), view.cat.name, view.youAreHer) : null;
@@ -1630,11 +1638,13 @@ function RoomPage({ id }: { id: string }) {
                 // She cannot get into a box that is not there, and a button that silently does
                 // nothing is worse than one visibly not ready.
                 const noBox = a.id === "box" && !view.boxOut;
+                const done = a.id === "shelf" ? view.shelfDown : view.box;
                 return (
                   <button
                     key={a.id}
+                    aria-pressed={done}
                     disabled={noBox}
-                    className={s.mood}
+                    className={`${s.mood} ${done ? s.moodOn : ""}`}
                     style={{
                       justifyContent: "center",
                       padding: "9px 8px",
@@ -1647,6 +1657,11 @@ function RoomPage({ id }: { id: string }) {
                 );
               })}
             </div>
+            {herMarks && (
+              <p className={s.small} style={{ marginTop: 4 }}>
+                He'll find {herMarks}.
+              </p>
+            )}
 
             <p className={s.tellLabel}>Leave him something</p>
             <div className={s.moodRow}>
@@ -1759,13 +1774,25 @@ function RoomPage({ id }: { id: string }) {
             )}
 
             {iAmHim && (
-              <div className={s.row} style={{ marginTop: 14 }}>
-                {ACTIONS.map((a) => (
-                  <button key={a.id} className={s.btn} onClick={() => void act(a.id)}>
-                    {a.label}
-                  </button>
-                ))}
-              </div>
+              <>
+                <div className={s.row} style={{ marginTop: 14 }}>
+                  {ACTIONS.map((a) => (
+                    <button
+                      key={a.id}
+                      aria-pressed={HIS_MARKS[a.id]?.(view) ?? false}
+                      className={`${s.btn} ${HIS_MARKS[a.id]?.(view) ? s.btnOn : ""}`}
+                      onClick={() => void act(a.id)}
+                    >
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+                {hisMarks && (
+                  <p className={s.small} style={{ marginTop: 6 }}>
+                    She'll find {hisMarks}.
+                  </p>
+                )}
+              </>
             )}
 
             {iAmHim && (
@@ -2302,6 +2329,25 @@ function Select({
     </span>
   );
 }
+
+/*
+ * Everything he does leaves a mark a few pixels wide on a canvas the size of a postcard, so a button
+ * that only changed the drawing read as a button that did nothing. This is the room reported back in
+ * words. It says what is in the room now, not who did it, which is what keeps it out of rule 3.
+ */
+function listOf(parts: (string | false | null | undefined)[]): string | null {
+  const kept = parts.filter((v): v is string => typeof v === "string" && v.length > 0);
+  if (kept.length === 0) return null;
+  if (kept.length === 1) return kept[0]!;
+  return `${kept.slice(0, -1).join(", ")} and ${kept[kept.length - 1]}`;
+}
+
+/** Petting leaves nothing to find, which is why it is not in here. */
+const HIS_MARKS: Partial<Record<Action, (v: RoomView) => boolean>> = {
+  brush: (v) => v.brushed,
+  sit: (v) => v.satWith,
+  photo: (v) => v.framed,
+};
 
 export function isNightChrome(sun: number): boolean {
   return sun < NIGHT_BELOW;
