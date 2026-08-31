@@ -38,6 +38,16 @@ what her personality is derived from and she would be learning traits from herse
 dream material, for the same reason. TypeScript caught both the moment the log started carrying two
 vocabularies.
 
+**And he can leave something out for her**, which is the other half of the gift. The yarn, a treat
+and the catnip were typed easter eggs: animations the room already knew how to draw, with no state
+behind them and no way to mean anything. Left out on purpose they become an object with a life --
+she finds it the next time she opens the room, and he is told she did.
+
+Finding it is being handed it. There is no button for her to press, because a surprise you have to
+press for is a chore, so the view that carries it is the one that spends it. That has to happen after
+the view is built rather than before, which is the bug the first version had: it spent the thing on
+the way past and she was never given what she had just found.
+
 You tell the cat how you are. It answers, and the other person finds out.
 
 ```bash

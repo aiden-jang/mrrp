@@ -7,6 +7,8 @@ import type {
   Clock,
   Doodle,
   Gift,
+  LeftOut,
+  Treat,
   Mood,
   Note,
   RoomView,
@@ -196,7 +198,22 @@ export class Room extends DurableObject<Env> {
 
     void this.refreshWeather();
 
-    return this.build(me, people, lastVisit);
+    const built = await this.build(me, people, lastVisit);
+
+    /*
+     * She finds it by being handed it, and that same read spends it.
+     *
+     * After the view is built, not before: building is what puts it in front of her, so spending it
+     * first meant she was never given the thing she had just found. No separate "take it" call --
+     * there is nothing to press, and a surprise you have to press for is a chore. He learns she
+     * found it from his arrival card, the way she learns he took her gift.
+     */
+    if (built.forHer) {
+      await this.ctx.storage.delete("forHer");
+      await this.ctx.storage.put<LeftOut>("forHerTaken", { treat: built.forHer, at: Date.now() });
+    }
+
+    return built;
   }
 
   // Arrival order decides who is who, so anything handing a seat to a new token must carry the old
@@ -271,6 +288,19 @@ export class Room extends DurableObject<Env> {
     const previous = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
     await this.ctx.storage.put("log", [{ at: Date.now(), who: me, action: act }, ...previous].slice(0, LOG_KEEP));
 
+    people[me].lastSeen = Date.now();
+    await this.ctx.storage.put("people", people);
+    return this.build(me, people);
+  }
+
+  /** What he leaves out for her. The other half of the gift she leaves him. */
+  async leaveOut(me: string, treat: Treat): Promise<RoomView> {
+    await this.guard();
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (!people[me]) return this.build(me, people);
+    if (this.roles(people).him !== me) return this.build(me, people);
+
+    await this.ctx.storage.put<LeftOut>("forHer", { treat, at: Date.now() });
     people[me].lastSeen = Date.now();
     await this.ctx.storage.put("people", people);
     return this.build(me, people);
@@ -977,6 +1007,10 @@ export class Room extends DurableObject<Env> {
         const kept = await this.ctx.storage.get<{ gift: Gift; at: number }>("giftKept");
         if (kept && kept.at > since) arrivals.push({ kind: "kept", at: kept.at, gift: kept.gift });
       }
+      if (!youAreHer) {
+        const took = await this.ctx.storage.get<LeftOut>("forHerTaken");
+        if (took && took.at > since) arrivals.push({ kind: "took", at: took.at, treat: took.treat });
+      }
       const firsts = (await this.ctx.storage.get<Record<string, number>>("firsts")) ?? {};
       for (const [what, at] of Object.entries(firsts)) {
         if (at > since) arrivals.push({ kind: "first", at, what: what as FirstKey });
@@ -1020,6 +1054,8 @@ export class Room extends DurableObject<Env> {
        * to see what she left him, or choosing is choosing into the dark.
        */
       gift: seated ? ((await this.ctx.storage.get<Gift>("gift")) ?? null) : null,
+      /* Only she is shown it: it is a thing waiting for her, and he knows what he left. */
+      forHer: youAreHer ? ((await this.ctx.storage.get<LeftOut>("forHer"))?.treat ?? null) : null,
       blanket: (await this.ctx.storage.get<Blanket>("blanket")) ?? null,
       expectAt: learnedHour((await this.ctx.storage.get<Homing>("homing")) ?? null, clock.homeHour),
       sky: ((await this.ctx.storage.get<Weather>("weather"))?.sky ?? "clear") as Sky,
