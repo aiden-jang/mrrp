@@ -314,6 +314,10 @@ export class Room extends DurableObject<Env> {
     if (this.roles(people).her !== me) return this.build(me, people);
 
     await this.ctx.storage.put("gift", gift);
+    /* Her other two acts leave a record; this one did not, so the one thing she chose deliberately
+       for him was the only thing of hers he was never told about. */
+    const previous = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
+    await this.ctx.storage.put("log", [{ at: Date.now(), who: me, action: "gift" as const }, ...previous].slice(0, LOG_KEEP));
     people[me].lastSeen = Date.now();
     await this.ctx.storage.put("people", people);
     return this.build(me, people);
