@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Milestone, Personality } from "./types.js";
 import { AWAY_FLOOR_MS, awayLine, homingLine, milestoneLine, personalityLine } from "./remembers.js";
+import { moonLine } from "./moon.js";
 
 const TRAITS: Personality["trait"][] = ["petted", "brushed", "fed", "accompanied", "photographed"];
 const MILESTONES: Milestone[] = [
@@ -71,6 +72,16 @@ describe("who each seat is reading about", () => {
     for (const milestone of MILESTONES) {
       const hers = milestoneLine(milestone, "Ada", true);
       expect(hers, hers).not.toContain("Ada");
+    }
+  });
+
+  it("never names her in the window that is hers", () => {
+    // The full moon is the one ambient line both seats read.
+    const full = new Date("2026-03-03T12:00:00Z");
+    for (let d = 0; d < 40; d += 1) {
+      const day = new Date(full.getTime() + d * 86_400_000);
+      const hers = moonLine(day, "Ada", true);
+      if (hers) expect(hers, hers).not.toContain("Ada");
     }
   });
 

@@ -23,6 +23,9 @@ is what caught a draft that read "you have not once thanked" -- the room never i
 `awayLine` is told to him alone now, for the reason `homingLine` already gives: to her it is the room
 reporting her own arrival back to her, in her own name.
 
+The full moon was the last one: it is the only ambient line both seats read, and it told her the moon
+was in a window belonging to somebody with her name. It is her window on her side.
+
 You tell the cat how you are. It answers, and the other person finds out.
 
 ```bash
