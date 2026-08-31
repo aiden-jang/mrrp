@@ -250,6 +250,7 @@ export function Cat({
   together = false,
   onPet,
   onPoke,
+  leftOut = null,
   onFound,
   onCapture,
   onProps,
@@ -290,6 +291,8 @@ export function Cat({
   together?: boolean;
   onPet?: () => void;
   onPoke?: () => void;
+  /** Something he left out for her, played once when she opens the room and finds it. */
+  leftOut?: "yarn" | "treat" | "catnip" | null;
   onFound?: (key: DiscoveryKey) => void;
   onCapture?: (capture: () => Promise<Blob | null>) => void;
   onProps?: (props: { key: string; label: string }[], poke: (key: string) => void) => void;
@@ -389,6 +392,15 @@ export function Cat({
   const auroraUntil = useRef(-1e9);
   const summonUntil = useRef(-1e9);
   const secretBoxUntil = useRef(-1e9);
+  /*
+   * Play what he left out, once, on arrival.
+   *
+   * These three were typed easter eggs with no state behind them, so the drawing already exists and
+   * this only has to start the same timers a typed code does. The server has already spent it by the
+   * time this runs -- being handed it is what counts as finding it -- so this fires on the view that
+   * carries it and never again.
+   */
+  const playedLeftOut = useRef<string | null>(null);
   const yarnUntil = useRef(-1e9);
   const treatUntil = useRef(-1e9);
   const catnipUntil = useRef(-1e9);
@@ -537,6 +549,16 @@ export function Cat({
   const mothSwipe = useRef({ visit: -1, at: -Infinity });
   const reserveRef = useRef(reserveBelow);
   reserveRef.current = reserveBelow;
+  useEffect(() => {
+    if (!leftOut || playedLeftOut.current === leftOut) return;
+    playedLeftOut.current = leftOut;
+    const now = performance.now();
+    if (leftOut === "yarn") yarnUntil.current = now + YARN_MS;
+    if (leftOut === "treat") treatUntil.current = now + TREAT_MS;
+    if (leftOut === "catnip") catnipUntil.current = now + CATNIP_MS;
+    play("purr");
+  }, [leftOut]);
+
   const stayingRef = useRef(staying);
   stayingRef.current = staying;
   const stayDepth = useRef(0);

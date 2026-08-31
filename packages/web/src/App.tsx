@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import type { Action, CatAct, Arrival, Cat as CatLook, Gift, Mood, RoomView } from "./types.js";
-import { ACTIONS, CAT_ACTS, MOODS } from "./types.js";
+import type { Action, CatAct, Arrival, Cat as CatLook, Gift, Mood, RoomView, Treat } from "./types.js";
+import { ACTIONS, CAT_ACTS, MOODS, TREATS } from "./types.js";
 import {
   doAct,
   doClock,
@@ -17,6 +17,7 @@ import {
   doRelease,
   doCatAct,
   doLeaveGift,
+  doLeaveOut,
   doSay,
   doTell,
   doTidy,
@@ -333,6 +334,10 @@ function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[];
                 </>
               ) : item.kind === "first" ? (
                 <>{FIRSTS[item.what] ?? "something happened here for the first time."}</>
+              ) : item.kind === "took" ? (
+                <>
+                  <b>{name}</b> {TREATS.find((t) => t.id === item.treat)?.found ?? "found what you left out"}.
+                </>
               ) : (
                 <>
                   <b>{name}</b> left: “{item.text}”
@@ -956,6 +961,15 @@ function RoomPage({ id }: { id: string }) {
     }
   };
 
+  const leaveOut = async (treat: Treat) => {
+    play("settle");
+    try {
+      setView(await doLeaveOut(id, treat));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't leave that out.");
+    }
+  };
+
   const leaveGift = async (gift: Gift) => {
     play("settle");
     try {
@@ -1168,6 +1182,7 @@ function RoomPage({ id }: { id: string }) {
             firstEver={view.firstEver}
             monthsOld={view.monthsOld}
             gift={view.gift}
+            leftOut={view.forHer}
             windowLight={view.windowLight}
             onWindowLight={() => void touchWindowLight()}
             shelfDown={view.shelfDown}
@@ -1681,6 +1696,21 @@ function RoomPage({ id }: { id: string }) {
                     </>
                   )}
                 </p>
+                {/* The other half of the gift she leaves him: something out for her to find. */}
+                <p className={s.small} style={{ marginTop: 8 }}>Leave something out for her</p>
+                <div className={s.moodRow}>
+                  {TREATS.map((t) => (
+                    <button
+                      key={t.id}
+                      className={s.mood}
+                      style={{ justifyContent: "center", padding: "9px 8px" }}
+                      onClick={() => void leaveOut(t.id)}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+
                 {/* What she has been doing in there, the way she is told what he did. */}
                 {last && (
                   <p className={s.small} style={{ marginTop: 4 }}>

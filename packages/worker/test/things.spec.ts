@@ -130,6 +130,33 @@ describe("what she leaves him", () => {
   });
 });
 
+describe("what he leaves out for her", () => {
+  it("waits for her, is his to leave, and is found exactly once", async () => {
+    await seat();
+    expect((await post("leaveout", { me: HER, treat: "catnip" })).status).toBe(200);
+    // Hers is a no-op: leaving something out is his half of the gift she leaves him.
+    expect((await view(HER)).forHer).toBeNull();
+
+    expect((await post("leaveout", { me: HIM, treat: "yarn" })).status).toBe(200);
+    // He knows what he left, so it is not shown back to him.
+    expect((await view(HIM)).forHer).toBeNull();
+
+    expect((await view(HER)).forHer).toBe("yarn");
+    // Being handed it is what finding it means, so the same read spends it.
+    expect((await view(HER)).forHer).toBeNull();
+  });
+
+  it("tells him she found it", async () => {
+    await seat();
+    await post("leaveout", { me: HIM, treat: "treat" });
+    await view(HER);
+
+    away(9);
+    const arrivals = (await view(HIM)).arrivals;
+    expect(arrivals.some((a) => a.kind === "took" && a.treat === "treat")).toBe(true);
+  });
+});
+
 describe("the thing she knocks off the shelf", () => {
   it("can be put back by either of them, and by no one else", async () => {
     await seat();

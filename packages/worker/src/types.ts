@@ -37,6 +37,26 @@ export const CAT_ACTS: { id: CatAct; label: string; past: string; mine: string }
   { id: "box", label: "Get in the box", past: "got in the box", mine: "got in the box" },
 ];
 
+/*
+ * What he leaves out for her, mirroring the gift she leaves him.
+ *
+ * The room already knows how to draw all three: they were typed easter eggs, animations with no
+ * state behind them. Left out on purpose they become the other half of the gift -- she finds it
+ * waiting the next time she opens the room, and him being told she took it is the point.
+ */
+export type Treat = "yarn" | "treat" | "catnip";
+
+export interface LeftOut {
+  treat: Treat;
+  at: number;
+}
+
+export const TREATS: { id: Treat; label: string; found: string }[] = [
+  { id: "yarn", label: "the yarn", found: "found the yarn you left out" },
+  { id: "treat", label: "a treat", found: "found the treat you left out" },
+  { id: "catnip", label: "the catnip", found: "got into the catnip you left out" },
+];
+
 export type Mood = "good" | "tired" | "stressed" | "sad" | "lonely" | "bored" | "feral" | "done" | "horny";
 
 export const MOODS: { id: Mood; label: string; said: string }[] = [
@@ -95,6 +115,7 @@ export type Arrival =
   | { kind: "drawn"; at: number; cells: string }
   | { kind: "found"; at: number; what: DiscoveryKey | null }
   | { kind: "kept"; at: number; gift: Gift }
+  | { kind: "took"; at: number; treat: Treat }
   | { kind: "first"; at: number; what: FirstKey };
 
 /*
@@ -139,6 +160,8 @@ export interface RoomView {
   monthsOld: number;
   shelfDown: boolean;
   gift: Gift | null;
+  /** What he left out for her, until she opens the room and finds it. Null on his side. */
+  forHer: Treat | null;
   // The hour he actually turns up, once the room has watched long enough to disagree with the one
   // he typed. Null while it still only has his word for it.
   expectAt: number | null;
