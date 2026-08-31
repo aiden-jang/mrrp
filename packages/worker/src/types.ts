@@ -25,7 +25,7 @@ export const ACTIONS: { id: Action; label: string; past: string; mine: string }[
  *
  * `past` finishes "<she> ___", which HE reads. `mine` finishes "He'll see that you ___", hers.
  */
-export type CatAct = "shelf" | "box";
+export type CatAct = "shelf" | "box" | "gift";
 
 export const CAT_ACTS: { id: CatAct; label: string; past: string; mine: string }[] = [
   {
@@ -35,6 +35,8 @@ export const CAT_ACTS: { id: CatAct; label: string; past: string; mine: string }
     mine: "knocked something off the shelf",
   },
   { id: "box", label: "Get in the box", past: "got in the box", mine: "got in the box" },
+  // Not offered as a button: she picks the gift itself below, and this is how that reaches him.
+  { id: "gift", label: "Leave him something", past: "left you something", mine: "left him something" },
 ];
 
 /*

@@ -1626,7 +1626,7 @@ function RoomPage({ id }: { id: string }) {
                 18% chance when she looked in, the box once a day on its own. */}
             <p className={s.tellLabel}>Be a cat about it</p>
             <div className={s.moodRow}>
-              {CAT_ACTS.map((a) => (
+              {CAT_ACTS.filter((a) => a.id !== "gift").map((a) => (
                 <button
                   key={a.id}
                   className={s.mood}
