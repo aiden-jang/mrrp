@@ -338,6 +338,10 @@ function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[];
                 <>
                   <b>{name}</b> {TREATS.find((t) => t.id === item.treat)?.found ?? "found what you left out"}.
                 </>
+              ) : item.kind === "brought" ? (
+                <>
+                  <b>{name}</b> left {TREATS.find((t) => t.id === item.treat)?.label ?? "something"} out for you.
+                </>
               ) : (
                 <>
                   <b>{name}</b> left: “{item.text}”

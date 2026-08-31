@@ -163,6 +163,18 @@ describe("what he leaves out for her", () => {
     expect((await view(HIM)).forHer).toBeNull();
   });
 
+  it("tells her in words, not only by playing it once", async () => {
+    // The animation runs five or six seconds, once, and does not run at all when the cat is at the
+    // door -- which is what she does when somebody opens the room. The card is what cannot be missed.
+    await seat();
+    away(9);
+    await post("leaveout", { me: HIM, treat: "yarn" });
+
+    const hers = await view(HER);
+    expect(hers.forHer).toBe("yarn");
+    expect(hers.arrivals.some((a) => a.kind === "brought" && a.treat === "yarn")).toBe(true);
+  });
+
   it("tells him she found it", async () => {
     await seat();
     await post("leaveout", { me: HIM, treat: "treat" });

@@ -58,6 +58,11 @@ nothing, and there was no way to tell "still waiting" from "she has been in and 
 look at it as often as he likes without spending it: only being handed it to her counts as finding
 it, and that guard is the whole mechanic.
 
+She is told in words as well as shown. The animation is 5.2 to 6.2 seconds and plays once, it is
+suppressed entirely while the cat is at the door -- which is what she does when somebody opens the
+room -- and reduced motion removes two of the three. So a one-shot surprise could be spent and never
+seen. The moment is still the nice part; the card is the part that cannot be missed.
+
 You tell the cat how you are. It answers, and the other person finds out.
 
 ```bash

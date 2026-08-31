@@ -966,6 +966,7 @@ export class Room extends DurableObject<Env> {
     const theyLeft =
       kept && Date.now() < kept.dropsAt ? { name: cat.name, until: kept.dropsAt } : null;
     const theyWereTold = undoLeaveUntil && him ? (people[him]?.name ?? null) : null;
+    const leftOut = await this.ctx.storage.get<LeftOut>("forHer");
     const windowLight = await this.ctx.storage.get<WindowLight>("windowLight");
     const startedAt = roomStartedAt(
       Object.values(people).map((person) => person.firstSeen),
@@ -1006,6 +1007,16 @@ export class Room extends DurableObject<Env> {
       if (youAreHer) {
         const kept = await this.ctx.storage.get<{ gift: Gift; at: number }>("giftKept");
         if (kept && kept.at > since) arrivals.push({ kind: "kept", at: kept.at, gift: kept.gift });
+      }
+      /*
+       * Say it in words as well as in the room.
+       *
+       * The animation is five or six seconds, once, and it is suppressed outright when the cat is at
+       * the door -- which is what she does when somebody opens the room -- and under reduced motion
+       * for two of the three. The moment is the nice part; this is the part that cannot be missed.
+       */
+      if (youAreHer && leftOut) {
+        arrivals.push({ kind: "brought", at: leftOut.at, treat: leftOut.treat });
       }
       if (!youAreHer) {
         const took = await this.ctx.storage.get<LeftOut>("forHerTaken");
@@ -1061,7 +1072,7 @@ export class Room extends DurableObject<Env> {
        * nothing shown on his side, leaving something out looked exactly like a button that does not
        * work, and there was no way to tell "still waiting" from "she has been in and found it".
        */
-      forHer: seated ? ((await this.ctx.storage.get<LeftOut>("forHer"))?.treat ?? null) : null,
+      forHer: seated ? (leftOut?.treat ?? null) : null,
       blanket: (await this.ctx.storage.get<Blanket>("blanket")) ?? null,
       expectAt: learnedHour((await this.ctx.storage.get<Homing>("homing")) ?? null, clock.homeHour),
       sky: ((await this.ctx.storage.get<Weather>("weather"))?.sky ?? "clear") as Sky,
