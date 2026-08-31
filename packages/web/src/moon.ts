@@ -36,7 +36,10 @@ export function moonPixelLit(phase: number, x: number): boolean {
   return x === 0;
 }
 
-export function moonLine(date: Date, catName: string): string | null {
+/* Her side is the cat, so it is her window rather than a window belonging to somebody named. */
+export function moonLine(date: Date, catName: string, youAreHer: boolean): string | null {
   if (moonPhase(date).index !== 4) return null;
-  return `the moon is full tonight, and it is right in ${catName}'s window.`;
+  return youAreHer
+    ? `the moon is full tonight, and it is right in your window.`
+    : `the moon is full tonight, and it is right in ${catName}'s window.`;
 }

@@ -1095,7 +1095,7 @@ function RoomPage({ id }: { id: string }) {
   const iAmHim = view.you !== null && !view.youAreHer;
 
   const herDay = iAmHim ? dayApart(view.clock) : null;
-  const moon = nightChrome ? moonLine(new Date(), view.cat.name) : null;
+  const moon = nightChrome ? moonLine(new Date(), view.cat.name, view.youAreHer) : null;
 
   const previewLook =
     setup && draft
