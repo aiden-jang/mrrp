@@ -157,9 +157,10 @@ app.post("/api/room/:id/hold", async (c) => {
 
 app.post("/api/room/:id/boxout", async (c) => {
   const id = c.req.param("id");
-  const body = (await c.req.json().catch(() => null)) as { me?: string } | null;
+  const body = (await c.req.json().catch(() => null)) as { me?: string; on?: boolean } | null;
   if (!ROOM_RE.test(id) || !body?.me) return c.json({ error: "bad request" }, 400);
-  return c.json(await room(c.env, id).putBoxOut(body.me));
+  // Defaults to putting one out, so an older client that sends no `on` still works.
+  return c.json(await room(c.env, id).putBoxOut(body.me, body.on ?? true));
 });
 
 app.post("/api/room/:id/leaveout", async (c) => {

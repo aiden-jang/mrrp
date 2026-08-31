@@ -286,8 +286,8 @@ export async function fetchNotes(id: string): Promise<string[]> {
   return (await r.json()).notes as string[];
 }
 
-export async function doBoxOut(id: string): Promise<RoomView> {
-  const r = await send(`/api/room/${id}/boxout`, { me: myToken() });
+export async function doBoxOut(id: string, on = true): Promise<RoomView> {
+  const r = await send(`/api/room/${id}/boxout`, { me: myToken(), on });
   if (!r.ok) throw new Error("Couldn't put the box out.");
   return r.json() as Promise<RoomView>;
 }

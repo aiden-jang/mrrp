@@ -74,6 +74,14 @@ const WIN_X = 60,
   WIN_CX = WIN_X + 8;
 const BOX_X = 44,
   BOX_Y = FLOOR + 9;
+/*
+ * Where she sits when she is in it. Measured off the sprite, not written down.
+ *
+ * This was `BOX_X + 2`, which is the box's left edge: she stood with her front half out of it and
+ * the near wall cutting her in two. That reads as a cat beside a box, which is the wrong picture and
+ * is exactly what "she doesn't go in the box" looked like.
+ */
+const BOX_CENTRE = BOX_X + Math.round(BOX_FRONT.w / 2);
 const ZOOM_MS = 1600;
 const BIRD_MS = 5200;
 const SUN_CATCHER_MS = 3200;
@@ -1761,9 +1769,9 @@ export function Cat({
         px(89, FLOOR - 29, "#ffd79a");
         px(90, FLOOR - 29, "#ffd79a");
       }
-      if (downRef.current) {
-        blit(MUG_DOWN, MUG_FLOOR_X, MUG_FLOOR_Y, { w: INK, c: "#cfe0e4", d: "#a9c2c8" });
-      } else {
+      // The mug on the floor is drawn much further down, with the other things that land on the
+      // floor: it sits at x 66-73, inside the box's near wall, so drawn here a box hides it.
+      if (!downRef.current) {
         blit(MUG, 84 + shake("shelf"), FLOOR - 29, { w: INK, c: "#cfe0e4", d: "#a9c2c8" });
         const steamAge = t - mugSteamedAt.current;
         if (!reduce && steamAge >= 0 && steamAge < MUG_STEAM_MS) {
@@ -2105,7 +2113,7 @@ export function Cat({
                       : treating
                         ? TREAT_X
                         : inBox
-                          ? BOX_X + 2
+                          ? BOX_CENTRE
                           : nesting
                             ? 24
                             : admiring
@@ -2718,9 +2726,16 @@ export function Cat({
           px(Math.round(point.x), Math.round(point.y), `rgba(255,107,107,${opacity})`);
         }
       }
-      // Below BOX_FRONT, not above it. The box's near wall covers x 44-71 at floor level, which is
-      // exactly where the treat (68) and the catnip (54) sit, so drawn any earlier a box he put out
-      // paints straight over both of them.
+      /*
+       * Below BOX_FRONT, not above it.
+       *
+       * The box's near wall covers x 44-71 at floor level, which is where the treat (68), the catnip
+       * (54) and the mug she knocked off (66) all land. Drawn any earlier, a box he put out paints
+       * straight over them, and knocking the mug off looks like nothing happening.
+       */
+      if (downRef.current) {
+        blit(MUG_DOWN, MUG_FLOOR_X, MUG_FLOOR_Y, { w: INK, c: "#cfe0e4", d: "#a9c2c8" });
+      }
       if (treating) {
         const ty = FLOOR + 18;
         if (treatProgress < 0.68) {

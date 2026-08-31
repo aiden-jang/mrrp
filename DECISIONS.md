@@ -442,6 +442,44 @@ It costs almost nothing to notice, because the last poke is already sitting in s
 replaced. Three conditions and each has its own test: the other seat, the same thing, within three
 seconds. A stranger cannot be half of it, and drumming on the plant on your own is not a moment.
 
+## The box hid the two things it was sitting on top of
+
+Three separate reports of "I don't see anything happening in the room" turned out to be one bug with
+two halves, and neither was visible in any test.
+
+The box's near wall is drawn after the cat, which is what puts her inside it rather than behind it.
+It is 28 wide at `BOX_X = 44`, so it covers x 44-71 at floor level. The treat (68), the catnip (54)
+and the mug she knocks off the shelf (66) all land inside that. The treat and the catnip were moved
+below it once; the mug was missed, so with a box out, knocking the mug off the shelf moved it from
+the shelf to underneath the box, which looks exactly like nothing happening. The regression test now
+names all four.
+
+The other half: she was sent to `BOX_X + 2` when she got in, which is the box's left edge, not its
+middle. That constant would have been right for a box a few pixels wide. She stood with her front
+half out of it and the near wall cutting her in two, which reads as a cat beside a box. It is
+measured off the sprite now, `BOX_X + BOX_FRONT.w / 2`, so a box that changes size takes her with it.
+
+## Seeing the canvas at all
+
+Both of those had been reported three times and verified as working three times, because the canvas
+had never once rendered where I could look at it. A hidden tab never fires `requestAnimationFrame`,
+and the automated browser keeps its tabs hidden, so the canvas stayed at its unsized 300x150 default
+and every screenshot came back black. Every canvas change was being checked by reading the state that
+feeds the drawing rather than the drawing.
+
+What works: patch `requestAnimationFrame` to a timer and stub `innerHeight`, both before the app
+boots, then read the pixels back with `getImageData`. Positions have to be converted out of screen
+space first, because the room is 100 columns wide, the viewport is 80, and the camera follows the
+cat, so the same object is at a different screen x in two rooms. The box is at a fixed x, so finding
+it gives you the camera and everything else follows.
+
+## Taking the box away
+
+The button that puts a box out takes it away again on a second press, except while she is sitting in
+it, where it says so and does nothing. Rule one is that nothing in this room can go wrong for the
+cat, and pulling the box out from under her is the smallest possible version of that. Taking it away
+is not logged either: "took the box away again" is not a thing she needs told.
+
 ## Nothing accumulates into an inbox
 
 The arrival card is capped and clears itself. The visit log is bounded. There is no unread count, no

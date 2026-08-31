@@ -344,14 +344,32 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  async putBoxOut(me: string): Promise<RoomView> {
+  /*
+   * Puts a box out, or takes it away again.
+   *
+   * Taking it away is refused while she is sitting in it. Rule one: nothing in this room can go
+   * wrong for the cat, and pulling the box out from under her is the smallest possible version of
+   * something going wrong. It is also not logged, because "took the box away again" is not a thing
+   * she needs told.
+   */
+  async putBoxOut(me: string, on = true): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (!people[me]) return this.build(me, people);
     if (this.roles(people).him !== me) return this.build(me, people);
 
     const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
-    await this.ctx.storage.put("boxOutDay", localDayNumber(Date.now(), clock.tz));
+    const today = localDayNumber(Date.now(), clock.tz);
+    if (!on) {
+      if (((await this.ctx.storage.get<number>("boxDay")) ?? -1) === today) {
+        return this.build(me, people);
+      }
+      await this.ctx.storage.delete("boxOutDay");
+      people[me].lastSeen = Date.now();
+      await this.ctx.storage.put("people", people);
+      return this.build(me, people);
+    }
+    await this.ctx.storage.put("boxOutDay", today);
     const previous = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
     await this.ctx.storage.put(
       "log",

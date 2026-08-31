@@ -579,3 +579,32 @@ describe("the first time the world does something here", () => {
     expect((await view(HIM)).arrivals.some((a) => a.kind === "first")).toBe(false);
   });
 });
+
+describe("taking the box away again", () => {
+  it("comes out and goes back in on the same button", async () => {
+    await seat();
+    expect((await post("boxout", { me: HIM, on: true })).status).toBe(200);
+    expect((await view(HER)).boxOut).toBe(true);
+    expect((await post("boxout", { me: HIM, on: false })).status).toBe(200);
+    expect((await view(HER)).boxOut).toBe(false);
+  });
+
+  it("will not be taken out from under her", async () => {
+    await seat();
+    await post("boxout", { me: HIM, on: true });
+    await post("heract", { me: HER, act: "box" });
+    expect((await view(HER)).box).toBe(true);
+
+    await post("boxout", { me: HIM, on: false });
+    // Rule one. Nothing in this room goes wrong for the cat, and this is the smallest version of it.
+    expect((await view(HER)).boxOut).toBe(true);
+    expect((await view(HER)).box).toBe(true);
+  });
+
+  it("is still his alone to take away", async () => {
+    await seat();
+    await post("boxout", { me: HIM, on: true });
+    await post("boxout", { me: HER, on: false });
+    expect((await view(HER)).boxOut).toBe(true);
+  });
+});

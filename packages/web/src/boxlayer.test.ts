@@ -15,6 +15,8 @@ describe("the box's near wall", () => {
     expect(lineOf("if (treating) {")).toBeGreaterThan(front);
     expect(lineOf("if (catnipActive && catnipProgress < 0.28)")).toBeGreaterThan(front);
     expect(lineOf("if (yarnPlaying) {")).toBeGreaterThan(front);
+    // The mug she knocks off the shelf lands at x 66, inside the box's near wall.
+    expect(lineOf("blit(MUG_DOWN")).toBeGreaterThan(front);
   });
 
   it("is tappable under the same condition it is drawn under", () => {
