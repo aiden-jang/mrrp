@@ -63,6 +63,12 @@ suppressed entirely while the cat is at the door -- which is what she does when 
 room -- and reduced motion removes two of the three. So a one-shot surprise could be spent and never
 seen. The moment is still the nice part; the card is the part that cannot be missed.
 
+The door no longer suppresses it. That guard exists so the typed easter eggs do not fight the
+waiting-by-the-door pose, and it is not the arrival greeting it looks like: it holds for the hour and
+a half around the time he is expected home, which is exactly when she is most likely to look in. A
+thing he left out on purpose is not an easter egg and does not lose to a pose, so it plays through
+it.
+
 You tell the cat how you are. It answers, and the other person finds out.
 
 ```bash
