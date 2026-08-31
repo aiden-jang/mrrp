@@ -826,7 +826,9 @@ function RoomPage({ id }: { id: string }) {
         adoptSeat(next.seat);
         setView(next);
         lastCat.set(id, next.cat);
-        const back = awayLine(next.awayMs, next.cat.name);
+        /* Him only, for the reason homingLine already gives: to her this is the room reporting
+           her own arrival back to her, in her own name. She is the one looking up. */
+        const back = next.youAreHer ? null : awayLine(next.awayMs, next.cat.name);
         if (back) setAwayNote((prev) => prev ?? back);
         if (next.arrivals.length > 0) setArrivalCard(next.arrivals);
         setErr(null);
@@ -1211,7 +1213,7 @@ function RoomPage({ id }: { id: string }) {
         {!setup &&
           (iAmHim || view.youAreHer) &&
           [
-            view.milestone && milestoneLine(view.milestone, view.cat.name),
+            view.milestone && milestoneLine(view.milestone, view.cat.name, view.youAreHer),
             awayNote,
             moon,
             view.personality && personalityLine(view.personality, view.youAreHer, view.them),

@@ -15,6 +15,14 @@ promised he would see it, which he would not: his touch on her is a recorded act
 hers is a local sound and reaches nobody. Her first-time hint said "tap Sofia" for the same reason.
 She is the cat; she is not holding it.
 
+The milestones needed the same split the personality lines already had, and the jokes do not all
+survive the turn: "she has no idea what that means" is fond about a cat and unkind about a person, so
+her side points at him remembering instead. The seat-awareness tests now cover milestones too, which
+is what caught a draft that read "you have not once thanked" -- the room never implies anything owed.
+
+`awayLine` is told to him alone now, for the reason `homingLine` already gives: to her it is the room
+reporting her own arrival back to her, in her own name.
+
 You tell the cat how you are. It answers, and the other person finds out.
 
 ```bash

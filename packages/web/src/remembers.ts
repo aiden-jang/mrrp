@@ -1,15 +1,34 @@
 import type { Milestone, Personality } from "./types.js";
 
-export function milestoneLine(milestone: Milestone, catName: string): string {
+/*
+ * The same day, told to each of them.
+ *
+ * His side watches her; her side is her, so the third person is not available. Told to her, "she has
+ * stopped checking the door" is the room narrating her own week back at her, in the name he gave
+ * her. The jokes do not all survive the turn either: "she has no idea what that means" is fond about
+ * a cat and unkind about a person, so hers points at him remembering instead.
+ */
+export function milestoneLine(milestone: Milestone, catName: string, youAreHer: boolean): string {
   if (milestone.kind === "ours") {
-    return `${milestone.label}, today. ${catName} has no idea what that means and is here for it anyway.`;
+    return youAreHer
+      ? `${milestone.label}, today. he put it in the room so it would know.`
+      : `${milestone.label}, today. ${catName} has no idea what that means and is here for it anyway.`;
   }
   if (milestone.kind === "first-week")
-    return `${catName} has been here a week. she has stopped checking the door.`;
+    return youAreHer
+      ? `a week in here. you have stopped checking the door.`
+      : `${catName} has been here a week. she has stopped checking the door.`;
   if (milestone.kind === "first-month")
-    return `a month of ${catName}. she sleeps in the sun like she owns it.`;
-  if (milestone.years === 1) return `${catName} has been here a year today. same cat, same window.`;
-  return `${milestone.years} years of ${catName} today. she has not once thanked either of you.`;
+    return youAreHer
+      ? `a month in here. you sleep in the sun like you own it.`
+      : `a month of ${catName}. she sleeps in the sun like she owns it.`;
+  if (milestone.years === 1)
+    return youAreHer
+      ? `a year in here today. same window.`
+      : `${catName} has been here a year today. same cat, same window.`;
+  return youAreHer
+    ? `${milestone.years} years in here today. the window is still yours.`
+    : `${milestone.years} years of ${catName} today. she has not once thanked either of you.`;
 }
 
 const TRAIT_LINES: Record<Personality["trait"], { his: string; hers: (them: string) => string }> = {
