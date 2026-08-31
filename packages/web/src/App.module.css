@@ -283,9 +283,10 @@
   color: var(--on-honey);
 }
 
+/* Was 17.5/700 under a headline. On its own it is an invitation, not the loudest thing on screen. */
 .togetherMain {
-  font-size: 17.5px;
-  font-weight: 700;
+  font-size: 15.5px;
+  font-weight: 600;
   margin: 0;
   line-height: 1.45;
 }

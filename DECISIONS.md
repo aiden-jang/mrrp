@@ -381,6 +381,34 @@ The posts are fire and forget. They fire on every press and release of the cat, 
 worth nothing: the cost is a hand she does not see, or one that lapses half a minute late, and
 neither is worth a red bar across a room where somebody is trying to pet a cat.
 
+## Touching something in the room is watched, not recorded
+
+The room is full of things you can poke that only you ever saw move: the mug, the plant, the bird on
+the sill, the door. Once both seats were live in the same second, there was no reason for that to stay
+private, and it costs no new drawing at all: the wobble and her head turning already existed as the
+local tap's own reaction.
+
+Only those two things are replayed, never the tap handler. That handler opens the curtains, starts the
+rain, collects a glint and counts towards easter eggs, and none of that is theirs to do to your room
+from a distance. What crosses is "something over there moved, and she looked at it".
+
+It is not in the log and not in the tally, and it lapses after four seconds. Touching the plant is not
+a thing you did for her, it is a thing she saw you do, and a log full of them would bury the things
+that were meant for her. Four seconds is also what stops a reload replaying the last one.
+
+An unknown prop key is a 400, the same way an unknown discovery key is. The client does not get to
+invent room furniture.
+
+## The room says you are both here; the app used to say it as well
+
+Rule four is that the room does things and the app does not announce them. When both seats are live,
+the door swings and the cat gets up, crosses to the middle and purrs. Above that sat a honey banner
+reading "You're both in here right now", which is the app narrating something you were watching happen.
+
+The headline is gone. What stayed is the line under it, because that one is not an announcement: "He
+is right there. He can reach you" is the single thing the scene cannot tell you, which is what to do
+about it. It is set smaller now that it is not living under a headline.
+
 ## Nothing accumulates into an inbox
 
 The arrival card is capped and clears itself. The visit log is bounded. There is no unread count, no

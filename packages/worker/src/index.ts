@@ -15,6 +15,9 @@ const VALID: Action[] = ["pet", "brush", "sit", "photo"];
 const VALID_CAT_ACTS: CatAct[] = ["shelf", "box"];
 const VALID_GIFTS: Gift[] = ["leaf", "cap", "moth"];
 const VALID_TREATS: Treat[] = ["yarn", "treat", "catnip"];
+// The things in the room you can touch. An unknown key is a 400, not a new prop, for the same reason
+// `found` refuses one: the client does not get to invent room furniture.
+const VALID_POKES = ["window", "frame", "shelf", "door", "plant", "bed", "box", "floor"];
 const TALLY_KEYS: TallyKey[] = ["pet", "brush", "sit", "photo", "leaveout"];
 const VALID_MOODS: Mood[] = ["good", "tired", "stressed", "sad", "lonely", "bored", "feral", "done", "horny"];
 
@@ -118,6 +121,15 @@ app.post("/api/room/:id/heract", async (c) => {
     return c.json({ error: "bad request" }, 400);
   }
   return c.json(await room(c.env, id).herAct(body.me, body.act as CatAct));
+});
+
+app.post("/api/room/:id/poke", async (c) => {
+  const id = c.req.param("id");
+  const body = (await c.req.json().catch(() => null)) as { me?: string; what?: string } | null;
+  if (!ROOM_RE.test(id) || !body?.me || !VALID_POKES.includes(body.what ?? "")) {
+    return c.json({ error: "bad request" }, 400);
+  }
+  return c.json(await room(c.env, id).poke(body.me, body.what!));
 });
 
 app.post("/api/room/:id/hold", async (c) => {

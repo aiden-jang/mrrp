@@ -72,6 +72,8 @@ const LEFT_KEEP = 20;
 const HERE_NOW_MS = 3 * 60_000;
 /* A hold is seconds. Anything older is a tab that died without its socket saying so. */
 const HELD_LAPSE_MS = 30_000;
+/* Long enough for the wobble to play on a slow connection, short enough not to replay on a reload. */
+const POKE_LIVE_MS = 4_000;
 const DEFAULT_CAT: Cat = {
   name: "Bean",
   fur: "#e8963f",
@@ -162,6 +164,18 @@ interface Blanket {
  */
 interface Held {
   who: string;
+  at: number;
+}
+
+/*
+ * One of them touching something in the room, for the other one to watch.
+ *
+ * Not in the log and not in the tally. Touching the plant is not a thing you did for her, it is a
+ * thing she saw you do, and it is gone four seconds later.
+ */
+interface Poke {
+  who: string;
+  what: string;
   at: number;
 }
 
@@ -286,6 +300,19 @@ export class Room extends DurableObject<Env> {
       [{ at: Date.now(), who: me, action: act }, ...previous].slice(0, LOG_KEEP),
     );
 
+    people[me].lastSeen = Date.now();
+    await this.ctx.storage.put("people", people);
+    return this.build(me, people);
+  }
+
+  /** Touched something in the room. Ephemeral: it is not a doing, it is a thing to watch. */
+  async poke(me: string, what: string): Promise<RoomView> {
+    await this.guard();
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    const { him, her } = this.roles(people);
+    if (me !== him && me !== her) return this.build(me, people);
+
+    await this.ctx.storage.put<Poke>("poke", { who: me, what, at: Date.now() });
     people[me].lastSeen = Date.now();
     await this.ctx.storage.put("people", people);
     return this.build(me, people);
@@ -1123,6 +1150,7 @@ export class Room extends DurableObject<Env> {
     const theyWereTold = undoLeaveUntil && him ? (people[him]?.name ?? null) : null;
     const leftOut = await this.ctx.storage.get<LeftOut>("forHer");
     const held = seated ? await this.ctx.storage.get<Held>("held") : null;
+    const poke = seated ? await this.ctx.storage.get<Poke>("poke") : null;
     const windowLight = await this.ctx.storage.get<WindowLight>("windowLight");
     const startedAt = roomStartedAt(
       Object.values(people).map((person) => person.firstSeen),
@@ -1235,6 +1263,12 @@ export class Room extends DurableObject<Env> {
       // Only ever true for the seat being held on to, which is hers. Nobody watches a third person
       // being petted.
       heldByThem: !!held && held.who === otherId && Date.now() - held.at < HELD_LAPSE_MS,
+      // Theirs only. Your own taps already moved your own room; being sent them back would play the
+      // wobble twice.
+      pokedByThem:
+        poke && poke.who === otherId && Date.now() - poke.at < POKE_LIVE_MS
+          ? { what: poke.what, at: poke.at }
+          : null,
       // Keep `seated` here. Without it anybody holding the link is told what she has been doing.
       theirRecent: seated && otherId ? log.filter((v) => v.who === otherId).slice(0, 4) : [],
       theyCameAfter: !!catTold && !!them && youAreHer && them.lastSeen > catTold.at,
