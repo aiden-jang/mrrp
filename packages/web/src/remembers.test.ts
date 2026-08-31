@@ -11,7 +11,8 @@ const MILESTONES: Milestone[] = [
 ];
 
 const allLines = (): string[] => [
-  ...MILESTONES.map((m) => milestoneLine(m, "Bean")),
+  ...MILESTONES.map((m) => milestoneLine(m, "Bean", false)),
+  ...MILESTONES.map((m) => milestoneLine(m, "Bean", true)),
   ...TRAITS.map((trait) => personalityLine({ trait, count: 20 }, false, "Ada")),
   ...TRAITS.map((trait) => personalityLine({ trait, count: 20 }, true, "Ada")),
 ];
@@ -59,6 +60,20 @@ describe("who each seat is reading about", () => {
     }
   });
 
+  it("never calls the cat 'she' on a milestone she is reading about herself", () => {
+    for (const milestone of MILESTONES) {
+      const hers = milestoneLine(milestone, "Ada", true);
+      expect(hers, hers).not.toMatch(/\bshe\b|\bher\b/);
+    }
+  });
+
+  it("never calls her by name on the milestone side that is her", () => {
+    for (const milestone of MILESTONES) {
+      const hers = milestoneLine(milestone, "Ada", true);
+      expect(hers, hers).not.toContain("Ada");
+    }
+  });
+
   it("names nobody on his side, since he is 'you'", () => {
     for (const trait of TRAITS) {
       expect(personalityLine({ trait, count: 20 }, false, "Ada")).not.toContain("Ada");
@@ -82,19 +97,21 @@ describe("who each seat is reading about", () => {
 
 describe("milestones", () => {
   it("says something different for each of the three", () => {
-    const lines = MILESTONES.map((m) => milestoneLine(m, "Bean"));
+    const lines = MILESTONES.map((m) => milestoneLine(m, "Bean", false));
     expect(new Set(lines).size).toBe(lines.length);
   });
 
   it("counts years in words she would read, not as a field", () => {
-    expect(milestoneLine({ kind: "anniversary", years: 1 }, "Bean")).toContain("a year");
-    expect(milestoneLine({ kind: "anniversary", years: 4 }, "Bean")).toContain("4 years");
-    expect(milestoneLine({ kind: "anniversary", years: 1 }, "Bean")).not.toContain("1 year");
+    for (const youAreHer of [false, true]) {
+      expect(milestoneLine({ kind: "anniversary", years: 1 }, "Bean", youAreHer)).toContain("a year");
+      expect(milestoneLine({ kind: "anniversary", years: 4 }, "Bean", youAreHer)).toContain("4 years");
+      expect(milestoneLine({ kind: "anniversary", years: 1 }, "Bean", youAreHer)).not.toContain("1 year");
+    }
   });
 
-  it("uses the cat's real name", () => {
+  it("uses the cat's real name on his side", () => {
     for (const milestone of MILESTONES) {
-      expect(milestoneLine(milestone, "Pumpkin")).toContain("Pumpkin");
+      expect(milestoneLine(milestone, "Pumpkin", false)).toContain("Pumpkin");
     }
   });
 });
