@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type {
   Action,
   CatAct,
@@ -9,6 +9,7 @@ import type {
   Mood,
   RoomView,
   Treat,
+  Visit,
 } from "./types.js";
 import { ACTIONS, CAT_ACTS, MOODS, TREATS } from "./types.js";
 import {
@@ -87,6 +88,29 @@ const ACTION_SOUND: Record<Action, Cue> = {
   sit: "settle",
   photo: "shutter",
 };
+
+/*
+ * What the other one has been doing, newest first.
+ *
+ * One line was enough while the room was polled: whatever arrived replaced it, and you never saw two
+ * things at once because you only heard about them every 15 seconds. Live, they can do three things
+ * in a minute and a self-replacing line loses the first two.
+ *
+ * The arrival card is a different thing and still is: it is for what happened while you were away,
+ * which is why its own copy says it waited for you. This is for while you are watching.
+ */
+function TheirRecent({ subject, items }: { subject: ReactNode; items: Visit[] }) {
+  if (items.length === 0) return null;
+  return (
+    <ul className={s.recent}>
+      {items.map((visit) => (
+        <li key={`${visit.at}-${visit.action}`} className={s.recentItem}>
+          {subject} {pastTense(visit.action)}, {whenish(visit.at)}.
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 function SoundToggle() {
   const [off, setOff] = useState(isMuted);
@@ -1182,7 +1206,6 @@ function RoomPage({ id }: { id: string }) {
     );
   }
 
-  const last = view.theirRecent[0];
   const herSpot = view.personality ? HER_SPOT : null;
   const scene = sceneFor(
     view.clock,
@@ -1615,21 +1638,11 @@ function RoomPage({ id }: { id: string }) {
             )}
 
             {/* Not hidden while you are both here. That was right when the room was 15 seconds
-                stale and this line could only say "looked in a while ago"; now it is the live one,
-                and suppressing it muted the moment they are most likely to be watching. */}
-            {last && (view.bothHereNow || view.themHereNow) ? (
-              <p className={s.came}>
-                <b>{view.them}</b> {pastTense(last.action)}, {whenish(last.at)}.
-              </p>
-            ) : view.bothHereNow ? null : view.themHereNow ? (
-              <p className={s.came}>
-                <b>{view.them}</b> is in here right now.
-              </p>
-            ) : last ? (
-              <p className={s.came}>
-                <b>{view.them}</b> {pastTense(last.action)}, {whenish(last.at)}.
-              </p>
-            ) : view.themLastAt ? (
+                stale and this could only say "looked in a while ago"; now it is the live one, and
+                suppressing it muted the moment they are most likely to be watching. */}
+            {view.theirRecent.length > 0 ? (
+              <TheirRecent subject={<b>{view.them}</b>} items={view.theirRecent} />
+            ) : view.themHereNow ? null : view.themLastAt ? (
               <p className={s.came}>
                 <b>{view.them}</b> looked in {whenish(view.themLastAt)}.
               </p>
@@ -1814,11 +1827,7 @@ function RoomPage({ id }: { id: string }) {
                 </div>
 
                 {/* What she has been doing in there, the way she is told what he did. */}
-                {last && (
-                  <p className={s.small} style={{ marginTop: 4 }}>
-                    She {pastTense(last.action)}, {whenish(last.at)}.
-                  </p>
-                )}
+                <TheirRecent subject="She" items={view.theirRecent} />
                 <p className={s.small} style={{ marginTop: 4 }}>
                   Go and be in there. That's all it takes.
                 </p>

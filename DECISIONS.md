@@ -308,6 +308,33 @@ firing on it would greet you with a purr for something you already knew about. `
 `heard.ts` returns false until it has a previous timestamp to compare against, and that rule is what
 its tests are mostly about.
 
+## The arrival card is for being away, the list is for being there
+
+Making the room live quietly broke the log, and the mechanism is worth writing down because it was
+invisible in the diff.
+
+`build` fills `arrivals` only when it is given a `since`, and the broadcast deliberately passes none:
+`since` is your previous visit, and a push is not a visit. So every pushed view carries no arrivals,
+which is correct. What that missed is that the old 15 second poll had been doing two jobs. It was the
+transport, and it was also what popped the arrival card, because each poll's `since` was only fifteen
+seconds back so anything the other one had just done landed in it. Replacing the transport took the
+second job away with it, and the card stopped appearing while you had the room open.
+
+Restoring that would have been wrong. It means pushing with `since` set to the last visit, which can
+be hours ago, so every push would re-pop the whole backlog. And the card's own copy is "the room kept
+this for you, it waited here until you looked in": it is about absence, and popping it for something
+happening in front of you contradicts it.
+
+So the card keeps its job, and what happens while you are watching gets its own list. `theirRecent`
+already carries the last four and was already being pushed, so this was mostly rendering. One line
+was enough while the room was polled, because whatever arrived replaced it and you never saw two
+things at once. Live, they can do three things in a minute, and a self-replacing line loses the first
+two.
+
+Collapsing the old branch turned up dead code. It read "both here, else they are here, else what they
+last did", and once presence counted an open socket, `bothHereNow` and `themHereNow` became the same
+question for anyone holding a seat, so the middle branch could never be reached.
+
 ## Nothing accumulates into an inbox
 
 The arrival card is capped and clears itself. The visit log is bounded. There is no unread count, no
