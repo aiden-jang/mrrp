@@ -72,9 +72,22 @@ export type Trait = "petted" | "brushed" | "fed" | "accompanied" | "photographed
 
 export type Tally = Partial<Record<Action, number>>;
 
+const HIS_ACTIONS: Action[] = ["pet", "brush", "bring", "sit", "photo"];
+
+/*
+ * Only his doings count.
+ *
+ * The log carries both seats now, and her personality is derived from this tally: what he keeps
+ * doing for her is what she becomes. Counting her own acts here would have her learning a trait
+ * from herself.
+ */
 export function tallyFrom(log: Visit[]): Tally {
   const tally: Tally = {};
-  for (const visit of log) tally[visit.action] = (tally[visit.action] ?? 0) + 1;
+  for (const visit of log) {
+    const action = visit.action as Action;
+    if (!HIS_ACTIONS.includes(action)) continue;
+    tally[action] = (tally[action] ?? 0) + 1;
+  }
   return tally;
 }
 
