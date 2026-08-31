@@ -524,8 +524,16 @@ export class Room extends DurableObject<Env> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (this.roles(people).him !== me) return false;
-    const cat = (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT;
-    if (typed.trim().toLowerCase() !== cat.name.trim().toLowerCase()) return false;
+    /*
+     * He signs his own name, not hers.
+     *
+     * This used to ask for the cat's name, which read as a nice touch while the cat was a pet. She
+     * is the cat, so it had become "type her name to erase her", which is not a thing to ask of
+     * anybody. His own name keeps the deliberateness -- you cannot do this by leaning on a key --
+     * without making the last thing he does in here be typing her out of it.
+     */
+    const signature = people[me]?.name ?? "";
+    if (!signature || typed.trim().toLowerCase() !== signature.trim().toLowerCase()) return false;
 
     const at = Date.now();
     const erasesAt = at + UNDO_MS;

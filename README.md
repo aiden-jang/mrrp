@@ -7,6 +7,9 @@ room, and that name is what she is called everywhere, to both of them. The app u
 "someone made you a cat" and then ask her to type her own name on the same screen, so it held two
 names for one person and could not decide which she was.
 
+Ending the room asks him to sign his own name. It used to ask for the cat's name, which was a nice
+touch while the cat was a pet and became "type her name to erase her" the moment she was not.
+
 You tell the cat how you are. It answers, and the other person finds out.
 
 ```bash

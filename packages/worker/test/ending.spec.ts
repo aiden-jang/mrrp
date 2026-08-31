@@ -5,39 +5,39 @@ import { harness, HER, HIM, STRANGER } from "./harness.js";
 const { away, id, post, seat, view } = harness("endingroom");
 
 describe("deleting the room", () => {
-  it("takes the cat's name, typed, and not just the button", async () => {
+  it("takes his own name, typed, and not just the button", async () => {
     await seat();
-    expect((await post("delete", { me: HIM, name: "not the cat" })).status).toBe(403);
+    expect((await post("delete", { me: HIM, name: "not his name" })).status).toBe(403);
     expect((await view(HIM)).you).not.toBeNull();
   });
 
   it("is not hers to do, however she asks", async () => {
     await seat();
-    expect((await post("delete", { me: HER, name: "Bean" })).status).toBe(403);
-    expect((await post("delete", { me: STRANGER, name: "Bean" })).status).toBe(403);
+    expect((await post("delete", { me: HER, name: "Aiden" })).status).toBe(403);
+    expect((await post("delete", { me: STRANGER, name: "Aiden" })).status).toBe(403);
     expect((await view(HIM)).you).not.toBeNull();
   });
 
   it("accepts the name however it was capitalised or spaced", async () => {
     await seat();
-    expect((await post("delete", { me: HIM, name: "  bEaN " })).status).toBe(200);
+    expect((await post("delete", { me: HIM, name: "  aIdEn " })).status).toBe(200);
   });
 
   it("answers 410 to everyone afterwards, and never reseats", async () => {
     await seat();
-    await post("delete", { me: HIM, name: "Bean" });
+    await post("delete", { me: HIM, name: "Aiden" });
 
     const r = await SELF.fetch(`https://x/api/room/${id}?me=${HIM}`);
     expect(r.status).toBe(410);
     expect((await SELF.fetch(`https://x/api/room/${id}?me=${STRANGER}`)).status).toBe(410);
     expect((await post("tell", { me: HER, mood: "good" })).status).toBe(410);
-    expect((await post("delete", { me: HIM, name: "Bean" })).status).toBe(410);
+    expect((await post("delete", { me: HIM, name: "Aiden" })).status).toBe(410);
   });
 
   it("keeps the room readable to nobody, but does not erase it yet", async () => {
     await seat();
     await post("say", { me: HER, text: "something of hers" });
-    await post("delete", { me: HIM, name: "Bean" });
+    await post("delete", { me: HIM, name: "Aiden" });
 
     const stub = env.ROOM.get(env.ROOM.idFromName(id));
     await runInDurableObject(stub, async (_instance, state) => {
@@ -50,7 +50,7 @@ describe("deleting the room", () => {
   it("leaves nothing behind but the date it went, once the week is up", async () => {
     await seat();
     await post("say", { me: HER, text: "something of hers" });
-    await post("delete", { me: HIM, name: "Bean" });
+    await post("delete", { me: HIM, name: "Aiden" });
 
     const stub = env.ROOM.get(env.ROOM.idFromName(id));
     away(24 * 8);
@@ -63,7 +63,7 @@ describe("deleting the room", () => {
 
   it("erases on the next request too, in case the alarm never ran", async () => {
     await seat();
-    await post("delete", { me: HIM, name: "Bean" });
+    await post("delete", { me: HIM, name: "Aiden" });
 
     away(24 * 8);
     expect((await SELF.fetch(`https://x/api/room/${id}?me=${HIM}`)).status).toBe(410);
@@ -102,7 +102,7 @@ describe("deleting the room", () => {
 
   it("gives him a week to change his mind, and tells him when it runs out", async () => {
     await seat();
-    const r = await post("delete", { me: HIM, name: "Bean" });
+    const r = await post("delete", { me: HIM, name: "Aiden" });
     const { undoUntil } = (await r.json()) as { undoUntil: number };
     expect(undoUntil).toBeGreaterThan(Date.now());
 
@@ -119,7 +119,7 @@ describe("deleting the room", () => {
 
   it("offers the way back to him and to nobody else", async () => {
     await seat();
-    await post("delete", { me: HIM, name: "Bean" });
+    await post("delete", { me: HIM, name: "Aiden" });
 
     for (const who of [HER, STRANGER]) {
       const r = await SELF.fetch(`https://x/api/room/${id}?me=${who}`);
@@ -131,7 +131,7 @@ describe("deleting the room", () => {
 
   it("closes the way back when the week is up", async () => {
     await seat();
-    await post("delete", { me: HIM, name: "Bean" });
+    await post("delete", { me: HIM, name: "Aiden" });
 
     away(24 * 8);
     expect((await post("undelete", { me: HIM })).status).toBe(403);
@@ -144,7 +144,7 @@ describe("deleting the room", () => {
     await seat();
     await post("say", { me: HER, text: "still here" });
     await post("tell", { me: HER, mood: "sad" });
-    await post("delete", { me: HIM, name: "Bean" });
+    await post("delete", { me: HIM, name: "Aiden" });
     await post("undelete", { me: HIM });
 
     const v = await view(HIM);
@@ -155,7 +155,7 @@ describe("deleting the room", () => {
 
   it("refuses every method a route can reach, including ones added after this was written", async () => {
     await seat();
-    await post("delete", { me: HIM, name: "Bean" });
+    await post("delete", { me: HIM, name: "Aiden" });
 
     const stub = env.ROOM.get(env.ROOM.idFromName(id));
     await runInDurableObject(stub, async (instance) => {
@@ -170,7 +170,7 @@ describe("deleting the room", () => {
         const call = (instance as unknown as Record<string, (...a: unknown[]) => unknown>)[name]!;
         let message = "did not throw";
         try {
-          await call.call(instance, HIM, "Bean", null);
+          await call.call(instance, HIM, "Aiden", null);
         } catch (e) {
           message = (e as Error).message;
         }
@@ -363,7 +363,7 @@ describe("her leaving on her own", () => {
   it("cannot be undone into a room he has already deleted", async () => {
     await seat();
     await post("leave", { me: HER });
-    await post("delete", { me: HIM, name: "Bean" });
+    await post("delete", { me: HIM, name: "Aiden" });
 
     expect((await post("unleave", { me: HER })).status).toBe(410);
 
@@ -374,7 +374,7 @@ describe("her leaving on her own", () => {
   it("still lets her come back after he puts the room back", async () => {
     await seat();
     await post("leave", { me: HER });
-    await post("delete", { me: HIM, name: "Bean" });
+    await post("delete", { me: HIM, name: "Aiden" });
     await post("undelete", { me: HIM });
 
     expect((await view(HER)).undoLeaveUntil).toBeGreaterThan(Date.now());
@@ -393,7 +393,7 @@ describe("her leaving on her own", () => {
   it("takes what she left with it when he deletes the room", async () => {
     await seat();
     await post("leave", { me: HER });
-    await post("delete", { me: HIM, name: "Bean" });
+    await post("delete", { me: HIM, name: "Aiden" });
 
     const stub = env.ROOM.get(env.ROOM.idFromName(id));
     away(24 * 8);
@@ -408,7 +408,7 @@ describe("what a deleted room can still be made to keep", () => {
   it("does not let a weather lookup put a key back after erasing", async () => {
     await seat();
     await view(HER);
-    await post("delete", { me: HIM, name: "Bean" });
+    await post("delete", { me: HIM, name: "Aiden" });
 
     const stub = env.ROOM.get(env.ROOM.idFromName(id));
     away(24 * 8);
@@ -424,7 +424,7 @@ describe("what a deleted room can still be made to keep", () => {
 describe("a first that lands after the room is gone", () => {
   it("is not written into a room that has been deleted", async () => {
     await seat();
-    await post("delete", { me: HIM, name: "Bean" });
+    await post("delete", { me: HIM, name: "Aiden" });
 
     const stub = env.ROOM.get(env.ROOM.idFromName(id));
     await runInDurableObject(stub, async (instance) => {
