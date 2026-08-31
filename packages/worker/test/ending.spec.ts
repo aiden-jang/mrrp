@@ -97,8 +97,17 @@ describe("deleting the room", () => {
     "noteFirst",
     "sweepLeftSide",
     "scheduleNext",
+    "hereNow",
+    "liveTokens",
+    "tokenOf",
+    "broadcast",
   ];
   const ANSWERS_WHEN_GONE = ["undoUntil", "undelete", "alarm"];
+  /*
+   * Socket lifecycle, not RPC. These take a WebSocket rather than a seat token, so the call below
+   * cannot exercise them; `fetch` refusing a deleted room has its own test in this file.
+   */
+  const SOCKET = ["fetch", "webSocketMessage", "webSocketClose", "webSocketError"];
 
   it("gives him a week to change his mind, and tells him when it runs out", async () => {
     await seat();
@@ -163,7 +172,9 @@ describe("deleting the room", () => {
       const all = Object.getOwnPropertyNames(proto).filter(
         (m) => typeof (instance as unknown as Record<string, unknown>)[m] === "function",
       );
-      const unclassified = all.filter((m) => !INTERNAL.includes(m) && !ANSWERS_WHEN_GONE.includes(m));
+      const unclassified = all.filter(
+        (m) => !INTERNAL.includes(m) && !ANSWERS_WHEN_GONE.includes(m) && !SOCKET.includes(m),
+      );
       expect(unclassified.length).toBeGreaterThan(10);
 
       for (const name of unclassified) {
@@ -177,7 +188,7 @@ describe("deleting the room", () => {
         expect(message, `${name}() on a deleted room`).toMatch(/room deleted/);
       }
 
-      for (const name of [...INTERNAL.slice(1), ...ANSWERS_WHEN_GONE]) {
+      for (const name of [...INTERNAL.slice(1), ...ANSWERS_WHEN_GONE, ...SOCKET]) {
         expect(all, `${name} is listed but no longer exists`).toContain(name);
       }
     });

@@ -1,5 +1,15 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import type { Action, CatAct, Arrival, Cat as CatLook, Gift, LogAction, Mood, RoomView, Treat } from "./types.js";
+import type {
+  Action,
+  CatAct,
+  Arrival,
+  Cat as CatLook,
+  Gift,
+  LogAction,
+  Mood,
+  RoomView,
+  Treat,
+} from "./types.js";
 import { ACTIONS, CAT_ACTS, MOODS, TREATS } from "./types.js";
 import {
   doAct,
@@ -41,6 +51,7 @@ import {
   type SignedInAs,
 } from "./api.js";
 import { Cat } from "./Cat.js";
+import { useLive } from "./live.js";
 import { dayApart, HER_SPOT, mixHex, sceneFor, type Scene } from "./hours.js";
 import { moonLine } from "./moon.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
@@ -344,7 +355,8 @@ function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[];
                 </>
               ) : item.kind === "brought" ? (
                 <>
-                  <b>{name}</b> left {TREATS.find((t) => t.id === item.treat)?.label ?? "something"} out for you.
+                  <b>{name}</b> left {TREATS.find((t) => t.id === item.treat)?.label ?? "something"} out for
+                  you.
                 </>
               ) : (
                 <>
@@ -862,6 +874,28 @@ function RoomPage({ id }: { id: string }) {
     [id],
   );
 
+  /*
+   * The same handling `load` does, for a view that arrived on its own.
+   *
+   * It deliberately skips `adoptSeat` and the away line. Both belong to opening the room: a seat is
+   * adopted from the response to a read you made, and "you were away four hours" is a greeting, not
+   * something to be told again every time he brushes her.
+   */
+  const takeView = useCallback(
+    (next: RoomView) => {
+      setView(next);
+      lastCat.set(id, next.cat);
+      if (next.arrivals.length > 0) setArrivalCard(next.arrivals);
+      setErr(null);
+    },
+    [id],
+  );
+  const liveGone = useCallback(() => {
+    forgetRoom(id);
+    setGone({ undoUntil: null });
+  }, [id]);
+  const live = useLive(id, !asking && !gone, takeView, liveGone);
+
   useEffect(() => {
     if (!asking) void load();
   }, [asking, load]);
@@ -872,11 +906,17 @@ function RoomPage({ id }: { id: string }) {
     return () => clearTimeout(t);
   }, [asking, view, err, gone, load]);
 
+  /*
+   * A backstop, not the transport. With the socket up the room arrives when it changes, so this only
+   * has to cover a browser or a proxy that refused the upgrade. Left at 15 seconds it would be two
+   * reads of the same room for every one that was needed.
+   */
   useEffect(() => {
     if (asking || gone) return;
+    const every = live === "open" ? 120_000 : 15_000;
     const tick = setInterval(() => {
       if (!document.hidden) void load();
-    }, 15_000);
+    }, every);
     const onShow = () => {
       if (!document.hidden) void load();
     };
@@ -885,7 +925,7 @@ function RoomPage({ id }: { id: string }) {
       clearInterval(tick);
       document.removeEventListener("visibilitychange", onShow);
     };
-  }, [asking, gone, load]);
+  }, [asking, gone, load, live]);
 
   const act = async (a: Action) => {
     setNudge((v) => v + 1);
@@ -1224,9 +1264,7 @@ function RoomPage({ id }: { id: string }) {
               // She dreams about what he does for her, never her own doings: she did those.
               recent: view.theirRecent
                 .map((visit) => visit.action)
-                .filter((a): a is Action | "leaveout" =>
-                  a === "leaveout" || ACTIONS.some((x) => x.id === a),
-                ),
+                .filter((a): a is Action | "leaveout" => a === "leaveout" || ACTIONS.some((x) => x.id === a)),
               trait: view.personality?.trait ?? null,
               framed: view.framed,
               hasBox: view.box,
@@ -1726,7 +1764,7 @@ function RoomPage({ id }: { id: string }) {
                   )}
                 </p>
                 {/* The other half of the gift she leaves him: something out for her to find. */}
-<p className={s.small} style={{ marginTop: 8 }}>
+                <p className={s.small} style={{ marginTop: 8 }}>
                   {view.forHer
                     ? `${TREATS.find((t) => t.id === view.forHer)?.label ?? "Something"} is out, waiting for her.`
                     : "Leave something out for her"}

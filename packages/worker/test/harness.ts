@@ -40,6 +40,9 @@ export function harness(room: string): Harness {
   afterEach(async () => {
     vi.useRealTimers();
     await runInDurableObject(env.ROOM.get(env.ROOM.idFromName(id)), async (_instance, state) => {
+      // Sockets outlive a storage wipe. Left open, the next test in the file sees the previous
+      // test's tabs as people who are here.
+      for (const ws of state.getWebSockets()) ws.close(1001, "test over");
       await state.storage.deleteAlarm();
       await state.storage.deleteAll();
     });
