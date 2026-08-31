@@ -506,8 +506,9 @@ breath is on the glass and she leaves a nose print in it. At night the dark pane
 Wet paws walk a trail across the boards that dries in nine seconds. Hang something in the frame and she
 goes and sits under it.
 
-She also does things because she means to. She knocks something off the shelf, gets into the box he
-put out, and picks which of three things he finds. He is told the way she is told about him: the room
+She also does things because she means to, and only because she means to: the room rolls nothing on
+her behalf any more. She knocks something off the shelf, gets into the box he put out, and picks
+which of three things he finds. He is told the way she is told about him: the room
 is different when he opens it.
 
 None of it is announced. The room does these things and the app says nothing about them.

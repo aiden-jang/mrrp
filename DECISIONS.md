@@ -37,10 +37,16 @@ have not once thanked". The room never implies anything owed.
 
 Everything the cat did was the room's dice. The shelf came down on an 18% roll when she looked in,
 the box appeared once a day on its own, and the gift she left him was picked at random from three.
+The shelf roll outlived the rest of that change by a good while, and it was the worst of the three:
+it put the mug on the floor with no line anywhere saying who did it, which reads as a glitch rather
+than as her. A test now opens the room fifty times as her and fails if the mug ever moves.
 
 If she is the cat, those are hers. She knocks the shelf off because she means to, gets into the box
 he put out, and chooses which of the three things he finds. He is told the same way she is told about
 him: the room is different when he opens it, and a line says what she did.
+
+The one roll left is the gift, and only when he has been away a while and she has not chosen one
+herself. That one is the room covering for a silence, not acting as her.
 
 Her acts are deliberately kept out of two places. They do not count toward the tally, because her
 personality is derived from that tally and she would be learning traits from herself. They are not
