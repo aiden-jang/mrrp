@@ -1085,10 +1085,10 @@ function RoomPage({ id }: { id: string }) {
     }
   };
 
-  const boxOut = async () => {
+  const boxOut = async (on: boolean) => {
     play("thump");
     try {
-      setView(await doBoxOut(id));
+      setView(await doBoxOut(id, on));
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Couldn't put the box out.");
     }
@@ -1867,13 +1867,19 @@ function RoomPage({ id }: { id: string }) {
                     : "Leave something out for her"}
                 </p>
                 <div className={s.moodRow}>
+                  {/* Press it again to take the box away, unless she is sitting in it. */}
                   <button
                     aria-pressed={view.boxOut}
+                    disabled={view.box}
                     className={`${s.mood} ${view.boxOut ? s.moodOn : ""}`}
-                    style={{ justifyContent: "center", padding: "9px 8px" }}
-                    onClick={() => void boxOut()}
+                    style={{
+                      justifyContent: "center",
+                      padding: "9px 8px",
+                      opacity: view.box ? 0.55 : undefined,
+                    }}
+                    onClick={() => void boxOut(!view.boxOut)}
                   >
-                    {view.boxOut ? "a box is out" : "a box"}
+                    {view.box ? "she's in it" : view.boxOut ? "a box is out" : "a box"}
                   </button>
                   {TREATS.map((t) => (
                     <button
