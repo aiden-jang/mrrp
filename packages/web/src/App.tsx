@@ -52,6 +52,7 @@ import {
 } from "./api.js";
 import { Cat } from "./Cat.js";
 import { useLive } from "./live.js";
+import { heard } from "./heard.js";
 import { dayApart, HER_SPOT, mixHex, sceneFor, type Scene } from "./hours.js";
 import { moonLine } from "./moon.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
@@ -896,6 +897,20 @@ function RoomPage({ id }: { id: string }) {
   }, [id]);
   const live = useLive(id, !asking && !gone, takeView, liveGone);
 
+  // Their last action, felt rather than read. A pet leaves no mark, so a rising timestamp on the
+  // pushed view is the only thing it gives her to react to. See heard.ts for why the first view
+  // never fires.
+  const heardAt = useRef<number | null>(null);
+  const theirLastAt = view?.theirRecent[0]?.at ?? null;
+  const theirLastAction = view?.theirRecent[0]?.action ?? null;
+  useEffect(() => {
+    const cue = heard(heardAt.current, theirLastAt, theirLastAction);
+    if (theirLastAt !== null) heardAt.current = theirLastAt;
+    if (cue === false) return;
+    if (cue) play(cue);
+    setNudge((v) => v + 1);
+  }, [theirLastAt, theirLastAction]);
+
   useEffect(() => {
     if (!asking) void load();
   }, [asking, load]);
@@ -1599,7 +1614,14 @@ function RoomPage({ id }: { id: string }) {
               </div>
             )}
 
-            {view.bothHereNow ? null : view.themHereNow ? (
+            {/* Not hidden while you are both here. That was right when the room was 15 seconds
+                stale and this line could only say "looked in a while ago"; now it is the live one,
+                and suppressing it muted the moment they are most likely to be watching. */}
+            {last && (view.bothHereNow || view.themHereNow) ? (
+              <p className={s.came}>
+                <b>{view.them}</b> {pastTense(last.action)}, {whenish(last.at)}.
+              </p>
+            ) : view.bothHereNow ? null : view.themHereNow ? (
               <p className={s.came}>
                 <b>{view.them}</b> is in here right now.
               </p>
