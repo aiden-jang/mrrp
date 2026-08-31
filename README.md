@@ -64,6 +64,9 @@ there; the card that says "the room kept this for you" is still for what happene
 away. Petting is why that exists: it is the one action that leaves no
 mark in the room, so without it a pet arrived as silence.
 
+Touching something in the room reaches the other one too, so she watches the plant shiver because he
+touched it, and the cat turns to look at it.
+
 When he holds on to her, she sees it while it is happening rather than afterwards: the cat's eyes
 close, the purr builds, and it stops when he lets go.
 
@@ -268,6 +271,7 @@ than the UI, because a rule enforced in the browser is a rule anyone can turn of
 | `POST .../heract`             | her only    | what she does as the cat: shelf, box, gift                                    |
 | `POST .../boxout`             | him only    | puts a box in the room. She decides whether to get in                         |
 | `POST .../hold`               | him only    | took hold of her, or let go. The one thing that is a duration                 |
+| `POST .../poke`               | either seat | touched something in the room. Ephemeral, unlogged, 400 on unknown furniture  |
 | `POST .../leaveout`           | him only    | leaves the yarn, a treat or the catnip for her to find                        |
 | `POST .../gift`               | her only    | picks which of the three he finds                                             |
 | `POST .../shelf`              | either seat | puts the mug back. The one write both of them may make                        |

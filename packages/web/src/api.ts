@@ -265,6 +265,14 @@ export function doHold(id: string, on: boolean): void {
   void send(`/api/room/${id}/hold`, { me: myToken(), on }).catch(() => {});
 }
 
+/*
+ * Touched something in the room. Fire and forget, like `doHold`, and throttled by the caller: this
+ * fires on taps, and somebody drumming on the plant should not be a request each time.
+ */
+export function doPoke(id: string, what: string): void {
+  void send(`/api/room/${id}/poke`, { me: myToken(), what }).catch(() => {});
+}
+
 export async function doBoxOut(id: string): Promise<RoomView> {
   const r = await send(`/api/room/${id}/boxout`, { me: myToken() });
   if (!r.ok) throw new Error("Couldn't put the box out.");

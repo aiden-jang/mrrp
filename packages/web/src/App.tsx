@@ -26,6 +26,7 @@ import {
   doOurDay,
   doRecover,
   doRelease,
+  doPoke,
   doHold,
   doBoxOut,
   doCatAct,
@@ -938,6 +939,21 @@ function RoomPage({ id }: { id: string }) {
     },
     [id, showArrivals],
   );
+  /*
+   * Somebody drumming on the plant should not be a request per tap. One per prop per second is
+   * enough for the other side to see it move, which is all this is for.
+   */
+  const lastPoke = useRef<Record<string, number>>({});
+  const sharePoke = useCallback(
+    (what: string) => {
+      const now = Date.now();
+      if (now - (lastPoke.current[what] ?? 0) < 1000) return;
+      lastPoke.current[what] = now;
+      doPoke(id, what);
+    },
+    [id],
+  );
+
   const liveGone = useCallback(() => {
     forgetRoom(id);
     setGone({ undoUntil: null });
@@ -1317,7 +1333,9 @@ function RoomPage({ id }: { id: string }) {
             together={view.bothHereNow}
             onPet={() => void act("pet")}
             onHold={(on) => doHold(id, on)}
+            onPoke2={sharePoke}
             heldByThem={view.heldByThem}
+            pokedByThem={view.pokedByThem}
             onPoke={() => {
               play("mrrp");
               setNudge((v) => v + 1);
@@ -1605,10 +1623,17 @@ function RoomPage({ id }: { id: string }) {
             </div>
           </div>
         )}
+        {/*
+            No headline. The room already says this and says it better: the door swings when they
+            arrive, and the cat gets up and crosses to the middle to purr while you are both in.
+            "You're both in here right now" was the app announcing a thing you were watching happen.
+
+            What is left is not an announcement, it is the one thing the scene cannot tell you, which
+            is what you can do about it.
+        */}
         {view.bothHereNow && (
           <div className={s.together}>
-            <p className={s.togetherMain}>You're both in here right now.</p>
-            <p className={s.small} style={{ color: "var(--on-honey)", marginTop: 4 }}>
+            <p className={s.togetherMain}>
               {view.youAreHer
                 ? `${view.them ?? "He"} is right there. He can reach you.`
                 : `Hold on ${view.cat.name}. She's right there.`}

@@ -251,7 +251,9 @@ export function Cat({
   together = false,
   onPet,
   onHold,
+  onPoke2,
   heldByThem = false,
+  pokedByThem = null,
   onPoke,
   leftOut = null,
   onFound,
@@ -299,6 +301,10 @@ export function Cat({
   onHold?: (on: boolean) => void;
   /** He is holding on to her right now. Drives the same look his own hold does. */
   heldByThem?: boolean;
+  /** Called when this seat touches something, so the other one can watch it move. */
+  onPoke2?: (what: string) => void;
+  /** Something they just touched. Replays the wobble and turns her head, nothing else. */
+  pokedByThem?: { what: string; at: number } | null;
   onPoke?: () => void;
   /** Something he left out for her, played once when she opens the room and finds it. */
   leftOut?: "yarn" | "treat" | "catnip" | null;
@@ -468,6 +474,8 @@ export function Cat({
   onHoldRef.current = onHold;
   const heldRef = useRef(heldByThem);
   heldRef.current = heldByThem;
+  const onPoke2Ref = useRef(onPoke2);
+  onPoke2Ref.current = onPoke2;
   const onPokeRef = useRef(onPoke);
   const onFoundRef = useRef(onFound);
   roleRef.current = role;
@@ -543,6 +551,26 @@ export function Cat({
       speakUntil.current = performance.now() + 1700;
     }
   }, [nudge]);
+
+  /*
+   * Their touch, replayed on this screen.
+   *
+   * Only the wobble and her head turning, never the tap handler itself. That one opens the curtains,
+   * starts the rain, collects a glint and counts towards easter eggs, and none of that is theirs to
+   * do to your room from a distance.
+   *
+   * Keyed on `at`, so the same poke arriving twice, and every later view that still carries it
+   * inside its four seconds, plays once.
+   */
+  const playedPoke = useRef(0);
+  useEffect(() => {
+    if (!pokedByThem || pokedByThem.at === playedPoke.current) return;
+    playedPoke.current = pokedByThem.at;
+    const now = performance.now();
+    poked.current = { key: pokedByThem.what, at: now };
+    const prop = PROPS.find((q) => q.key === pokedByThem.what);
+    if (prop) lookAt.current = { x: prop.x + prop.sp.w / 2, until: now + 2400 };
+  }, [pokedByThem]);
 
   const seenDoodle = useRef<string | null | undefined>(undefined);
   const glanceUntil = useRef(0);
@@ -969,6 +997,7 @@ export function Cat({
           }
         }
         poked.current = { key: hit.key, at: performance.now() };
+        onPoke2Ref.current?.(hit.key);
         lookAt.current = {
           x: rainStarted ? WIN_CX : hit.x + hit.sp.w / 2,
           until: performance.now() + (rainStarted ? 4200 : 2400),
@@ -978,6 +1007,7 @@ export function Cat({
         floorPress.current = { x, y, at: performance.now(), active: false };
         lookAt.current = { x, until: performance.now() + 900 };
         poked.current = { key: "floor", at: performance.now() };
+        onPoke2Ref.current?.("floor");
       }
     };
     const onUp = () => {

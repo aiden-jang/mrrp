@@ -217,3 +217,47 @@ describe("him holding on to her", () => {
     expect((await h.view(HER)).heldByThem).toBe(false);
   });
 });
+
+describe("touching something in the room", () => {
+  it("reaches the other one and not the person who did it", async () => {
+    await h.seat();
+    const her = await connect(h.id, HER);
+    await settle();
+    expect((await h.post("poke", { me: HIM, what: "plant" })).status).toBe(200);
+    await settle();
+
+    expect(her.got.at(-1)!.view!.pokedByThem?.what).toBe("plant");
+    // His own tap already moved his own room. Sent back, it would play the wobble twice.
+    expect((await h.view(HIM)).pokedByThem).toBeNull();
+    her.ws.close();
+  });
+
+  it("goes on its own, so a reload does not replay it", async () => {
+    await h.seat();
+    await h.post("poke", { me: HIM, what: "door" });
+    expect((await h.view(HER)).pokedByThem?.what).toBe("door");
+    h.away(1);
+    expect((await h.view(HER)).pokedByThem).toBeNull();
+  });
+
+  it("refuses furniture the room does not have", async () => {
+    await h.seat();
+    expect((await h.post("poke", { me: HIM, what: "chandelier" })).status).toBe(400);
+    expect((await h.view(HER)).pokedByThem).toBeNull();
+  });
+
+  it("is private to the two seats", async () => {
+    await h.seat();
+    await h.post("poke", { me: HIM, what: "shelf" });
+    expect((await h.view(STRANGER)).pokedByThem).toBeNull();
+    expect((await h.post("poke", { me: STRANGER, what: "shelf" })).status).toBe(200);
+    // The stranger's tap reached nobody: hers still shows his, not theirs.
+    expect((await h.view(HER)).pokedByThem?.what).toBe("shelf");
+  });
+
+  it("stays out of the log, because it is not something you did for them", async () => {
+    await h.seat();
+    await h.post("poke", { me: HER, what: "bed" });
+    expect((await h.view(HIM)).theirRecent).toEqual([]);
+  });
+});
