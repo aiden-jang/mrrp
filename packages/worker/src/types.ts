@@ -116,6 +116,7 @@ export type Arrival =
   | { kind: "found"; at: number; what: DiscoveryKey | null }
   | { kind: "kept"; at: number; gift: Gift }
   | { kind: "took"; at: number; treat: Treat }
+  | { kind: "brought"; at: number; treat: Treat }
   | { kind: "first"; at: number; what: FirstKey };
 
 /*
