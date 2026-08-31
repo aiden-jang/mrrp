@@ -415,6 +415,27 @@
   margin: 12px 0 0;
 }
 
+/* The live list of what the other one has been doing, as against `.came`, which is one sentence. */
+.recent {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.recentItem {
+  font-size: 13.5px;
+  text-align: center;
+  color: var(--soft);
+}
+
+/* Everything below the newest is quieter, so the thing that just happened is the one you read. */
+.recentItem + .recentItem {
+  font-size: 12.5px;
+  opacity: 0.7;
+}
+
 /*
    * Sentence case, not letterspaced caps. Caps are the house style of dashboards and settings
    * screens: they read as a field label on a form you have to fill in. This is somebody asking how

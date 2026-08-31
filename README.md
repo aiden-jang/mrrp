@@ -59,7 +59,9 @@ request in the last three minutes, and the cat's whole co-presence routine final
 worth the name.
 
 When they do something while you are watching, the cat bounces and makes the same sound their own tap
-makes, and a line says what it was. Petting is why that exists: it is the one action that leaves no
+makes, and it joins a short list of what they have been doing. That list is for while you are both
+there; the card that says "the room kept this for you" is still for what happened while you were
+away. Petting is why that exists: it is the one action that leaves no
 mark in the room, so without it a pet arrived as silence.
 
 The socket only ever receives. Everything that changes the room still goes through the ordinary
