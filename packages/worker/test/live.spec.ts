@@ -160,3 +160,60 @@ describe("her opening the room", () => {
     him.ws.close();
   });
 });
+
+describe("him holding on to her", () => {
+  it("reaches her while it is happening, and stops when he lets go", async () => {
+    await h.seat();
+    const her = await connect(h.id, HER);
+    await settle();
+    expect(her.got.at(-1)!.view!.heldByThem).toBe(false);
+
+    expect((await h.post("hold", { me: HIM, on: true })).status).toBe(200);
+    await settle();
+    expect(her.got.at(-1)!.view!.heldByThem, "his hand, on her screen").toBe(true);
+
+    expect((await h.post("hold", { me: HIM, on: false })).status).toBe(200);
+    await settle();
+    expect(her.got.at(-1)!.view!.heldByThem).toBe(false);
+    her.ws.close();
+  });
+
+  it("is never his own hand reported back at him", async () => {
+    await h.seat();
+    await h.post("hold", { me: HIM, on: true });
+    // Rule 3. He is doing it; there is nothing for him to be told.
+    expect((await h.view(HIM)).heldByThem).toBe(false);
+    expect((await h.view(HER)).heldByThem).toBe(true);
+  });
+
+  it("lets go when his tab closes, rather than leaving a hand on her", async () => {
+    await h.seat();
+    const him = await connect(h.id, HIM);
+    const her = await connect(h.id, HER);
+    await settle();
+    await h.post("hold", { me: HIM, on: true });
+    await settle();
+    expect(her.got.at(-1)!.view!.heldByThem).toBe(true);
+
+    him.ws.close();
+    await settle();
+    expect(her.got.at(-1)!.view!.heldByThem, "his tab went, so did the hand").toBe(false);
+    her.ws.close();
+  });
+
+  it("lapses on its own if nothing ever says he let go", async () => {
+    await h.seat();
+    await h.post("hold", { me: HIM, on: true });
+    expect((await h.view(HER)).heldByThem).toBe(true);
+    // A hold is seconds. A minute later it is a tab that died without its socket noticing.
+    h.away(1);
+    expect((await h.view(HER)).heldByThem).toBe(false);
+  });
+
+  it("is his to do, not hers", async () => {
+    await h.seat();
+    await h.post("hold", { me: HER, on: true });
+    expect((await h.view(HIM)).heldByThem).toBe(false);
+    expect((await h.view(HER)).heldByThem).toBe(false);
+  });
+});

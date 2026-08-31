@@ -120,6 +120,15 @@ app.post("/api/room/:id/heract", async (c) => {
   return c.json(await room(c.env, id).herAct(body.me, body.act as CatAct));
 });
 
+app.post("/api/room/:id/hold", async (c) => {
+  const id = c.req.param("id");
+  const body = (await c.req.json().catch(() => null)) as { me?: string; on?: boolean } | null;
+  if (!ROOM_RE.test(id) || !body?.me || typeof body.on !== "boolean") {
+    return c.json({ error: "bad request" }, 400);
+  }
+  return c.json(await room(c.env, id).hold(body.me, body.on));
+});
+
 app.post("/api/room/:id/boxout", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as { me?: string } | null;

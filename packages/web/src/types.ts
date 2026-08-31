@@ -150,6 +150,8 @@ export interface RoomView {
   gift: Gift | null;
   /** Whether there is a box in the room for her to get into. */
   boxOut: boolean;
+  /** He is holding on to her at this moment. Hers to see; never his own hand reported back. */
+  heldByThem: boolean;
   /** What he left out for her, until she opens the room and finds it. Null on his side. */
   forHer: Treat | null;
   // The hour he really turns up. Null until the room has watched long enough to disagree with him.

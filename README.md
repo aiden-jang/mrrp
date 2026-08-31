@@ -64,6 +64,9 @@ there; the card that says "the room kept this for you" is still for what happene
 away. Petting is why that exists: it is the one action that leaves no
 mark in the room, so without it a pet arrived as silence.
 
+When he holds on to her, she sees it while it is happening rather than afterwards: the cat's eyes
+close, the purr builds, and it stops when he lets go.
+
 The socket only ever receives. Everything that changes the room still goes through the ordinary
 routes where the seat checks are, so it cannot become a second way to write. Sockets are hibernatable,
 so a room with two phones asleep on it costs nothing. There is still a poll behind it, at 120 seconds

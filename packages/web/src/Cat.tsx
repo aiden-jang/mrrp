@@ -250,6 +250,8 @@ export function Cat({
   role = null,
   together = false,
   onPet,
+  onHold,
+  heldByThem = false,
   onPoke,
   leftOut = null,
   onFound,
@@ -293,6 +295,10 @@ export function Cat({
   role?: "him" | "her" | null;
   together?: boolean;
   onPet?: () => void;
+  /** Called on every press and release of the cat, by him. */
+  onHold?: (on: boolean) => void;
+  /** He is holding on to her right now. Drives the same look his own hold does. */
+  heldByThem?: boolean;
   onPoke?: () => void;
   /** Something he left out for her, played once when she opens the room and finds it. */
   leftOut?: "yarn" | "treat" | "catnip" | null;
@@ -458,6 +464,10 @@ export function Cat({
 
   const roleRef = useRef(role);
   const onPetRef = useRef(onPet);
+  const onHoldRef = useRef(onHold);
+  onHoldRef.current = onHold;
+  const heldRef = useRef(heldByThem);
+  heldRef.current = heldByThem;
   const onPokeRef = useRef(onPoke);
   const onFoundRef = useRef(onFound);
   roleRef.current = role;
@@ -659,6 +669,7 @@ export function Cat({
     };
     const onLeave = () => {
       ptr.in = false;
+      if (petting.current) onHoldRef.current?.(false);
       petting.current = false;
       slowBlink.current.answered = false;
       if (floorPress.current?.active) laser.current.until = performance.now() + LASER_RELEASE_MS;
@@ -729,6 +740,7 @@ export function Cat({
         const now = performance.now();
         if (roleRef.current === "him") {
           petting.current = true;
+          onHoldRef.current?.(true);
           onPetRef.current?.();
         } else if (roleRef.current === "her") onPokeRef.current?.();
         else {
@@ -969,6 +981,7 @@ export function Cat({
       }
     };
     const onUp = () => {
+      if (petting.current) onHoldRef.current?.(false);
       petting.current = false;
       ptr.in = true;
       const press = floorPress.current;
@@ -989,6 +1002,7 @@ export function Cat({
       play("mrrp");
     };
     const onCancel = () => {
+      if (petting.current) onHoldRef.current?.(false);
       petting.current = false;
       floorPress.current = null;
     };
@@ -2081,7 +2095,9 @@ export function Cat({
       const want = ptr.in ? Math.max(0, 1 - Math.hypot(ptr.x - kx, ptr.y - (ky - 8)) / 44) : 0;
       near.current += (want - near.current) * 0.07;
       const n = near.current;
-      const pet = petting.current;
+      // His hand, whichever side of it you are on. `petting` is his own press; `heldRef` is the same
+      // press arriving on her screen, and the closed eyes, the purr and the heart all hang off this.
+      const pet = petting.current || heldRef.current;
       bounce.current = Math.max(0, bounce.current - 0.02);
 
       petDepth.current = Math.max(0, Math.min(1, petDepth.current + (pet ? 0.006 : -0.003)));

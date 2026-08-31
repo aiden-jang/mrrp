@@ -26,6 +26,7 @@ import {
   doOurDay,
   doRecover,
   doRelease,
+  doHold,
   doBoxOut,
   doCatAct,
   doLeaveGift,
@@ -1315,6 +1316,8 @@ function RoomPage({ id }: { id: string }) {
             role={iAmHim ? "him" : view.youAreHer ? "her" : null}
             together={view.bothHereNow}
             onPet={() => void act("pet")}
+            onHold={(on) => doHold(id, on)}
+            heldByThem={view.heldByThem}
             onPoke={() => {
               play("mrrp");
               setNudge((v) => v + 1);
