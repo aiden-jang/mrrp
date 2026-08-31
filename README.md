@@ -48,6 +48,10 @@ press for is a chore, so the view that carries it is the one that spends it. Tha
 the view is built rather than before, which is the bug the first version had: it spent the thing on
 the way past and she was never given what she had just found.
 
+Making "what the other one has been doing" symmetric quietly opened it to anybody holding the link.
+It had been keyed on "am I her", which excluded a stranger by accident rather than on purpose, and
+the accident was the only thing keeping it shut. It is gated on holding a seat now.
+
 You tell the cat how you are. It answers, and the other person finds out.
 
 ```bash
