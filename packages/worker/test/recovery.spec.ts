@@ -55,7 +55,8 @@ describe("taking his seat back", () => {
     await post("recover", { me: NEWPHONE, code });
 
     const v = await view(NEWPHONE);
-    expect(v.yourNotes).toEqual(["mine to keep"]);
+    const mine = await SELF.fetch(`https://x/api/room/${id}/notes?me=${NEWPHONE}`);
+    expect(await mine.json()).toEqual({ notes: ["mine to keep"] });
     expect(v.herLine?.text).toBe("still here");
     expect(v.framed).toBe(true);
   });

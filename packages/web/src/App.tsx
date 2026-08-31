@@ -26,6 +26,7 @@ import {
   doOurDay,
   doRecover,
   doRelease,
+  fetchNotes,
   doPoke,
   doHold,
   doBoxOut,
@@ -261,6 +262,7 @@ export const FOUND_ANNOUNCEMENTS: Record<string, string> = {
   bubbles: "bubbles are drifting through the room.",
   aurora: "lights are moving across the window.",
   mrrp: "she is purring.",
+  reached: "you both went for the same thing at the same time.",
   summon: "she has come over.",
   herName: "she knows her own name.",
   box: "a box has turned up.",
@@ -1022,8 +1024,11 @@ function RoomPage({ id }: { id: string }) {
     }
   };
 
-  const openSetup = () => {
+  const openSetup = async () => {
     if (!view) return;
+    // Fetched rather than carried in the view. If it fails the panel still opens, with the notes box
+    // empty, and saving an empty box is what restores the defaults anyway.
+    const notes = await fetchNotes(id).catch(() => [] as string[]);
     const look =
       LOOKS.find((l) => l.cat.fur.toLowerCase() === view.cat.fur.toLowerCase())?.id ?? LOOKS[0]!.id;
     const eyes = EYES.find((e) => e.hex.toLowerCase() === view.cat.eyes.toLowerCase())?.id ?? EYES[0]!.id;
@@ -1033,7 +1038,7 @@ function RoomPage({ id }: { id: string }) {
       eyes,
       tz: view.clock.tz,
       homeHour: view.clock.homeHour,
-      notes: (view.yourNotes ?? []).join("\n"),
+      notes: notes.join("\n"),
       ourDate: view.ourDay ? `2000-${pad(view.ourDay.month)}-${pad(view.ourDay.day)}` : "",
       ourLabel: view.ourDay?.label ?? "",
     });
@@ -1336,6 +1341,7 @@ function RoomPage({ id }: { id: string }) {
             onPoke2={sharePoke}
             heldByThem={view.heldByThem}
             pokedByThem={view.pokedByThem}
+            reachedTogether={view.reachedTogether}
             onPoke={() => {
               play("mrrp");
               setNudge((v) => v + 1);
@@ -1660,7 +1666,7 @@ function RoomPage({ id }: { id: string }) {
                 ref={setupTrigger}
                 className={s.btn}
                 style={{ width: "100%", marginTop: 12 }}
-                onClick={openSetup}
+                onClick={() => void openSetup()}
                 aria-expanded={setup}
               >
                 Write her notes, name her, choose how she looks
@@ -1935,7 +1941,7 @@ function RoomPage({ id }: { id: string }) {
               </p>
             )}
             {iAmHim && !setup && (
-              <button className={s.quiet} onClick={openSetup}>
+              <button className={s.quiet} onClick={() => void openSetup()}>
                 Write her notes, or change how {view.cat.name} looks
               </button>
             )}

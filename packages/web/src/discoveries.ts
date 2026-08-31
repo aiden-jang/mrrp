@@ -14,6 +14,7 @@ export const DISCOVERY_KEYS = [
   "music",
   "mouse",
   "belly",
+  "reached",
 ] as const;
 
 export type DiscoveryKey = (typeof DISCOVERY_KEYS)[number];

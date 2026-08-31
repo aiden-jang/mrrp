@@ -74,6 +74,8 @@ const HERE_NOW_MS = 3 * 60_000;
 const HELD_LAPSE_MS = 30_000;
 /* Long enough for the wobble to play on a slow connection, short enough not to replay on a reload. */
 const POKE_LIVE_MS = 4_000;
+/* Both reaching for the same thing. Long enough to be the same thought, short enough to be a moment. */
+const REACH_MS = 3_000;
 const DEFAULT_CAT: Cat = {
   name: "Bean",
   fur: "#e8963f",
@@ -312,6 +314,16 @@ export class Room extends DurableObject<Env> {
     const { him, her } = this.roles(people);
     if (me !== him && me !== her) return this.build(me, people);
 
+    /*
+     * Both of you reaching for the same thing at the same time.
+     *
+     * The only thing in the room neither of you can do alone, other than her rolling over, and it
+     * costs nothing to notice: the last poke is already sitting there waiting to be replaced.
+     */
+    const last = await this.ctx.storage.get<Poke>("poke");
+    if (last && last.who !== me && last.what === what && Date.now() - last.at < REACH_MS) {
+      await this.ctx.storage.put("reach", { what, at: Date.now() });
+    }
     await this.ctx.storage.put<Poke>("poke", { who: me, what, at: Date.now() });
     people[me].lastSeen = Date.now();
     await this.ctx.storage.put("people", people);
@@ -549,6 +561,21 @@ export class Room extends DurableObject<Env> {
     return true;
   }
 
+  /*
+   * His own notes, fetched when he opens the panel that edits them.
+   *
+   * These used to ride in every RoomView. That was cheap while the client pulled one every fifteen
+   * seconds and stopped being cheap the moment the room started pushing on every write: they are
+   * capped at 120 notes of 280 characters, so up to 33KB of his own writing was going back to him on
+   * every pet, poke and press. One reader, one fetch, when the panel actually opens.
+   */
+  async notesFor(me: string): Promise<string[] | null> {
+    await this.guard();
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (this.roles(people).him !== me) return null;
+    return this.notes();
+  }
+
   private async notes(): Promise<string[]> {
     const own = await this.ctx.storage.get<string[]>("notes");
     return own && own.length > 0 ? own : NOTES;
@@ -704,6 +731,16 @@ export class Room extends DurableObject<Env> {
       }
       throw e;
     }
+
+    /*
+     * Not coalesced, deliberately. Merging writes inside a short window was tried and backed out: it
+     * needs a timer and two fields of in-memory state on an object that hibernates, and it can only
+     * ever fail in the direction of the room silently going quiet.
+     *
+     * The number that made it not worth it is above. A view is about 1.1KB now that his notes are
+     * fetched rather than pushed; coalescing would have saved another 1.1KB on a double-write like a
+     * press, against the 6.9KB that taking the notes out already saved.
+     */
     await this.broadcast();
   }
 
@@ -1151,6 +1188,7 @@ export class Room extends DurableObject<Env> {
     const leftOut = await this.ctx.storage.get<LeftOut>("forHer");
     const held = seated ? await this.ctx.storage.get<Held>("held") : null;
     const poke = seated ? await this.ctx.storage.get<Poke>("poke") : null;
+    const reach = seated ? await this.ctx.storage.get<{ what: string; at: number }>("reach") : null;
     const windowLight = await this.ctx.storage.get<WindowLight>("windowLight");
     const startedAt = roomStartedAt(
       Object.values(people).map((person) => person.firstSeen),
@@ -1233,7 +1271,6 @@ export class Room extends DurableObject<Env> {
       doodle: await this.doodleFor(me, seated),
       note: youAreHer ? note : null,
       noteDay: seated && !youAreHer ? (note?.day ?? null) : null,
-      yourNotes: seated && !youAreHer ? await this.notes() : null,
       ourDay: seated && !youAreHer ? ((await this.ctx.storage.get<OurDay>("ourDay")) ?? null) : null,
       framed: (await this.ctx.storage.get<boolean>("framed")) ?? false,
       shelfDown: (await this.ctx.storage.get<boolean>("shelfDown")) ?? false,
@@ -1269,6 +1306,8 @@ export class Room extends DurableObject<Env> {
         poke && poke.who === otherId && Date.now() - poke.at < POKE_LIVE_MS
           ? { what: poke.what, at: poke.at }
           : null,
+      // Both of you, unlike everything else in here. Neither of you did this one to the other.
+      reachedTogether: reach && Date.now() - reach.at < POKE_LIVE_MS ? reach : null,
       // Keep `seated` here. Without it anybody holding the link is told what she has been doing.
       theirRecent: seated && otherId ? log.filter((v) => v.who === otherId).slice(0, 4) : [],
       theyCameAfter: !!catTold && !!them && youAreHer && them.lastSeen > catTold.at,

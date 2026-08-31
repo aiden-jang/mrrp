@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context, type Next } from "hono";
 import { getSessionUser } from "@aidenjang/auth-client";
 import type { Action, CatAct, Gift, Mood, Treat } from "./types.js";
 import type { Tally, TallyKey } from "./remembers.js";
@@ -76,11 +76,10 @@ app.get("/api/room/:id/live", async (c) => {
  * turns up, counts a visit, and spends whatever he left out for her. That last one is the moment he
  * most wants to see, and without this he would wait for his own next poll to learn she found it.
  */
-app.on(["GET", "POST"], ["/api/room/:id", "/api/room/:id/*"], async (c, next) => {
+const pushAfter = async (c: Context<{ Bindings: Env }>, next: Next) => {
   await next();
-  const id = c.req.param("id");
-  // Not the upgrade: that route hands back a socket and has already broadcast on its way out.
-  if (!ROOM_RE.test(id) || c.res.status >= 400 || c.req.path.endsWith("/live")) return;
+  const id = c.req.param("id") ?? "";
+  if (!ROOM_RE.test(id) || c.res.status >= 400) return;
   // Swallowed on purpose: a push that fails must not turn a write that worked into an error, and
   // the one failure that matters, a room deleted mid-request, closes the sockets on its way out.
   c.executionCtx.waitUntil(
@@ -88,6 +87,21 @@ app.on(["GET", "POST"], ["/api/room/:id", "/api/room/:id/*"], async (c, next) =>
       .notify()
       .catch(() => {}),
   );
+};
+
+// Named exactly rather than with a wildcard. `/live` hands back a socket and has already broadcast,
+// and the notes fetch changes nothing, so neither should wake the other tab.
+app.on(["GET"], "/api/room/:id", pushAfter);
+app.on(["POST"], "/api/room/:id/*", pushAfter);
+
+// His notes, for the panel that edits them. Not in RoomView: see `notesFor`.
+app.get("/api/room/:id/notes", async (c) => {
+  const id = c.req.param("id");
+  const me = c.req.query("me") ?? "";
+  if (!ROOM_RE.test(id) || me.length < 8) return c.json({ error: "bad request" }, 400);
+  const notes = await room(c.env, id).notesFor(me);
+  if (!notes) return c.json({ error: "not yours" }, 403);
+  return c.json({ notes });
 });
 
 app.get("/api/room/:id", async (c) => {

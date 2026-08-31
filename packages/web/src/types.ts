@@ -154,6 +154,8 @@ export interface RoomView {
   heldByThem: boolean;
   /** Something they just touched in the room, for a few seconds. Null on their own side. */
   pokedByThem: { what: string; at: number } | null;
+  /** You both reached for the same thing at once. Sent to both, which nothing else is. */
+  reachedTogether: { what: string; at: number } | null;
   /** What he left out for her, until she opens the room and finds it. Null on his side. */
   forHer: Treat | null;
   // The hour he really turns up. Null until the room has watched long enough to disagree with him.
@@ -167,7 +169,6 @@ export interface RoomView {
   linked: boolean;
   recoveryCode: string | null;
   ourDay: { month: number; day: number; label: string } | null;
-  yourNotes: string[] | null;
   herLine: Told2 | null;
   doodle: { cells: string; mine: boolean; at: number } | null;
   note: Note | null;
