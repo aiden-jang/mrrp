@@ -515,6 +515,13 @@ and does the same job better: he picks the thing, she finds it, and he is told. 
 used to set draws the thing he actually left, which also means it sits there waiting rather than
 existing only inside a six-second animation.
 
+**The box takes both of them.** Putting one out is a person's doing and getting into it is a cat's,
+and they used to be the same event: she summoned a box from nowhere and was already sitting in it.
+"Bring her something" hid that by putting the box out a third of the time it was pressed, and cutting
+it left her the only source. He puts a box out now and she decides whether to get in, which makes it
+the one thing in the room that needs the two of them. Her button says so when there is nothing to get
+into, rather than doing nothing when pressed.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

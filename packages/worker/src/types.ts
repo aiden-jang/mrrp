@@ -26,6 +26,12 @@ export const ACTIONS: { id: Action; label: string; past: string; mine: string }[
  */
 export type CatAct = "shelf" | "box" | "gift";
 
+/*
+ * Everything the log can hold. His buttons, her cat acts, and the two things he does from his own
+ * panel: leaving something out, and putting a box out for her to get into.
+ */
+export type LogAction = Action | CatAct | "leaveout" | "boxout";
+
 export const CAT_ACTS: { id: CatAct; label: string; past: string; mine: string }[] = [
   {
     id: "shelf",
@@ -96,7 +102,7 @@ export interface Note {
 export interface Visit {
   at: number;
   who: string;
-  action: Action | CatAct | "leaveout";
+  action: LogAction;
 }
 
 export interface Told2 {
@@ -110,7 +116,7 @@ export interface Told {
 }
 
 export type Arrival =
-  | { kind: "action"; at: number; action: Action | CatAct | "leaveout" }
+  | { kind: "action"; at: number; action: LogAction }
   | { kind: "mood"; at: number; mood: Mood }
   | { kind: "line"; at: number; text: string }
   | { kind: "drawn"; at: number; cells: string }
@@ -162,6 +168,8 @@ export interface RoomView {
   monthsOld: number;
   shelfDown: boolean;
   gift: Gift | null;
+  /** Whether there is a box in the room for her to get into. */
+  boxOut: boolean;
   /** What he left out for her, until she opens the room and finds it. Null on his side. */
   forHer: Treat | null;
   // The hour he actually turns up, once the room has watched long enough to disagree with the one
