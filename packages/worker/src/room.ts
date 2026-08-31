@@ -185,11 +185,6 @@ export class Room extends DurableObject<Env> {
     }
 
     const { him: h, her: hr } = this.roles(people);
-    if (hr && me === hr && Math.random() < 0.18) {
-      if (!(await this.ctx.storage.get<boolean>("shelfDown"))) {
-        await this.ctx.storage.put("shelfDown", true);
-      }
-    }
     if (hr && me === hr && h && now - (people[h]?.lastSeen ?? 0) > GIFT_AFTER_MS) {
       if (!(await this.ctx.storage.get<string>("gift"))) {
         await this.ctx.storage.put("gift", GIFTS[Math.floor(Math.random() * GIFTS.length)]!);

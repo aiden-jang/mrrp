@@ -213,7 +213,7 @@ describe("the thing she knocks off the shelf", () => {
   it("can be put back by either of them, and by no one else", async () => {
     await seat();
     const knock = async () => {
-      for (let i = 0; i < 200 && !(await view(HIM)).shelfDown; i++) await view(HER);
+      expect((await post("heract", { me: HER, act: "shelf" })).status).toBe(200);
       expect((await view(HIM)).shelfDown).toBe(true);
     };
 
@@ -231,6 +231,17 @@ describe("the thing she knocks off the shelf", () => {
     await putBack(HER);
     await knock();
     await putBack(HIM);
+  });
+});
+
+describe("the room's dice", () => {
+  // She is the cat, so the shelf is hers to knock off. The room used to roll it on an 18% chance
+  // every time she opened it, which put the mug on the floor with no line saying who did it. Fifty
+  // reads is a 1 in 20,000,000 chance of seeing nothing if that roll ever comes back.
+  it("never knocks the mug off on her behalf, however many times she looks in", async () => {
+    await seat();
+    for (let i = 0; i < 50; i++) await view(HER);
+    expect((await view(HIM)).shelfDown).toBe(false);
   });
 });
 
