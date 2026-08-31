@@ -359,6 +359,28 @@ The countdown is in hours, so the room only needs a coarse clock of its own, fiv
 one, "in about 5 hours" sits there saying five for as long as nobody touches the room, because
 everything else that re-renders it is somebody doing something.
 
+## Being held is a duration, so it is not in the log
+
+Everything else in the room is an event: he did a thing, the room kept the mark. Holding on to her is
+not that. It has a beginning and an end, and the whole of it is the middle, which is why she used to
+get "Aiden petted you" only once his hand was already gone.
+
+The cat already knew how to be petted. Her eyes close, the purr deepens the longer it goes on, and a
+heart rises off her. All of that hung off one local flag set by his own press. Live touch is that
+same flag, set by his press arriving on her screen, so there is no new drawing anywhere in this.
+
+It stays off the log and out of the tally on purpose. A hold is not a thing he did, it is a thing he
+is doing, and counting every press would make the `fed` trait a measure of how twitchy his thumb is.
+
+Two ways a hand can be left on her, and both are covered. His tab closing mid-hold is caught by the
+socket's own close handler, which knows whose seat it was. Anything that gets past that lapses after
+thirty seconds, because a real hold is a few seconds and a minute-old one is a tab that died without
+saying so.
+
+The posts are fire and forget. They fire on every press and release of the cat, and a failed one is
+worth nothing: the cost is a hand she does not see, or one that lapses half a minute late, and
+neither is worth a red bar across a room where somebody is trying to pet a cat.
+
 ## Nothing accumulates into an inbox
 
 The arrival card is capped and clears itself. The visit log is bounded. There is no unread count, no

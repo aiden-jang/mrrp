@@ -94,7 +94,9 @@ export function forgetRoom(id: string): void {
 // remembered name. Don't use `lastRoom`: App writes that for any id in the path, opened or not.
 export function beenHere(id: string): boolean {
   try {
-    return localStorage.getItem(`mrrp:mine:${id}`) !== null || localStorage.getItem(`mrrp:cat:${id}`) !== null;
+    return (
+      localStorage.getItem(`mrrp:mine:${id}`) !== null || localStorage.getItem(`mrrp:cat:${id}`) !== null
+    );
   } catch {
     return false;
   }
@@ -250,6 +252,17 @@ export async function doCatAct(id: string, act: CatAct): Promise<RoomView> {
   const r = await send(`/api/room/${id}/heract`, { me: myToken(), act });
   if (!r.ok) throw new Error("Couldn't do that.");
   return r.json() as Promise<RoomView>;
+}
+
+/*
+ * Took hold, or let go.
+ *
+ * Fire and forget, and it must stay that way. This fires on every press and release of the cat, so a
+ * failure here is not worth a red bar across a room where somebody is trying to pet a cat. The worst
+ * a dropped one costs is a hand she does not see, or one that lapses on its own thirty seconds late.
+ */
+export function doHold(id: string, on: boolean): void {
+  void send(`/api/room/${id}/hold`, { me: myToken(), on }).catch(() => {});
 }
 
 export async function doBoxOut(id: string): Promise<RoomView> {

@@ -17,6 +17,13 @@ export type LiveState = "connecting" | "open" | "closed";
 /* Long enough that a dead socket is not a busy loop, short enough that a flaky tunnel recovers. */
 const BACKOFF_MS = [1_000, 2_000, 5_000, 10_000, 20_000];
 
+/*
+ * Keepalive. Carriers and office proxies hang up a socket that has said nothing for a while, and a
+ * room can be quiet for hours, which is the normal case rather than the odd one. The server answers
+ * "pong" and nothing else; this exists to make the connection look alive to whatever is in between.
+ */
+const PING_MS = 30_000;
+
 export function useLive(
   id: string,
   enabled: boolean,
@@ -33,6 +40,7 @@ export function useLive(
   useEffect(() => {
     if (!enabled) return;
     let ws: WebSocket | null = null;
+    let beat: ReturnType<typeof setInterval> | null = null;
     let retry: ReturnType<typeof setTimeout> | null = null;
     let attempt = 0;
     let stopped = false;
@@ -51,6 +59,17 @@ export function useLive(
       socket.onopen = () => {
         attempt = 0;
         setState("open");
+        if (beat) clearInterval(beat);
+        beat = setInterval(() => {
+          // Sending on a socket that has closed under you throws, and the throw would kill the timer
+          // rather than the socket.
+          if (socket.readyState !== WebSocket.OPEN) return;
+          try {
+            socket.send("ping");
+          } catch {
+            socket.close();
+          }
+        }, PING_MS);
       };
       socket.onmessage = (e) => {
         if (typeof e.data !== "string" || e.data === "pong") return;
@@ -63,6 +82,10 @@ export function useLive(
         if (msg.type === "view" && msg.view) view.current(msg.view);
       };
       socket.onclose = () => {
+        if (beat) {
+          clearInterval(beat);
+          beat = null;
+        }
         setState("closed");
         schedule();
       };
@@ -95,6 +118,7 @@ export function useLive(
     return () => {
       stopped = true;
       document.removeEventListener("visibilitychange", wake);
+      if (beat) clearInterval(beat);
       if (retry) clearTimeout(retry);
       ws?.close();
     };

@@ -70,6 +70,8 @@ function widenDoodle(cells: string): string {
 const LOG_KEEP = 40;
 const LEFT_KEEP = 20;
 const HERE_NOW_MS = 3 * 60_000;
+/* A hold is seconds. Anything older is a tab that died without its socket saying so. */
+const HELD_LAPSE_MS = 30_000;
 const DEFAULT_CAT: Cat = {
   name: "Bean",
   fur: "#e8963f",
@@ -149,6 +151,18 @@ interface Person {
 interface Blanket {
   key: BlanketKey;
   stripe: boolean;
+}
+
+/*
+ * Him holding on her, right now.
+ *
+ * The only thing in the room that is a duration rather than an event, which is why it is not in the
+ * log: it is not something he did, it is something he is doing. `at` is a lapse guard for a tab that
+ * dies mid-hold without its socket noticing; a real hold is seconds.
+ */
+interface Held {
+  who: string;
+  at: number;
 }
 
 interface WindowLight {
@@ -272,6 +286,20 @@ export class Room extends DurableObject<Env> {
       [{ at: Date.now(), who: me, action: act }, ...previous].slice(0, LOG_KEEP),
     );
 
+    people[me].lastSeen = Date.now();
+    await this.ctx.storage.put("people", people);
+    return this.build(me, people);
+  }
+
+  /** Held on, or let go. See `Held`. */
+  async hold(me: string, on: boolean): Promise<RoomView> {
+    await this.guard();
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (!people[me]) return this.build(me, people);
+    if (this.roles(people).him !== me) return this.build(me, people);
+
+    if (on) await this.ctx.storage.put<Held>("held", { who: me, at: Date.now() });
+    else await this.ctx.storage.delete("held");
     people[me].lastSeen = Date.now();
     await this.ctx.storage.put("people", people);
     return this.build(me, people);
@@ -685,11 +713,15 @@ export class Room extends DurableObject<Env> {
   }
 
   async webSocketClose(ws: WebSocket): Promise<void> {
+    const me = this.tokenOf(ws);
     try {
       ws.close();
     } catch {
       // Already closed.
     }
+    // He closed the tab mid-hold. Without this she watches a hand that is not there until it lapses.
+    const held = await this.ctx.storage.get<Held>("held");
+    if (me && held?.who === me) await this.ctx.storage.delete("held");
     // The other seat is watching a cat that thinks it has company.
     await this.broadcast();
   }
@@ -1090,6 +1122,7 @@ export class Room extends DurableObject<Env> {
     const theyLeft = kept && Date.now() < kept.dropsAt ? { name: cat.name, until: kept.dropsAt } : null;
     const theyWereTold = undoLeaveUntil && him ? (people[him]?.name ?? null) : null;
     const leftOut = await this.ctx.storage.get<LeftOut>("forHer");
+    const held = seated ? await this.ctx.storage.get<Held>("held") : null;
     const windowLight = await this.ctx.storage.get<WindowLight>("windowLight");
     const startedAt = roomStartedAt(
       Object.values(people).map((person) => person.firstSeen),
@@ -1199,6 +1232,9 @@ export class Room extends DurableObject<Env> {
       recoveryCode: seated ? await this.recoveryCode(youAreHer ? "her" : "him") : null,
       seat: seated ? me : null,
       linked: seated ? (people[me]?.account ?? null) !== null : false,
+      // Only ever true for the seat being held on to, which is hers. Nobody watches a third person
+      // being petted.
+      heldByThem: !!held && held.who === otherId && Date.now() - held.at < HELD_LAPSE_MS,
       // Keep `seated` here. Without it anybody holding the link is told what she has been doing.
       theirRecent: seated && otherId ? log.filter((v) => v.who === otherId).slice(0, 4) : [],
       theyCameAfter: !!catTold && !!them && youAreHer && them.lastSeen > catTold.at,
