@@ -55,6 +55,7 @@ import { Cat } from "./Cat.js";
 import { useLive } from "./live.js";
 import { heard } from "./heard.js";
 import { coveredBy, liveOnly } from "./recent.js";
+import { fadeNote, listOf } from "./fades.js";
 import { dayApart, HER_SPOT, mixHex, sceneFor, type Scene } from "./hours.js";
 import { moonLine } from "./moon.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
@@ -835,6 +836,18 @@ function RoomPage({ id }: { id: string }) {
   }, [line, lineOpen]);
   const [awayNote, setAwayNote] = useState<string | null>(null);
   const [arrivalCard, setArrivalCard] = useState<Arrival[] | null>(null);
+  /*
+   * A clock for the countdown, coarse on purpose.
+   *
+   * The room re-renders whenever anything happens in it, which is most of the time, but "goes at
+   * midnight, in about 5 hours" would otherwise still say five three hours later in a room nobody
+   * touched. The string is in hours, so five minutes is as fine as this needs to be.
+   */
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 300_000);
+    return () => clearInterval(t);
+  }, []);
   // How far the card has already told them. See recent.ts: it is a mark rather than a flag so that
   // dismissing the card does not put everything it showed back into the list.
   const covered = useRef(0);
@@ -1242,6 +1255,9 @@ function RoomPage({ id }: { id: string }) {
     view.boxOut && "a box",
   ]);
   const herMarks = listOf([view.shelfDown && "the mug on the floor", view.box && "you in the box"]);
+  // Three lifetimes share one room and nothing said which was which. See fades.ts.
+  const hisFades = fadeNote(view, "him", now);
+  const herFades = fadeNote(view, "her", now);
 
   const herDay = iAmHim ? dayApart(view.clock) : null;
   const moon = nightChrome ? moonLine(new Date(), view.cat.name, view.youAreHer) : null;
@@ -1746,6 +1762,7 @@ function RoomPage({ id }: { id: string }) {
                 He'll find {herMarks}.
               </p>
             )}
+            {herFades && <p className={s.fades}>{herFades}</p>}
 
             <p className={s.tellLabel}>Leave him something</p>
             <div className={s.moodRow}>
@@ -1872,6 +1889,7 @@ function RoomPage({ id }: { id: string }) {
                     She'll find {hisMarks}.
                   </p>
                 )}
+                {hisFades && <p className={s.fades}>{hisFades}</p>}
               </>
             )}
 
@@ -2408,18 +2426,6 @@ function Select({
       </svg>
     </span>
   );
-}
-
-/*
- * Everything he does leaves a mark a few pixels wide on a canvas the size of a postcard, so a button
- * that only changed the drawing read as a button that did nothing. This is the room reported back in
- * words. It says what is in the room now, not who did it, which is what keeps it out of rule 3.
- */
-function listOf(parts: (string | false | null | undefined)[]): string | null {
-  const kept = parts.filter((v): v is string => typeof v === "string" && v.length > 0);
-  if (kept.length === 0) return null;
-  if (kept.length === 1) return kept[0]!;
-  return `${kept.slice(0, -1).join(", ")} and ${kept[kept.length - 1]}`;
 }
 
 /** Petting leaves nothing to find, which is why it is not in here. */

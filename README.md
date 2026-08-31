@@ -306,6 +306,10 @@ canvas the size of a postcard, so a button whose only effect was on the drawing 
 did nothing. The line says what is in the room now rather than who did it, which keeps it clear of
 rule 3.
 
+It also says when they go, which it never used to: "the tuft, the dent and the box go at midnight
+where she is, in about 12 hours. The picture stays up." Whose midnight matters. The room runs on her
+day, so his own can be most of a day away from the one that clears it.
+
 An action that leaves nothing is a button he presses, a line she is told, and a room exactly as it
 was. A present that does not exist is a worse gesture than no present, which is why `brush` and `sit`
 each got a mark and why `bring her something` was cut: it rolled a die between a box and a bow, so it
