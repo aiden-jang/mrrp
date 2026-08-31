@@ -1229,7 +1229,9 @@ function RoomPage({ id }: { id: string }) {
               </p>
             ))}
         {!setup && nudge === 0 && (iAmHim || view.youAreHer) && (
-          <p className={s.hint}>{iAmHim ? `Hold on ${view.cat.name} to pet her` : `Tap ${view.cat.name}`}</p>
+          /* "Tap {her own name}" is not something to say to her. His first move is on her; hers is
+             telling him how she is, which is the only thing in here that leaves her side. */
+          <p className={s.hint}>{iAmHim ? `Hold on ${view.cat.name} to pet her` : "Tell him how you are"}</p>
         )}
         {iAmHim && setup && draft && (
           <div
@@ -1433,8 +1435,14 @@ function RoomPage({ id }: { id: string }) {
           <div className={s.together}>
             <p className={s.togetherMain}>You're both in here right now.</p>
             <p className={s.small} style={{ color: "var(--on-honey)", marginTop: 4 }}>
+              {/*
+                Her half used to read "hold on {her own name} and he'll see it happen", which told
+                her to hold herself and promised something that does not happen: his touch is
+                act("pet") and reaches her, hers is a local sound and reaches nobody. She is the cat.
+                She is not holding it.
+              */}
               {view.youAreHer
-                ? `Hold on ${view.cat.name} and he'll see it happen.`
+                ? `${view.them ?? "He"} is right there. He can reach you.`
                 : `Hold on ${view.cat.name}. She's right there.`}
             </p>
           </div>

@@ -10,6 +10,11 @@ names for one person and could not decide which she was.
 Ending the room asks him to sign his own name. It used to ask for the cat's name, which was a nice
 touch while the cat was a pet and became "type her name to erase her" the moment she was not.
 
+Her half of the copy had to change with her. It told her to "hold on Sofia" -- her own name -- and
+promised he would see it, which he would not: his touch on her is a recorded action and reaches her,
+hers is a local sound and reaches nobody. Her first-time hint said "tap Sofia" for the same reason.
+She is the cat; she is not holding it.
+
 You tell the cat how you are. It answers, and the other person finds out.
 
 ```bash
