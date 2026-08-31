@@ -267,6 +267,7 @@ than the UI, because a rule enforced in the browser is a rule anyone can turn of
 | `POST .../act`                | him only    | pet, brush, sit, photo. Each one leaves a mark                                |
 | `POST .../heract`             | her only    | what she does as the cat: shelf, box, gift                                    |
 | `POST .../boxout`             | him only    | puts a box in the room. She decides whether to get in                         |
+| `POST .../hold`               | him only    | took hold of her, or let go. The one thing that is a duration                 |
 | `POST .../leaveout`           | him only    | leaves the yarn, a treat or the catnip for her to find                        |
 | `POST .../gift`               | her only    | picks which of the three he finds                                             |
 | `POST .../shelf`              | either seat | puts the mug back. The one write both of them may make                        |
