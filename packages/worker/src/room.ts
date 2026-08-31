@@ -208,7 +208,7 @@ export class Room extends DurableObject<Env> {
      * there is nothing to press, and a surprise you have to press for is a chore. He learns she
      * found it from his arrival card, the way she learns he took her gift.
      */
-    if (built.forHer) {
+    if (built.forHer && this.roles(people).her === me) {
       await this.ctx.storage.delete("forHer");
       await this.ctx.storage.put<LeftOut>("forHerTaken", { treat: built.forHer, at: Date.now() });
     }
@@ -1054,8 +1054,14 @@ export class Room extends DurableObject<Env> {
        * to see what she left him, or choosing is choosing into the dark.
        */
       gift: seated ? ((await this.ctx.storage.get<Gift>("gift")) ?? null) : null,
-      /* Only she is shown it: it is a thing waiting for her, and he knows what he left. */
-      forHer: youAreHer ? ((await this.ctx.storage.get<LeftOut>("forHer"))?.treat ?? null) : null,
+      /*
+       * Both of them, for different reasons: she finds it, and he needs to see it is still out.
+       *
+       * It was hers alone at first, on the reasoning that he knows what he left. He does not: with
+       * nothing shown on his side, leaving something out looked exactly like a button that does not
+       * work, and there was no way to tell "still waiting" from "she has been in and found it".
+       */
+      forHer: seated ? ((await this.ctx.storage.get<LeftOut>("forHer"))?.treat ?? null) : null,
       blanket: (await this.ctx.storage.get<Blanket>("blanket")) ?? null,
       expectAt: learnedHour((await this.ctx.storage.get<Homing>("homing")) ?? null, clock.homeHour),
       sky: ((await this.ctx.storage.get<Weather>("weather"))?.sky ?? "clear") as Sky,

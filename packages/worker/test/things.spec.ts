@@ -150,12 +150,17 @@ describe("what he leaves out for her", () => {
     expect((await view(HER)).forHer).toBeNull();
 
     expect((await post("leaveout", { me: HIM, treat: "yarn" })).status).toBe(200);
-    // He knows what he left, so it is not shown back to him.
-    expect((await view(HIM)).forHer).toBeNull();
+
+    // He sees it waiting, or leaving something out is a button that appears to do nothing. Looking
+    // at it must not spend it: only being handed it to her counts as her finding it.
+    expect((await view(HIM)).forHer).toBe("yarn");
+    expect((await view(HIM)).forHer).toBe("yarn");
 
     expect((await view(HER)).forHer).toBe("yarn");
     // Being handed it is what finding it means, so the same read spends it.
     expect((await view(HER)).forHer).toBeNull();
+    // And it is gone from his side too, which is how he can tell she has been in.
+    expect((await view(HIM)).forHer).toBeNull();
   });
 
   it("tells him she found it", async () => {

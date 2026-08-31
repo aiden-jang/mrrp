@@ -52,6 +52,12 @@ Making "what the other one has been doing" symmetric quietly opened it to anybod
 It had been keyed on "am I her", which excluded a stranger by accident rather than on purpose, and
 the accident was the only thing keeping it shut. It is gated on holding a seat now.
 
+What he leaves out is shown to him too. It was hers alone at first, reasoning that he knows what he
+left; he does not. With nothing on his side, leaving something out was a button that appeared to do
+nothing, and there was no way to tell "still waiting" from "she has been in and found it". He can
+look at it as often as he likes without spending it: only being handed it to her counts as finding
+it, and that guard is the whole mechanic.
+
 You tell the cat how you are. It answers, and the other person finds out.
 
 ```bash

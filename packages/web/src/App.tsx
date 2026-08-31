@@ -1697,12 +1697,17 @@ function RoomPage({ id }: { id: string }) {
                   )}
                 </p>
                 {/* The other half of the gift she leaves him: something out for her to find. */}
-                <p className={s.small} style={{ marginTop: 8 }}>Leave something out for her</p>
+<p className={s.small} style={{ marginTop: 8 }}>
+                  {view.forHer
+                    ? `${TREATS.find((t) => t.id === view.forHer)?.label ?? "Something"} is out, waiting for her.`
+                    : "Leave something out for her"}
+                </p>
                 <div className={s.moodRow}>
                   {TREATS.map((t) => (
                     <button
                       key={t.id}
-                      className={s.mood}
+                      aria-pressed={view.forHer === t.id}
+                      className={`${s.mood} ${view.forHer === t.id ? s.moodOn : ""}`}
                       style={{ justifyContent: "center", padding: "9px 8px" }}
                       onClick={() => void leaveOut(t.id)}
                     >
