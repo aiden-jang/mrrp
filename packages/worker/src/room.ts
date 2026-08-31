@@ -234,13 +234,6 @@ export class Room extends DurableObject<Env> {
       await this.ctx.storage.delete("doodle");
     }
 
-    if (action === "bring") {
-      const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
-      const today = localDayNumber(Date.now(), clock.tz);
-      if (Math.random() < 1 / 3) await this.ctx.storage.put("boxDay", today);
-      else await this.ctx.storage.put("broughtDay", today);
-    }
-
     if (action === "brush" || action === "sit") {
       const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
       const key = action === "brush" ? "brushedDay" : "satWithDay";
@@ -301,6 +294,11 @@ export class Room extends DurableObject<Env> {
     if (this.roles(people).him !== me) return this.build(me, people);
 
     await this.ctx.storage.put<LeftOut>("forHer", { treat, at: Date.now() });
+    const previous = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
+    await this.ctx.storage.put(
+      "log",
+      [{ at: Date.now(), who: me, action: "leaveout" as const }, ...previous].slice(0, LOG_KEEP),
+    );
     people[me].lastSeen = Date.now();
     await this.ctx.storage.put("people", people);
     return this.build(me, people);
@@ -1082,8 +1080,14 @@ export class Room extends DurableObject<Env> {
       sky: ((await this.ctx.storage.get<Weather>("weather"))?.sky ?? "clear") as Sky,
       windowLight: seated && !!windowLight && windowLight.from !== me,
       box: ((await this.ctx.storage.get<number>("boxDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
-      brought:
-        ((await this.ctx.storage.get<number>("broughtDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
+      /*
+       * The thing he left out, sitting on the floor.
+       *
+       * This sprite used to be set by "bring her something", which rolled a die and could not say
+       * what it brought. It draws the thing he actually chose now, which also means she can see it
+       * waiting rather than only catching a six-second animation.
+       */
+      brought: seated && !!leftOut,
       brushed:
         ((await this.ctx.storage.get<number>("brushedDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
       satWith:

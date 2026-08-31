@@ -70,7 +70,7 @@ describe("what the room works out from having been used a while", () => {
     await acted("pet", 5);
     await acted("brush", 4);
     await acted("sit", 4);
-    await acted("bring", 4);
+    await acted("photo", 4);
     expect((await view(HIM)).personality).toBeNull();
   });
 

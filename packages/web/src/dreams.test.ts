@@ -114,7 +114,7 @@ describe("what she dreams about", () => {
 describe("the voice", () => {
   const everything = ctx({
     found: ALL_KEYS,
-    recent: ["brush", "bring", "photo"],
+    recent: ["brush", "leaveout", "photo"],
     trait: "petted",
     framed: true,
     hasBox: true,

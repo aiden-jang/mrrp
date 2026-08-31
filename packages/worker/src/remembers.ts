@@ -70,9 +70,17 @@ export const TRAIT_MIN_DAYS = 14;
 
 export type Trait = "petted" | "brushed" | "fed" | "accompanied" | "photographed";
 
-export type Tally = Partial<Record<Action, number>>;
+/*
+ * What he does, counted. "leaveout" is in here and not in Action because it is not a button on the
+ * room: he leaves something out from his own panel, and it is what "fed" is made of now that "bring
+ * her something" is gone. That button rolled a die between putting the box out and setting a flag,
+ * so it could never say what he brought, because he never chose.
+ */
+export type TallyKey = Action | "leaveout";
 
-const HIS_ACTIONS: Action[] = ["pet", "brush", "bring", "sit", "photo"];
+export type Tally = Partial<Record<TallyKey, number>>;
+
+const HIS_ACTIONS: TallyKey[] = ["pet", "brush", "sit", "photo", "leaveout"];
 
 /*
  * Only his doings count.
@@ -84,19 +92,19 @@ const HIS_ACTIONS: Action[] = ["pet", "brush", "bring", "sit", "photo"];
 export function tallyFrom(log: Visit[]): Tally {
   const tally: Tally = {};
   for (const visit of log) {
-    const action = visit.action as Action;
+    const action = visit.action as TallyKey;
     if (!HIS_ACTIONS.includes(action)) continue;
     tally[action] = (tally[action] ?? 0) + 1;
   }
   return tally;
 }
 
-const TRAIT_OF: Record<Action, Trait> = {
+const TRAIT_OF: Record<TallyKey, Trait> = {
   pet: "petted",
   brush: "brushed",
-  bring: "fed",
   sit: "accompanied",
   photo: "photographed",
+  leaveout: "fed",
 };
 
 export interface Personality {
@@ -107,7 +115,7 @@ export interface Personality {
 export function personalityFrom(tally: Tally, daysKnown: number): Personality | null {
   if (!(daysKnown >= TRAIT_MIN_DAYS)) return null;
 
-  const ranked = (Object.entries(tally) as [Action, number][])
+  const ranked = (Object.entries(tally) as [TallyKey, number][])
     .map(([action, n]): [Trait, number] => [TRAIT_OF[action], n])
     .sort((a, b) => b[1] - a[1]);
   if (ranked.length === 0) return null;
