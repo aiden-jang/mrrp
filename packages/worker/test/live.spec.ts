@@ -261,3 +261,48 @@ describe("touching something in the room", () => {
     expect((await h.view(HIM)).theirRecent).toEqual([]);
   });
 });
+
+describe("both reaching for the same thing", () => {
+  it("is the one moment that goes to both of them", async () => {
+    await h.seat();
+    await h.post("poke", { me: HIM, what: "plant" });
+    await h.tick(20);
+    await h.post("poke", { me: HER, what: "plant" });
+
+    // Everything else in the room is one of them doing something to the other. This is neither.
+    expect((await h.view(HIM)).reachedTogether?.what).toBe("plant");
+    expect((await h.view(HER)).reachedTogether?.what).toBe("plant");
+  });
+
+  it("needs the same thing, not just the same moment", async () => {
+    await h.seat();
+    await h.post("poke", { me: HIM, what: "plant" });
+    await h.tick(20);
+    await h.post("poke", { me: HER, what: "door" });
+    expect((await h.view(HIM)).reachedTogether).toBeNull();
+  });
+
+  it("needs two of you, so drumming on it alone is not a moment", async () => {
+    await h.seat();
+    await h.post("poke", { me: HIM, what: "bed" });
+    await h.tick(20);
+    await h.post("poke", { me: HIM, what: "bed" });
+    expect((await h.view(HER)).reachedTogether).toBeNull();
+  });
+
+  it("needs the same moment, not the same thing an hour apart", async () => {
+    await h.seat();
+    await h.post("poke", { me: HIM, what: "shelf" });
+    h.away(1);
+    await h.post("poke", { me: HER, what: "shelf" });
+    expect((await h.view(HIM)).reachedTogether).toBeNull();
+  });
+
+  it("is not something a stranger can be half of", async () => {
+    await h.seat();
+    await h.post("poke", { me: HIM, what: "window" });
+    await h.tick(20);
+    await h.post("poke", { me: STRANGER, what: "window" });
+    expect((await h.view(HIM)).reachedTogether).toBeNull();
+  });
+});

@@ -273,6 +273,19 @@ export function doPoke(id: string, what: string): void {
   void send(`/api/room/${id}/poke`, { me: myToken(), what }).catch(() => {});
 }
 
+/*
+ * His notes, for the panel that edits them.
+ *
+ * Not in RoomView. They are capped at 120 notes of 280 characters and the room pushes a view on every
+ * write, so carrying them meant sending up to 33KB of his own writing back to him every time he
+ * touched the cat. One reader, one fetch, when the panel opens.
+ */
+export async function fetchNotes(id: string): Promise<string[]> {
+  const r = await fetch(`/api/room/${id}/notes?me=${encodeURIComponent(myToken())}`);
+  if (!r.ok) throw new Error("Couldn't get your notes.");
+  return (await r.json()).notes as string[];
+}
+
 export async function doBoxOut(id: string): Promise<RoomView> {
   const r = await send(`/api/room/${id}/boxout`, { me: myToken() });
   if (!r.ok) throw new Error("Couldn't put the box out.");

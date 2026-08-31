@@ -254,6 +254,7 @@ export function Cat({
   onPoke2,
   heldByThem = false,
   pokedByThem = null,
+  reachedTogether = null,
   onPoke,
   leftOut = null,
   onFound,
@@ -305,6 +306,8 @@ export function Cat({
   onPoke2?: (what: string) => void;
   /** Something they just touched. Replays the wobble and turns her head, nothing else. */
   pokedByThem?: { what: string; at: number } | null;
+  /** You both reached for the same thing at once. Plays on both screens, not one. */
+  reachedTogether?: { what: string; at: number } | null;
   onPoke?: () => void;
   /** Something he left out for her, played once when she opens the room and finds it. */
   leftOut?: "yarn" | "treat" | "catnip" | null;
@@ -571,6 +574,28 @@ export function Cat({
     const prop = PROPS.find((q) => q.key === pokedByThem.what);
     if (prop) lookAt.current = { x: prop.x + prop.sp.w / 2, until: now + 2400 };
   }, [pokedByThem]);
+
+  /*
+   * Both of you reaching for the same thing.
+   *
+   * She comes to look, and both screens get it, which is what makes it different from every other
+   * moment in the room: nobody did this one to the other one. Keyed on `at` like the poke above, so
+   * the four seconds it stays in the view play once.
+   */
+  const playedReach = useRef(0);
+  useEffect(() => {
+    if (!reachedTogether || reachedTogether.at === playedReach.current) return;
+    playedReach.current = reachedTogether.at;
+    const now = performance.now();
+    const prop = PROPS.find((q) => q.key === reachedTogether.what);
+    if (prop) {
+      lookAt.current = { x: prop.x + prop.sp.w / 2, until: now + 3200 };
+    }
+    bounce.current = 1;
+    speakUntil.current = now + 1600;
+    play("twinkle");
+    onFoundRef.current?.("reached");
+  }, [reachedTogether]);
 
   const seenDoodle = useRef<string | null | undefined>(undefined);
   const glanceUntil = useRef(0);

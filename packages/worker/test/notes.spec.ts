@@ -137,10 +137,18 @@ describe("writing his own notes", () => {
   it("gives them back to him to edit, and to nobody else", async () => {
     await seat();
     await post("notes", { me: HIM, notes: ["one", "two", "three"] });
-    expect((await view(HIM)).yourNotes).toEqual(["one", "two", "three"]);
-    expect((await view(HER)).yourNotes).toBeNull();
+    // Not in RoomView any more: they are up to 33KB and were being pushed on every write.
+    const mine = async (me: string) => SELF.fetch(`https://x/api/room/${id}/notes?me=${me}`);
+    expect(await (await mine(HIM)).json()).toEqual({ notes: ["one", "two", "three"] });
+    expect((await mine(HER)).status).toBe(403);
     await view(STRANGER);
-    expect((await view(STRANGER)).yourNotes).toBeNull();
+    expect((await mine(STRANGER)).status).toBe(403);
+  });
+
+  it("keeps his notes out of the view that gets pushed on every write", async () => {
+    await seat();
+    await post("notes", { me: HIM, notes: ["one", "two", "three"] });
+    expect(Object.keys(await view(HIM))).not.toContain("yourNotes");
   });
 
   it("does not put the unread ones in her payload at all", async () => {

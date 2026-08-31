@@ -409,6 +409,39 @@ The headline is gone. What stayed is the line under it, because that one is not 
 is right there. He can reach you" is the single thing the scene cannot tell you, which is what to do
 about it. It is set smaller now that it is not living under a headline.
 
+## His notes are fetched, not pushed
+
+Making the room push was right and I did not check what it was pushing. His view was 4KB and 72% of
+it was `yourNotes`, the notes he wrote himself, capped at 120 notes of 280 characters. That is up to
+33KB of his own writing going back to him on every pet, poke, hold and release, to prefill a panel
+that was not open. Cheap at one pull every fifteen seconds; not cheap once every write is a push.
+
+One reader, one fetch, when the panel opens. His view is 1.1KB now. If the fetch fails the panel
+still opens with an empty notes box, and saving an empty box is what restores the defaults anyway.
+
+## Broadcasts are not coalesced, and that was measured rather than assumed
+
+One press of the cat is two writes, `hold` and `act`, so it is two pushes. Merging writes inside a
+short window looked obviously worth it and was built, and then backed out.
+
+It needs a timer and two fields of in-memory state on an object that hibernates, and every way it
+fails is the room going quiet rather than noisy. The test run showed the shape of it: the flag
+survived a storage wipe between tests and a clock that moved backwards made the window negative.
+
+The number settled it. After the notes came out of the view, coalescing would have saved another
+1.1KB on a double write, against the 6.9KB that taking the notes out had already saved. That is not
+worth stateful timing in a Durable Object.
+
+## The one thing neither of you can do alone
+
+Everything in the room is one of you doing something to the other, and it is always addressed: what
+he did, what she did, what she will find. Both of you reaching for the same thing in the same moment
+is not addressed to anybody, which is why it is the only thing in here sent to both seats.
+
+It costs almost nothing to notice, because the last poke is already sitting in storage waiting to be
+replaced. Three conditions and each has its own test: the other seat, the same thing, within three
+seconds. A stranger cannot be half of it, and drumming on the plant on your own is not a moment.
+
 ## Nothing accumulates into an inbox
 
 The arrival card is capped and clears itself. The visit log is bounded. There is no unread count, no
