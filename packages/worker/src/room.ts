@@ -272,7 +272,10 @@ export class Room extends DurableObject<Env> {
     }
 
     const previous = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
-    await this.ctx.storage.put("log", [{ at: Date.now(), who: me, action: act }, ...previous].slice(0, LOG_KEEP));
+    await this.ctx.storage.put(
+      "log",
+      [{ at: Date.now(), who: me, action: act }, ...previous].slice(0, LOG_KEEP),
+    );
 
     people[me].lastSeen = Date.now();
     await this.ctx.storage.put("people", people);
@@ -324,7 +327,10 @@ export class Room extends DurableObject<Env> {
 
     await this.ctx.storage.put("gift", gift);
     const previous = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
-    await this.ctx.storage.put("log", [{ at: Date.now(), who: me, action: "gift" as const }, ...previous].slice(0, LOG_KEEP));
+    await this.ctx.storage.put(
+      "log",
+      [{ at: Date.now(), who: me, action: "gift" as const }, ...previous].slice(0, LOG_KEEP),
+    );
     people[me].lastSeen = Date.now();
     await this.ctx.storage.put("people", people);
     return this.build(me, people);
@@ -561,9 +567,140 @@ export class Room extends DurableObject<Env> {
 
   private bothHere(people: Record<string, Person>): boolean {
     const { him, her } = this.roles(people);
-    const now = Date.now();
     if (!him || !her) return false;
-    return now - people[him]!.lastSeen < HERE_NOW_MS && now - people[her]!.lastSeen < HERE_NOW_MS;
+    return this.hereNow(people, him) && this.hereNow(people, her);
+  }
+
+  /*
+   * Here means an open socket, or a request inside the last three minutes for anyone still polling.
+   *
+   * A socket is the honest answer: the tab is open right now. The lastSeen window is the fallback for
+   * a client whose socket a proxy refused, and it is why "both here" used to be up to three minutes
+   * stale even though the room drew a whole greeting off it.
+   */
+  private hereNow(people: Record<string, Person>, token: string): boolean {
+    if (this.liveTokens().has(token)) return true;
+    return Date.now() - (people[token]?.lastSeen ?? 0) < HERE_NOW_MS;
+  }
+
+  /*
+   * The seat a socket belongs to, kept on the socket itself.
+   *
+   * Hibernation throws away everything in memory, so a Map from socket to token does not survive an
+   * idle room waking up. `serializeAttachment` is stored with the connection and comes back with it.
+   */
+  private tokenOf(ws: WebSocket): string | null {
+    try {
+      const held = ws.deserializeAttachment() as { me?: string } | null;
+      return held?.me ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  private liveTokens(): Set<string> {
+    const out = new Set<string>();
+    for (const ws of this.ctx.getWebSockets()) {
+      const me = this.tokenOf(ws);
+      if (me) out.add(me);
+    }
+    return out;
+  }
+
+  /*
+   * Every open socket gets its own view, never one shared payload.
+   *
+   * `build` answers differently for each seat: her note, his copy of it, what the other one has been
+   * doing, the recovery code. Broadcasting one object would hand each of them the other's.
+   *
+   * It calls `build` and not `view`, which matters. `view` seats people, counts a visit, rolls the
+   * gift and spends whatever he left out. Running that on a push would mark a treat found because
+   * her phone was in her pocket with the tab open.
+   */
+  private async broadcast(): Promise<void> {
+    const sockets = this.ctx.getWebSockets();
+    if (sockets.length === 0) return;
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    for (const ws of sockets) {
+      const me = this.tokenOf(ws);
+      if (!me) continue;
+      try {
+        ws.send(JSON.stringify({ type: "view", view: await this.build(me, people) }));
+      } catch {
+        // A socket that died between the list and the send. webSocketClose will clean it up.
+      }
+    }
+  }
+
+  /*
+   * Called by the router after any write.
+   *
+   * It guards like everything else, and the guard is the interesting half. A deleted room has its
+   * storage wiped, so `build` would answer with a perfectly good view of an empty room and push it
+   * to whatever tabs were still open. That is the dead-link-becomes-a-fresh-room bug with a socket
+   * in place of a page load. Tell those tabs the room is gone and close them instead.
+   */
+  async notify(): Promise<void> {
+    try {
+      await this.guard();
+    } catch (e) {
+      for (const ws of this.ctx.getWebSockets()) {
+        try {
+          ws.send(JSON.stringify({ type: "gone" }));
+          ws.close(1001, "gone");
+        } catch {
+          // Already closed.
+        }
+      }
+      throw e;
+    }
+    await this.broadcast();
+  }
+
+  async fetch(request: Request): Promise<Response> {
+    if (request.headers.get("upgrade")?.toLowerCase() !== "websocket") {
+      return new Response("expected websocket", { status: 426 });
+    }
+    const me = new URL(request.url).searchParams.get("me") ?? "";
+    if (me.length < 8) return new Response("bad seat", { status: 400 });
+    try {
+      await this.guard();
+    } catch {
+      return new Response("gone", { status: 410 });
+    }
+
+    const pair = new WebSocketPair();
+    const [client, server] = [pair[0], pair[1]];
+    server.serializeAttachment({ me });
+    // Hibernatable, not `server.accept()`. An idle room with two tabs open would otherwise hold this
+    // object in memory all day, and almost every room is idle almost all of the time.
+    this.ctx.acceptWebSocket(server);
+
+    // One broadcast, not a send to the new socket and then a broadcast. `acceptWebSocket` has
+    // already put this one in `getWebSockets()`, so it is served by the same loop that tells the
+    // other seat somebody just arrived, which is the whole point of the socket.
+    await this.broadcast();
+    return new Response(null, { status: 101, webSocket: client });
+  }
+
+  async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
+    // The only thing a client may say. Everything that changes the room goes through the routes,
+    // where the seat checks live; a socket that could write would be a second way in past them.
+    if (typeof message === "string" && message === "ping") ws.send("pong");
+  }
+
+  async webSocketClose(ws: WebSocket): Promise<void> {
+    try {
+      ws.close();
+    } catch {
+      // Already closed.
+    }
+    // The other seat is watching a cat that thinks it has company.
+    await this.broadcast();
+  }
+
+  async webSocketError(ws: WebSocket): Promise<void> {
+    await this.webSocketClose(ws);
   }
 
   // Every method a route can reach must call this first, or a dead link hands a stranger a fresh
@@ -955,8 +1092,7 @@ export class Room extends DurableObject<Env> {
     const nameOf = (token: string | null): string | null =>
       token && token === her ? cat.name : token ? (people[token]?.name ?? null) : null;
 
-    const theyLeft =
-      kept && Date.now() < kept.dropsAt ? { name: cat.name, until: kept.dropsAt } : null;
+    const theyLeft = kept && Date.now() < kept.dropsAt ? { name: cat.name, until: kept.dropsAt } : null;
     const theyWereTold = undoLeaveUntil && him ? (people[him]?.name ?? null) : null;
     const leftOut = await this.ctx.storage.get<LeftOut>("forHer");
     const windowLight = await this.ctx.storage.get<WindowLight>("windowLight");
@@ -1033,7 +1169,9 @@ export class Room extends DurableObject<Env> {
       you: nameOf(me),
       them: nameOf(otherId),
       themLastAt: them?.lastSeen ?? null,
-      themHereNow: !!them && Date.now() - them.lastSeen < HERE_NOW_MS,
+      // Same rule as `bothHereNow`. Reading lastSeen straight had the room saying they were both in
+      // here while this said the other one had gone.
+      themHereNow: !!otherId && this.hereNow(people, otherId),
       bothHereNow: (me === him || me === her) && this.bothHere(people),
       herLine: seated ? ((await this.ctx.storage.get<Told2>("herLine")) ?? null) : null,
       doodle: await this.doodleFor(me, seated),

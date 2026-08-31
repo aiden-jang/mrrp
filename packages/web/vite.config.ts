@@ -6,6 +6,8 @@ export default defineConfig({
   server: {
     port: 30005,
     strictPort: true,
-    proxy: { "/api": "http://localhost:8787" },
+    // `ws` is what carries the live channel's upgrade. Without it the socket 400s in dev only, and
+    // production looks fine because the Worker serves these assets itself with no proxy in between.
+    proxy: { "/api": { target: "http://localhost:8787", ws: true } },
   },
 });

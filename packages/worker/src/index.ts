@@ -45,6 +45,48 @@ app.get("/api/me", async (c) => {
   return c.json({ signedIn: !!user, name: user?.displayName ?? null });
 });
 
+/*
+ * The live channel. One socket per open tab, forwarded straight to the room.
+ *
+ * This is the only route that hands the raw request to the Durable Object rather than calling a
+ * method on it: a 101 upgrade cannot come back through RPC. The room re-checks the seat and whether
+ * it still exists, so nothing here is the only thing standing between a stranger and a socket.
+ */
+app.get("/api/room/:id/live", async (c) => {
+  const id = c.req.param("id");
+  const me = c.req.query("me") ?? "";
+  if (!ROOM_RE.test(id) || me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (c.req.header("upgrade")?.toLowerCase() !== "websocket") {
+    return c.json({ error: "expected websocket" }, 426);
+  }
+  return room(c.env, id).fetch(c.req.raw);
+});
+
+/*
+ * Push the room to both tabs after anything that changed it.
+ *
+ * One place on purpose. The alternative is a broadcast at the end of each of the twenty-odd methods
+ * that write, which is the sort of list that is complete on the day it is written. `waitUntil` keeps
+ * it off the response, so the person who pressed the button waits for nothing.
+ *
+ * The plain GET is in here too, and has to be. Reading the room is not read-only: it seats whoever
+ * turns up, counts a visit, and spends whatever he left out for her. That last one is the moment he
+ * most wants to see, and without this he would wait for his own next poll to learn she found it.
+ */
+app.on(["GET", "POST"], ["/api/room/:id", "/api/room/:id/*"], async (c, next) => {
+  await next();
+  const id = c.req.param("id");
+  // Not the upgrade: that route hands back a socket and has already broadcast on its way out.
+  if (!ROOM_RE.test(id) || c.res.status >= 400 || c.req.path.endsWith("/live")) return;
+  // Swallowed on purpose: a push that fails must not turn a write that worked into an error, and
+  // the one failure that matters, a room deleted mid-request, closes the sockets on its way out.
+  c.executionCtx.waitUntil(
+    room(c.env, id)
+      .notify()
+      .catch(() => {}),
+  );
+});
+
 app.get("/api/room/:id", async (c) => {
   const id = c.req.param("id");
   const me = c.req.query("me") ?? "";

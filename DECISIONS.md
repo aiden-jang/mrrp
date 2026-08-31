@@ -238,6 +238,49 @@ all three go red, because a test for a swallowed error passes just as happily wh
 What is still untested is a real session: that needs a cookie, which needs a login, which needs a
 person.
 
+## The room is pushed, not polled
+
+The client used to re-read the room every 15 seconds, and `bothHereNow` meant "the other one made a
+request in the last three minutes". Both numbers were invisible until you noticed what they were
+feeding: the cat already had a whole greeting built for co-presence. She flops when you are both
+there, shows her belly, and slow-blinks at you. That content was running on a signal up to three
+minutes stale, delivered up to fifteen seconds late, which is why the app felt like a mailbox.
+
+There is one Durable Object per room already, which is the thing a socket wants to attach to. Each
+open tab now holds one, and the room pushes on every change.
+
+Four things that had to be right:
+
+**Hibernatable, via `ctx.acceptWebSocket`, never `server.accept()`.** Almost every room is idle
+almost all of the time. A plain accept pins the object in memory for as long as a tab is open, which
+for this app means all day.
+
+**The seat token lives on the socket, not in a Map.** Hibernation throws away everything in memory,
+so a `Map<WebSocket, token>` does not survive an idle room waking up. `serializeAttachment` is stored
+with the connection and comes back with it.
+
+**One view per socket, never one shared payload.** `build` answers differently for each seat: her
+note, his copy of it, what the other one has been doing, the recovery code. One object broadcast to
+both would hand each of them the other's.
+
+**The broadcast calls `build`, not `view`.** `view` seats people, counts a visit, rolls the gift and
+spends whatever he left out. Running that on a push would mark a treat found because her phone was in
+her pocket with the tab open, which is the exact bug that took three goes to fix the first time.
+
+Two things fall out of it. Presence is now literally true, so `HERE_NOW_MS` is a fallback for a
+client whose upgrade a proxy refused rather than the definition of being here. And the poll drops to
+120 seconds while the socket is up, because it is a backstop rather than the transport.
+
+The broadcast is triggered in one place, a Hono middleware over the room routes, rather than at the
+end of each of the twenty-odd methods that write. That kind of list is complete on the day it is
+written. The plain GET is in there too and has to be: reading the room is not read-only, and the
+spend it performs is the moment he most wants to see.
+
+A deleted room is the interesting edge. Its storage is wiped, so `build` would answer with a
+perfectly good view of an empty room and push it to whatever tabs were still open, which is the
+dead-link-becomes-a-fresh-room bug with a socket in place of a page load. Those tabs are told the
+room is gone and closed instead.
+
 ## Nothing accumulates into an inbox
 
 The arrival card is capped and clears itself. The visit log is bounded. There is no unread count, no
