@@ -683,11 +683,16 @@ export class Room extends DurableObject<Env> {
     const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
     const notes = await this.notes();
     const readSoFar = Math.min((await this.ctx.storage.get<number>("noteIdx")) ?? 0, notes.length - 1);
+    const cat = (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT;
+    /* Same rule the room uses: her seat is called by the name he gave her. This is a keepsake, and a
+       keepsake that calls her "Someone" is worse than one that does not name her at all. */
+    const nameOf = (token: string | null): string | null =>
+      token && token === her ? cat.name : token ? (people[token]?.name ?? null) : null;
 
     return {
       takenAt: new Date().toISOString(),
-      you: people[me]?.name ?? null,
-      them: (youAreHer ? him : her) ? (people[youAreHer ? him! : her!]?.name ?? null) : null,
+      you: nameOf(me),
+      them: nameOf(youAreHer ? him : her),
       youAreTheCat: youAreHer,
       startedAt: new Date(
         roomStartedAt(
@@ -695,7 +700,7 @@ export class Room extends DurableObject<Env> {
           Date.now(),
         ),
       ).toISOString(),
-      cat: (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT,
+      cat,
       clock,
       blanket: (await this.ctx.storage.get<Blanket>("blanket")) ?? null,
       ourDay: (await this.ctx.storage.get<OurDay>("ourDay")) ?? null,
@@ -713,7 +718,7 @@ export class Room extends DurableObject<Env> {
       visits: Object.fromEntries(
         Object.entries(people).map(([token, person]) => [
           token === me ? "you" : "them",
-          { name: person.name, since: new Date(person.firstSeen).toISOString(), times: person.visits },
+          { name: nameOf(token), since: new Date(person.firstSeen).toISOString(), times: person.visits },
         ]),
       ),
     };
@@ -877,8 +882,9 @@ export class Room extends DurableObject<Env> {
     const nameOf = (token: string | null): string | null =>
       token && token === her ? cat.name : token ? (people[token]?.name ?? null) : null;
 
+    /* The seat she left is hers, so it is her name that left, not the placeholder on her record. */
     const theyLeft =
-      kept && Date.now() < kept.dropsAt ? { name: kept.person.name, until: kept.dropsAt } : null;
+      kept && Date.now() < kept.dropsAt ? { name: cat.name, until: kept.dropsAt } : null;
     const theyWereTold = undoLeaveUntil && him ? (people[him]?.name ?? null) : null;
     const windowLight = await this.ctx.storage.get<WindowLight>("windowLight");
     const startedAt = roomStartedAt(

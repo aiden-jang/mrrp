@@ -305,7 +305,8 @@ describe("her leaving on her own", () => {
     await post("leave", { me: HER });
 
     const v = await view(HIM);
-    expect(v.theyLeft?.name).toBe("Sofia");
+    // The seat that left is hers, so it is her name he is told, not the placeholder on her record.
+    expect(v.theyLeft?.name).toBe(v.cat.name);
     expect(v.theyLeft?.until).toBeGreaterThan(Date.now());
   });
 
@@ -321,7 +322,9 @@ describe("her leaving on her own", () => {
     await seat();
     await post("leave", { me: HER });
 
-    expect((await view(HIM)).theyLeft?.name).toBe("Sofia");
+    const his = await view(HIM);
+    // The seat that left is hers, so it is her name he is told, not the placeholder on her record.
+    expect(his.theyLeft?.name).toBe(his.cat.name);
     expect((await view(HER)).theyWereTold).toBe("Aiden");
   });
 

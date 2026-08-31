@@ -257,9 +257,11 @@ describe("taking a copy of the room", () => {
     expect(his.disposition).toContain("attachment");
     expect(his.disposition).toContain(".json");
 
-    const body = his.body as { you: string; them: string; youAreTheCat: boolean };
+    const body = his.body as { you: string; them: string; youAreTheCat: boolean; cat: { name: string } };
     expect(body.you).toBe("Aiden");
-    expect(body.them).toBe("Sofia");
+    // His copy names her the way the room does: the name he gave her, not the placeholder her
+    // record carries because she is never asked for one.
+    expect(body.them).toBe(body.cat.name);
     expect(body.youAreTheCat).toBe(false);
     expect(((await copy(HER)).body as { youAreTheCat: boolean }).youAreTheCat).toBe(true);
   });

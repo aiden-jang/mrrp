@@ -1462,7 +1462,7 @@ function RoomPage({ id }: { id: string }) {
                 onClick={openSetup}
                 aria-expanded={setup}
               >
-                Write her notes and set up her cat
+                Write her notes, name her, choose how she looks
               </button>
             )}
             <button
