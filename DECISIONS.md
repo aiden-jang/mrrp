@@ -343,6 +343,22 @@ Collapsing the old branch turned up dead code. It read "both here, else they are
 last did", and once presence counted an open socket, `bothHereNow` and `themHereNow` became the same
 question for anyone holding a seat, so the middle branch could never be reached.
 
+## The room says when things go, and whose midnight it means
+
+Three lifetimes share one room and nothing said which was which. Most marks clear at the end of the
+day, the photo never goes, and what he leaves out waits until she picks it up. The room named what
+was in it and then let you find out the rest by it not being there.
+
+The part worth getting right is whose clock. The room runs on her day, so a mark cleared "at
+midnight" means hers, and his can be nowhere near it. Checked with her on Kiritimati and him on the
+US east coast: his own midnight was six hours off and the room correctly said twelve. A line that
+just said "at midnight" would have been wrong by half a day for the person reading it, which is why
+his side says "where she is" and hers does not.
+
+The countdown is in hours, so the room only needs a coarse clock of its own, five minutes. Without
+one, "in about 5 hours" sits there saying five for as long as nobody touches the room, because
+everything else that re-renders it is somebody doing something.
+
 ## Nothing accumulates into an inbox
 
 The arrival card is capped and clears itself. The visit log is bounded. There is no unread count, no
