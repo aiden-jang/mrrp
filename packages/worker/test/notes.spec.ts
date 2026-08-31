@@ -285,7 +285,7 @@ describe("taking a copy of the room", () => {
 
   it("has nothing to give once the room is gone", async () => {
     await seat();
-    await post("delete", { me: HIM, name: "Bean" });
+    await post("delete", { me: HIM, name: "Aiden" });
     expect((await copy(HIM)).status).toBe(410);
   });
 });

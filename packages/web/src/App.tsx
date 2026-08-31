@@ -1838,23 +1838,27 @@ function RoomPage({ id }: { id: string }) {
                       either of you left in here. It happens straight away. You have a week to change your
                       mind, and after that it is erased for good.
                     </p>
+                    {/* His name, not hers. Asking him to type hers had become "type her name to
+                        erase her" the moment she became the cat. */}
                     <p className={s.small} style={{ marginTop: 10 }}>
-                      Type her name to confirm.
+                      Sign your own name to confirm.
                     </p>
                     <input
                       className={s.input}
                       value={typedName}
-                      placeholder={view.cat.name}
+                      placeholder={view.you ?? "your name"}
                       autoCapitalize="none"
                       autoCorrect="off"
                       spellCheck={false}
-                      aria-label={`Type ${view.cat.name} to confirm deleting this room`}
+                      aria-label={`Type ${view.you ?? "your name"} to confirm deleting this room`}
                       onChange={(e) => setTypedName(e.target.value)}
                     />
                     <button
                       className={s.quiet}
                       disabled={
-                        ending || typedName.trim().toLowerCase() !== view.cat.name.trim().toLowerCase()
+                        ending ||
+                        !view.you ||
+                        typedName.trim().toLowerCase() !== view.you.trim().toLowerCase()
                       }
                       onClick={() => void endRoom()}
                     >
