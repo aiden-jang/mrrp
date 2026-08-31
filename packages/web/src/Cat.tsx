@@ -2336,52 +2336,6 @@ export function Cat({
         e: awake ? L.eyes : "",
       };
 
-      const activeMood = moodRef.current;
-      const moodLeft = kx - 13;
-      const moodRight = kx + 11;
-      if (activeMood === "sad") {
-        rect(moodRight, FLOOR + 17, 8, 1, mixHex(sc.floorNear, INK, 0.2));
-        rect(moodRight - 1, FLOOR + 14, 10, 3, "#c99291");
-        rect(moodRight + 1, FLOOR + 13, 6, 1, "#ddb0a8");
-        px(moodRight + 1, FLOOR + 15, "#b77b7d");
-        px(moodRight + 6, FLOOR + 15, "#b77b7d");
-      } else if (activeMood === "stressed") {
-        rect(moodLeft, FLOOR + 17, 28, 3, "#b68486");
-        dither(moodLeft + 2, FLOOR + 18, 24, 1, "#d5aaa0");
-        for (const x of [moodLeft + 2, moodLeft + 7, moodLeft + 20, moodLeft + 25]) {
-          px(x, FLOOR + 20, "#9d7077");
-        }
-      } else if (activeMood === "tired") {
-        rect(moodRight, FLOOR + 16, 9, 2, "#d3aaa0");
-        rect(moodRight + 1, FLOOR + 14, 7, 4, "#e2c0b4");
-        px(moodRight + 1, FLOOR + 15, "#bc8d8b");
-        px(moodRight + 7, FLOOR + 16, "#bc8d8b");
-      } else if (activeMood === "bored") {
-        rect(moodLeft + 2, FLOOR + 16, 6, 2, "#c8a77d");
-        rect(moodLeft + 1, FLOOR + 15, 2, 2, "#c8a77d");
-        px(moodLeft + 3, FLOOR + 15, "#ead5b1");
-        px(moodLeft + 8, FLOOR + 18, "#8fa172");
-        px(moodLeft + 9, FLOOR + 18, "#8fa172");
-      } else if (activeMood === "lonely") {
-        rect(7, FLOOR + 16, 5, 2, "#84646b");
-        px(8, FLOOR + 15, "#a47b7b");
-        rect(12, FLOOR + 17, 5, 2, "#6f5964");
-        px(13, FLOOR + 16, "#94737a");
-      } else if (activeMood === "feral") {
-        const leafHop = reduce ? 0 : Math.round(Math.abs(Math.sin(t / 150)) * 2);
-        px(moodRight + 2, FLOOR + 17 - leafHop, "#6f925b");
-        px(moodRight + 3, FLOOR + 16 - leafHop, "#8cab69");
-        px(moodRight + 4, FLOOR + 17 - leafHop, "#5f824e");
-        px(moodRight + 1, FLOOR + 18 - leafHop, "#8f7657");
-      } else if (activeMood === "horny") {
-        rect(19, FLOOR + 20, 5, 1, mixHex(sc.floorNear, INK, 0.2));
-        rect(19, FLOOR + 17, 4, 3, "#bd8897");
-        px(18, FLOOR + 16, "#dbabb6");
-        px(23, FLOOR + 19, "#946270");
-        px(24, FLOOR + 18, "#946270");
-        px(25, FLOOR + 17, "#946270");
-      }
-
       if (pianoPlaying) {
         const nextNote = pianoGame.current.history.length;
         for (const key of pianoKeysNow) {
@@ -2726,6 +2680,58 @@ export function Cat({
           px(Math.round(point.x), Math.round(point.y), `rgba(255,107,107,${opacity})`);
         }
       }
+      /*
+       * Her mood, on the floor beside her, below BOX_FRONT for the same reason as everything else
+       * down here. These are drawn at kx +- 13, so when she is in the box they land inside its
+       * footprint, and one of them was 96% behind the near wall: the room's whole point is that you
+       * can read her mood, and getting in a box was switching it off.
+       */
+      const activeMood = moodRef.current;
+      const moodLeft = kx - 13;
+      const moodRight = kx + 11;
+      if (activeMood === "sad") {
+        rect(moodRight, FLOOR + 17, 8, 1, mixHex(sc.floorNear, INK, 0.2));
+        rect(moodRight - 1, FLOOR + 14, 10, 3, "#c99291");
+        rect(moodRight + 1, FLOOR + 13, 6, 1, "#ddb0a8");
+        px(moodRight + 1, FLOOR + 15, "#b77b7d");
+        px(moodRight + 6, FLOOR + 15, "#b77b7d");
+      } else if (activeMood === "stressed") {
+        rect(moodLeft, FLOOR + 17, 28, 3, "#b68486");
+        dither(moodLeft + 2, FLOOR + 18, 24, 1, "#d5aaa0");
+        for (const x of [moodLeft + 2, moodLeft + 7, moodLeft + 20, moodLeft + 25]) {
+          px(x, FLOOR + 20, "#9d7077");
+        }
+      } else if (activeMood === "tired") {
+        rect(moodRight, FLOOR + 16, 9, 2, "#d3aaa0");
+        rect(moodRight + 1, FLOOR + 14, 7, 4, "#e2c0b4");
+        px(moodRight + 1, FLOOR + 15, "#bc8d8b");
+        px(moodRight + 7, FLOOR + 16, "#bc8d8b");
+      } else if (activeMood === "bored") {
+        rect(moodLeft + 2, FLOOR + 16, 6, 2, "#c8a77d");
+        rect(moodLeft + 1, FLOOR + 15, 2, 2, "#c8a77d");
+        px(moodLeft + 3, FLOOR + 15, "#ead5b1");
+        px(moodLeft + 8, FLOOR + 18, "#8fa172");
+        px(moodLeft + 9, FLOOR + 18, "#8fa172");
+      } else if (activeMood === "lonely") {
+        rect(7, FLOOR + 16, 5, 2, "#84646b");
+        px(8, FLOOR + 15, "#a47b7b");
+        rect(12, FLOOR + 17, 5, 2, "#6f5964");
+        px(13, FLOOR + 16, "#94737a");
+      } else if (activeMood === "feral") {
+        const leafHop = reduce ? 0 : Math.round(Math.abs(Math.sin(t / 150)) * 2);
+        px(moodRight + 2, FLOOR + 17 - leafHop, "#6f925b");
+        px(moodRight + 3, FLOOR + 16 - leafHop, "#8cab69");
+        px(moodRight + 4, FLOOR + 17 - leafHop, "#5f824e");
+        px(moodRight + 1, FLOOR + 18 - leafHop, "#8f7657");
+      } else if (activeMood === "horny") {
+        rect(19, FLOOR + 20, 5, 1, mixHex(sc.floorNear, INK, 0.2));
+        rect(19, FLOOR + 17, 4, 3, "#bd8897");
+        px(18, FLOOR + 16, "#dbabb6");
+        px(23, FLOOR + 19, "#946270");
+        px(24, FLOOR + 18, "#946270");
+        px(25, FLOOR + 17, "#946270");
+      }
+
       /*
        * Below BOX_FRONT, not above it.
        *

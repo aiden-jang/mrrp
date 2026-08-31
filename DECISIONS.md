@@ -459,6 +459,38 @@ middle. That constant would have been right for a box a few pixels wide. She sto
 half out of it and the near wall cutting her in two, which reads as a cat beside a box. It is
 measured off the sprite now, `BOX_X + BOX_FRONT.w / 2`, so a box that changes size takes her with it.
 
+## What else the box was covering, and what the camera cuts off
+
+Two audits, because they are different failures.
+
+**Behind the box.** The near wall is opaque and covers x 44-71, y 60-67. Anything drawn before it that
+lands in that rectangle disappears. Sweeping every draw call in that vertical band turned up one more
+after the mug: her mood props, drawn at `kx - 13` and `kx + 11`. When she is in the box `kx` is 58, so
+they land inside it, and the widest of them, the mat for "stressed", was 81 of its 84 cells behind the
+wall. The room's whole point is that you can read her mood, and getting in a box was switching it off.
+
+The rule is now consistent and the layering test pins all five: floor-level things are drawn after the
+box's near wall, and only the cat goes behind it.
+
+**Off the camera.** The room is 100 columns, the viewport is 80, and the camera follows the cat
+between 0 and 20. Every prop's reachable camera range, from the sprite widths:
+
+| prop   | x     | visible when the camera is |
+| ------ | ----- | -------------------------- |
+| window | 60-76 | anywhere                   |
+| box    | 44-71 | anywhere                   |
+| frame  | 16-36 | 0-16                       |
+| bed    | 13-32 | 0-13                       |
+| door   | 6-17  | 0-6                        |
+| shelf  | 80-95 | 16-20                      |
+| plant  | 87-96 | 17-20                      |
+
+The door and the shelf can never be on screen together, which is inherent to a room that pans and is
+not a bug. What it does mean is that knocking the mug off the shelf happens off screen unless the cat
+is already on the right, so the mug appearing on the floor at x 66, which is visible at every camera
+position, is the whole of what that event shows you. That is why it mattered so much that the box was
+covering it.
+
 ## Seeing the canvas at all
 
 Both of those had been reported three times and verified as working three times, because the canvas
