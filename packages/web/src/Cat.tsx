@@ -401,6 +401,8 @@ export function Cat({
    * carries it and never again.
    */
   const playedLeftOut = useRef<string | null>(null);
+  /* While this is running, the door pose does not get to suppress it. */
+  const leftOutUntil = useRef(-1e9);
   const yarnUntil = useRef(-1e9);
   const treatUntil = useRef(-1e9);
   const catnipUntil = useRef(-1e9);
@@ -553,9 +555,11 @@ export function Cat({
     if (!leftOut || playedLeftOut.current === leftOut) return;
     playedLeftOut.current = leftOut;
     const now = performance.now();
-    if (leftOut === "yarn") yarnUntil.current = now + YARN_MS;
-    if (leftOut === "treat") treatUntil.current = now + TREAT_MS;
-    if (leftOut === "catnip") catnipUntil.current = now + CATNIP_MS;
+    const ms = leftOut === "yarn" ? YARN_MS : leftOut === "treat" ? TREAT_MS : CATNIP_MS;
+    if (leftOut === "yarn") yarnUntil.current = now + ms;
+    if (leftOut === "treat") treatUntil.current = now + ms;
+    if (leftOut === "catnip") catnipUntil.current = now + ms;
+    leftOutUntil.current = now + ms;
     play("purr");
   }, [leftOut]);
 
@@ -1959,10 +1963,19 @@ export function Cat({
       const nesting = t < bedNestUntil.current && !sc.atDoor && !zooming;
       const laserPlaying = !reduce && t < laser.current.until && !sc.atDoor;
       const summoning = !reduce && t < summonUntil.current && !sc.atDoor;
-      const yarnPlaying = !reduce && t < yarnUntil.current && !sc.atDoor;
-      const treating = t < treatUntil.current && !sc.atDoor;
+      /*
+       * A thing he left out is not an easter egg and does not lose to the door.
+       *
+       * The door pose holds for the hour and a half around the time he is expected home, which is
+       * exactly when she is most likely to look in, so suppressing this would have hidden it on the
+       * visits that matter most -- and the server spends it whether or not it drew.
+       */
+      const showingLeftOut = t < leftOutUntil.current;
+      const doorBlocks = sc.atDoor && !showingLeftOut;
+      const yarnPlaying = !reduce && t < yarnUntil.current && !doorBlocks;
+      const treating = t < treatUntil.current && !doorBlocks;
       const treatProgress = treating ? 1 - (treatUntil.current - t) / TREAT_MS : 0;
-      const catnipActive = t < catnipUntil.current && !sc.atDoor;
+      const catnipActive = t < catnipUntil.current && !doorBlocks;
       const catnipping = catnipActive && !reduce;
       const catnipProgress = catnipActive ? 1 - (catnipUntil.current - t) / CATNIP_MS : 0;
       const catnipX = reduce
