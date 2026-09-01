@@ -1,16 +1,13 @@
 import type { Arrival, Visit } from "./types.js";
 
 /*
- * Which of their doings the arrival card has already shown you.
+ * How far the arrival card has already told you.
  *
- * The card and the live list read the same log, so on the first open after being away they say the
- * same things twice: the card because you missed them, the list because they are recent. They are
- * answering different questions and only one of them should answer each doing.
+ * The card and the live list read the same log, so without this they say the same things twice. The
+ * card owns everything up to the moment you opened the room; the list owns everything since.
  *
- * The card owns everything up to the moment you opened the room. The list owns everything since. A
- * high-water mark is enough to split them, because both are built from the same log in the same
- * order. Only `action` arrivals count: a mood or a line she left is not in `theirRecent`, so letting
- * one of those move the mark would hide a real action that happened just before it.
+ * Only `action` arrivals move the mark. A mood or a line is not in `theirRecent`, so letting one
+ * move it would hide a real action from just before.
  */
 export function coveredBy(arrivals: Arrival[], mark = 0): number {
   let out = mark;
@@ -18,10 +15,7 @@ export function coveredBy(arrivals: Arrival[], mark = 0): number {
   return out;
 }
 
-/*
- * Never derive this from whether the card is on screen. Dismissing it would put every item straight
- * back into the list, which is the duplication again with an extra step.
- */
+/* Never key this on whether the card is showing: dismissing it would put every item back. */
 export function liveOnly(recent: Visit[], covered: number): Visit[] {
   return recent.filter((visit) => visit.at > covered);
 }

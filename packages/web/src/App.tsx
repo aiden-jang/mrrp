@@ -95,14 +95,10 @@ const ACTION_SOUND: Record<Action, Cue> = {
 };
 
 /*
- * What the other one has been doing, newest first.
+ * What the other one has been doing while you watch, newest first.
  *
- * One line was enough while the room was polled: whatever arrived replaced it, and you never saw two
- * things at once because you only heard about them every 15 seconds. Live, they can do three things
- * in a minute and a self-replacing line loses the first two.
- *
- * The arrival card is a different thing and still is: it is for what happened while you were away,
- * which is why its own copy says it waited for you. This is for while you are watching.
+ * The arrival card is the other half and is for what happened while you were away, which is why its
+ * copy says it waited for you.
  */
 function TheirRecent({ subject, items }: { subject: ReactNode; items: Visit[] }) {
   if (items.length === 0) return null;
@@ -815,13 +811,8 @@ function RoomPage({ id }: { id: string }) {
   }, [wantsLink, id]);
 
   const [mugFell, setMugFell] = useState<number | null>(null);
-  /*
-   * When she knocked the mug off, so the cat can be seen doing it on both screens.
-   *
-   * Her own tap sets it directly; his comes off the action arriving in a pushed view. It is never
-   * set from `shelfDown`, because that is a state and not a moment: it is true all day, and reading
-   * it would send her walking to the shelf every time he opened the room.
-   */
+  // Never set this from `shelfDown`. That is true all day, so she would walk to the shelf every
+  // time he opened the room. This is the moment it happened, not the state.
   const [shelfAt, setShelfAt] = useState<number | null>(null);
   const [drawing, setDrawing] = useState(false);
   const hangUp = async (cells: string) => {
@@ -848,13 +839,8 @@ function RoomPage({ id }: { id: string }) {
   }, [line, lineOpen]);
   const [awayNote, setAwayNote] = useState<string | null>(null);
   const [arrivalCard, setArrivalCard] = useState<Arrival[] | null>(null);
-  /*
-   * A clock for the countdown, coarse on purpose.
-   *
-   * The room re-renders whenever anything happens in it, which is most of the time, but "goes at
-   * midnight, in about 5 hours" would otherwise still say five three hours later in a room nobody
-   * touched. The string is in hours, so five minutes is as fine as this needs to be.
-   */
+  // Coarse on purpose. Without it "in about 5 hours" still says five three hours later in a room
+  // nobody touched, and the string is in hours anyway.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 300_000);
@@ -933,13 +919,8 @@ function RoomPage({ id }: { id: string }) {
     [id, showArrivals],
   );
 
-  /*
-   * The same handling `load` does, for a view that arrived on its own.
-   *
-   * It deliberately skips `adoptSeat` and the away line. Both belong to opening the room: a seat is
-   * adopted from the response to a read you made, and "you were away four hours" is a greeting, not
-   * something to be told again every time he brushes her.
-   */
+  // What `load` does, for a view that arrived on its own. No `adoptSeat` and no away line: both
+  // belong to opening the room, and "you were away four hours" is a greeting, not a notification.
   const takeView = useCallback(
     (next: RoomView) => {
       setView(next);
@@ -949,10 +930,7 @@ function RoomPage({ id }: { id: string }) {
     },
     [id, showArrivals],
   );
-  /*
-   * Somebody drumming on the plant should not be a request per tap. One per prop per second is
-   * enough for the other side to see it move, which is all this is for.
-   */
+  // One per prop per second. Somebody drumming on the plant is not a request per tap.
   const lastPoke = useRef<Record<string, number>>({});
   const sharePoke = useCallback(
     (what: string) => {
@@ -996,11 +974,7 @@ function RoomPage({ id }: { id: string }) {
     return () => clearTimeout(t);
   }, [asking, view, err, gone, load]);
 
-  /*
-   * A backstop, not the transport. With the socket up the room arrives when it changes, so this only
-   * has to cover a browser or a proxy that refused the upgrade. Left at 15 seconds it would be two
-   * reads of the same room for every one that was needed.
-   */
+  // A backstop, not the transport: it only has to cover an upgrade a proxy refused.
   useEffect(() => {
     if (asking || gone) return;
     const every = live === "open" ? 120_000 : 15_000;
@@ -1350,7 +1324,7 @@ function RoomPage({ id }: { id: string }) {
             together={view.bothHereNow}
             onPet={() => void act("pet")}
             onHold={(on) => doHold(id, on)}
-            onPoke2={sharePoke}
+            onTouch={sharePoke}
             heldByThem={view.heldByThem}
             pokedByThem={view.pokedByThem}
             reachedTogether={view.reachedTogether}
@@ -1641,14 +1615,8 @@ function RoomPage({ id }: { id: string }) {
             </div>
           </div>
         )}
-        {/*
-            No headline. The room already says this and says it better: the door swings when they
-            arrive, and the cat gets up and crosses to the middle to purr while you are both in.
-            "You're both in here right now" was the app announcing a thing you were watching happen.
-
-            What is left is not an announcement, it is the one thing the scene cannot tell you, which
-            is what you can do about it.
-        */}
+        {/* No headline. The room already says this: the door swings, and she crosses the room to
+            purr. What is left is the one thing the scene cannot tell you, which is what to do. */}
         {view.bothHereNow && (
           <div className={s.together}>
             <p className={s.togetherMain}>
@@ -1710,9 +1678,8 @@ function RoomPage({ id }: { id: string }) {
               </div>
             )}
 
-            {/* Not hidden while you are both here. That was right when the room was 15 seconds
-                stale and this could only say "looked in a while ago"; now it is the live one, and
-                suppressing it muted the moment they are most likely to be watching. */}
+            {/* Not hidden while you are both here. This is the live one, and hiding it muted the
+                moment they are most likely to be watching. */}
             {theirLive.length > 0 ? (
               <TheirRecent subject={<b>{view.them}</b>} items={theirLive} />
             ) : view.themHereNow ? null : view.themLastAt ? (

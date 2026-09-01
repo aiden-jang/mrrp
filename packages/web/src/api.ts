@@ -255,31 +255,21 @@ export async function doCatAct(id: string, act: CatAct): Promise<RoomView> {
 }
 
 /*
- * Took hold, or let go.
+ * Took hold, or let go. Fire and forget, and it must stay that way.
  *
- * Fire and forget, and it must stay that way. This fires on every press and release of the cat, so a
- * failure here is not worth a red bar across a room where somebody is trying to pet a cat. The worst
- * a dropped one costs is a hand she does not see, or one that lapses on its own thirty seconds late.
+ * It fires on every press and release of the cat, and a dropped one costs a hand she does not see.
+ * That is not worth a red bar across a room where somebody is petting a cat.
  */
 export function doHold(id: string, on: boolean): void {
   void send(`/api/room/${id}/hold`, { me: myToken(), on }).catch(() => {});
 }
 
-/*
- * Touched something in the room. Fire and forget, like `doHold`, and throttled by the caller: this
- * fires on taps, and somebody drumming on the plant should not be a request each time.
- */
+/* Touched something. Fire and forget like `doHold`, and throttled by the caller. */
 export function doPoke(id: string, what: string): void {
   void send(`/api/room/${id}/poke`, { me: myToken(), what }).catch(() => {});
 }
 
-/*
- * His notes, for the panel that edits them.
- *
- * Not in RoomView. They are capped at 120 notes of 280 characters and the room pushes a view on every
- * write, so carrying them meant sending up to 33KB of his own writing back to him every time he
- * touched the cat. One reader, one fetch, when the panel opens.
- */
+/* His notes. Keep them out of RoomView: up to 33KB, pushed on every write. */
 export async function fetchNotes(id: string): Promise<string[]> {
   const r = await fetch(`/api/room/${id}/notes?me=${encodeURIComponent(myToken())}`);
   if (!r.ok) throw new Error("Couldn't get your notes.");

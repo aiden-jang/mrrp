@@ -9,13 +9,7 @@ export function listOf(parts: (string | false | null | undefined)[]): string | n
   return `${kept.slice(0, -1).join(", ")} and ${kept[kept.length - 1]}`;
 }
 
-/*
- * How long her day has left.
- *
- * Everything the room keeps for a day is keyed to HER local day, not the server's and not his. He is
- * the one who needs telling, because his midnight can be most of a day away from the one that
- * actually clears the room.
- */
+/* Her day, not his. His midnight can be most of a day away from the one that clears the room. */
 export function untilMidnight(tz: string, at = Date.now()): number {
   return 24 - hourIn(tz, at);
 }
@@ -27,12 +21,10 @@ function inAbout(hours: number): string {
 }
 
 /*
- * When what is in the room goes, said plainly.
+ * When what is in the room goes.
  *
- * Three different lifetimes live in one room and nothing said which was which: most marks clear at
- * her midnight, the photo never goes, and what he leaves out waits until she picks it up. Naming the
- * clock matters more than it looks. The room runs on her day, so "midnight" on his screen is her
- * midnight, which can be nowhere near his.
+ * Three lifetimes share one room: most marks clear at her midnight, the photo never goes, and what
+ * he leaves out waits until she finds it. His side has to say whose midnight it means.
  */
 export function fadeNote(view: RoomView, mine: "him" | "her", at = Date.now()): string | null {
   const hours = untilMidnight(view.clock.tz, at);

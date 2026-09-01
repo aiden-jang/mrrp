@@ -149,8 +149,9 @@ Design decisions, and the ones that were tried and reverted, are in
 
 ## Reading the code
 
-The reasoning lives in [`DECISIONS.md`](DECISIONS.md), not in the source. Comments in the code are
-kept for three things only:
+The reasoning lives in [`DECISIONS.md`](DECISIONS.md), not in the source. That split is the whole
+convention here: if a change needed a paragraph to justify, the paragraph goes in that file and the
+code gets a warning. Comments in the code are kept for three things only:
 
 - a trap that has actually bitten somebody, like the whole-pixel rule or the two gain stages in
   `sound.ts` where one node would let the LFO and the envelope fight over the same parameter
