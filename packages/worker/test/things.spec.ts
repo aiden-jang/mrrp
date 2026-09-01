@@ -44,11 +44,97 @@ describe("her line back", () => {
     expect(his.herLine?.at).toBeGreaterThan(0);
   });
 
-  it("keeps only the latest, never a history", async () => {
+  it("keeps the ones before it, so a week away is a week of them", async () => {
+    await seat();
+    await view(HIM);
+    await post("say", { me: HER, text: "first" });
+    await post("say", { me: HER, text: "second" });
+
+    const his = await view(HIM);
+    expect(his.herLine?.text).toBe("second");
+    const said = his.arrivals.filter((a) => a.kind === "line").map((a) => a.text);
+    expect(said).toEqual(["second", "first"]);
+  });
+
+  it("stops at twelve, so the card is not an inbox", async () => {
+    await seat();
+    for (let n = 0; n < 15; n++) await post("say", { me: HER, text: `line ${n}` });
+
+    const copy = (await (await SELF.fetch(`https://x/api/room/${id}/export?me=${HER}`)).json()) as {
+      herLines: { text: string }[];
+    };
+    expect(copy.herLines).toHaveLength(12);
+    expect(copy.herLines[0]!.text).toBe("line 14");
+    expect(copy.herLines.at(-1)!.text).toBe("line 3");
+  });
+
+  it("clears all of them when she empties it, not just the newest", async () => {
     await seat();
     await post("say", { me: HER, text: "first" });
     await post("say", { me: HER, text: "second" });
-    expect((await view(HIM)).herLine?.text).toBe("second");
+    await post("say", { me: HER, text: "  " });
+
+    expect((await view(HIM)).herLine).toBeNull();
+    const copy = (await (await SELF.fetch(`https://x/api/room/${id}/export?me=${HER}`)).json()) as {
+      herLines: unknown[];
+    };
+    expect(copy.herLines).toEqual([]);
+  });
+
+  it("carries her words with the thing she left on the floor", async () => {
+    await seat();
+    await view(HIM);
+    await post("gift", { me: HER, gift: "moth", text: "he was on the window" });
+
+    const said = (await view(HIM)).arrivals.find((a) => a.kind === "line");
+    expect(said).toMatchObject({ text: "he was on the window", gift: "moth" });
+  });
+
+  it("names the moth once, not once as a gift and again as a line", async () => {
+    await seat();
+    await view(HIM);
+    await post("gift", { me: HER, gift: "moth", text: "he was on the window" });
+
+    const arrivals = (await view(HIM)).arrivals;
+    expect(arrivals.filter((a) => a.kind === "line")).toHaveLength(1);
+    expect(arrivals.filter((a) => a.kind === "action" && a.action === "gift")).toHaveLength(0);
+  });
+
+  it("still announces a gift she sent with no words", async () => {
+    await seat();
+    await view(HIM);
+    await post("gift", { me: HER, gift: "moth" });
+
+    const arrivals = (await view(HIM)).arrivals;
+    expect(arrivals.filter((a) => a.kind === "action" && a.action === "gift")).toHaveLength(1);
+  });
+
+  it("leaves the gift alone when she sends it without words", async () => {
+    await seat();
+    await view(HIM);
+    await post("gift", { me: HER, gift: "leaf" });
+    expect((await view(HIM)).arrivals.some((a) => a.kind === "line")).toBe(false);
+  });
+
+  it("marks a line as an answer to the note it answers", async () => {
+    await seat();
+    await view(HER);
+    await post("say", { me: HER, text: "this one made me laugh", aboutDay: 0 });
+
+    const answer = (await view(HIM)).arrivals.find((a) => a.kind === "line");
+    expect(answer).toMatchObject({ text: "this one made me laugh" });
+    // It carries his note, so the card can show the pair rather than a day number.
+    expect(answer && "note" in answer ? answer.note : undefined).toBeTruthy();
+  });
+
+  it("keeps a line she aims at a note she has not read, but not the note it claims", async () => {
+    await seat();
+    await view(HER);
+    await post("say", { me: HER, text: "peeking ahead", aboutDay: 9 });
+
+    const answer = (await view(HIM)).arrivals.find((a) => a.kind === "line");
+    expect(answer).toMatchObject({ text: "peeking ahead" });
+    expect(answer && "note" in answer ? answer.note : undefined).toBeUndefined();
   });
 
   it("clears when she empties it", async () => {

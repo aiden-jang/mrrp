@@ -81,6 +81,8 @@ describe("deleting the room", () => {
     "constructor",
     "guard",
     "roles",
+    "lines",
+    "keepLine",
     "recoveryCode",
     "adoptFound",
     "reseatBelongings",

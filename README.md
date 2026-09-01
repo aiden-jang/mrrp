@@ -281,7 +281,8 @@ than the UI, because a rule enforced in the browser is a rule anyone can turn of
 | ----------------------------- | ----------- | ----------------------------------------------------------------------------- |
 | `GET /api/room/:id`           | anyone      | seats the first two callers. Only her read advances the note                  |
 | `POST .../tell`               | her only    | her mood, one of six                                                          |
-| `POST .../say`                | her only    | one line back, 140 chars, empty clears it                                     |
+| `POST .../say`                | her only    | a line back, 140 chars, kept twelve deep. `aboutDay` answers a note she has   |
+|                               |             | read. Empty text clears all of them                                           |
 | `POST .../act`                | him only    | pet, brush, sit, photo. Each one leaves a mark                                |
 | `POST .../heract`             | her only    | what she does as the cat: shelf, box, gift. `box` toggles, so she can get out |
 | `POST .../boxout`             | him only    | puts a box in the room. She decides whether to get in                         |
@@ -290,7 +291,7 @@ than the UI, because a rule enforced in the browser is a rule anyone can turn of
 | `GET .../notes`               | him only    | his notes, for the panel that edits them. Too big to ride in every view       |
 | `GET .../alive`               | anyone      | is the room still there. Guards, never seats: the door asks before inviting   |
 | `POST .../leaveout`           | him only    | leaves the yarn, a treat or the catnip for her to find                        |
-| `POST .../gift`               | her only    | picks which of the three he finds                                             |
+| `POST .../gift`               | her only    | picks which of the three he finds. Optional `text` rides along as a line      |
 | `POST .../shelf`              | either seat | puts the mug back. The one write both of them may make                        |
 | `POST .../dress`, `.../clock` | him only    | 403 otherwise                                                                 |
 | `POST .../notes`              | him only    | this room's notes, one per entry; empty restores the defaults                 |

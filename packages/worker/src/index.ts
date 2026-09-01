@@ -176,11 +176,12 @@ app.post("/api/room/:id/leaveout", async (c) => {
 
 app.post("/api/room/:id/gift", async (c) => {
   const id = c.req.param("id");
-  const body = (await c.req.json().catch(() => null)) as { me?: string; gift?: Gift } | null;
+  const body = (await c.req.json().catch(() => null)) as { me?: string; gift?: Gift; text?: unknown } | null;
   if (!ROOM_RE.test(id) || !body?.me || !VALID_GIFTS.includes(body.gift as Gift)) {
     return c.json({ error: "bad request" }, 400);
   }
-  return c.json(await room(c.env, id).leaveGift(body.me, body.gift as Gift));
+  const words = typeof body.text === "string" ? body.text : "";
+  return c.json(await room(c.env, id).leaveGift(body.me, body.gift as Gift, words));
 });
 
 app.post("/api/room/:id/tell", async (c) => {
@@ -194,11 +195,19 @@ app.post("/api/room/:id/tell", async (c) => {
 
 app.post("/api/room/:id/say", async (c) => {
   const id = c.req.param("id");
-  const body = (await c.req.json().catch(() => null)) as { me?: string; text?: unknown } | null;
+  const body = (await c.req.json().catch(() => null)) as {
+    me?: string;
+    text?: unknown;
+    aboutDay?: unknown;
+  } | null;
   if (!ROOM_RE.test(id) || !body?.me || typeof body.text !== "string") {
     return c.json({ error: "bad request" }, 400);
   }
-  return c.json(await room(c.env, id).say(body.me, body.text));
+  const day =
+    typeof body.aboutDay === "number" && Number.isInteger(body.aboutDay) && body.aboutDay >= 0
+      ? body.aboutDay
+      : undefined;
+  return c.json(await room(c.env, id).say(body.me, body.text, day));
 });
 
 app.post("/api/room/:id/link", async (c) => {

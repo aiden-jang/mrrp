@@ -419,10 +419,7 @@
   font: inherit;
   /* Two rows of floor. Her box is sized from its content and would otherwise collapse to one. */
   min-height: 72px;
-  /*
-   * 16 is a floor, not a preference: iOS zooms the page when you focus anything smaller, and both
-   * things anybody types in this app are textareas carrying this style.
-   */
+  /* 16 is a floor, not a preference: iOS zooms the page when you focus anything smaller. */
   font-size: 16px;
   line-height: 1.5;
   width: 100%;
@@ -1050,4 +1047,43 @@ details[open] > .recoverySummary::before {
   font-size: 13px;
   text-align: center;
   box-shadow: 0 6px 18px rgba(60, 40, 20, 0.14);
+}
+
+/* His note is quieter than her answer: he knows what he wrote, it is only here to say which one. */
+.answerPair {
+  display: block;
+  margin-top: 5px;
+  border-left: 2px solid var(--line);
+  padding-left: 9px;
+}
+
+.answerMine {
+  display: block;
+  color: var(--soft);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.answerHers {
+  display: block;
+  margin-top: 3px;
+}
+
+/* Rides along with whatever she taps below it, so it is a line of the row and not its own errand. */
+.giftWords {
+  font: inherit;
+  /* Same iOS floor as .sayInput: under 16px the page zooms on focus. */
+  font-size: 16px;
+  width: 100%;
+  margin-bottom: 8px;
+  /* 11px is what gets this to the 44px the rest of the room is tappable at. */
+  padding: 11px 13px;
+  border-radius: 12px;
+  border: 1px solid var(--control);
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.giftWords::placeholder {
+  color: var(--soft);
 }

@@ -354,7 +354,7 @@ const FIRSTS: Record<string, string> = {
   held: "the first time he reached you while you were here to feel it.",
 };
 
-function ArrivalCard({
+export function ArrivalCard({
   name,
   items,
   youAreHer,
@@ -425,6 +425,19 @@ function ArrivalCard({
                 <>
                   <b>{name}</b> left {TREATS.find((t) => t.id === item.treat)?.label ?? "something"} out for
                   you.
+                </>
+              ) : item.note ? (
+                <>
+                  <b>{name}</b> answered you.
+                  <span className={s.answerPair}>
+                    <span className={s.answerMine}>“{item.note}”</span>
+                    <span className={s.answerHers}>“{item.text}”</span>
+                  </span>
+                </>
+              ) : item.gift ? (
+                <>
+                  <b>{name}</b> left you {GIFT_CHOICES.find((g) => g.id === item.gift)?.label ?? "something"},
+                  and said: “{item.text}”
                 </>
               ) : (
                 <>
@@ -884,6 +897,9 @@ function RoomPage({ id }: { id: string }) {
 
   const [line, setLine] = useState("");
   const [lineOpen, setLineOpen] = useState(false);
+  /** The note this line answers, or null when she is just saying something. */
+  const [replyTo, setReplyTo] = useState<number | null>(null);
+  const [giftWords, setGiftWords] = useState("");
 
   const lineBox = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
@@ -1196,9 +1212,13 @@ function RoomPage({ id }: { id: string }) {
 
   const leaveGift = async (gift: Gift) => {
     play("settle");
+    // Clear the words first. Tapping a second gift while they sat in the box sent them twice.
+    const words = giftWords;
+    setGiftWords("");
     try {
-      setView(await doLeaveGift(id, gift));
+      setView(await doLeaveGift(id, gift, words));
     } catch (e) {
+      setGiftWords(words);
       setErr(e instanceof Error ? e.message : "Couldn't leave that.");
     }
   };
@@ -1206,8 +1226,9 @@ function RoomPage({ id }: { id: string }) {
   const say = async () => {
     setSaving(true);
     try {
-      setView(await doSay(id, line));
+      setView(await doSay(id, line, replyTo ?? undefined));
       setLineOpen(false);
+      setReplyTo(null);
     } catch {
       // Nothing to say. The thing you tapped is still there to tap again.
     }
@@ -1821,6 +1842,19 @@ function RoomPage({ id }: { id: string }) {
                 </p>
                 <p className={s.noteText}>{view.note.text}</p>
                 {!view.note.final && <p className={s.noteDay}>day {view.note.day}</p>}
+                {!lineOpen && (
+                  <button
+                    className={s.quiet}
+                    style={{ marginTop: 8 }}
+                    onClick={() => {
+                      setLine("");
+                      setReplyTo(view.note!.day - 1);
+                      setLineOpen(true);
+                    }}
+                  >
+                    Say something back
+                  </button>
+                )}
               </div>
             )}
 
@@ -1840,12 +1874,19 @@ function RoomPage({ id }: { id: string }) {
 
             {lineOpen ? (
               <div className={s.sayBox}>
+                {replyTo !== null && view.note && (
+                  <p className={s.answerMine} style={{ marginBottom: 6 }}>
+                    answering “{view.note.text}”
+                  </p>
+                )}
                 <textarea
                   autoFocus
                   ref={lineBox}
                   value={line}
                   maxLength={LINE_MAX}
-                  placeholder={`Something for ${view.them ?? "him"} to find`}
+                  placeholder={
+                    replyTo !== null ? "Say it back to him" : `Something for ${view.them ?? "him"} to find`
+                  }
                   onChange={(e) => setLine(e.target.value)}
                   className={s.sayInput}
                 />
@@ -1855,7 +1896,13 @@ function RoomPage({ id }: { id: string }) {
                   </p>
                 )}
                 <div className={s.row} style={{ marginTop: 8 }}>
-                  <button className={s.btn} onClick={() => setLineOpen(false)}>
+                  <button
+                    className={s.btn}
+                    onClick={() => {
+                      setLineOpen(false);
+                      setReplyTo(null);
+                    }}
+                  >
                     Never mind
                   </button>
                   <button className={`${s.btn} ${s.btnGo}`} disabled={saving} onClick={() => void say()}>
@@ -1864,14 +1911,17 @@ function RoomPage({ id }: { id: string }) {
                 </div>
               </div>
             ) : view.herLine ? (
+              /* Opens empty. Saving adds a line rather than replacing this one, and a prefilled
+                  box says the opposite. */
               <button
                 className={s.yourLine}
                 onClick={() => {
-                  setLine(view.herLine!.text);
+                  setLine("");
+                  setReplyTo(null);
                   setLineOpen(true);
                 }}
               >
-                <span className={s.yourLineLabel}>you left him this</span>
+                <span className={s.yourLineLabel}>the last thing you said to him</span>
                 <span className={s.yourLineText}>{view.herLine.text}</span>
               </button>
             ) : (
@@ -1879,6 +1929,7 @@ function RoomPage({ id }: { id: string }) {
                 className={s.quiet}
                 onClick={() => {
                   setLine("");
+                  setReplyTo(null);
                   setLineOpen(true);
                 }}
               >
@@ -1928,6 +1979,14 @@ function RoomPage({ id }: { id: string }) {
             {herFades && <p className={s.fades}>{herFades}</p>}
 
             <p className={s.tellLabel}>Leave him something</p>
+            <input
+              value={giftWords}
+              maxLength={LINE_MAX}
+              placeholder="say something with it, if you want"
+              onChange={(e) => setGiftWords(e.target.value)}
+              className={s.giftWords}
+              aria-label="Something to say with the thing you leave him"
+            />
             <div className={s.moodRow}>
               {GIFT_CHOICES.map((g) => (
                 <button

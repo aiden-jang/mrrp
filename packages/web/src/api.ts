@@ -305,14 +305,14 @@ export async function doLeaveOut(id: string, treat: Treat): Promise<RoomView> {
   return r.json() as Promise<RoomView>;
 }
 
-export async function doLeaveGift(id: string, gift: Gift): Promise<RoomView> {
-  const r = await send(`/api/room/${id}/gift`, { me: myToken(), gift });
+export async function doLeaveGift(id: string, gift: Gift, text = ""): Promise<RoomView> {
+  const r = await send(`/api/room/${id}/gift`, { me: myToken(), gift, text });
   if (!r.ok) throw new Error("Couldn't leave that.");
   return r.json() as Promise<RoomView>;
 }
 
-export async function doSay(id: string, text: string): Promise<RoomView> {
-  const r = await send(`/api/room/${id}/say`, { me: myToken(), text });
+export async function doSay(id: string, text: string, aboutDay?: number): Promise<RoomView> {
+  const r = await send(`/api/room/${id}/say`, { me: myToken(), text, aboutDay });
   if (!r.ok) throw new Error("Couldn't leave that.");
   return r.json() as Promise<RoomView>;
 }
