@@ -37,6 +37,7 @@ import {
   doLeaveGift,
   doLeaveOut,
   doSay,
+  doSettle,
   doSit,
   doTell,
   doTidy,
@@ -328,6 +329,7 @@ const FIRSTS: Record<string, string> = {
   rain: "it has rained on this room, for the first time.",
   storm: "the first storm this room has been through.",
   held: "the first time he reached you while you were here to feel it.",
+  settled: "the first time you settled against somebody who had sat down with you.",
 };
 
 export function ArrivalCard({
@@ -1103,6 +1105,16 @@ function RoomPage({ id }: { id: string }) {
     });
   };
 
+  const settleIn = async (on: boolean) => {
+    setNudge((v) => v + 1);
+    play("purr");
+    try {
+      setView(await doSettle(id, on));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't do that.");
+    }
+  };
+
   const sitWith = async (on: boolean) => {
     setNudge((v) => v + 1);
     play(on ? "settle" : "thump");
@@ -1534,6 +1546,7 @@ function RoomPage({ id }: { id: string }) {
             onTouch={sharePoke}
             heldByThem={view.heldByThem}
             sitting={view.sittingWith || view.sittingWithYou}
+            settled={view.settled}
             brushing={strokes !== null}
             onStroke={stroke}
             pokedByThem={view.pokedByThem}
@@ -1591,11 +1604,24 @@ function RoomPage({ id }: { id: string }) {
         </p>
         <p className={s.doing}>
           {/* Her own name, said back to her, is the room describing her to herself. */}
+          {/*
+              Settling overrides the scene, because it overrides the pose. The line is drawn from
+              the hour and the mood and knows nothing about somebody having sat down, so leaving it
+              alone said she was up and in the middle of the room while she lay on the bed.
+          */}
           {setup
             ? `Picking out ${previewLook.name}.`
-            : view.youAreHer
-              ? `You are ${scene.doingHers ?? scene.doing}.`
-              : `${previewLook.name} is ${scene.doing}.`}
+            : view.settled
+              ? view.youAreHer
+                ? "You are settled against him, not moving for anybody."
+                : `${previewLook.name} has settled against you.`
+              : view.sittingWith || view.sittingWithYou
+                ? view.youAreHer
+                  ? "You are curled up while he sits with you."
+                  : `${previewLook.name} is curled up beside you.`
+                : view.youAreHer
+                  ? `You are ${scene.doingHers ?? scene.doing}.`
+                  : `${previewLook.name} is ${scene.doing}.`}
         </p>
         <span id="room-actions" tabIndex={-1} />
         {captureRoom && !setup && (
@@ -2006,6 +2032,21 @@ function RoomPage({ id }: { id: string }) {
             <FrameSheet current={view.doodle} saving={drawing} onSave={(c) => void hangUp(c)} />
 
             <BlanketRow current={view.blanket} busy={bedding} onPick={(k, st) => void pickBlanket(k, st)} />
+
+            {/*
+                Only while he is sat there. Settling against nobody is sitting still, which she does
+                anyway, and it is the one thing she does that lasts rather than happening once.
+            */}
+            {view.sittingWithYou && (
+              <button
+                className={`${s.btn} ${view.settled ? `${s.btnOn} ${s.btnStaying}` : s.btnGo}`}
+                style={{ width: "100%", marginTop: 12 }}
+                aria-pressed={view.settled}
+                onClick={() => void settleIn(!view.settled)}
+              >
+                {view.settled ? "Settled" : "Settle into it"}
+              </button>
+            )}
 
             {/* The cat's own doings, hers to choose rather than the room's to roll. */}
             <p className={s.tellLabel}>Be a cat about it</p>

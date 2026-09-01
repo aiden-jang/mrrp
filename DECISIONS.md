@@ -1605,6 +1605,27 @@ thing on that screen and decorating around them would compete with them. `PawMar
 `screens.tsx` to get there, since a component in `App.tsx` cannot be reached from a file `App.tsx`
 imports.
 
+## She had nothing that lasted either
+
+Fixing his side made hers the thin one. Everything she does is a tap or a piece of typing: a mood, a
+line, three cat acts, a blanket, a drawing. Not one of them has a duration, and the two interactions
+in the room worth having are both durational.
+
+So: he sits down, and she can settle against it. It appears only while he is actually sat there,
+because settling against nobody is sitting still, which she does anyway. It ends when he gets up,
+without her having to do anything, which is the right way round: she is answering something he did.
+
+Two guards on it, and only one of them is visible. The view reports `settled` only while somebody is
+sitting, so both the check that he is sat there and the clearing when he stands up look redundant
+from the outside. They are not: without them a settle written at the wrong moment lies in storage and
+she is instantly settled the next time he sits down, having chosen nothing. Both needed a test that
+looks past the view to catch, and neither had one until the mutation run said so.
+
+She loafs while it lasts, and breathes slower and deeper, which is one pixel either way and the only
+thing still moving on screen while the two of them sit there. The caption had to be told as well:
+it is drawn from the hour and the mood, knows nothing about anybody sitting down, and cheerfully
+said she was up in the middle of the room while she lay on the bed.
+
 ## Brushing takes brushing
 
 It was a tap that set a boolean. The button picks the brush up now, and the strokes are the action:

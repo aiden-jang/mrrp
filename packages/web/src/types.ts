@@ -138,6 +138,7 @@ export interface Bodies {
   release: { me: string };
   say: { me: string; text: string; aboutDay?: number };
   shelf: { me: string };
+  settle: { me: string; on: boolean };
   sit: { me: string; on: boolean };
   tell: { me: string; mood: Mood };
   undelete: { me: string };
@@ -179,7 +180,7 @@ export type Arrival =
 
 /** Milestones the world hands the room rather than the calendar: first snow, first rain. */
 /** `held` is the app's whole thesis happening, so the room remembers the first one. */
-export type FirstKey = "snow" | "rain" | "storm" | "held";
+export type FirstKey = "snow" | "rain" | "storm" | "held" | "settled";
 
 export type Gift = "leaf" | "cap" | "moth";
 
@@ -239,6 +240,8 @@ export interface RoomView {
   /* Sitting is a place he stays, not a thing he did. Both seats see it live. */
   sittingWith: boolean;
   sittingWithYou: boolean;
+  /* She has settled into it. Only ever true while somebody is sat with her. */
+  settled: boolean;
   /** Something they just touched in the room, for a few seconds. Null on their own side. */
   pokedByThem: { what: string; at: number } | null;
   /** You both reached for the same thing at once. Sent to both, which nothing else is. */

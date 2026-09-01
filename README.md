@@ -291,6 +291,7 @@ field the browser misspells is a build error rather than a value the worker drop
 | `POST .../boxout`             | him only    | puts a box in the room. She decides whether to get in                         |
 | `POST .../hold`               | him only    | took hold of her, or let go. The one thing that is a duration                 |
 | `POST .../sit`                | him only    | sat down with her, or got up. A place he stays; still marks the day           |
+| `POST .../settle`             | her only    | settled against him. Only while he is sat there, and ends when he gets up     |
 | `POST .../poke`               | either seat | touched something in the room. Ephemeral, unlogged, 400 on unknown furniture  |
 | `GET .../notes`               | him only    | his notes, for the panel that edits them. Too big to ride in every view       |
 | `GET .../said`                | either seat | what has passed between them. Stops at the note the room has handed her       |
