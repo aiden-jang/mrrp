@@ -91,9 +91,8 @@ export interface Visit {
 /*
  * Something she left him. These stack; nothing else she leaves does.
  *
- * `gift` is set when the words came with the thing on the floor. An answer carries both `aboutDay`,
- * where the note sat, and `about`, what it actually said. He can rewrite his notes at any time, and
- * the index alone would then hang her words off a sentence she never read.
+ * An answer keeps both `aboutDay` and `about`. He can rewrite his notes whenever he likes, so the
+ * index alone would hang her words off a sentence she never read.
  */
 export interface Told2 {
   text: string;
