@@ -71,7 +71,10 @@ function widenDoodle(cells: string): string {
 }
 
 const HER_LINES = "herLines";
-const LINES_KEPT = 12;
+// As many as he can write notes. Twelve was picked for the note card, which only ever shows the
+// newest, and it quietly dropped her older lines and her answers out of the screen built to read
+// them back.
+const LINES_KEPT = 120;
 
 const LOG_KEEP = 40;
 const LEFT_KEEP = 20;
@@ -1370,6 +1373,11 @@ export class Room extends DurableObject<Env> {
     const catTold =
       told && localDayNumber(told.at, clock.tz) === localDayNumber(Date.now(), clock.tz) ? told : null;
     const note = await this.noteFor(clock, youAreHer, !waitingForThem);
+    // Him only, and only once she is at the end. `note.final` says the same thing but rides on her
+    // note, which never reaches him, so the notes running dry was his to notice or miss.
+    const allNotes = await this.notes();
+    const handedOver = Math.min((await this.ctx.storage.get<number>("noteIdx")) ?? 0, allNotes.length - 1);
+    const sheHasReadAll = seated && !youAreHer && !!her && handedOver >= allNotes.length - 1;
 
     return {
       cat,
@@ -1390,6 +1398,8 @@ export class Room extends DurableObject<Env> {
       doodle: await this.doodleFor(me, seated),
       note: youAreHer ? note : null,
       noteDay: seated && !youAreHer ? (note?.day ?? null) : null,
+      sheHasReadAll,
+      notesInAll: sheHasReadAll ? allNotes.length : null,
       ourDay: seated && !youAreHer ? ((await this.ctx.storage.get<OurDay>("ourDay")) ?? null) : null,
       framed: (await this.ctx.storage.get<boolean>("framed")) ?? false,
       shelfDown: (await this.ctx.storage.get<boolean>("shelfDown")) ?? false,

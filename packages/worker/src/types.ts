@@ -224,6 +224,9 @@ export interface RoomView {
   doodle: { cells: string; mine: boolean; at: number } | null;
   note: Note | null;
   noteDay: number | null;
+  // He is never shown her note, so `final` never reaches him and the notes could run dry unnoticed.
+  sheHasReadAll: boolean;
+  notesInAll: number | null;
   theirRecent: Visit[];
   theyCameAfter: boolean;
   arrivals: Arrival[];

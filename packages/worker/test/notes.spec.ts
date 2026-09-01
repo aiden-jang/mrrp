@@ -1,4 +1,4 @@
-import { SELF } from "cloudflare:test";
+import { env, runInDurableObject, SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import { NOTES } from "../src/notes.js";
 import { harness, AHEAD, BEHIND, HER, HIM, STRANGER } from "./harness.js";
@@ -347,5 +347,39 @@ describe("the notes the room ships with", () => {
 
   it("fits inside the hundred and twenty the room will keep", () => {
     expect(NOTES.length).toBeLessThanOrEqual(120);
+  });
+});
+
+describe("running out of notes", () => {
+  it("tells him when she has reached the last one, because it never reaches her note", async () => {
+    await seat();
+    await post("notes", { me: HIM, notes: ["one", "two"] });
+
+    expect((await view(HIM)).sheHasReadAll).toBe(false);
+
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    await runInDurableObject(stub, async (_i, state) => {
+      await state.storage.put("noteIdx", 1);
+    });
+
+    const his = await view(HIM);
+    expect(his.sheHasReadAll).toBe(true);
+    expect(his.notesInAll).toBe(2);
+  });
+
+  it("goes quiet again the moment he writes more", async () => {
+    await seat();
+    await post("notes", { me: HIM, notes: ["one"] });
+    expect((await view(HIM)).sheHasReadAll).toBe(true);
+
+    await post("notes", { me: HIM, notes: ["one", "two", "three"] });
+    expect((await view(HIM)).sheHasReadAll).toBe(false);
+  });
+
+  it("is his to see and never hers", async () => {
+    await seat();
+    await post("notes", { me: HIM, notes: ["one"] });
+    expect((await view(HER)).sheHasReadAll).toBe(false);
+    expect((await view(HER)).notesInAll).toBeNull();
   });
 });
