@@ -116,6 +116,7 @@ interface LeftSide {
   recovery?: string;
   light?: WindowLight;
   lines?: Told2[];
+  doodle?: Doodle;
 }
 
 export const ROOM_GONE = "mrrp: room deleted";
@@ -906,6 +907,7 @@ export class Room extends DurableObject<Env> {
     const light = await this.ctx.storage.get<WindowLight>("windowLight");
     const recovery = await this.ctx.storage.get<string>("recoveryHer");
     const lines = await this.lines();
+    const doodle = await this.ctx.storage.get<Doodle>("doodle");
 
     if (bar) {
       const at = Date.now();
@@ -919,6 +921,7 @@ export class Room extends DurableObject<Env> {
         recovery,
         light: light?.from === her ? light : undefined,
         lines,
+        doodle: doodle?.by === her ? doodle : undefined,
       });
     }
 
@@ -936,6 +939,9 @@ export class Room extends DurableObject<Env> {
     if (bar) {
       await this.ctx.storage.delete(HER_LINES);
       await this.ctx.storage.delete("herLine");
+      // Same test the window light gets: it goes only if she is the one who put it there. He can
+      // draw in that frame too, and his picture is not hers to take.
+      if (doodle?.by === her) await this.ctx.storage.delete("doodle");
     }
     await this.ctx.storage.delete("recoveryHer");
     await this.ctx.storage.put("handover", her);
@@ -975,6 +981,7 @@ export class Room extends DurableObject<Env> {
       await this.ctx.storage.put("log", merged);
     }
     if (kept.lines && kept.lines.length > 0) await this.ctx.storage.put(HER_LINES, kept.lines);
+    if (kept.doodle) await this.ctx.storage.put("doodle", kept.doodle);
     if (kept.recovery) await this.ctx.storage.put("recoveryHer", kept.recovery);
     if (kept.light) await this.ctx.storage.put("windowLight", kept.light);
 
