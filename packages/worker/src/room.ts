@@ -71,6 +71,7 @@ function widenDoodle(cells: string): string {
 }
 
 const HER_LINES = "herLines";
+const HER_DAY = "herDay";
 // As many as he can write notes. Twelve was picked for the note card, which only ever shows the
 // newest, and it quietly dropped her older lines and her answers out of the screen built to read
 // them back.
@@ -1104,6 +1105,7 @@ export class Room extends DurableObject<Env> {
       clock,
       blanket: (await this.ctx.storage.get<Blanket>("blanket")) ?? null,
       ourDay: (await this.ctx.storage.get<OurDay>("ourDay")) ?? null,
+      herDay: (await this.ctx.storage.get<OurDay>(HER_DAY)) ?? null,
       drawing: ((c) => (c ? widenDoodle(c) : null))((await this.ctx.storage.get<Doodle>("doodle"))?.cells),
       notes: youAreHer ? notes.slice(0, readSoFar + 1) : notes,
       notesInAll: notes.length,
@@ -1246,12 +1248,21 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
+  /*
+   * A day worth remembering. One slot each, and neither ever sees the other's.
+   *
+   * His was the only one, and it is not shown to her on purpose: the cat mentions it on the day and
+   * that is how she finds out. One shared slot could not be opened to her without her blindly
+   * overwriting a date she cannot read, so she gets her own and he gets the same surprise.
+   */
   async setOurDay(me: string, day: OurDay | null): Promise<boolean> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
-    if (this.roles(people).him !== me) return false;
-    if (day) await this.ctx.storage.put("ourDay", day);
-    else await this.ctx.storage.delete("ourDay");
+    const { him, her } = this.roles(people);
+    if (me !== him && me !== her) return false;
+    const key = me === him ? "ourDay" : HER_DAY;
+    if (day) await this.ctx.storage.put(key, day);
+    else await this.ctx.storage.delete(key);
     return true;
   }
 
@@ -1429,7 +1440,8 @@ export class Room extends DurableObject<Env> {
       noteDay: seated && !youAreHer ? (note?.day ?? null) : null,
       sheHasReadAll,
       notesInAll: sheHasReadAll ? allNotes.length : null,
-      ourDay: seated && !youAreHer ? ((await this.ctx.storage.get<OurDay>("ourDay")) ?? null) : null,
+      // The day you named, never the one they did.
+      ourDay: seated ? ((await this.ctx.storage.get<OurDay>(youAreHer ? HER_DAY : "ourDay")) ?? null) : null,
       framed: (await this.ctx.storage.get<boolean>("framed")) ?? false,
       shelfDown: (await this.ctx.storage.get<boolean>("shelfDown")) ?? false,
       gift: seated ? ((await this.ctx.storage.get<Gift>("gift")) ?? null) : null,
@@ -1468,7 +1480,10 @@ export class Room extends DurableObject<Env> {
       bothCalledHer: seated && him && her ? bothFound(await this.found(), "herName", him, her) : false,
       awayMs: since !== undefined ? Math.max(0, Date.now() - since) : null,
       milestone: seated
-        ? milestoneFor(startedAt, Date.now(), clock.tz, await this.ctx.storage.get<OurDay>("ourDay"))
+        ? milestoneFor(startedAt, Date.now(), clock.tz, [
+            await this.ctx.storage.get<OurDay>("ourDay"),
+            await this.ctx.storage.get<OurDay>(HER_DAY),
+          ])
         : null,
       personality: seated
         ? personalityFrom(

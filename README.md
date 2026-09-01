@@ -207,9 +207,11 @@ whole app. Editing them no longer needs a deploy.
 actually knows and set whose day the room runs on. Her eyes are held open while the panel is up, because
 shut eyes are drawn as a line in the outline colour and you cannot pick a colour you cannot see.
 
-**Optionally, name a day.** Also that panel: a date and a few words for what it is. The room says your
-words back on that day every year. Only the month and day are kept, because storing the year would let
-the room say "three years since", and that is a counter rather than a greeting.
+**Optionally, name a day.** Not in that panel: under **"this room"**, where both of you can reach it.
+A date and a few words for what it is, and the room says those words back on that day every year, to
+both of you. You each get your own slot and neither of you is ever shown the other's, so the day is
+how you find out. Only the month and day are kept, because storing the year would let the room say
+"three years since", and that is a counter rather than a greeting.
 
 Then open the link yourself first, and send it. **Whoever opens it second is the one the cat is.**
 
@@ -292,44 +294,44 @@ than the UI, because a rule enforced in the browser is a rule anyone can turn of
 Every POST body is named once, in `Bodies`, which both sides import. `send` is generic over it, so a
 field the browser misspells is a build error rather than a value the worker drops in silence.
 
-| endpoint                      | who         | notes                                                                         |
-| ----------------------------- | ----------- | ----------------------------------------------------------------------------- |
-| `GET /api/room/:id`           | anyone      | seats the first two callers. Only her read advances the note                  |
-| `POST .../tell`               | her only    | her mood, one of six                                                          |
-| `POST .../say`                | her only    | a line back, 140 chars. `aboutDay` answers a note she has                     |
-|                               |             | read. Empty text clears all of them                                           |
-| `POST .../unsay`              | her only    | takes back the one line left at that moment, and nothing else                 |
-| `POST .../act`                | him only    | pet, brush, sit, photo. Each one leaves a mark                                |
-| `POST .../heract`             | her only    | what she does as the cat: shelf, box, gift. `box` toggles, so she can get out |
-| `POST .../boxout`             | him only    | puts a box in the room. She decides whether to get in                         |
-| `POST .../hold`               | him only    | took hold of her, or let go. The one thing that is a duration                 |
-| `POST .../sit`                | him only    | sat down with her, or got up. A place he stays; still marks the day           |
-| `POST .../settle`             | her only    | settled against him. Only while he is sat there, and ends when he gets up     |
-| `POST .../wait`               | her only    | gone to the door to wait for him. Ends when he looks in, which is the point   |
-| `POST .../poke`               | either seat | touched something in the room. Ephemeral, unlogged, 400 on unknown furniture  |
-| `GET .../notes`               | him only    | his notes, for the panel that edits them. Too big to ride in every view       |
-| `GET .../said`                | either seat | what has passed between them. Stops at the note the room has handed her       |
-| `GET .../alive`               | anyone      | is the room still there. Guards, never seats: the door asks before inviting   |
-| `POST .../leaveout`           | him only    | leaves the yarn, a treat or the catnip for her to find                        |
-| `POST .../gift`               | her only    | picks which of the three he finds. Optional `text` rides along as a line      |
-| `POST .../shelf`              | either seat | puts the mug back. The one write both of them may make                        |
-| `POST .../dress`, `.../clock` | him only    | 403 otherwise                                                                 |
-| `POST .../notes`              | him only    | this room's notes, one per entry; empty restores the defaults                 |
-| `POST .../window-light`       | either seat | leave one glint in the window, or collect the other person's                  |
-| `POST .../release`            | him only    | frees her seat so a new device can be her                                     |
-| `POST .../recover`            | his code    | takes the first seat back on a new device                                     |
-| `POST .../delete`             | him only    | ends the room for both. Needs his own name typed, not a flag                  |
-| `POST .../undelete`           | him only    | puts it back, for a week. 403 after that                                      |
-| `POST .../leave`              | her only    | takes her side out and frees her seat. His room stands                        |
-| `POST .../unleave`            | her only    | puts her side back, while the week holds and the seat is free                 |
-| `POST .../draw`               | either seat | the seven-by-five sheet in the frame. 35 chars of 0-4, or 400                 |
-| `POST .../blanket`            | her only    | the one thing in the room she picks. Five colours and a stripe                |
-| `GET .../export`              | either seat | the whole room as a file. Her copy stops at the note she has read             |
-| `POST .../ourday`             | him only    | the date the room says something about, and its words                         |
-| `POST .../link`               | either seat | ties the seat you hold to the account you are signed into                     |
-| `POST .../found`              | either seat | records a discovery. Unknown keys are a 400, not a new secret                 |
-| `POST .../age`                | either seat | dev only, gated on DEV_TOOLS. Fast-forwards months                            |
-| `GET .../live`                | either seat | the WebSocket. Receives only; every write still goes through the routes above |
+| endpoint                      | who         | notes                                                                           |
+| ----------------------------- | ----------- | ------------------------------------------------------------------------------- |
+| `GET /api/room/:id`           | anyone      | seats the first two callers. Only her read advances the note                    |
+| `POST .../tell`               | her only    | her mood, one of six                                                            |
+| `POST .../say`                | her only    | a line back, 140 chars. `aboutDay` answers a note she has                       |
+|                               |             | read. Empty text clears all of them                                             |
+| `POST .../unsay`              | her only    | takes back the one line left at that moment, and nothing else                   |
+| `POST .../act`                | him only    | pet, brush, sit, photo. Each one leaves a mark                                  |
+| `POST .../heract`             | her only    | what she does as the cat: shelf, box, gift. `box` toggles, so she can get out   |
+| `POST .../boxout`             | him only    | puts a box in the room. She decides whether to get in                           |
+| `POST .../hold`               | him only    | took hold of her, or let go. The one thing that is a duration                   |
+| `POST .../sit`                | him only    | sat down with her, or got up. A place he stays; still marks the day             |
+| `POST .../settle`             | her only    | settled against him. Only while he is sat there, and ends when he gets up       |
+| `POST .../wait`               | her only    | gone to the door to wait for him. Ends when he looks in, which is the point     |
+| `POST .../poke`               | either seat | touched something in the room. Ephemeral, unlogged, 400 on unknown furniture    |
+| `GET .../notes`               | him only    | his notes, for the panel that edits them. Too big to ride in every view         |
+| `GET .../said`                | either seat | what has passed between them. Stops at the note the room has handed her         |
+| `GET .../alive`               | anyone      | is the room still there. Guards, never seats: the door asks before inviting     |
+| `POST .../leaveout`           | him only    | leaves the yarn, a treat or the catnip for her to find                          |
+| `POST .../gift`               | her only    | picks which of the three he finds. Optional `text` rides along as a line        |
+| `POST .../shelf`              | either seat | puts the mug back. The one write both of them may make                          |
+| `POST .../dress`, `.../clock` | him only    | 403 otherwise                                                                   |
+| `POST .../notes`              | him only    | this room's notes, one per entry; empty restores the defaults                   |
+| `POST .../window-light`       | either seat | leave one glint in the window, or collect the other person's                    |
+| `POST .../release`            | him only    | frees her seat so a new device can be her                                       |
+| `POST .../recover`            | his code    | takes the first seat back on a new device                                       |
+| `POST .../delete`             | him only    | ends the room for both. Needs his own name typed, not a flag                    |
+| `POST .../undelete`           | him only    | puts it back, for a week. 403 after that                                        |
+| `POST .../leave`              | her only    | takes her side out and frees her seat. His room stands                          |
+| `POST .../unleave`            | her only    | puts her side back, while the week holds and the seat is free                   |
+| `POST .../draw`               | either seat | the seven-by-five sheet in the frame. 35 chars of 0-4, or 400                   |
+| `POST .../blanket`            | her only    | the one thing in the room she picks. Five colours and a stripe                  |
+| `GET .../export`              | either seat | the whole room as a file. Her copy stops at the note she has read               |
+| `POST .../ourday`             | either seat | the date the room says something about. One slot each, never shown to the other |
+| `POST .../link`               | either seat | ties the seat you hold to the account you are signed into                       |
+| `POST .../found`              | either seat | records a discovery. Unknown keys are a 400, not a new secret                   |
+| `POST .../age`                | either seat | dev only, gated on DEV_TOOLS. Fast-forwards months                              |
+| `GET .../live`                | either seat | the WebSocket. Receives only; every write still goes through the routes above   |
 
 ### What his actions leave behind
 

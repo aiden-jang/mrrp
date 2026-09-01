@@ -1721,10 +1721,13 @@ them:
 
 - **A second treat replacing the first is not silent.** The button that is out is highlighted and
   the line above it names the treat waiting for her.
-- **"Our day" being his is not an oversight, it is the surprise.** She never sees `ourDay` at all;
-  the cat mentions it to her on the day. Letting her set it, as the code stands, would let her write
-  a single shared slot she cannot read, blindly overwriting his date and killing the thing it exists
-  for. If she should have one too, it needs a second slot, not a wider guard.
+- **"Our day" being his was not an oversight, it was the surprise.** She never saw `ourDay` at all;
+  the cat mentions it on the day and that is how she finds out. So opening the one shared slot to her
+  would have let her write a date she cannot read, blindly overwriting his and killing the thing it
+  exists for. The answer was a second slot rather than a wider guard, and that is what it has now:
+  one each, neither of them ever shown the other's, and the cat says whichever of them falls today to
+  both of them. It moved out of his setup panel and into the block they both reach, because it was
+  the one thing in a panel about naming and dressing her that was not about her.
 
 ## The flaky test was a sleep
 

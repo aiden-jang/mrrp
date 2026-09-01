@@ -866,6 +866,10 @@ function RoomPage({ id }: { id: string }) {
   const [strokes, setStrokes] = useState<number | null>(null);
   // Armed once he has been told the photo takes her drawing down.
   const [photoOver, setPhotoOver] = useState(false);
+  // The day this seat named. Each of them has one and neither is ever shown the other's.
+  const [ourDate, setOurDate] = useState("");
+  const [ourLabel, setOurLabel] = useState("");
+  const [ourSaved, setOurSaved] = useState(false);
   const [said, setSaid] = useState<SaidSoFar | null>(null);
   const saidTrigger = useRef<HTMLButtonElement>(null);
   const saidPanel = useRef<HTMLElement>(null);
@@ -911,8 +915,6 @@ function RoomPage({ id }: { id: string }) {
     tz: string;
     homeHour: number;
     notes: string;
-    ourDate: string;
-    ourLabel: string;
   } | null>(null);
 
   const heardName = useRef<string | null>(null);
@@ -1075,6 +1077,29 @@ function RoomPage({ id }: { id: string }) {
     }
   };
 
+  // Fill from the day this seat already named, once, when the room first arrives. Not on every view,
+  // or it would overwrite what they are in the middle of typing.
+  const ourDayLoaded = useRef(false);
+  useEffect(() => {
+    if (ourDayLoaded.current || !view) return;
+    ourDayLoaded.current = true;
+    setOurDate(view.ourDay ? `2000-${pad(view.ourDay.month)}-${pad(view.ourDay.day)}` : "");
+    setOurLabel(view.ourDay?.label ?? "");
+  }, [view]);
+
+  const saveOurDay = async () => {
+    const [, mm, dd] = ourDate.match(/^\d{4}-(\d{2})-(\d{2})$/) ?? [];
+    const label = ourLabel.trim();
+    try {
+      await doOurDay(id, mm && dd && label ? { month: Number(mm), day: Number(dd), label } : null);
+      await load();
+      setOurSaved(true);
+      window.setTimeout(() => setOurSaved(false), 2400);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't keep that day.");
+    }
+  };
+
   const takeBack = async (at: number) => {
     try {
       setView(await doUnsay(id, at));
@@ -1149,8 +1174,6 @@ function RoomPage({ id }: { id: string }) {
       tz: view.clock.tz,
       homeHour: view.clock.homeHour,
       notes: notes.join("\n"),
-      ourDate: view.ourDay ? `2000-${pad(view.ourDay.month)}-${pad(view.ourDay.day)}` : "",
-      ourLabel: view.ourDay?.label ?? "",
     });
     setSetup(true);
   };
@@ -1182,9 +1205,6 @@ function RoomPage({ id }: { id: string }) {
       await doDress(id, { name: draft.name.trim() || "Bean", ...look.cat, eyes: eyes.hex });
       await doClock(id, { tz: draft.tz, homeHour: draft.homeHour });
       await doNotes(id, draft.notes.split("\n"));
-      const [, mm, dd] = draft.ourDate.match(/^\d{4}-(\d{2})-(\d{2})$/) ?? [];
-      const label = draft.ourLabel.trim();
-      await doOurDay(id, mm && dd && label ? { month: Number(mm), day: Number(dd), label } : null);
       setSetup(false);
       await load();
     } catch (e) {
@@ -1703,28 +1723,6 @@ function RoomPage({ id }: { id: string }) {
                 </option>
               ))}
             </Select>
-
-            <p className={s.fieldLabel}>a day worth remembering</p>
-            <input
-              className={`${s.input} ${s.dateInput}`}
-              type="date"
-              value={draft.ourDate}
-              min="1900-01-01"
-              max="2100-12-31"
-              onChange={(e) => setDraft((d) => ({ ...d!, ourDate: e.target.value }))}
-            />
-            <input
-              className={s.input}
-              style={{ marginTop: 8 }}
-              value={draft.ourLabel}
-              maxLength={32}
-              placeholder="what it is, in a few words"
-              onChange={(e) => setDraft((d) => ({ ...d!, ourLabel: e.target.value }))}
-            />
-            <p className={s.small} style={{ marginTop: 6 }}>
-              She will mention it every year on the day, in exactly those words. Leave either blank for no day
-              at all.
-            </p>
 
             <p className={s.fieldLabel}>her notes, one per line</p>
             <textarea
@@ -2298,6 +2296,45 @@ function RoomPage({ id }: { id: string }) {
         {!setup && (iAmHim || view.youAreHer) && (
           <section className={s.roomBits} aria-label="This room">
             <p className={s.roomBitsTitle}>this room</p>
+            {/*
+                One slot each, and neither is shown the other's. It used to sit in his setup panel,
+                which is where you name and dress her: the one thing in there that was not about her.
+            */}
+            <details className={s.disclosure}>
+              <summary className={s.disclosureHead}>a day worth remembering</summary>
+              <div style={{ marginTop: 8 }}>
+                <input
+                  className={`${s.input} ${s.dateInput}`}
+                  type="date"
+                  value={ourDate}
+                  min="1900-01-01"
+                  max="2100-12-31"
+                  aria-label="The date"
+                  onChange={(e) => setOurDate(e.target.value)}
+                />
+                <input
+                  className={s.input}
+                  style={{ marginTop: 8 }}
+                  value={ourLabel}
+                  maxLength={32}
+                  placeholder="what it is, in a few words"
+                  aria-label="What the day is"
+                  onChange={(e) => setOurLabel(e.target.value)}
+                />
+                <p className={s.small} style={{ marginTop: 6 }}>
+                  {view.cat.name} says it every year on the day, to both of you, in exactly those words.{" "}
+                  {view.them ?? "They"} will not see it here, so it stays a surprise. Leave either blank for
+                  no day at all.
+                </p>
+                <button
+                  className={s.btn}
+                  style={{ width: "100%", marginTop: 8 }}
+                  onClick={() => void saveOurDay()}
+                >
+                  {ourSaved ? "Kept" : "Keep this day"}
+                </button>
+              </div>
+            </details>
             {!setup && view.recoveryCode && (
               <div className={s.accountInBits}>
                 <p className={s.small}>
