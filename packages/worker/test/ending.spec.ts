@@ -449,3 +449,21 @@ describe("a first that lands after the room is gone", () => {
     });
   });
 });
+
+describe("asking whether a room is still there", () => {
+  it("answers without taking the seat it is asking about", async () => {
+    await view(HIM, "Aiden");
+    const r = await SELF.fetch(`https://x/api/room/${id}/alive`);
+    expect(r.status).toBe(200);
+    // The door screen asks this before it invites anybody in. If it seated them, it would be
+    // taking the seat by asking, which is the one thing the door exists to prevent.
+    expect((await view(HIM)).them).toBeNull();
+  });
+
+  it("says gone for a deleted room, so a dead link is not answered with an invitation", async () => {
+    await seat();
+    await post("delete", { me: HIM, name: "Aiden" });
+    const r = await SELF.fetch(`https://x/api/room/${id}/alive`);
+    expect(r.status).toBe(410);
+  });
+});

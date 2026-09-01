@@ -33,6 +33,20 @@ the same sentence about a person:
 The seat-awareness tests cover milestones for this reason, and they caught a draft that read "you
 have not once thanked". The room never implies anything owed.
 
+## A dead link is not answered with an invitation
+
+The door screen renders before anything is read, so following a link to a deleted room got you
+"somebody made you a room, and you are the cat in it", a button, and only then, once you had tapped
+it, "this room is gone". The client was handing out the welcome the server works hard never to give.
+
+The awkward part is why it could not simply read the room first. The door is consent before seating:
+reading a live room seats whoever is reading, so asking "is this still here" by calling `view` would
+take the seat the door exists to ask about. `alive` guards and does nothing else, and there is a test
+that it never seats, alongside one that it says gone.
+
+The gone screen is also answered before the door now, rather than after it. That ordering was the
+other half: even with the answer in hand, the door was reached first.
+
 ## The first screen she ever sees said the old thing
 
 She opens his link and the very first thing in front of her was an almost empty screen reading

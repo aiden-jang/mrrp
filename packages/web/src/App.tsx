@@ -26,6 +26,7 @@ import {
   doOurDay,
   doRecover,
   doRelease,
+  roomIsGone,
   fetchNotes,
   doPoke,
   doHold,
@@ -1004,6 +1005,24 @@ function RoomPage({ id }: { id: string }) {
   }, [id]);
   const live = useLive(id, !asking && !gone, takeView, liveGone);
 
+  /*
+   * A dead link must not be answered with an invitation.
+   *
+   * The door screen renders before anything is read, so somebody following the link to a room that
+   * has been deleted was told a room had been made for them, invited in, and only then told it was
+   * gone. This asks the one question the door needs without seating anybody.
+   */
+  useEffect(() => {
+    if (!asking) return;
+    let stale = false;
+    void roomIsGone(id).then((yes) => {
+      if (yes && !stale) setGone({ undoUntil: null });
+    });
+    return () => {
+      stale = true;
+    };
+  }, [asking, id]);
+
   // Their last action, felt rather than read. A pet leaves no mark, so a rising timestamp on the
   // pushed view is the only thing it gives her to react to. See heard.ts for why the first view
   // never fires.
@@ -1232,6 +1251,23 @@ function RoomPage({ id }: { id: string }) {
   const remembered = lastCat.get(id);
   const knownCat = remembered ?? DOOR_CAT;
 
+  if (gone) {
+    return (
+      <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
+        <ChromeSync night={isNightChrome(door.sun)} />
+        <GoneCard
+          undoUntil={gone.undoUntil}
+          undoing={undoing}
+          err={err}
+          onPutBack={() => void putBackRoom()}
+          onHome={() => {
+            window.location.href = "/";
+          }}
+        />
+      </main>
+    );
+  }
+
   if (asking) {
     return (
       <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
@@ -1269,23 +1305,6 @@ function RoomPage({ id }: { id: string }) {
             Go in
           </button>
         </div>
-      </main>
-    );
-  }
-
-  if (gone) {
-    return (
-      <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
-        <ChromeSync night={isNightChrome(door.sun)} />
-        <GoneCard
-          undoUntil={gone.undoUntil}
-          undoing={undoing}
-          err={err}
-          onPutBack={() => void putBackRoom()}
-          onHome={() => {
-            window.location.href = "/";
-          }}
-        />
       </main>
     );
   }

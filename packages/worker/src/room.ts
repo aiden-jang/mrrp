@@ -340,6 +340,17 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
+  /*
+   * Is this room still here?
+   *
+   * The door screen asks before it seats anybody, so it cannot call `view` to find out: on a live
+   * room that would take the seat the door exists to ask about. This guards and does nothing else.
+   */
+  async alive(): Promise<{ ok: true }> {
+    await this.guard();
+    return { ok: true };
+  }
+
   /** Out, or away again. Never away while she is in it: nothing here goes wrong for the cat. */
   async putBoxOut(me: string, on = true): Promise<RoomView> {
     await this.guard();

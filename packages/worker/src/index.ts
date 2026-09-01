@@ -89,6 +89,13 @@ const pushAfter = async (c: Context<{ Bindings: Env }>, next: Next) => {
 app.on(["GET"], "/api/room/:id", pushAfter);
 app.on(["POST"], "/api/room/:id/*", pushAfter);
 
+// Whether the room is still there, for the door screen, which must not seat anybody to find out.
+app.get("/api/room/:id/alive", async (c) => {
+  const id = c.req.param("id");
+  if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
+  return c.json(await room(c.env, id).alive());
+});
+
 // His notes, for the panel that edits them. Not in RoomView: see `notesFor`.
 app.get("/api/room/:id/notes", async (c) => {
   const id = c.req.param("id");
