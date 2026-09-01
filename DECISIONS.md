@@ -1437,6 +1437,24 @@ This does not make the room something to keep up with. The line the app holds to
 goes wrong if you stay away: no streaks, nothing unread, no obligation. Somewhere to look back is
 not an obligation.
 
+## Her words stayed behind when she left
+
+Leaving is justified in one sentence: if only he could delete, she would have to ask somebody else
+to remove her own data. `wipeHerSide` took her moods, her visits, her window light and her recovery
+code, and left her line sitting in the room for him to read.
+
+That was survivable while it was one line. It stopped being survivable the day her lines started
+stacking twelve deep and a screen appeared whose whole job is reading them back.
+
+The catch is that `wipeHerSide` runs down two different paths. She leaving is one. Him freeing her
+seat, because she cannot get in on a new phone, is the other, and the existing tests said her line
+must survive that one while her mood must not. They are right: she has not left there, she has lost
+her way in, and taking her words would be doing it to her rather than for her. So the deletion sits
+inside the `bar` branch, which is the flag that already means "she is the one going".
+
+Her lines ride in the same `LEFT_SIDE` record as everything else she takes, so the undo week puts
+them back exactly as it puts back her mood.
+
 ## What the comments are for
 
 Every explanation of a decision belongs in this file. The comments left in the code are for three

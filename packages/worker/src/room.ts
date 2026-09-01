@@ -115,6 +115,7 @@ interface LeftSide {
   visits: Visit[];
   recovery?: string;
   light?: WindowLight;
+  lines?: Told2[];
 }
 
 export const ROOM_GONE = "mrrp: room deleted";
@@ -901,6 +902,7 @@ export class Room extends DurableObject<Env> {
     const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
     const light = await this.ctx.storage.get<WindowLight>("windowLight");
     const recovery = await this.ctx.storage.get<string>("recoveryHer");
+    const lines = await this.lines();
 
     if (bar) {
       const at = Date.now();
@@ -913,6 +915,7 @@ export class Room extends DurableObject<Env> {
         visits: log.filter((v) => v.who === her),
         recovery,
         light: light?.from === her ? light : undefined,
+        lines,
       });
     }
 
@@ -925,6 +928,13 @@ export class Room extends DurableObject<Env> {
       log.filter((v) => v.who !== her),
     );
     if (light?.from === her) await this.ctx.storage.delete("windowLight");
+    // Only when she is the one leaving. Her words go with her then, because the reason she has a
+    // door of her own is to take her own data out without asking him. When he frees the seat she
+    // has not left, she has lost her way in, so taking her words would be doing it to her.
+    if (bar) {
+      await this.ctx.storage.delete(HER_LINES);
+      await this.ctx.storage.delete("herLine");
+    }
     await this.ctx.storage.delete("recoveryHer");
     await this.ctx.storage.put("handover", her);
 
@@ -962,6 +972,7 @@ export class Room extends DurableObject<Env> {
       const merged = [...log, ...kept.visits].sort((a, b) => b.at - a.at).slice(0, LOG_KEEP);
       await this.ctx.storage.put("log", merged);
     }
+    if (kept.lines && kept.lines.length > 0) await this.ctx.storage.put(HER_LINES, kept.lines);
     if (kept.recovery) await this.ctx.storage.put("recoveryHer", kept.recovery);
     if (kept.light) await this.ctx.storage.put("windowLight", kept.light);
 
