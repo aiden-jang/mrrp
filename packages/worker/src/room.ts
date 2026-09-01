@@ -616,10 +616,17 @@ export class Room extends DurableObject<Env> {
     const read = Math.min((await this.ctx.storage.get<number>("noteIdx")) ?? 0, all.length - 1);
     const lines = await this.lines();
 
+    // An answer goes under its note only if that note still says what it said when she answered.
+    // Otherwise he has rewritten it, and putting her words there would attach them to a sentence
+    // she never read. Those fall in beside her other lines, still carrying what they answered.
+    const home = (line: Told2) =>
+      line.aboutDay !== undefined && all[line.aboutDay] === line.about ? line.aboutDay : null;
+
     const answers = new Map<number, Told2[]>();
     for (const line of lines) {
-      if (line.aboutDay === undefined) continue;
-      answers.set(line.aboutDay, [...(answers.get(line.aboutDay) ?? []), line]);
+      const day = home(line);
+      if (day === null) continue;
+      answers.set(day, [...(answers.get(day) ?? []), line]);
     }
 
     return {
@@ -629,8 +636,8 @@ export class Room extends DurableObject<Env> {
         answers: (answers.get(i) ?? []).map((a) => ({ text: a.text, at: a.at })),
       })),
       lines: lines
-        .filter((line) => line.aboutDay === undefined)
-        .map((line) => ({ text: line.text, at: line.at, gift: line.gift })),
+        .filter((line) => home(line) === null)
+        .map((line) => ({ text: line.text, at: line.at, gift: line.gift, about: line.about })),
     };
   }
 
@@ -1091,10 +1098,12 @@ export class Room extends DurableObject<Env> {
     // She can only answer a note the room has actually handed her. The button is only ever on a
     // note she has read, but the button is not the rule.
     const read = (await this.ctx.storage.get<number>("noteIdx")) ?? 0;
-    const about = aboutDay !== undefined && aboutDay <= read ? aboutDay : undefined;
+    const day = aboutDay !== undefined && aboutDay <= read ? aboutDay : undefined;
+    // Keep what the note said, not just where it sat. He can rewrite his notes whenever he likes.
+    const about = day === undefined ? undefined : (await this.notes())[day];
 
     const trimmed = text.trim().slice(0, 140);
-    if (trimmed) await this.keepLine({ text: trimmed, at: Date.now(), aboutDay: about });
+    if (trimmed) await this.keepLine({ text: trimmed, at: Date.now(), aboutDay: day, about });
     else {
       await this.ctx.storage.delete(HER_LINES);
       await this.ctx.storage.delete("herLine");
@@ -1280,10 +1289,8 @@ export class Room extends DurableObject<Env> {
         if (mood && mood.at > since) arrivals.push({ kind: "mood", at: mood.at, mood: mood.mood });
         // An answer carries his note with it. He wrote it, and the pair is the point.
         const said = lines.filter((x) => x.at > since).slice(0, 6);
-        const hisNotes = said.some((l) => l.aboutDay !== undefined) ? await this.notes() : [];
         for (const l of said) {
-          const note = l.aboutDay === undefined ? undefined : hisNotes[l.aboutDay];
-          arrivals.push({ kind: "line", at: l.at, text: l.text, gift: l.gift, note });
+          arrivals.push({ kind: "line", at: l.at, text: l.text, gift: l.gift, note: l.about });
         }
         // A gift she sent words with is already named by the line carrying them. Both would put
         // "Bean left you a moth" and "Bean left you something" on the same card, for one moth.

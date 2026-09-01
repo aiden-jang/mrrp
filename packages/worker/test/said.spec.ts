@@ -63,6 +63,32 @@ describe("looking back at what has passed between them", () => {
     ]);
   });
 
+  it("never hangs her answer off a note he rewrote after she wrote it", async () => {
+    await seat();
+    await post("notes", { me: HIM, notes: ["the good mug is yours now", "second"] });
+    await post("say", { me: HER, text: "it made me laugh", aboutDay: 0 });
+    await post("notes", { me: HIM, notes: ["I am selling the car", "second"] });
+
+    const { body } = await said(HIM);
+    expect(body.notes[0]!.text).toBe("I am selling the car");
+    expect(body.notes[0]!.answers).toEqual([]);
+    // It is still hers and still readable, beside the note it actually answered.
+    expect(body.lines.map((l) => [l.text, l.about])).toEqual([
+      ["it made me laugh", "the good mug is yours now"],
+    ]);
+  });
+
+  it("keeps the answer in place when he edits a different note", async () => {
+    await seat();
+    await post("notes", { me: HIM, notes: ["the good mug is yours now", "second"] });
+    await post("say", { me: HER, text: "it made me laugh", aboutDay: 0 });
+    await post("notes", { me: HIM, notes: ["the good mug is yours now", "rewritten"] });
+
+    const { body } = await said(HIM);
+    expect(body.notes[0]!.answers.map((a) => a.text)).toEqual(["it made me laugh"]);
+    expect(body.lines).toEqual([]);
+  });
+
   it("is not something a stranger with the link can read", async () => {
     await seat();
     await view(STRANGER);
