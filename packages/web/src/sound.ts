@@ -1,9 +1,4 @@
-/*
- * A cat built from oscillators and noise. No sound files. See DECISIONS.md.
- *
- * A purr is a rumble whose volume flutters about 25 times a second, and that flutter is the "pitch"
- * you hear. The real pitch is too low for a phone speaker, so this flutters filtered noise instead.
- */
+/* A cat built from oscillators and noise. No sound files. See DECISIONS.md. */
 
 const MUTE_KEY = "mrrp.muted.v1";
 
@@ -102,8 +97,8 @@ function rumble(
   if (o.to) filter.frequency.exponentialRampToValueAtTime(o.to, o.at + o.dur);
   filter.Q.value = o.q ?? 1;
 
-  // Keep two gain stages. With one, the LFO and the scheduled ramps fight over the same
-  // AudioParam and the envelope wins, silently.
+  // Keep two gain stages. With one, the LFO and the scheduled ramps fight over the same AudioParam and
+  // the envelope loses.
   const trem = g.ctx.createGain();
   trem.gain.value = 1;
   if (o.flutter) {

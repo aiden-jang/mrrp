@@ -56,7 +56,7 @@ const PAST_DOODLES: [number, number][] = [
 ];
 
 // Every size the sheet has ever been. A room nobody has opened in a year still holds whatever it
-// held, so a size never leaves this list.
+// held, so never take a size off this list.
 function widenDoodle(cells: string): string {
   const was = PAST_DOODLES.find(([w, h]) => w * h === cells.length);
   if (!was) return cells;
@@ -71,7 +71,6 @@ function widenDoodle(cells: string): string {
 }
 
 const HER_LINES = "herLines";
-/* A note card is not an inbox. Twelve is a fortnight away and still all of it. */
 const LINES_KEPT = 12;
 
 const LOG_KEEP = 40;
@@ -82,13 +81,9 @@ const HELD_LAPSE_MS = 30_000;
 const SITTING = "sitting";
 const SETTLED = "settled";
 const WAITING = "waiting";
-/* Long enough to be a wait, short enough that she is not still at the door tomorrow. */
 const WAITING_LAPSE_MS = 90 * 60_000;
-/* Longer than a hold: sitting with somebody is meant to outlast a moment of not touching a key. */
 const SITTING_LAPSE_MS = 10 * 60_000;
-/* Long enough for the wobble to play on a slow connection, short enough not to replay on a reload. */
 const POKE_LIVE_MS = 4_000;
-/* Both reaching for the same thing. Long enough to be the same thought, short enough to be a moment. */
 const REACH_MS = 3_000;
 const DEFAULT_CAT: Cat = {
   name: "Bean",
@@ -100,9 +95,11 @@ const DEFAULT_CAT: Cat = {
 };
 const DEFAULT_CLOCK: Clock = { tz: "America/New_York", homeHour: 18 };
 
-// A deleted room keeps one key: the date it went. Wiping storage outright is not enough, because
-// view() seats whoever turns up when there are fewer than two people, so the next person to open
-// a dead link would quietly make a new room at the same address.
+/*
+ * A deleted room keeps one key: the date it went. Wiping storage outright is not enough, because
+ * `view()` seats whoever turns up when there are fewer than two people, so a dead link would hand a
+ * stranger a brand new room.
+ */
 const TOMBSTONE = "deleted";
 
 const UNDO_MS = 7 * DAY_MS;
@@ -174,14 +171,11 @@ interface Blanket {
   stripe: boolean;
 }
 
-/** A hold, not a doing, which is why it is not in the log. `at` catches a tab that died holding. */
-/* Sitting works the same way, and shares the lapse: both are somebody being here right now. */
 interface Held {
   who: string;
   at: number;
 }
 
-/** Something one of them touched, for the other to watch. Not logged: it is not a doing. */
 interface Poke {
   who: string;
   what: string;
@@ -215,8 +209,6 @@ export class Room extends DurableObject<Env> {
 
     if (this.roles(people).him === me) {
       await this.noteHomecoming();
-      // She was waiting at the door and he has walked through it. Waiting is over because the
-      // thing she was waiting for happened, which is the only ending it should have.
       if (await this.ctx.storage.get<Held>(WAITING)) await this.ctx.storage.delete(WAITING);
     }
 
@@ -246,8 +238,8 @@ export class Room extends DurableObject<Env> {
     return built;
   }
 
-  // Arrival order decides who is who, so anything handing a seat to a new token must carry the old
-  // `firstSeen` over. Stamp it fresh and he becomes the second seat, which is the cat.
+  // Arrival order decides who is who, so anything handing a seat to a new token has to carry the old
+  // `firstSeen` across. Stamp it fresh and he becomes the cat.
   private roles(people: Record<string, Person>): { him: string | null; her: string | null } {
     const ids = Object.keys(people).sort((a, b) => people[a]!.firstSeen - people[b]!.firstSeen);
     return { him: ids[0] ?? null, her: ids[1] ?? null };
@@ -267,8 +259,8 @@ export class Room extends DurableObject<Env> {
     if (action === "brush" || action === "sit") {
       const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
       const key = action === "brush" ? "brushedDay" : "satWithDay";
-      // The moment as well as the day. See marks.ts: the day alone loses a late-night one by
-      // midnight, which is the one she is most likely to have missed.
+      // Keep the moment as well as the day. The day alone loses a late-night one at midnight, which is the
+      // one she is most likely to have missed.
       await this.ctx.storage.put<Mark>(key, { day: localDayNumber(Date.now(), clock.tz), at: Date.now() });
     }
 
@@ -291,8 +283,8 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  // Keep these out of the tally. Her personality is built from that tally, so counting her own
-  // doings would have her learning traits from herself.
+  // Keep her own doings out of the tally. Her personality is built from that tally, so counting them
+  // would have her learning traits from herself.
   async herAct(me: string, act: CatAct): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -303,15 +295,13 @@ export class Room extends DurableObject<Env> {
     if (act === "box") {
       const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
       const today = localDayNumber(Date.now(), clock.tz);
-      // In, or back out. Getting out is not logged and returns here before the log below: the room
-      // shows her leaving it, and "got out of the box again" is not news.
+      // Getting out is not logged, and returns before the log below.
       if (((await this.ctx.storage.get<number>("boxDay")) ?? -1) === today) {
         await this.ctx.storage.delete("boxDay");
         people[me].lastSeen = Date.now();
         await this.ctx.storage.put("people", people);
         return this.build(me, people);
       }
-      // Nothing to get into unless he has put one out.
       if (((await this.ctx.storage.get<number>("boxOutDay")) ?? -1) !== today) {
         return this.build(me, people);
       }
@@ -335,7 +325,6 @@ export class Room extends DurableObject<Env> {
     const { him, her } = this.roles(people);
     if (me !== him && me !== her) return this.build(me, people);
 
-    // Both at once. The last poke is already here waiting to be replaced, so this costs nothing.
     const last = await this.ctx.storage.get<Poke>("poke");
     if (last && last.who !== me && last.what === what && Date.now() - last.at < REACH_MS) {
       await this.ctx.storage.put("reach", { what, at: Date.now() });
@@ -346,12 +335,6 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  /*
-   * Sitting with her, for as long as he stays.
-   *
-   * A state and not an event, unlike the day's `satWith` mark, which it still sets the first time.
-   * Sitting is the one thing on his list that is entirely about duration and it was a boolean.
-   */
   async sitWith(me: string, on: boolean): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -360,25 +343,15 @@ export class Room extends DurableObject<Env> {
 
     if (on) {
       await this.ctx.storage.put<Held>(SITTING, { who: me, at: Date.now() });
-      // Sitting down is still the day's `sit`, so the mark and the log come from the one place
-      // that knows how to write them.
       return this.act(me, "sit");
     }
     await this.ctx.storage.delete(SITTING);
-    // She was settled against somebody who has stood up.
     await this.ctx.storage.delete(SETTLED);
     people[me].lastSeen = Date.now();
     await this.ctx.storage.put("people", people);
     return this.build(me, people);
   }
 
-  /*
-   * Her answer to him sitting down: she settles into it.
-   *
-   * Only while he is actually sat there. It is the one thing she does that has a duration, and it
-   * is deliberately not available on its own: settling against nobody is just sitting still, which
-   * she does anyway.
-   */
   async settle(me: string, on: boolean): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -397,13 +370,6 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  /*
-   * Waiting by the door for him.
-   *
-   * The one lasting thing she starts rather than answers. It is deliberately not a request: he is
-   * usually not even here to see it, nothing is owed, and if he never comes she was by the door.
-   * The room already puts her there for the hour before he is normally home; this is her saying so.
-   */
   async waitAtDoor(me: string, on: boolean): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -425,7 +391,6 @@ export class Room extends DurableObject<Env> {
 
     if (on) {
       await this.ctx.storage.put<Held>("held", { who: me, at: Date.now() });
-      // The first time he ever reached her while she was there to feel it.
       if (this.hereNow(people, this.roles(people).her ?? "")) await this.noteFirst("held");
     } else await this.ctx.storage.delete("held");
     people[me].lastSeen = Date.now();
@@ -433,18 +398,13 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  /*
-   * Is this room still here?
-   *
-   * The door screen asks before it seats anybody, so it cannot call `view` to find out: on a live
-   * room that would take the seat the door exists to ask about. This guards and does nothing else.
-   */
+  // The door screen asks before it seats anybody, so it cannot call `view()` to find out: on a live
+  // room that would take the seat it exists to ask about.
   async alive(): Promise<{ ok: true }> {
     await this.guard();
     return { ok: true };
   }
 
-  /** Out, or away again. Never away while she is in it: nothing here goes wrong for the cat. */
   async putBoxOut(me: string, on = true): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -490,7 +450,6 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  /** The room still rolls a gift on its own if she has not picked one. */
   async leaveGift(me: string, gift: Gift, text = ""): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -498,8 +457,8 @@ export class Room extends DurableObject<Env> {
     if (this.roles(people).her !== me) return this.build(me, people);
 
     await this.ctx.storage.put("gift", gift);
-    // One stamp for both. His card drops the generic gift arrival when a line carries the same gift
-    // at the same moment, and two Date.now() calls either side of an await can land apart.
+    // One stamp for both. His card drops the generic gift arrival when a line carries the same gift at
+    // the same moment, and two `Date.now()` calls either side of an await can land apart.
     const now = Date.now();
     const said = text.trim().slice(0, LINE_MAX);
     if (said) await this.keepLine({ text: said, at: now, gift });
@@ -545,15 +504,15 @@ export class Room extends DurableObject<Env> {
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (this.roles(people).him !== me) return false;
     const current = (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT;
-    // Drop the keys nobody sent. The route builds all six every time, so spreading the undefined
-    // ones straight in would wipe her fur and leave a cat the UI cannot draw.
+    // Drop the keys nobody sent. The route builds all six every time, so spreading the undefined ones
+    // straight in would wipe her fur and leave a cat with no colour.
     const given = Object.fromEntries(Object.entries(cat).filter(([, v]) => v !== undefined));
     await this.ctx.storage.put("cat", { ...current, ...given });
     return true;
   }
 
-  // Plaintext on purpose. All this code can do is become one seat of one room, and anybody who can
-  // read this storage already has the room, the notes and both names.
+  // Plaintext on purpose. All this can do is become one seat of one room, and anybody who can read
+  // this storage already has the room, the notes and both names.
   private async recoveryCode(seat: "him" | "her"): Promise<string> {
     const key = seat === "him" ? "recovery" : "recoveryHer";
     const existing = await this.ctx.storage.get<string>(key);
@@ -684,12 +643,6 @@ export class Room extends DurableObject<Env> {
     return this.notes();
   }
 
-  /*
-   * The notes the room has handed her, each with what she said back, and her other lines beside them.
-   *
-   * It stops at the note she has read for him too. He has the editing panel for the rest, and
-   * showing him past her position would be the room spoiling its own pacing.
-   */
   async saidSoFar(me: string): Promise<SaidSoFar | null> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -700,8 +653,8 @@ export class Room extends DurableObject<Env> {
     const read = Math.min((await this.ctx.storage.get<number>("noteIdx")) ?? 0, all.length - 1);
     const lines = await this.lines();
 
-    // Only if the note still says what it said when she answered. Otherwise he has rewritten it,
-    // and her words would end up attached to a sentence she never read.
+    // Only if the note still says what it said when she answered. Otherwise he has rewritten it, and her
+    // words would end up attached to a sentence she never read.
     const home = (line: Told2) =>
       line.aboutDay !== undefined && all[line.aboutDay] === line.about ? line.aboutDay : null;
 
@@ -759,7 +712,7 @@ export class Room extends DurableObject<Env> {
   }
 
   // Runs behind the response, never in front of it. The stamp is written before the request, so a
-  // service that is down is asked every half hour rather than on every read.
+  // service that is down is asked every half hour rather than on every single view.
   private async refreshWeather(): Promise<void> {
     const current = await this.ctx.storage.get<Weather>("weather");
     if (current && Date.now() - current.at < WEATHER_STALE_MS) return;
@@ -777,8 +730,6 @@ export class Room extends DurableObject<Env> {
     );
   }
 
-  // The first time he looks in each day. He tells the room "usually home around six" once and never
-  // again; life moves and the hour he typed does not.
   private async noteHomecoming(): Promise<void> {
     const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
     const now = Date.now();
@@ -797,7 +748,6 @@ export class Room extends DurableObject<Env> {
     return this.hereNow(people, him) && this.hereNow(people, her);
   }
 
-  // An open socket, or a recent request for anyone whose upgrade a proxy refused.
   private hereNow(people: Record<string, Person>, token: string): boolean {
     if (this.liveTokens().has(token)) return true;
     return Date.now() - (people[token]?.lastSeen ?? 0) < HERE_NOW_MS;
@@ -822,12 +772,10 @@ export class Room extends DurableObject<Env> {
     return out;
   }
 
-  /*
-   * One view per socket, and `build` not `view`.
-   *
-   * Each seat gets different answers, so one shared payload hands each of them the other's. And
-   * `view` spends what he left out, so pushing through it marks a treat found by a phone in a pocket.
-   */
+  // One view per socket, and `build`, not `view`. Each seat gets different answers, so one shared
+  // payload would hand each of them the other's.
+  // Guard first, or a deleted room pushes a view of an empty room to whatever tabs are still open
+  // and a dead link becomes a fresh room again.
   private async broadcast(): Promise<void> {
     const sockets = this.ctx.getWebSockets();
     if (sockets.length === 0) return;
@@ -838,13 +786,11 @@ export class Room extends DurableObject<Env> {
       try {
         ws.send(JSON.stringify({ type: "view", view: await this.build(me, people) }));
       } catch {
-        // A socket that died between the list and the send. webSocketClose will clean it up.
+        // A socket that died between the list and the send. webSocketClose cleans it up.
       }
     }
   }
 
-  // Guard, or a deleted room pushes a view of an empty room to whatever tabs are still open and a
-  // dead link becomes a fresh room again. Close them instead.
   async notify(): Promise<void> {
     try {
       await this.guard();
@@ -860,8 +806,8 @@ export class Room extends DurableObject<Env> {
       throw e;
     }
 
-    // Don't coalesce these. It was tried: it needs timing state on an object that hibernates, and
-    // every way it fails is the room going quiet. DECISIONS.md has the numbers.
+    // Don't coalesce these. It was tried: it needs timing state on an object that hibernates, and every
+    // way it fails is the room going quiet. DECISIONS.md has the numbers.
     await this.broadcast();
   }
 
@@ -883,7 +829,6 @@ export class Room extends DurableObject<Env> {
     // Hibernatable, never `server.accept()`: that holds the object in memory all day.
     this.ctx.acceptWebSocket(server);
 
-    // One broadcast. `acceptWebSocket` has already added this one, so the same loop serves it.
     await this.broadcast();
     return new Response(null, { status: 101, webSocket: client });
   }
@@ -900,17 +845,15 @@ export class Room extends DurableObject<Env> {
     } catch {
       // Already closed.
     }
-    // He closed the tab mid-hold. Without this she watches a hand that is not there until it lapses.
+    // He closed the tab mid-hold, or mid-sit. Without this she watches a hand that is not there until it
+    // lapses, or sits with somebody who has gone.
     const held = await this.ctx.storage.get<Held>("held");
     if (me && held?.who === me) await this.ctx.storage.delete("held");
-    // And the same for sitting, which lasts longer and so is likelier to end this way than any
-    // other way.
     const sitting = await this.ctx.storage.get<Held>(SITTING);
     if (me && sitting?.who === me) {
       await this.ctx.storage.delete(SITTING);
       await this.ctx.storage.delete(SETTLED);
     }
-    // The other seat is watching a cat that thinks it has company.
     await this.broadcast();
   }
 
@@ -918,8 +861,8 @@ export class Room extends DurableObject<Env> {
     await this.webSocketClose(ws);
   }
 
-  // Every method a route can reach must call this first, or a dead link hands a stranger a fresh
-  // room. A test walks the prototype and fails on any method that skips it.
+  // Every method a route can reach must call this first, or a dead link hands a stranger a fresh room.
+  // A test walks the prototype and fails on any method that does not.
   private async guard(): Promise<void> {
     const stone = await this.ctx.storage.get<Tombstone>(TOMBSTONE);
     if (!stone) return;
@@ -960,8 +903,8 @@ export class Room extends DurableObject<Env> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (this.roles(people).him !== me) return false;
-    // His own name, never hers. She is the cat, so asking for her name here would be asking him to
-    // type her out of the room.
+    // His own name, never hers. She is the cat, so asking for her name here would be asking him to type
+    // her out of the room.
     const signature = people[me]?.name ?? "";
     if (!signature || typed.trim().toLowerCase() !== signature.trim().toLowerCase()) return false;
 
@@ -989,9 +932,8 @@ export class Room extends DurableObject<Env> {
     return true;
   }
 
-  // `bar` separates her leaving from him freeing her seat. Leaving must stop this browser being
-  // reseated by its own next page load, or leaving undoes itself. Him freeing a seat must NOT bar:
-  // that button exists so the right person can take the seat.
+  // `bar` is what separates her leaving from him freeing her seat. Leaving has to stop this browser
+  // being reseated by its own next page load, or leaving undoes itself.
   private async wipeHerSide(people: Record<string, Person>, bar: boolean): Promise<void> {
     const her = this.roles(people).her;
     if (!her) return;
@@ -1032,23 +974,16 @@ export class Room extends DurableObject<Env> {
       log.filter((v) => v.who !== her),
     );
     if (light?.from === her) await this.ctx.storage.delete("windowLight");
-    // Only when she is the one leaving. `bar` is that flag. Him freeing her seat runs through here
-    // too, and she has not left there, so taking her words would be doing it to her.
     if (bar) {
       await this.ctx.storage.delete(HER_LINES);
       await this.ctx.storage.delete("herLine");
-      // Same test the window light gets: it goes only if she is the one who put it there. He can
-      // draw in that frame too, and his picture is not hers to take.
+      // It goes only if she is the one who put it there. He can draw in that frame too, and his picture is
+      // not hers to take.
       if (doodle?.by === her) await this.ctx.storage.delete("doodle");
-      // The blanket is hers to pick and the thing on the floor is hers to leave. Whoever sits down
-      // next should not find the last person's choices already made.
       await this.ctx.storage.delete("blanket");
       await this.ctx.storage.delete("gift");
     }
     await this.ctx.storage.delete("recoveryHer");
-    // Only when he frees her seat, which is the one case where the next token really is her. She
-    // leaving takes everything else of hers with it, so carrying her discoveries across to whoever
-    // sits down next was the odd one out, and that person had found none of them.
     if (!bar) await this.ctx.storage.put("handover", her);
 
     if (bar) {
@@ -1142,8 +1077,6 @@ export class Room extends DurableObject<Env> {
     const notes = await this.notes();
     const readSoFar = Math.min((await this.ctx.storage.get<number>("noteIdx")) ?? 0, notes.length - 1);
     const cat = (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT;
-    // Same rule as the room: her seat goes by the name he gave her. A keepsake calling her
-    // "Someone" is worse than one that never names her.
     const nameOf = (token: string | null): string | null =>
       token && token === her ? cat.name : token ? (people[token]?.name ?? null) : null;
 
@@ -1197,15 +1130,14 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  /* Adds a line; it does not replace the last one. Empty text clears every one of them. */
   async say(me: string, text: string, aboutDay?: number): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (!people[me]) return this.build(me, people);
     if (this.roles(people).her !== me) return this.build(me, people);
 
-    // She can only answer a note the room has actually handed her. The button is only ever on a
-    // note she has read, but the button is not the rule.
+    // She can only answer a note the room has actually handed her. The button is only ever on one she has
+    // read, but the button is not the rule.
     const read = (await this.ctx.storage.get<number>("noteIdx")) ?? 0;
     const day = aboutDay !== undefined && aboutDay <= read ? aboutDay : undefined;
     // Keep what the note said, not just where it sat. He can rewrite his notes whenever he likes.
@@ -1223,12 +1155,8 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  /*
-   * Her lines, newest first.
-   *
-   * Don't move the old single-line key to a write-side migration. A room nobody opens is a room
-   * nobody writes to, so her line would vanish from every untouched room.
-   */
+  // Her lines, newest first. Don't move the old single-line key to a write-side migration: a room
+  // nobody opens is a room nobody writes to, so her line would vanish from every untouched room.
   private async lines(): Promise<Told2[]> {
     const kept = await this.ctx.storage.get<Told2[]>(HER_LINES);
     if (kept) return kept;
@@ -1306,8 +1234,8 @@ export class Room extends DurableObject<Env> {
     const current = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
     await this.ctx.storage.put("clock", { ...current, ...clock });
 
-    // Key the cache on her timezone: he opens the room before picking one, so the first lookup is
-    // always for the default and the very next thing he does is change it.
+    // Key the cache on her timezone. He opens the room before picking one, so the first lookup is always
+    // for the default and the very next thing he does changes it.
     if (clock.tz !== undefined && clock.tz !== current.tz) await this.ctx.storage.delete("weather");
     return true;
   }
@@ -1359,7 +1287,7 @@ export class Room extends DurableObject<Env> {
     const waitingForThem = !her;
     const kept = waitingForThem && me === him ? await this.ctx.storage.get<LeftSide>(LEFT_SIDE) : null;
     // She is the cat, so her seat goes by the name he gave her. She is never asked for one, and the
-    // placeholder on her record is not a name anybody should see.
+    // placeholder on her record is not a name anybody chose.
     const nameOf = (token: string | null): string | null =>
       token && token === her ? cat.name : token ? (people[token]?.name ?? null) : null;
 
@@ -1372,12 +1300,8 @@ export class Room extends DurableObject<Env> {
     const settled = sittingNow ? ((await this.ctx.storage.get<Held>(SETTLED)) ?? null) : null;
     const waiting = seated ? ((await this.ctx.storage.get<Held>(WAITING)) ?? null) : null;
     const today = localDayNumber(Date.now(), clock.tz);
-    /*
-     * When she last opened the room, from before this request touched it.
-     *
-     * On her own read her `lastSeen` is already now, so it has to come from `since`, which `view`
-     * captured beforehand. Anywhere else, including a push, her stored one is the honest answer.
-     */
+    // When she last opened the room, from before this request touched it. On her own read her `lastSeen`
+    // is already now, so it has to come from `since`.
     const herLastLook = youAreHer ? (since ?? 0) : her ? (people[her]?.lastSeen ?? 0) : 0;
     const poke = seated ? await this.ctx.storage.get<Poke>("poke") : null;
     const reach = seated ? await this.ctx.storage.get<{ what: string; at: number }>("reach") : null;
@@ -1400,13 +1324,12 @@ export class Room extends DurableObject<Env> {
         const mood = moods[her];
         const lines = await this.lines();
         if (mood && mood.at > since) arrivals.push({ kind: "mood", at: mood.at, mood: mood.mood });
-        // An answer carries his note with it. He wrote it, and the pair is the point.
         const said = lines.filter((x) => x.at > since).slice(0, 6);
         for (const l of said) {
           arrivals.push({ kind: "line", at: l.at, text: l.text, gift: l.gift, note: l.about });
         }
-        // A gift she sent words with is already named by the line carrying them. Both would put
-        // "Bean left you a moth" and "Bean left you something" on the same card, for one moth.
+        // A gift she sent words with is already named by the line carrying them. Both would put "Bean left
+        // you a moth" and "Bean left you something" on the same card, for one moth.
         const spokenFor = new Set(said.filter((l) => l.gift).map((l) => l.at));
         arrivals.push(
           ...log
@@ -1429,8 +1352,6 @@ export class Room extends DurableObject<Env> {
         const kept = await this.ctx.storage.get<{ gift: Gift; at: number }>("giftKept");
         if (kept && kept.at > since) arrivals.push({ kind: "kept", at: kept.at, gift: kept.gift });
       }
-      // Say it in words too. The animation runs once for six seconds and reduced motion removes
-      // most of it, so the card is the part that cannot be missed.
       if (youAreHer && leftOut) {
         arrivals.push({ kind: "brought", at: leftOut.at, treat: leftOut.treat });
       }
@@ -1463,7 +1384,6 @@ export class Room extends DurableObject<Env> {
       you: nameOf(me),
       them: nameOf(otherId),
       themLastAt: them?.lastSeen ?? null,
-      // Same rule as `bothHereNow`, or the room says they are both here and that she has gone.
       themHereNow: !!otherId && this.hereNow(people, otherId),
       bothHereNow: (me === him || me === her) && this.bothHere(people),
       herLine: seated ? ((await this.lines())[0] ?? null) : null,
@@ -1473,10 +1393,7 @@ export class Room extends DurableObject<Env> {
       ourDay: seated && !youAreHer ? ((await this.ctx.storage.get<OurDay>("ourDay")) ?? null) : null,
       framed: (await this.ctx.storage.get<boolean>("framed")) ?? false,
       shelfDown: (await this.ctx.storage.get<boolean>("shelfDown")) ?? false,
-      // She sees it too, or she is picking blind. He is still the one who picks it up.
       gift: seated ? ((await this.ctx.storage.get<Gift>("gift")) ?? null) : null,
-      // He sees it too, or the leave-out button appears to do nothing and he cannot tell "still
-      // waiting" from "she found it".
       forHer: seated ? (leftOut?.treat ?? null) : null,
       blanket: (await this.ctx.storage.get<Blanket>("blanket")) ?? null,
       expectAt: learnedHour((await this.ctx.storage.get<Homing>("homing")) ?? null, clock.homeHour),
@@ -1485,7 +1402,6 @@ export class Room extends DurableObject<Env> {
       box: ((await this.ctx.storage.get<number>("boxDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
       boxOut:
         ((await this.ctx.storage.get<number>("boxOutDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
-      // Draw it on the floor so it waits there instead of only flashing past in the animation.
       brought: seated && !!leftOut,
       brushed: markLives(await this.ctx.storage.get<Mark>("brushedDay"), today, herLastLook),
       satWith: markLives(await this.ctx.storage.get<Mark>("satWithDay"), today, herLastLook),
@@ -1494,7 +1410,6 @@ export class Room extends DurableObject<Env> {
       recoveryCode: seated ? await this.recoveryCode(youAreHer ? "her" : "him") : null,
       seat: seated ? me : null,
       linked: seated ? (people[me]?.account ?? null) !== null : false,
-      // Hers alone. Nobody watches a third person being petted.
       heldByThem: !!held && held.who === otherId && Date.now() - held.at < HELD_LAPSE_MS,
       sittingWith: sittingNow && sitting.who === me,
       sittingWithYou: sittingNow && sitting.who === otherId,
@@ -1505,7 +1420,6 @@ export class Room extends DurableObject<Env> {
         poke && poke.who === otherId && Date.now() - poke.at < POKE_LIVE_MS
           ? { what: poke.what, at: poke.at }
           : null,
-      // Both of you, unlike everything else in here. Neither of you did this one to the other.
       reachedTogether: reach && Date.now() - reach.at < POKE_LIVE_MS ? reach : null,
       // Keep `seated` here. Without it anybody holding the link is told what she has been doing.
       theirRecent: seated && otherId ? log.filter((v) => v.who === otherId).slice(0, 4) : [],

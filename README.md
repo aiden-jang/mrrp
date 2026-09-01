@@ -168,11 +168,20 @@ code gets a warning. Comments in the code are kept for three things only:
 Everything else was moved to `DECISIONS.md` or deleted. If you are wondering why something is shaped
 the way it is and the code does not say, that is deliberate: it is in the doc.
 
+They are written as warnings, not descriptions, and mostly as `//` rather than block comments. Two
+lines of prose inside a four-line box reads as documentation; the same two lines as `//` read as
+somebody leaning over your shoulder saying "don't".
+
+Three kinds of comment here are load-bearing and must survive any tidy-up: `// prettier-ignore`,
+which holds the sprite grids readable, `// eslint-disable-next-line`, and the line inside every
+empty `catch {}`, which is the only thing keeping `no-empty` quiet. Removing a comment cannot break
+a build, right up until the comment was doing a job.
+
 ## Where things are
 
 | file                    | what                                                                  |
 | ----------------------- | --------------------------------------------------------------------- |
-| `worker/src/room.ts`    | the Durable Object. One per room, two seats, one alarm, no sockets    |
+| `worker/src/room.ts`    | the Durable Object. One per room, two seats, one alarm, the sockets   |
 | `worker/src/notes.ts`   | the default notes, used until a room writes its own                   |
 | `web/src/sprites.ts`    | the cat, hand-authored pixel grids                                    |
 | `web/src/Cat.tsx`       | the room, drawn one aligned rectangle per logical pixel               |
@@ -182,7 +191,10 @@ the way it is and the code does not say, that is deliberate: it is in the doc.
 | `worker/src/weather.ts` | her sky, from a timezone and a keyless forecast                       |
 | `web/src/overlays.ts`   | where the painted-on details go, held to the sprites by its own test  |
 | `web/src/blanket.ts`    | the five blankets, the one thing in the room she picks                |
-| `web/src/screens.tsx`   | the screens for a room that is ending, kept pure so they are testable |
+| `web/src/screens.tsx`   | the screens and panels kept out of `App.tsx` so a test can click them |
+| `web/src/live.ts`       | the socket, receive-only. Every write still goes through a POST       |
+| `web/src/legible.ts`    | contrast, so a mark on a floor that is retinted hourly stays visible  |
+| `web/src/wire.check.ts` | imported by nothing. Makes `tsc` fail when the two type files drift   |
 
 ## Before you send it
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { harness, HER, HIM, STRANGER } from "./harness.js";
 
-const { id, post, seat, view } = harness("waitingroom");
+const { post, seat, view } = harness("waitingroom");
 
 describe("waiting by the door", () => {
   it("is hers to start, and he sees it", async () => {

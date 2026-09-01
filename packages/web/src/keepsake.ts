@@ -2,7 +2,7 @@ export type KeepsakeDetails = {
   catName: string;
   doing: string;
   together: boolean;
-  /** She is the cat, so her copy cannot be captioned with her own name in the third person. */
+  /* She is the cat, so her copy cannot be captioned with her own name in the third person. */
   youAreHer?: boolean;
   capturedAt?: Date;
   night?: boolean;

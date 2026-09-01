@@ -1,13 +1,7 @@
 /*
- * The two types.ts files describe the same wire format and are maintained by hand.
- *
- * They are not copies: the worker's imports its weather and memory types, the browser's inlines
- * them, and the comments differ because each side reads them for different reasons. So nothing
- * stops a field being added to one and forgotten in the other, and neither package's typecheck
- * would notice: the browser would simply read `undefined` off every view, at runtime, in
- * production.
- *
- * Nothing imports this file. It exists so `tsc` fails when the two sides stop agreeing.
+ * The two types.ts files describe the same wire format and are kept by hand. Add a field to one and
+ * forget the other and both packages still typecheck: the browser just reads `undefined` off every
+ * view, at runtime, in production. Nothing imports this file. It exists so `tsc` fails on drift.
  */
 import type {
   Arrival as ArrivalSent,
@@ -20,8 +14,8 @@ import type { Arrival, Bodies, RoomView, SaidSoFar, Told2 } from "./types.js";
 
 /*
  * Identity, not mutual assignability. `[A] extends [B]` calls two shapes the same when one has an
- * extra optional field, and an optional field is exactly what gets added to one side and forgotten
- * on the other.
+ * extra optional field, and an optional field is exactly what gets added to one side and forgotten on
+ * the other.
  */
 type Same<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 
@@ -30,5 +24,4 @@ export const roomViewAgrees: Same<ViewSent, RoomView> = true;
 export const arrivalAgrees: Same<ArrivalSent, Arrival> = true;
 export const saidSoFarAgrees: Same<SaidSent, SaidSoFar> = true;
 export const told2Agrees: Same<Told2Sent, Told2> = true;
-/* What the browser sends against what the worker reads, field by field. */
 export const bodiesAgree: Same<BodiesSent, Bodies> = true;

@@ -7,8 +7,8 @@ export interface Weather {
 
 export const WEATHER_STALE_MS = 30 * 60_000;
 
-// Coarse on purpose. The room already knows her timezone, and that is enough to know if it is
-// raining on her without ever asking anyone where they live.
+// Coarse on purpose. The room already knows her timezone, and that is enough to know if it is raining
+// on her window.
 const PLACES: Record<string, [number, number]> = {
   "America/New_York": [40.71, -74.01],
   "America/Chicago": [41.88, -87.63],
@@ -64,8 +64,8 @@ export function placeFor(tz: string): [number, number] {
   }
 }
 
-// Anything not named here is clear. A window that says nothing is right far more often than one
-// that guesses.
+// Anything not named here is clear. A window that says nothing is right far more often than one that
+// guesses.
 export function skyFor(code: number): Sky {
   if (code >= 71 && code <= 77) return "snow";
   if (code === 85 || code === 86) return "snow";
@@ -77,8 +77,7 @@ export function skyFor(code: number): Sky {
   return "clear";
 }
 
-// The base URL is a binding so tests can point it at a port that refuses. As a constant, the suite
-// called a stranger's API a few hundred times a run.
+// The base URL is a binding so tests can point it at a port that refuses.
 export async function lookOutside(tz: string, baseUrl: string): Promise<Sky | null> {
   const [lat, lon] = placeFor(tz);
   const url = new URL(baseUrl);

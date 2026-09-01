@@ -28,8 +28,8 @@ export function withCell(cells: string, x: number, y: number, ink: number): stri
   return cells.slice(0, i) + String(ink) + cells.slice(i + 1);
 }
 
-// Drawings are hanging in real rooms. The sheet has grown twice, and every past size stays in the
-// list forever: a room nobody has opened in a year still holds whatever it held.
+// Drawings are hanging in real rooms. The sheet has grown twice, and every past size stays in this
+// list forever, or an old room's drawing stops loading.
 export function widen(cells: string): string {
   const was = PAST_SIZES.find(([w, h]) => w * h === cells.length);
   if (!was) return cells;

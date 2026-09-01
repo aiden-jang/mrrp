@@ -156,10 +156,8 @@ export function TheyLeftNotice({ name, until }: { name: string; until: number })
   );
 }
 
-/*
- * Notes carry no timestamp and her lines do, so the two cannot be ordered into one list. Her answers
- * hang off the notes they answer, which is the only real link between them.
- */
+// Notes carry no timestamp and her lines do, so the two cannot be ordered into one list. Her answers
+// hang off the notes they answer, which is the only real link between them.
 export function SaidPanel({
   said,
   youAreHer,
@@ -173,8 +171,10 @@ export function SaidPanel({
   onClose: () => void;
   panelRef?: React.Ref<HTMLElement>;
 }) {
-  // Don't print his name on her side: it is a placeholder until he picks one. Don't say "wrote" on
-  // his: this stops at the note she has been handed, and he may have written a hundred more.
+  /*
+   * Don't print his name on her side: it is a placeholder until he picks one. Don't say "wrote" on his:
+   * this stops at the note she has been handed, and he may have written a hundred more.
+   */
   const wrote = youAreHer ? "what he's written you" : "what she has read so far";
   const back = youAreHer ? "you said back" : `${them} said back`;
 
@@ -210,11 +210,6 @@ export function SaidPanel({
         ))}
       </ol>
 
-      {/*
-          A fact about how much he wrote, not a position she is at. The room refuses unread counts
-          and streaks, and this is neither: it does not move when she stays away and nothing goes
-          wrong if she never reaches the end of it.
-      */}
       {said.total > said.notes.length ? (
         <p className={s.saidMore}>
           {youAreHer
@@ -222,7 +217,6 @@ export function SaidPanel({
             : `${said.total} written. She is on day ${said.notes.length}.`}
         </p>
       ) : (
-        /* The end of a hundred days of them, which used to arrive as an empty space. */
         <p className={s.saidEnd}>
           <PawMark />{" "}
           {youAreHer
@@ -239,8 +233,6 @@ export function SaidPanel({
           <ul className={s.saidList}>
             {said.lines.map((line, i) => (
               <li key={line.at} className={s.saidLine}>
-                {/* She answered this one, and he has since rewritten it. Show what she was
-                    answering, or her words sit here looking like a reply to nothing. */}
                 {line.about && <span className={s.saidWho}>answering &ldquo;{line.about}&rdquo;</span>}
                 {line.gift && (
                   <span className={s.saidWho}>

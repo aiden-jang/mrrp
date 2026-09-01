@@ -1,16 +1,11 @@
 /*
- * The floor under a room nobody has written notes for yet.
+ * The floor under a room nobody has written notes for yet, one a day, read by her and nobody else.
  *
- * Read by her and nobody else, one a day. She is the cat, so none of these may talk about a cat in
- * the third person: twenty of the original thirty did, left over from when the cat was a pet she
- * owned, and they were the last place in the app still holding the old idea. `notes.spec.ts` holds
- * that line now.
+ * She is the cat, so none of these may talk about a cat in the third person: twenty of the original
+ * thirty did, and `notes.spec.ts` holds that line now. The last dozen lean on time having passed,
+ * because the room hands these out in order.
  *
- * The last dozen or so lean on time having passed, because the room hands these out in order and a
- * note read three months in can say things the first one cannot.
- *
- * A note written by somebody else is not a gift from you, so these are a floor rather than the
- * point. Overwrite them in the setup panel.
+ * A note written by somebody else is not a gift from you. Overwrite them in the setup panel.
  */
 export const NOTES: string[] = [
   "Somebody made this room and put you in it. You are not going anywhere.",

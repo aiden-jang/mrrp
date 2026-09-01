@@ -70,7 +70,6 @@ const GW = 100,
   GH = 80,
   FLOOR = 48;
 const VW = 80;
-/* Grid cells of travel over her that make one stroke. She is about 14 wide, so this is most of her. */
 const BRUSH_RUN = 10;
 const CAT_REACH_LEFT = Math.max(...Object.values(POSES).map((p) => -p.ox));
 const CAT_REACH_RIGHT = Math.max(...Object.values(POSES).map((p) => p.ox + p.w));
@@ -157,12 +156,6 @@ const PAW_CURSOR =
       '<ellipse cx="11" cy="15" rx="7.5" ry="5.8"/></g></svg>',
   );
 
-/*
- * How much of a phone screen the chrome gets before the room starts giving way.
- *
- * The room was about 40% of the screen with four stacked cards under it, which is the wrong way
- * round for the thing the app is about.
- */
 const ROOM_RESERVE = 210;
 const ROOM_MAX_SHARE = 0.78;
 
@@ -179,7 +172,6 @@ const PRINT_FADE_MS = 9000;
 const DOOR_CENTRE = 12;
 const SWIPE_MS = 620;
 const WATCH_DOOR_MS = 7000;
-/* A tap of the pet button, drawn for about as long as a short hold would be. */
 const PET_TAP_MS = 1800;
 
 const MUG_FLOOR_X = 66,
@@ -315,11 +307,8 @@ export function Cat({
   onWindowLight?: () => void;
   mugFell?: number | null;
   shelfDown?: boolean;
-  /** When she knocked the mug off, so she can be seen doing it. Null on a plain load. */
   shelfAt?: number | null;
-  /** When he tapped the pet button, as against holding on to her. Both have to look the same. */
   petAt?: number | null;
-  /** A box is in the room. Separate from `box`, which is whether she is sitting in it. */
   boxOut?: boolean;
   onTidy?: () => void;
   role?: "him" | "her" | null;
@@ -327,23 +316,15 @@ export function Cat({
   onPet?: () => void;
   onHold?: (on: boolean) => void;
   heldByThem?: boolean;
-  /* Somebody is sat with her right now, on either side of the room. */
   sitting?: boolean;
-  /* He has picked the brush up. A drag across her counts strokes instead of petting her. */
-  /* She has settled against whoever sat down. */
   settled?: boolean;
-  /* She has gone to the door to wait, whatever the hour had planned for her. */
   waiting?: boolean;
   brushing?: boolean;
   onStroke?: () => void;
-  /** Every press and release of the cat, and every prop this seat touches, for the other screen. */
   onTouch?: (what: string) => void;
-  /** Something they just touched. Replays the wobble and turns her head, nothing else. */
   pokedByThem?: { what: string; at: number } | null;
-  /** You both reached for the same thing at once. Plays on both screens, not one. */
   reachedTogether?: { what: string; at: number } | null;
   onPoke?: () => void;
-  /** Something he left out for her, played once when she opens the room and finds it. */
   leftOut?: "yarn" | "treat" | "catnip" | null;
   onFound?: (key: DiscoveryKey) => void;
   onCapture?: (capture: () => Promise<Blob | null>) => void;
@@ -412,8 +393,6 @@ export function Cat({
   boxOutRef.current = boxOut;
   const downRef = useRef(shelfDown);
   downRef.current = shelfDown;
-  // A tap of the pet button, shown for as long as a short hold. Holding sets `petting` from the
-  // canvas; the button never touched the drawing at all, so tapping it did nothing you could see.
   const petShownUntil = useRef(-1e9);
   const petShown = useRef(0);
   useEffect(() => {
@@ -464,10 +443,7 @@ export function Cat({
   const auroraUntil = useRef(-1e9);
   const summonUntil = useRef(-1e9);
   const secretBoxUntil = useRef(-1e9);
-  // Play what he left out, once, on arrival. The server spends it as it hands it over, so this
-  // fires on the view carrying it and never again.
   const playedLeftOut = useRef<string | null>(null);
-  // While this runs, the door pose must not suppress it.
   const leftOutUntil = useRef(-1e9);
   const yarnUntil = useRef(-1e9);
   const treatUntil = useRef(-1e9);
@@ -539,7 +515,6 @@ export function Cat({
   brushingRef.current = brushing;
   const onStrokeRef = useRef(onStroke);
   onStrokeRef.current = onStroke;
-  /* Distance dragged across her since the last stroke landed. */
   const brushRun = useRef(0);
   const onTouchRef = useRef(onTouch);
   onTouchRef.current = onTouch;
@@ -619,12 +594,6 @@ export function Cat({
     }
   }, [nudge]);
 
-  /*
-   * Their touch, replayed here: the wobble and her head, never the tap handler.
-   *
-   * That handler opens curtains, starts rain and collects glints, none of which is theirs to do to
-   * your room from a distance. Keyed on `at` so a poke that arrives twice plays once.
-   */
   const playedPoke = useRef(0);
   useEffect(() => {
     if (!pokedByThem || pokedByThem.at === playedPoke.current) return;
@@ -635,8 +604,6 @@ export function Cat({
     if (prop) lookAt.current = { x: prop.x + prop.sp.w / 2, until: now + 2400 };
   }, [pokedByThem]);
 
-  // Both of you at once, so both screens get it: nobody did this one to the other. Keyed on `at`
-  // like the poke above, so the four seconds it sits in the view play once.
   const playedReach = useRef(0);
   useEffect(() => {
     if (!reachedTogether || reachedTogether.at === playedReach.current) return;
@@ -707,13 +674,13 @@ export function Cat({
     let refit = 0;
     const fit = () => {
       cancelAnimationFrame(refit);
-      // One logical pixel has to be a whole number of device pixels, or the floorboards come out at
-      // two different widths. Hence the floor(), and the retry when a measurement reads zero.
+      // One logical pixel has to be a whole number of device pixels, or the floorboards come out at two
+      // different widths.
       const d = Math.min(2, devicePixelRatio || 1);
       const wide = box ? box.clientWidth : cv.getBoundingClientRect().width;
       const h = innerHeight;
-      // A ceiling, not a floor. max() here means "take 62% whatever is below you", which puts the
-      // front door's own button under the fold.
+      // A ceiling, not a floor. `max()` here means "take 62% whatever is below you", which puts the front
+      // door's own button under the fold.
       const cap = h > 0 ? Math.min(h * ROOM_MAX_SHARE, h - reserveRef.current) : Infinity;
       const avail = Math.min(wide > 0 ? wide : Infinity, cap);
       if (!Number.isFinite(avail) || avail < VW) {
@@ -752,10 +719,9 @@ export function Cat({
         slowBlink.current.answered = false;
       }
       /*
-       * Brushing is the distance travelled over her, not a count of moves.
-       *
-       * A mouse fires far more move events than a finger for the same stroke, so counting events
-       * would make it four times quicker on a laptop than on the phone this is mostly used on.
+       * Brushing is the distance travelled over her, not a count of moves. A mouse fires far more move
+       * events than a finger for the same stroke, so counting events would make it four times quicker on a
+       * laptop than on the phone this is mostly used on.
        */
       if (brushingRef.current) {
         const b = catBox.current;
@@ -774,13 +740,6 @@ export function Cat({
       ptr.in = true;
       const press = floorPress.current;
       const now = performance.now();
-      /*
-       * She watches your finger, not just the one that is dragging her a laser about.
-       *
-       * Kept short and kept behind everything else that has an opinion about where she is looking:
-       * a cat glances at a hand moving nearby, she does not lock onto it. Anything with a real
-       * reason to hold her gaze has already written a later `until` than this one.
-       */
       if (!press && now > (lookAt.current?.until ?? 0) - 200) {
         lookAt.current = { x: Math.max(6, Math.min(GW - 6, nextX)), until: now + 700 };
       }
@@ -875,7 +834,7 @@ export function Cat({
       if (b && x >= b.x0 - 2 && x <= b.x1 + 2 && y >= b.y0 - 2 && y <= b.y1 + 3) {
         const now = performance.now();
         if (roleRef.current === "him") {
-          // Holding the brush means a press on her is the start of a stroke, not a pet.
+          // Holding the brush means a press on her starts a stroke, not a pet.
           if (!brushingRef.current) {
             petting.current = true;
             onHoldRef.current?.(true);
@@ -929,8 +888,8 @@ export function Cat({
         }
         return;
       }
-      // Must match `boxHere` in the draw loop. Without boxOut a box he put out is drawn and cannot
-      // be tapped.
+      // Must match `boxHere` in the draw loop. Without `boxOut` a box he put out is drawn and cannot be
+      // tapped.
       const boxIsHere = boxOutRef.current || boxRef.current || performance.now() < secretBoxUntil.current;
       const hit = PROPS.find(
         (q) => (q.key !== "box" || boxIsHere) && x >= q.x && x < q.x + q.sp.w && y >= q.y && y < q.y + q.sp.h,
@@ -1391,12 +1350,8 @@ export function Cat({
         togetherRef.current,
         spotRef.current,
       );
-      /*
-       * Waiting beats the hour, the mood and him being here.
-       *
-       * The scene puts her where the time of day says she should be. Choosing to wait at the door
-       * has to win, or the caption says she is by the door while she sits in the sun.
-       */
+      // Waiting beats the hour, the mood, and him being here. This component builds its own scene, so
+      // overriding `catX` anywhere else moves the caption and not the cat.
       const sc = waitingRef.current ? { ...hourly, catX: DOOR_X, atDoor: true, sleepy: 0.1 } : hourly;
       const beamX = Math.round(sc.beam * GW);
 
@@ -1433,8 +1388,8 @@ export function Cat({
       const rugShadow = mixHex(sc.floorNear, INK, 0.25);
       const rugEdge = mixHex(sc.floorNear, "#765367", 0.58);
       const rugBody = mixHex(sc.floorNear, "#a8737e", 0.48);
-      // What the tuft and the dent are actually lying on. Both sit inside the rug, so measuring
-      // their contrast against the bare floor gets the wrong surface and the wrong answer.
+      // What the tuft and the dent are actually lying on. Both sit inside the rug, so measuring their
+      // contrast against the bare floor gives the wrong answer.
       const under = rugBody;
       const rugThread = mixHex(rugBody, sc.beamWarm, 0.16);
       rect(35, FLOOR + 12, 40, 1, rugShadow);
@@ -1503,8 +1458,6 @@ export function Cat({
 
       const wy = (row: number) => 4 + 1 + row;
 
-      // She goes and knocks it off, and the camera follows her, which is what brings the shelf into
-      // view at all. See shelftrip.ts.
       const tripAge = t - tripFrom.current;
       const trip = shelfTrip(tripAge, lastTripAge.current);
       lastTripAge.current = tripAge;
@@ -1540,8 +1493,8 @@ export function Cat({
       const curtainHem = reduce ? 0 : Math.round(Math.sin(t / 2400));
       px(wx - 2 + curtainHem, 24, curtainLight);
       px(wx + WINDOW.w + 1 - curtainHem, 24, curtainLight);
-      // Night first, then mix the weather into it. The other order makes a rainy 2am glow like an
-      // overcast noon, because the wet grey is mixed off the wall colour.
+      // Night first, then mix the weather into it. The other order makes a rainy 2am glow like an overcast
+      // noon.
       const nightGlass = raining
         ? mixHex("#2b3450", "#718aa1", 0.34)
         : snowing
@@ -1629,8 +1582,8 @@ export function Cat({
       if (cold) {
         const swell = reduce ? 0.3 : 0.3 + Math.sin(t / 4200) * 0.07;
         const fog = mixHex(glass, "#ffffff", swell);
-        // Only the last two glass rows of each pane. wy(4) and wy(9) are frame bars, and fogging
-        // those paints over the window's own woodwork.
+        // Only the last two glass rows of each pane. wy(4) and wy(9) are frame bars, and fogging those paints
+        // over the window frame.
         for (const paneY of [wy(2), wy(7)]) {
           rect(wx + 1, paneY, 7, 2, fog);
           rect(wx + 9, paneY, 7, 2, fog);
@@ -1868,8 +1821,7 @@ export function Cat({
         px(89, FLOOR - 29, "#ffd79a");
         px(90, FLOOR - 29, "#ffd79a");
       }
-      // The mug on the floor is drawn much further down, with the other things that land on the
-      // floor: it sits at x 66-73, inside the box's near wall, so drawn here a box hides it.
+      // The mug on the floor is drawn much further down, with the other things that land on the floor.
       if (!downRef.current || trip.mugStillUp) {
         blit(MUG, 84 + shake("shelf"), FLOOR - 29, { w: INK, c: "#cfe0e4", d: "#a9c2c8" });
         const steamAge = t - mugSteamedAt.current;
@@ -2092,7 +2044,6 @@ export function Cat({
           }
         }
       }
-      // A box in the room and her being in it are different things: he puts one out, she decides.
       const boxHere = boxOutRef.current || boxRef.current || t < secretBoxUntil.current;
       const inBox = (boxRef.current || t < secretBoxUntil.current) && boxHere && !sc.atDoor;
       const peeking = !reduce && boxHere && t < boxPeekUntil.current;
@@ -2142,8 +2093,8 @@ export function Cat({
       const nesting = t < bedNestUntil.current && !sc.atDoor && !zooming;
       const laserPlaying = !reduce && t < laser.current.until && !sc.atDoor;
       const summoning = !reduce && t < summonUntil.current && !sc.atDoor;
-      // Don't let the door pose suppress this the way it does easter eggs. It holds for 90 minutes
-      // around his expected hour, which is when she is most likely to look in.
+      // Don't let the door pose suppress this the way it does easter eggs. It holds for 90 minutes around
+      // his expected hour, which would swallow most of an evening.
       const showingLeftOut = t < leftOutUntil.current;
       const doorBlocks = sc.atDoor && !showingLeftOut;
       const yarnPlaying = !reduce && t < yarnUntil.current && !doorBlocks;
@@ -2190,8 +2141,6 @@ export function Cat({
         return (warmSpot.current ?? target) + shade;
       };
 
-      // Below the games, above the sunbeam: she will not leave a chase to look at a picture, but a
-      // new drawing beats a warm patch she has all day.
       const admiring = t < admireUntil.current;
       let wantX = trip.going
         ? SHELF_REACH_X
@@ -2225,8 +2174,8 @@ export function Cat({
       const bounded = (x: number) => Math.max(CAT_REACH_LEFT, Math.min(GW - CAT_REACH_RIGHT, x));
       wantX = bounded(wantX);
       if (catX.current === null) catX.current = firstEverRef.current ? 19 : wantX;
-      // She eases toward where she wants to be a frame at a time, so a single screenshot never
-      // shows her final position.
+      // She eases toward where she wants to be a frame at a time, so a single screenshot never shows her
+      // final position.
       catX.current += (wantX - catX.current) * (catnipping || zooming || mouseChasing ? 0.4 : 0.05);
       const kx = Math.round(catX.current);
 
@@ -2259,8 +2208,8 @@ export function Cat({
       const want = ptr.in ? Math.max(0, 1 - Math.hypot(ptr.x - kx, ptr.y - (ky - 8)) / 44) : 0;
       near.current += (want - near.current) * 0.07;
       const n = near.current;
-      // His hand, whichever side of it you are on. `petting` is his own press; `heldRef` is the same
-      // press arriving on her screen, and the closed eyes, the purr and the heart all hang off this.
+      // His hand, whichever side of it you are on. `petting` is his own press; `heldRef` is the same press
+      // arriving on her screen.
       const pet = petting.current || heldRef.current || t < petShownUntil.current;
       bounce.current = Math.max(0, bounce.current - 0.02);
 
@@ -2360,8 +2309,6 @@ export function Cat({
       const pouncing = mouseChasing || laserPlaying || swiping;
       const walking = Math.abs(wantX - kx) > 3 && !zooming && !catnipping && !pouncing;
 
-      // On the step into walking, not while walking: a bell that rings the whole way across the
-      // room is a smoke alarm.
       if (bothCalledRef.current && walking && !wasWalking.current && !reduce && t > belled.current) {
         belled.current = t + 2600;
         play("bell");
@@ -2396,17 +2343,11 @@ export function Cat({
                         : admiring && !walking
                           ? "sit"
                           : // Somebody sat down with her. She settles, and loafing is the pose that
-                            // breathes, so the room keeps moving very slightly while nothing happens.
                             sittingRef.current && !walking
                             ? "loaf"
                             : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
-      /*
-       * Settled against somebody, she breathes slower and deeper. It is one pixel either way, which
-       * is the most the grid has to say it with, and it is the only thing on screen still moving
-       * while the two of them sit there doing nothing.
-       */
       const breathe =
         reduce || pose !== "loaf"
           ? 0
@@ -2541,8 +2482,8 @@ export function Cat({
       if (raining && atTheGlass && awake) wetPaws.current = t + WET_PAWS_MS;
       if (walking && t < wetPaws.current && t > nextPrint.current) {
         nextPrint.current = t + 380;
-        // `ky`, not `y`. `y` bobs with her breathing, and a breathing paw print is a mark on the
-        // cat rather than on the floor.
+        // `ky`, not `y`. `y` bobs with her breathing, and a breathing paw print is a mark on the cat rather
+        // than on the floor.
         prints.current.push({ x: kx, y: ky, at: t, side: prints.current.length % 2 });
         if (prints.current.length > 10) prints.current.shift();
       }
@@ -2618,8 +2559,7 @@ export function Cat({
       const grooming = t - groom.current.at < GROOM_MS;
       if (grooming && awake) {
         const faceX = kx + sp.ox;
-        // `perk` has its face a row lower than every other pose. Assuming otherwise puts the yawn
-        // on her nose.
+        // `perk` has its face a row lower than every other pose. Assuming otherwise puts the yawn on her nose.
         const faceY = y + sp.oy + faceShift(pose);
         rect(faceX + GROOM.pawX, faceY + GROOM.pawY, 2, 2, L.fur);
         px(faceX + GROOM.tipX, faceY + GROOM.tipY, INK);
@@ -2796,8 +2736,6 @@ export function Cat({
           px(Math.round(point.x), Math.round(point.y), `rgba(255,107,107,${opacity})`);
         }
       }
-      // Her mood, below BOX_FRONT like everything else on the floor. Drawn at kx +- 13, so in the
-      // box they land inside it, and one was 96% behind the near wall.
       const activeMood = moodRef.current;
       const moodLeft = kx - 13;
       const moodRight = kx + 11;
@@ -2844,13 +2782,8 @@ export function Cat({
         px(25, FLOOR + 17, "#946270");
       }
 
-      /*
-       * Everything on the floor goes below BOX_FRONT. Only the cat goes behind it.
-       *
-       * Its near wall covers x 44-71 at floor level, which is where the treat (68), the catnip (54)
-       * and the mug she knocks off (66) all land.
-       */
-      // Down, unless she is still on her way to knock it off.
+      // Everything on the floor goes below BOX_FRONT. Only the cat goes behind it, or a box he put out
+      // hides the treats.
       if (downRef.current && !trip.mugStillUp) {
         blit(MUG_DOWN, MUG_FLOOR_X, MUG_FLOOR_Y, { w: INK, c: "#cfe0e4", d: "#a9c2c8" });
       }
