@@ -2726,7 +2726,7 @@ export function isNightChrome(sun: number): boolean {
   return sun < NIGHT_BELOW;
 }
 
-function chromeFor(scene: Scene): Record<string, string> {
+export function chromeFor(scene: Scene): Record<string, string> {
   const night = isNightChrome(scene.sun);
   const t = night
     ? Math.min(1, scene.sun / NIGHT_BELOW)

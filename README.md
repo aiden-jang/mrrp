@@ -255,7 +255,7 @@ bar.
 **The interface goes dark when the room does**, rather than crossfading. Blending a light panel into
 a dark one drags it through mid grey, where neither dark nor light text clears 4.5:1 against it, so
 the chrome is two palettes and the text polarity flips with the surfaces at a single point. Checked
-across all 24 keyframe hours: the worst ratio anywhere is 4.54.
+across all 24 keyframe hours: the worst ratio anywhere is 4.53.
 
 The typeface is **self-hosted Quicksand**, first in the stack ahead of the Apple rounded faces. The
 stack named it for a long time and never loaded it, so it only ever resolved in Safari and everywhere
