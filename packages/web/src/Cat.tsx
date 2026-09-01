@@ -272,6 +272,7 @@ export function Cat({
   onTouch,
   heldByThem = false,
   sitting = false,
+  settled = false,
   brushing = false,
   onStroke,
   pokedByThem = null,
@@ -328,6 +329,8 @@ export function Cat({
   /* Somebody is sat with her right now, on either side of the room. */
   sitting?: boolean;
   /* He has picked the brush up. A drag across her counts strokes instead of petting her. */
+  /* She has settled against whoever sat down. */
+  settled?: boolean;
   brushing?: boolean;
   onStroke?: () => void;
   /** Every press and release of the cat, and every prop this seat touches, for the other screen. */
@@ -525,6 +528,8 @@ export function Cat({
   heldRef.current = heldByThem;
   const sittingRef = useRef(sitting);
   sittingRef.current = sitting;
+  const settledRef = useRef(settled);
+  settledRef.current = settled;
   const brushingRef = useRef(brushing);
   brushingRef.current = brushing;
   const onStrokeRef = useRef(onStroke);
@@ -2385,7 +2390,17 @@ export function Cat({
                             : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
-      const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));
+      /*
+       * Settled against somebody, she breathes slower and deeper. It is one pixel either way, which
+       * is the most the grid has to say it with, and it is the only thing on screen still moving
+       * while the two of them sit there doing nothing.
+       */
+      const breathe =
+        reduce || pose !== "loaf"
+          ? 0
+          : settledRef.current
+            ? Math.round(Math.sin(t / 1900) * 1.6)
+            : Math.round(Math.sin(t / 1100));
       const hop =
         Math.round(bounce.current * 3) +
         (musicDancing || (pianoRewarding && !reduce)
