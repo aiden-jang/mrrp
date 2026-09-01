@@ -224,3 +224,22 @@ describe("both of you calling her by name", () => {
     expect((await view(STRANGER)).bothCalledHer).toBe(false);
   });
 });
+
+describe("somebody who only has the link", () => {
+  it("is not told her name, whether she is in the room, or when she last was", async () => {
+    await seat();
+    await post("tell", { me: HER, mood: "sad" });
+
+    const v = await view(STRANGER);
+    // `otherId` used to fall back to her for anybody who was not her, so a link was a presence feed.
+    expect(v.them).toBeNull();
+    expect(v.themHereNow).toBe(false);
+    expect(v.themLastAt).toBeNull();
+  });
+
+  it("still tells each of them about the other", async () => {
+    await seat();
+    expect((await view(HIM)).them).not.toBeNull();
+    expect((await view(HER)).them).not.toBeNull();
+  });
+});
