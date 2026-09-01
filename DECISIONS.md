@@ -1410,6 +1410,33 @@ gift arrival when a line carries the same gift at the same moment, and two `Date
 an `await` between them can land a millisecond apart, which would have put the moth on the card
 twice.
 
+## The reader could not re-read
+
+He can look at every note he ever wrote her whenever he likes: `GET /notes` serves the panel he
+edits them in. Her view carries exactly one, today's. So over a long room she is handed a hundred
+and twenty things he wrote for her and each one is out of reach an hour later. The author could
+review his own writing and the reader could not, which is the wrong way round.
+
+Her lines made it worse rather than better. Once they stacked twelve deep, the only places they
+surfaced were a card that closes and a "last thing you said" label.
+
+`GET /said` is one screen for both of them. Two rules hold it together:
+
+- **It stops at the note the room has actually handed her, for him too.** He has the editing panel
+  for the rest, and a screen that showed her notes she has not been given would be the room
+  spoiling its own pacing. One rule, enforced in the Durable Object, for both seats.
+- **Her answers sit under the notes they answer, and her other lines sit beside them.** Notes carry
+  no timestamp at all, only a day number the room counts out, so notes and lines cannot be
+  interleaved into one list ordered by time without inventing an order. The `aboutDay` link is the
+  only true relation between the two, so the screen is built on that and nothing else.
+
+Her side of it never prints his name. His is a placeholder until he picks one, and "what Someone has
+written you" is a worse sentence than the button that opened the screen already used.
+
+This does not make the room something to keep up with. The line the app holds to is that nothing
+goes wrong if you stay away: no streaks, nothing unread, no obligation. Somewhere to look back is
+not an obligation.
+
 ## What the comments are for
 
 Every explanation of a decision belongs in this file. The comments left in the code are for three

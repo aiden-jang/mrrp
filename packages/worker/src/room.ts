@@ -14,6 +14,7 @@ import type {
   RoomView,
   Told,
   Told2,
+  SaidSoFar,
   Visit,
 } from "./types.js";
 import { markLives, type Mark } from "./marks.js";
@@ -593,6 +594,43 @@ export class Room extends DurableObject<Env> {
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (this.roles(people).him !== me) return null;
     return this.notes();
+  }
+
+  /*
+   * What has actually passed between them: the notes the room has handed her, each with anything
+   * she said back about it, and her other lines beside them.
+   *
+   * It stops at the note she has read, for him too. He has the editing panel for the rest, and a
+   * screen that shows her notes she has not been given yet would be the room spoiling its own
+   * pacing. Notes carry no timestamp, so they cannot be interleaved with her lines by time; the
+   * answers she attached are the only true link between the two, and this uses that.
+   */
+  async saidSoFar(me: string): Promise<SaidSoFar | null> {
+    await this.guard();
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    const { him, her } = this.roles(people);
+    if (me !== him && me !== her) return null;
+
+    const all = await this.notes();
+    const read = Math.min((await this.ctx.storage.get<number>("noteIdx")) ?? 0, all.length - 1);
+    const lines = await this.lines();
+
+    const answers = new Map<number, Told2[]>();
+    for (const line of lines) {
+      if (line.aboutDay === undefined) continue;
+      answers.set(line.aboutDay, [...(answers.get(line.aboutDay) ?? []), line]);
+    }
+
+    return {
+      notes: all.slice(0, read + 1).map((text, i) => ({
+        day: i + 1,
+        text,
+        answers: (answers.get(i) ?? []).map((a) => ({ text: a.text, at: a.at })),
+      })),
+      lines: lines
+        .filter((line) => line.aboutDay === undefined)
+        .map((line) => ({ text: line.text, at: line.at, gift: line.gift })),
+    };
   }
 
   private async notes(): Promise<string[]> {
