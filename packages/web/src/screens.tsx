@@ -161,9 +161,15 @@ export function SaidPanel({
   onClose: () => void;
   panelRef?: React.Ref<HTMLElement>;
 }) {
-  // No name on her side. His is a placeholder until he sets one, and "what Someone has written you"
-  // is a worse sentence than the one the button that opened this already used.
-  const wrote = youAreHer ? "what he's written you" : "what you wrote her";
+  /*
+   * No name on her side: his is a placeholder until he sets one, and "what Someone has written you"
+   * is a worse sentence than the button that opened this already used.
+   *
+   * His side says "read" rather than "wrote" because this stops at the note she has been handed. He
+   * may have written a hundred and twenty, and "what you wrote her" over one of them reads as if
+   * the rest had gone missing.
+   */
+  const wrote = youAreHer ? "what he's written you" : "what she has read so far";
   const back = youAreHer ? "you said back" : `${them} said back`;
 
   return (
