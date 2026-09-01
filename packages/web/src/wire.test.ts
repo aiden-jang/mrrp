@@ -16,6 +16,7 @@ describe("the lists both sides keep their own copy of", () => {
     expect(read.TREATS.map((t) => t.id)).toEqual(served.TREATS.map((t) => t.id));
     expect(read.ACTIONS.map((a) => a.id)).toEqual(served.ACTIONS.map((a) => a.id));
     expect(read.CAT_ACTS.map((a) => a.id)).toEqual(served.CAT_ACTS.map((a) => a.id));
+    expect(read.GIFTS.map((g) => g.id)).toEqual(served.GIFTS.map((g) => g.id));
   });
 
   it("agrees how much she can say in one go", () => {
@@ -27,5 +28,6 @@ describe("the lists both sides keep their own copy of", () => {
   it("says the same words about them, so one side is not quietly nicer than the other", () => {
     expect(read.MOODS).toEqual(served.MOODS);
     expect(read.TREATS).toEqual(served.TREATS);
+    expect(read.GIFTS).toEqual(served.GIFTS);
   });
 });

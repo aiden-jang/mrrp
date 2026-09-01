@@ -1522,6 +1522,17 @@ production. That is the failure this kind of duplication actually produces, and 
 the bundle; it exists for `tsc`, which CI runs. One assertion per shape, so the error names the one
 that drifted rather than pointing at a tuple.
 
+The same duplication had spread past the types. The three things she can leave on the floor were
+written out four times: twice in the worker, as the list it rolls a random one from and as the list
+its route validates against, and twice in the browser, as names and as labels. They are one list in
+`types.ts` now, on each side, which the value test above holds identical. The worker's other
+validation lists are derived from it too, except the cat acts, which are deliberately a subset:
+`gift` has its own endpoint because it carries her words, and accepting it on the act endpoint would
+be a second, wordless way to leave one.
+
+That consolidation is also what let the look-back screen say which thing her words came with. It had
+the field and no way to name it, so the archive quietly forgot the moth.
+
 It compares identity rather than mutual assignability. `[A] extends [B] && [B] extends [A]` calls
 two shapes the same when one carries an extra optional field, and an optional field is precisely
 what gets added to one side and forgotten on the other. The conditional-type identity trick

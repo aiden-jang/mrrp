@@ -54,6 +54,24 @@ describe("looking back at what they have said", () => {
     expect(orphan.indexOf("good mug")).toBeLessThan(orphan.indexOf("it made me laugh"));
   });
 
+  it("remembers the thing her words came with", () => {
+    expect(text(room, false)).toContain("with a moth");
+  });
+
+  it("writes the date once for a run of things said the same day", () => {
+    const sameDay = text(
+      {
+        notes: [],
+        lines: [
+          { text: "one", at: AT },
+          { text: "two", at: AT + 60_000 },
+        ],
+      },
+      true,
+    );
+    expect(sameDay.match(/April 2/g)).toHaveLength(1);
+  });
+
   it("leaves out the other-lines heading when every line was an answer", () => {
     const only = text({ notes: room.notes, lines: [] }, true);
     expect(only).not.toContain("the rest of what");

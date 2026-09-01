@@ -22,7 +22,7 @@ import { NOTES } from "./notes.js";
 import { isBlanketKey, type BlanketKey } from "./blanket.js";
 import { lookOutside, WEATHER_STALE_MS, type Sky, type Weather } from "./weather.js";
 import type { FirstKey } from "./types.js";
-import { LINE_MAX } from "./types.js";
+import { GIFTS, LINE_MAX } from "./types.js";
 import {
   arrivalsFor,
   bothFound,
@@ -129,7 +129,6 @@ export class RoomGone extends Error {
 }
 
 const GIFT_AFTER_MS = 8 * 60 * 60 * 1000;
-const GIFTS = ["leaf", "cap", "moth"] as const;
 
 function hourInZone(at: number, tz: string): number {
   const parts = new Intl.DateTimeFormat("en-GB", {
@@ -215,7 +214,7 @@ export class Room extends DurableObject<Env> {
     const { him: h, her: hr } = this.roles(people);
     if (hr && me === hr && h && now - (people[h]?.lastSeen ?? 0) > GIFT_AFTER_MS) {
       if (!(await this.ctx.storage.get<string>("gift"))) {
-        await this.ctx.storage.put("gift", GIFTS[Math.floor(Math.random() * GIFTS.length)]!);
+        await this.ctx.storage.put("gift", GIFTS[Math.floor(Math.random() * GIFTS.length)]!.id);
       }
     }
 
