@@ -1896,16 +1896,18 @@ function RoomPage({ id }: { id: string }) {
                     Say something back
                   </button>
                 )}
-                <button
-                  ref={saidTrigger}
-                  className={s.quiet}
-                  style={{ marginTop: 6 }}
-                  onClick={() => void openSaid()}
-                >
+              </div>
+            )}
+
+            {/* Outside the note, not inside it. The panel is its own card, and nesting one card in
+                another put a rounded border inside a rounded border. */}
+            {view.note && (
+              <>
+                <button ref={saidTrigger} className={s.quiet} onClick={() => void openSaid()}>
                   Everything he's written you
                 </button>
                 {saidBack}
-              </div>
+              </>
             )}
 
             {/* Not hidden while you are both here. This is the live one, and hiding it muted the
