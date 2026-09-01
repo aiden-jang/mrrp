@@ -1455,6 +1455,12 @@ inside the `bar` branch, which is the flag that already means "she is the one go
 Her lines ride in the same `LEFT_SIDE` record as everything else she takes, so the undo week puts
 them back exactly as it puts back her mood.
 
+The drawing was the same oversight one step further out. The room already removes her window light
+by asking whether she is the one who lit it, and a doodle carries exactly the same `by` field and
+was skipped. So she could draw something, leave, and a stranger taking her seat would find her
+picture still in the frame. It goes now, under the same test, which also means his picture stays
+where it is: the frame belongs to both of them and only one of them is going.
+
 ## Her answer pointed at a slot, and he can move what is in it
 
 An answer stored the index of the note it answered. He can rewrite his notes whenever he likes, from

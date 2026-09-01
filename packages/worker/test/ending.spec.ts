@@ -223,6 +223,18 @@ describe("her leaving on her own", () => {
     expect(JSON.stringify(said)).not.toContain("something only for him");
   });
 
+  it("takes the picture she drew with her, and leaves his hanging", async () => {
+    await seat();
+    await post("draw", { me: HER, cells: "1".repeat(135) });
+    await post("leave", { me: HER });
+    expect((await view(HIM)).doodle).toBeNull();
+
+    await post("unleave", { me: HER });
+    await post("draw", { me: HIM, cells: "2".repeat(135) });
+    await post("leave", { me: HER });
+    expect((await view(HIM)).doodle).not.toBeNull();
+  });
+
   it("brings her words back if she changes her mind inside the week", async () => {
     await seat();
     await post("say", { me: HER, text: "still true" });
@@ -230,6 +242,15 @@ describe("her leaving on her own", () => {
     expect((await post("unleave", { me: HER })).status).toBe(200);
 
     expect((await view(HIM)).herLine?.text).toBe("still true");
+  });
+
+  it("brings her picture back with them", async () => {
+    await seat();
+    await post("draw", { me: HER, cells: "1".repeat(135) });
+    await post("leave", { me: HER });
+    await post("unleave", { me: HER });
+
+    expect((await view(HIM)).doodle).not.toBeNull();
   });
 
   it("leaves his room standing, notes and all", async () => {
