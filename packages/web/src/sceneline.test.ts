@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import hours from "./hours.ts?raw";
 import moods from "./moods.ts?raw";
+import dreams from "./dreams.ts?raw";
 
 /*
  * Every scene description is read in two frames.
@@ -24,6 +25,18 @@ const hers = (src: string) =>
   Object.fromEntries(
     [...strip(src).matchAll(/\bdoing: "([^"]+)",\s*\n\s*doingHers: "([^"]+)"/g)].map((m) => [m[1]!, m[2]!]),
   );
+
+/*
+ * Both seats watch the same sleeping cat, and one of them is her, so a dream naming a third person
+ * was the room narrating her own sleep back to her. Ten of nineteen did.
+ */
+describe("what she is dreaming about", () => {
+  it("belongs to whoever is watching", () => {
+    const lines = [...strip(dreams).matchAll(/line:\s*"([^"]+)"/g)].map((m) => m[1]!);
+    expect(lines.length, "found no dream lines").toBeGreaterThan(10);
+    expect(lines.filter((l) => /\b(she|her|hers)\b/i.test(l))).toEqual([]);
+  });
+});
 
 describe("what the room says she is doing", () => {
   const all = [...his(hours), ...his(moods)];
