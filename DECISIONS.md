@@ -48,6 +48,23 @@ There is a test for the sentence, and for the caption saying "You are" rather th
 at her, because this is twice now that the premise has been re-established and something has been
 left behind saying the opposite.
 
+## The discoveries and the postcard were holding it too
+
+Both seats find the secrets, and most of the copy described the cat, so on her screen the room told
+her what she had just done as though it were somebody else: "she is purring", "she knows her own
+name", "she has rolled all the way over". Five of the sixteen announcements and four of the fifteen
+names on the arrival card.
+
+They take the shape `ACTIONS` already uses for `past` and `mine`: one act, two sentences, because the
+two seats are not the same reader. Only the lines that name her need a second version; the bubbles
+are the bubbles to everybody. The a11y test now fails on any announcement that says "she" without a
+version she can read about herself.
+
+The postcard had it as well, captioned `${catName} was ${doing}`, so her own keepsake said "Bean was
+asleep in the sun" about her. That one matters more than its size suggests: it is the only thing in
+the app designed to leave the app, which makes it the most likely to be seen by somebody who has no
+idea she is the cat.
+
 ## The notes were the last place still holding the old idea
 
 Twenty of the thirty default notes talked about a cat in the third person: "she is asleep in the

@@ -304,6 +304,30 @@ const GIFT_CHOICES: { id: Gift; label: string }[] = [
   { id: "moth", label: "a moth" },
 ];
 
+/*
+ * What she reads when the secret is about her.
+ *
+ * Both seats can find these, and most of them describe the cat, so on her screen the room was
+ * telling her what she had just done as though it were somebody else. Same shape as `past` and
+ * `mine` on ACTIONS: one act, two sentences, because the two seats are not the same reader.
+ *
+ * Only the ones that name her need an entry. The bubbles are the bubbles to everybody.
+ */
+export const FOUND_AS_HER: Record<string, string> = {
+  mrrp: "you are purring.",
+  summon: "you came over.",
+  herName: "you know your own name.",
+  treat: "you have found a treat.",
+  belly: "you rolled all the way over.",
+};
+
+const FOUND_NAMES_AS_HER: Record<string, string> = {
+  mrrp: "what you do when he says your word",
+  summon: "that you come when called",
+  herName: "that you know your own name",
+  belly: "that you will roll over for the two of you",
+};
+
 const FOUND_NAMES: Record<string, string> = {
   constellation: "the stars in the window",
   roomTour: "every corner of the room",
@@ -329,7 +353,17 @@ const FIRSTS: Record<string, string> = {
   held: "the first time he reached you while you were here to feel it.",
 };
 
-function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[]; onClose: () => void }) {
+function ArrivalCard({
+  name,
+  items,
+  youAreHer,
+  onClose,
+}: {
+  name: string;
+  items: Arrival[];
+  youAreHer: boolean;
+  onClose: () => void;
+}) {
   return (
     <section className={s.arrival} aria-label="Things the room kept for you">
       <div className={s.arrivalTop}>
@@ -361,7 +395,11 @@ function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[];
               ) : item.kind === "found" ? (
                 item.what ? (
                   <>
-                    <b>{name}</b> found {FOUND_NAMES[item.what] ?? "something in here"} too.
+                    <b>{name}</b> found{" "}
+                    {(youAreHer ? FOUND_NAMES_AS_HER[item.what] : undefined) ??
+                      FOUND_NAMES[item.what] ??
+                      "something in here"}{" "}
+                    too.
                   </>
                 ) : (
                   <>
@@ -675,6 +713,7 @@ function RoomPage({ id }: { id: string }) {
       const blob = await makeKeepsake(roomBlob, {
         catName: view?.cat.name ?? "the cat",
         doing: currentScene?.doing ?? "keeping the room warm",
+        youAreHer: view?.youAreHer ?? false,
         together: view?.bothHereNow ?? false,
         night: currentScene ? isNightChrome(currentScene.sun) : false,
         day: view?.note?.day ?? view?.noteDay ?? undefined,
@@ -1400,7 +1439,11 @@ function RoomPage({ id }: { id: string }) {
             }}
             onFound={(key) => {
               noticed(id, myToken(), key);
-              setFound(FOUND_ANNOUNCEMENTS[key] ?? "something in the room answered.");
+              setFound(
+                (view.youAreHer ? FOUND_AS_HER[key] : undefined) ??
+                  FOUND_ANNOUNCEMENTS[key] ??
+                  "something in the room answered.",
+              );
             }}
             onProps={handleRoomProps}
             dreamContext={{
@@ -1698,7 +1741,12 @@ function RoomPage({ id }: { id: string }) {
           </div>
         )}
         {arrivalCard && arrivalCard.length > 0 && view.them && (
-          <ArrivalCard name={view.them} items={arrivalCard} onClose={() => setArrivalCard(null)} />
+          <ArrivalCard
+            name={view.them}
+            items={arrivalCard}
+            youAreHer={view.youAreHer}
+            onClose={() => setArrivalCard(null)}
+          />
         )}
         {view.waitingForThem ? (
           <>
@@ -2319,7 +2367,7 @@ function BlanketRow({
           aria-label="stripes"
           aria-pressed={stripe}
           disabled={busy}
-          style={{ borderColor: stripe ? "var(--ink)" : "var(--line)" }}
+          style={{ borderColor: stripe ? "var(--ink)" : "var(--control)" }}
           onClick={() => onPick(key, !stripe)}
         >
           <span style={{ background: BLANKETS[key].d }} />

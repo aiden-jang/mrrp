@@ -2,6 +2,8 @@ export type KeepsakeDetails = {
   catName: string;
   doing: string;
   together: boolean;
+  /** She is the cat, so her copy cannot be captioned with her own name in the third person. */
+  youAreHer?: boolean;
   capturedAt?: Date;
   night?: boolean;
   day?: number;
@@ -12,9 +14,12 @@ const CARD = {
   night: { paper: "#2b2439", caption: "#f6f1e6", date: "#c9bccb", mark: "#e8ad55" },
 } as const;
 
-export function keepsakeCaption({ catName, doing, together }: KeepsakeDetails): string {
-  if (together) return `for a little while, you were both here with ${catName}.`;
-  return `${catName} was ${doing}.`;
+export function keepsakeCaption({ catName, doing, together, youAreHer }: KeepsakeDetails): string {
+  if (together)
+    return youAreHer
+      ? "for a little while, you were both here."
+      : `for a little while, you were both here with ${catName}.`;
+  return youAreHer ? `you were ${doing}.` : `${catName} was ${doing}.`;
 }
 
 export function keepsakeDate(date = new Date()): string {
