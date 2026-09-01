@@ -1262,6 +1262,9 @@ function RoomPage({ id }: { id: string }) {
     setSaving(true);
     try {
       setView(await doSay(id, line, replyTo ?? undefined));
+      // After it lands, the way hanging a drawing does it. Everything else she leaves him makes a
+      // sound and this was the one that did not.
+      play("settle");
       setLineOpen(false);
       setReplyTo(null);
     } catch {
