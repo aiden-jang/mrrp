@@ -70,6 +70,8 @@ const GW = 100,
   GH = 80,
   FLOOR = 48;
 const VW = 80;
+/* Grid cells of travel over her that make one stroke. She is about 14 wide, so this is most of her. */
+const BRUSH_RUN = 10;
 const CAT_REACH_LEFT = Math.max(...Object.values(POSES).map((p) => -p.ox));
 const CAT_REACH_RIGHT = Math.max(...Object.values(POSES).map((p) => p.ox + p.w));
 const WIN_X = 60,
@@ -270,6 +272,8 @@ export function Cat({
   onTouch,
   heldByThem = false,
   sitting = false,
+  brushing = false,
+  onStroke,
   pokedByThem = null,
   reachedTogether = null,
   onPoke,
@@ -323,6 +327,9 @@ export function Cat({
   heldByThem?: boolean;
   /* Somebody is sat with her right now, on either side of the room. */
   sitting?: boolean;
+  /* He has picked the brush up. A drag across her counts strokes instead of petting her. */
+  brushing?: boolean;
+  onStroke?: () => void;
   /** Every press and release of the cat, and every prop this seat touches, for the other screen. */
   onTouch?: (what: string) => void;
   /** Something they just touched. Replays the wobble and turns her head, nothing else. */
@@ -518,6 +525,12 @@ export function Cat({
   heldRef.current = heldByThem;
   const sittingRef = useRef(sitting);
   sittingRef.current = sitting;
+  const brushingRef = useRef(brushing);
+  brushingRef.current = brushing;
+  const onStrokeRef = useRef(onStroke);
+  onStrokeRef.current = onStroke;
+  /* Distance dragged across her since the last stroke landed. */
+  const brushRun = useRef(0);
   const onTouchRef = useRef(onTouch);
   onTouchRef.current = onTouch;
   const onPokeRef = useRef(onPoke);
@@ -728,6 +741,24 @@ export function Cat({
         ptr.stillSince = performance.now();
         slowBlink.current.answered = false;
       }
+      /*
+       * Brushing is the distance travelled over her, not a count of moves.
+       *
+       * A mouse fires far more move events than a finger for the same stroke, so counting events
+       * would make it four times quicker on a laptop than on the phone this is mostly used on.
+       */
+      if (brushingRef.current) {
+        const b = catBox.current;
+        const over = b && nextX >= b.x0 - 1 && nextX <= b.x1 + 1 && nextY >= b.y0 - 1 && nextY <= b.y1 + 2;
+        if (over) {
+          brushRun.current += Math.hypot(nextX - ptr.x, nextY - ptr.y);
+          if (brushRun.current >= BRUSH_RUN) {
+            brushRun.current = 0;
+            bounce.current = 1;
+            onStrokeRef.current?.();
+          }
+        } else brushRun.current = 0;
+      }
       ptr.x = nextX;
       ptr.y = nextY;
       ptr.in = true;
@@ -834,9 +865,12 @@ export function Cat({
       if (b && x >= b.x0 - 2 && x <= b.x1 + 2 && y >= b.y0 - 2 && y <= b.y1 + 3) {
         const now = performance.now();
         if (roleRef.current === "him") {
-          petting.current = true;
-          onHoldRef.current?.(true);
-          onPetRef.current?.();
+          // Holding the brush means a press on her is the start of a stroke, not a pet.
+          if (!brushingRef.current) {
+            petting.current = true;
+            onHoldRef.current?.(true);
+            onPetRef.current?.();
+          }
         } else if (roleRef.current === "her") onPokeRef.current?.();
         else {
           bounce.current = 1;
