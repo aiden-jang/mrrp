@@ -576,6 +576,16 @@ two `doHold` calls send it to her down the same path a real hold already uses.
 `brushedDay`, `satWithDay`, `boxDay` and `boxOutDay` are day numbers in her timezone, not timers, so
 everything clears at her midnight rather than a day after whenever it happened.
 
+The two marks he leaves, the tuft and the dent, get one addition: they also stay until she has been
+in and seen them. The day on its own has a hole at the end of it. These are day numbers rather than
+timers, so a brush at eleven at night is gone by midnight, an hour later, while a morning one lasts
+fifteen hours, and the marks exist to be found by somebody who was not there. The one left last thing
+at night is exactly the one she is most likely to miss.
+
+Whose last look counts is the fiddly half. On her own read her `lastSeen` is already now by the time
+the view is built, so it has to come from the value `view` captured beforehand. Anywhere else,
+including a push to his tab, her stored one is the honest answer.
+
 A duration would have been the obvious choice and is worse. It puts the room on a different schedule
 every day, so a tuft left at nine in the morning goes at nine and one left at eleven at night goes at
 eleven, and she can never tell what she is looking at without knowing when it was left. A day is the

@@ -649,3 +649,37 @@ describe("getting out of the box again", () => {
     expect((await view(HER)).box).toBe(false);
   });
 });
+
+describe("a mark left last thing at night", () => {
+  it("is still there when she wakes up, even though her day rolled over", async () => {
+    await seat();
+    await tick(50);
+    await post("act", { me: HIM, action: "brush" });
+
+    away(24);
+    // Her midnight has been and gone. Under the day rule alone this was the case that lost a brush
+    // an hour after he left it, which is exactly the one she was most likely to have missed.
+    expect((await view(HIM)).brushed, "she has not looked yet").toBe(true);
+  });
+
+  it("goes once she has been in and seen it", async () => {
+    await seat();
+    await tick(50);
+    await post("act", { me: HIM, action: "sit" });
+
+    away(24);
+    await view(HER);
+    away(24);
+    expect((await view(HIM)).satWith, "seen, and a day past").toBe(false);
+  });
+
+  it("still clears at her midnight once she has looked, rather than lingering", async () => {
+    await seat();
+    await post("act", { me: HIM, action: "brush" });
+    await view(HER);
+    expect((await view(HER)).brushed, "same day, still there").toBe(true);
+
+    away(24);
+    expect((await view(HIM)).brushed).toBe(false);
+  });
+});
