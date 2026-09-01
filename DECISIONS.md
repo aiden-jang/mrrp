@@ -33,6 +33,21 @@ the same sentence about a person:
 The seat-awareness tests cover milestones for this reason, and they caught a draft that read "you
 have not once thanked". The room never implies anything owed.
 
+## The first screen she ever sees said the old thing
+
+She opens his link and the very first thing in front of her was an almost empty screen reading
+"Someone made you a cat", with a button. That is the sentence the entire app moved away from: it
+means somebody gave her a pet. She is the cat. It survived every pass because nobody working on the
+app ever opens that screen; it only shows once, to the one person who is not the one building it.
+
+It shows the room now, which is the other half of it. That was the one screen in the app without a
+room on it, so the first impression of a thing whose whole point is a room was a card with two lines
+of text.
+
+There is a test for the sentence, and for the caption saying "You are" rather than her own name back
+at her, because this is twice now that the premise has been re-established and something has been
+left behind saying the opposite.
+
 ## The notes were the last place still holding the old idea
 
 Twenty of the thirty default notes talked about a cat in the third person: "she is asleep in the

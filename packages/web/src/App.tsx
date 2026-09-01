@@ -1165,10 +1165,27 @@ function RoomPage({ id }: { id: string }) {
     return (
       <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
         <ChromeSync night={isNightChrome(door.sun)} />
+        {/*
+            The first thing she ever sees, and for a long time it was an empty screen with "someone
+            made you a cat" on it. That is the sentence the whole app moved away from: it means
+            somebody gave her a pet. She is the cat.
+
+            It shows the room now, because there is a room and this was the one screen without one.
+        */}
         <div className={s.card} style={{ textAlign: "center" }}>
+          <div className={s.stage} style={{ marginBottom: 14 }}>
+            <Cat
+              label="A pixel cat in a quiet room, waiting."
+              look={DOOR_CAT}
+              clock={DOOR_CLOCK}
+              mood={null}
+              nudge={0}
+              reserveBelow={300}
+            />
+          </div>
           <h1 className={s.h1}>mrrp</h1>
           <p className={s.lede} style={{ margin: "0 auto 20px" }}>
-            Someone made you a cat.
+            Somebody made you a room, and you are the cat in it.
           </p>
           <button
             className={`${s.btn} ${s.btnGo}`}
