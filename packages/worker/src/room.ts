@@ -118,6 +118,8 @@ interface LeftSide {
   light?: WindowLight;
   lines?: Told2[];
   doodle?: Doodle;
+  blanket?: Blanket;
+  gift?: Gift;
 }
 
 export const ROOM_GONE = "mrrp: room deleted";
@@ -908,6 +910,8 @@ export class Room extends DurableObject<Env> {
     const recovery = await this.ctx.storage.get<string>("recoveryHer");
     const lines = await this.lines();
     const doodle = await this.ctx.storage.get<Doodle>("doodle");
+    const blanket = await this.ctx.storage.get<Blanket>("blanket");
+    const gift = await this.ctx.storage.get<Gift>("gift");
 
     if (bar) {
       const at = Date.now();
@@ -922,6 +926,8 @@ export class Room extends DurableObject<Env> {
         light: light?.from === her ? light : undefined,
         lines,
         doodle: doodle?.by === her ? doodle : undefined,
+        blanket: blanket ?? undefined,
+        gift: gift ?? undefined,
       });
     }
 
@@ -942,12 +948,16 @@ export class Room extends DurableObject<Env> {
       // Same test the window light gets: it goes only if she is the one who put it there. He can
       // draw in that frame too, and his picture is not hers to take.
       if (doodle?.by === her) await this.ctx.storage.delete("doodle");
+      // The blanket is hers to pick and the thing on the floor is hers to leave. Whoever sits down
+      // next should not find the last person's choices already made.
+      await this.ctx.storage.delete("blanket");
+      await this.ctx.storage.delete("gift");
     }
     await this.ctx.storage.delete("recoveryHer");
-    // Set even when she is the one leaving, which looks wrong and is not. The next token to take
-    // the seat is how she comes back on a new phone, and the room cannot tell that from a stranger.
-    // Dropping it here would cost her her own way back.
-    await this.ctx.storage.put("handover", her);
+    // Only when he frees her seat, which is the one case where the next token really is her. She
+    // leaving takes everything else of hers with it, so carrying her discoveries across to whoever
+    // sits down next was the odd one out, and that person had found none of them.
+    if (!bar) await this.ctx.storage.put("handover", her);
 
     if (bar) {
       const left = (await this.ctx.storage.get<string[]>("left")) ?? [];
@@ -985,6 +995,8 @@ export class Room extends DurableObject<Env> {
     }
     if (kept.lines && kept.lines.length > 0) await this.ctx.storage.put(HER_LINES, kept.lines);
     if (kept.doodle) await this.ctx.storage.put("doodle", kept.doodle);
+    if (kept.blanket) await this.ctx.storage.put("blanket", kept.blanket);
+    if (kept.gift) await this.ctx.storage.put("gift", kept.gift);
     if (kept.recovery) await this.ctx.storage.put("recoveryHer", kept.recovery);
     if (kept.light) await this.ctx.storage.put("windowLight", kept.light);
 

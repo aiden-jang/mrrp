@@ -235,6 +235,45 @@ describe("her leaving on her own", () => {
     expect((await view(HIM)).doodle).not.toBeNull();
   });
 
+  it("leaves nothing of hers on the floor for the next person to find", async () => {
+    await seat();
+    await post("gift", { me: HER, gift: "moth" });
+    await post("blanket", { me: HER, key: "cream", stripe: true });
+    await post("leave", { me: HER });
+
+    const v = await view(HIM);
+    expect(v.gift).toBeNull();
+    expect(v.blanket).toBeNull();
+  });
+
+  it("does not hand her discoveries to whoever takes the empty seat", async () => {
+    await seat();
+    await post("found", { me: HER, key: "piano" });
+    await post("leave", { me: HER });
+
+    const fresh = "somebodyelseentirely";
+    await view(fresh, "Someone new");
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    await runInDurableObject(stub, async (_i, state) => {
+      const found = (await state.storage.get<Record<string, Record<string, number>>>("found")) ?? {};
+      expect(Object.keys(found.piano ?? {}), "the new seat found none of it").not.toContain(fresh);
+    });
+  });
+
+  it("still hands them back when he frees her seat for her own new phone", async () => {
+    await seat();
+    await post("found", { me: HER, key: "piano" });
+    await post("release", { me: HIM });
+
+    const newPhone = "hernewphonetoken";
+    await view(newPhone, "Sofia again");
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    await runInDurableObject(stub, async (_i, state) => {
+      const found = (await state.storage.get<Record<string, Record<string, number>>>("found")) ?? {};
+      expect(Object.keys(found.piano ?? {}), "her way back keeps what she found").toContain(newPhone);
+    });
+  });
+
   it("brings her words back if she changes her mind inside the week", async () => {
     await seat();
     await post("say", { me: HER, text: "still true" });
