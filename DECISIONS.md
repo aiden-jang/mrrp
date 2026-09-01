@@ -33,6 +33,20 @@ the same sentence about a person:
 The seat-awareness tests cover milestones for this reason, and they caught a draft that read "you
 have not once thanked". The room never implies anything owed.
 
+## The button that ends her week was the brightest thing on the screen
+
+After she leaves, his side says it plainly: her side is kept until a date, she can put it back, and
+sending this link to somebody else gives the seat away and ends that. Directly underneath sat the
+honey button, labelled "Send the link to somebody else".
+
+The copy and the emphasis were arguing with each other. Both send buttons call the same thing, so
+this is only about which one looks like the next step, and during her week the room's own position is
+that waiting is fine. It is a plain button while `theyLeft` holds and goes back to primary once her
+week is up, when handing the seat on really is the thing to do.
+
+No test for this one. It is a class name on a condition, and a test asserting that is the brittle
+kind that fails when the design improves rather than when it breaks.
+
 ## A dead link is not answered with an invitation
 
 The door screen renders before anything is read, so following a link to a deleted room got you

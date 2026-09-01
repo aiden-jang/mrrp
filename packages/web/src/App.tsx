@@ -1790,8 +1790,16 @@ function RoomPage({ id }: { id: string }) {
                 Write her notes, name her, choose how she looks
               </button>
             )}
+            {/*
+                Not the loud button while she can still come back.
+
+                The sentence above it says that sending this to somebody else gives her seat away and
+                ends her week, and then this was the brightest thing on the screen. During the undo
+                window the room's own position is that waiting is fine, so this reads as an option
+                rather than the next step. It goes back to primary once her week is up.
+            */}
             <button
-              className={`${s.btn} ${s.btnGo}`}
+              className={`${s.btn} ${view.theyLeft ? "" : s.btnGo}`}
               style={{ width: "100%", marginTop: 8 }}
               onClick={() => void shareRoom()}
             >
