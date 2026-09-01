@@ -22,6 +22,8 @@
    * literal value: overriding --ink further down would never reach anything that did not name it.
    */
   color: var(--ink);
+  /* The sound toggle hangs off this rather than the viewport. See `.soundToggle`. */
+  position: relative;
   min-height: 100%;
   display: grid;
   place-items: center;
@@ -90,8 +92,15 @@
  * keeps it beside the content at every size, and it falls back to the old corner on anything too
  * narrow for the offset to fit.
  */
+/*
+ * Absolute, not fixed. Fixed, it floated over whatever scrolled underneath it, and on a phone the
+ * content column is the full width, so it sat on the top-right corner of the notes textarea: the one
+ * field in the app where he writes the thing the room is for. Tapping there muted the app.
+ *
+ * It belongs with the room anyway. Scroll past the room and it goes with it.
+ */
 .soundToggle {
-  position: fixed;
+  position: absolute;
   top: 12px;
   left: min(calc(50% + 300px - 48px), calc(100vw - 48px));
   z-index: 20;
