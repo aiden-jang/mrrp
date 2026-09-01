@@ -35,6 +35,66 @@ describe("the photo on the wall", () => {
   });
 });
 
+describe("his photo and her drawing", () => {
+  it("tells her it came down, instead of it just being gone", async () => {
+    await seat();
+    await post("draw", { me: HER, cells: "1".repeat(135) });
+    await view(HER);
+    await post("act", { me: HIM, action: "photo" });
+
+    const hers = await view(HER);
+    expect(hers.doodle).toBeNull();
+    expect(hers.arrivals.some((a) => a.kind === "undrawn")).toBe(true);
+  });
+
+  it("says nothing to the person who took it", async () => {
+    await seat();
+    await post("draw", { me: HER, cells: "1".repeat(135) });
+    await view(HIM);
+    await post("act", { me: HIM, action: "photo" });
+
+    expect((await view(HIM)).arrivals.some((a) => a.kind === "undrawn")).toBe(false);
+  });
+
+  it("says nothing when there was nothing in the frame", async () => {
+    await seat();
+    await view(HER);
+    await post("act", { me: HIM, action: "photo" });
+
+    expect((await view(HER)).arrivals.some((a) => a.kind === "undrawn")).toBe(false);
+  });
+
+  it("never tells her he took down a drawing she did not make", async () => {
+    await seat();
+    await post("draw", { me: HIM, cells: "2".repeat(135) });
+    await view(HER);
+    await post("act", { me: HIM, action: "photo" });
+
+    // The card says "what you drew came down", so it must only ever reach whoever drew it.
+    expect((await view(HER)).arrivals.some((a) => a.kind === "undrawn")).toBe(false);
+  });
+
+  it("writes nothing down when the frame was empty", async () => {
+    await seat();
+    await post("act", { me: HIM, action: "photo" });
+
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    await runInDurableObject(stub, async (_i, state) => {
+      expect(await state.storage.get("undrawn"), "nothing came down").toBeUndefined();
+    });
+  });
+
+  it("tells him too, if it was his own drawing she took down", async () => {
+    await seat();
+    await post("draw", { me: HIM, cells: "2".repeat(135) });
+    await view(HIM);
+    await post("act", { me: HIM, action: "photo" });
+
+    // He drew it and he took it down, so he already knows.
+    expect((await view(HIM)).arrivals.some((a) => a.kind === "undrawn")).toBe(false);
+  });
+});
+
 describe("her line back", () => {
   it("lets her leave one, and he reads it", async () => {
     await seat();

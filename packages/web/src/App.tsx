@@ -375,6 +375,10 @@ export function ArrivalCard({
                 <>
                   <b>{name}</b> put something in the frame. <Sheet cells={item.cells} />
                 </>
+              ) : item.kind === "undrawn" ? (
+                <>
+                  <b>{name}</b> took a photo, so what you drew came down.
+                </>
               ) : item.kind === "kept" ? (
                 <>
                   <b>{name}</b> took the {GIFTS.find((g) => g.id === item.gift)?.name ?? "thing"} you left.
@@ -859,6 +863,8 @@ function RoomPage({ id }: { id: string }) {
   const [giftWords, setGiftWords] = useState("");
   const [clearing, setClearing] = useState(false);
   const [strokes, setStrokes] = useState<number | null>(null);
+  // Armed once he has been told the photo takes her drawing down.
+  const [photoOver, setPhotoOver] = useState(false);
   const [said, setSaid] = useState<SaidSoFar | null>(null);
   const saidTrigger = useRef<HTMLButtonElement>(null);
   const saidPanel = useRef<HTMLElement>(null);
@@ -2145,6 +2151,9 @@ function RoomPage({ id }: { id: string }) {
                 <div className={s.row} style={{ marginTop: 14 }}>
                   {ACTIONS.map((a) => {
                     const brushingNow = a.id === "brush" && strokes !== null;
+                    // The frame holds one thing, so a photo takes down whatever is drawn in it. Ask
+                    // first: he cannot see that his button is about to delete her drawing.
+                    const overDrawing = a.id === "photo" && !!view.doodle;
                     const sitting = a.id === "sit" && view.sittingWith;
                     // Sitting shows where he is, never where he has been. Dimming the button once he stands up would say
                     // he had used it up.
@@ -2157,10 +2166,18 @@ function RoomPage({ id }: { id: string }) {
                         onClick={() => {
                           if (a.id === "sit") return void sitWith(!view.sittingWith);
                           if (a.id === "brush") return setStrokes(brushingNow ? null : 0);
+                          if (overDrawing && !photoOver) return setPhotoOver(true);
+                          setPhotoOver(false);
                           void act(a.id);
                         }}
                       >
-                        {sitting ? "Get up" : brushingNow ? `Brushing${".".repeat(strokes)}` : a.label}
+                        {sitting
+                          ? "Get up"
+                          : brushingNow
+                            ? `Brushing${".".repeat(strokes)}`
+                            : overDrawing && photoOver
+                              ? "That takes her drawing down"
+                              : a.label}
                       </button>
                     );
                   })}

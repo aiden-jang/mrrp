@@ -256,7 +256,13 @@ export class Room extends DurableObject<Env> {
 
     if (action === "photo") {
       await this.ctx.storage.put("framed", true);
-      await this.ctx.storage.delete("doodle");
+      // The frame holds one thing and a drawing beats a photo, so the photo has to take it down.
+      // Record whose it was: she made it, and until now it left with nothing said to anybody.
+      const hanging = await this.ctx.storage.get<Doodle>("doodle");
+      if (hanging) {
+        await this.ctx.storage.put("undrawn", { by: hanging.by, at: Date.now() });
+        await this.ctx.storage.delete("doodle");
+      }
     }
 
     if (action === "brush" || action === "sit") {
@@ -1345,6 +1351,10 @@ export class Room extends DurableObject<Env> {
       const hung = await this.ctx.storage.get<Doodle>("doodle");
       if (hung && hung.by !== me && hung.at > since) {
         arrivals.push({ kind: "drawn", at: hung.at, cells: hung.cells });
+      }
+      const undrawn = await this.ctx.storage.get<{ by: string; at: number }>("undrawn");
+      if (undrawn && undrawn.by === me && undrawn.at > since) {
+        arrivals.push({ kind: "undrawn", at: undrawn.at });
       }
       if (otherId) {
         for (const found of arrivalsFor(await this.found(), me, otherId, since)) {
