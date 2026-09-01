@@ -270,6 +270,23 @@ export function doPoke(id: string, what: string): void {
 }
 
 /* His notes. Keep them out of RoomView: up to 33KB, pushed on every write. */
+/*
+ * Whether the room is still there, without taking a seat in it.
+ *
+ * The door screen has to know before it invites anybody in, and it cannot ask by reading the room:
+ * on a live one that would seat the very person it is asking.
+ */
+export async function roomIsGone(id: string): Promise<boolean> {
+  try {
+    const r = await fetch(`/api/room/${id}/alive`);
+    return r.status === 410;
+  } catch {
+    // A dropped connection is not a deleted room. The door stays open and the read behind it
+    // will say so properly.
+    return false;
+  }
+}
+
 export async function fetchNotes(id: string): Promise<string[]> {
   const r = await fetch(`/api/room/${id}/notes?me=${encodeURIComponent(myToken())}`);
   if (!r.ok) throw new Error("Couldn't get your notes.");
