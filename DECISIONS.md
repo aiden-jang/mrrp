@@ -1689,6 +1689,43 @@ The lapse is ten minutes rather than the thirty seconds a hold gets. A hold is a
 and a stale one is a hand she can see that is not there. Sitting is meant to outlast not touching a
 key.
 
+## Four things the room did to her without saying so
+
+Found by reading the app from her seat rather than from the code. Four of them turned out to be the
+same shape as most of the bugs in this file: the room knows something and does not say it.
+
+**His photo took her drawing down.** The frame holds one thing and a drawing beats a photo, so
+`act("photo")` deleted the doodle. No warning, no record, and nothing told either of them. She made
+the only thing in the room she made, and a button with her name on it binned it. His button asks
+first now, and if it was her drawing she is told it came down.
+
+Only whoever drew it is told, which is not the redundant guard it looks like: he can draw in that
+frame too, and the card says "what you drew came down", so telling the wrong person is a sentence
+that is simply untrue. That case had no test until the mutation run went looking.
+
+**The look-back screen forgot.** Her lines capped at twelve, and the thirteenth silently dropped the
+oldest. Answers to his notes are stored as lines, so they went the same way: the screen built to read
+back what they have said quietly lost the beginning of it. Twelve was chosen for the note card,
+which only ever shows the newest one. It is a hundred and twenty now, the same as the notes.
+
+**The notes could run dry unnoticed.** `note.final` says she has reached the last one, but `note` is
+her-seat-only, so it never reached the one person who could write more. His side says so now, and
+goes quiet again the moment he adds any.
+
+**She could not unsay one thing.** Emptying the box cleared every line she had ever left him, so the
+sentence she regretted cost her all the others. Meanwhile he can delete the whole room and has a
+week to change his mind. She can take back one line now, from the screen she reads them back on.
+
+Two of the six did not survive being checked, and both are worth writing down so nobody re-finds
+them:
+
+- **A second treat replacing the first is not silent.** The button that is out is highlighted and
+  the line above it names the treat waiting for her.
+- **"Our day" being his is not an oversight, it is the surprise.** She never sees `ourDay` at all;
+  the cat mentions it to her on the day. Letting her set it, as the code stands, would let her write
+  a single shared slot she cannot read, blindly overwriting his date and killing the thing it exists
+  for. If she should have one too, it needs a second slot, not a wider guard.
+
 ## The flaky test was a sleep
 
 `live.spec.ts` waited a flat 140ms after each socket write and then asserted on what had arrived. It
