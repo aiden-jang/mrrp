@@ -1469,6 +1469,22 @@ the sentence she was actually answering, so nothing is lost and nothing is misat
 Both are needed. The text alone would attach one answer to every note that happens to repeat a line;
 the index alone is the bug. Index picks the note, text vouches for it.
 
+## The save button became a delete-everything button
+
+Emptying the box and saving has always cleared her line. That was safe while there was one line and
+the box opened prefilled with it: saving without typing put back exactly what was there.
+
+Making the lines stack broke both halves of that at once. The box now opens empty, because saving
+adds rather than replaces, and an empty save now clears every line she has ever left him. So the
+button she taps to say something else was one tap from wiping twelve messages, silently, with no
+undo. Nothing warned her, because from the code's point of view nothing unusual happened.
+
+"Leave it" refuses a blank box now, so the accident is unreachable. Clearing became its own button,
+shown only when there is something to clear, and it arms on the first tap and goes on the second.
+
+The box moved out of `App.tsx` to make that testable. It is the only control in the app that can
+destroy something of hers, and it had no test that could click it.
+
 ## What the comments are for
 
 Every explanation of a decision belongs in this file. The comments left in the code are for three

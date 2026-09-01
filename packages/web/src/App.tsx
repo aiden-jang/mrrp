@@ -88,7 +88,7 @@ import { AUTH_URL } from "./config.js";
 import { foundKeys, noticed } from "./discoveries.js";
 import { awayLine, homingLine, milestoneLine, personalityLine } from "./remembers.js";
 import { myToken } from "./api.js";
-import { GoneCard, LeftCard, SaidPanel, TheyLeftNotice } from "./screens.js";
+import { GoneCard, LeftCard, SaidPanel, SayBox, TheyLeftNotice } from "./screens.js";
 import { BLANKETS, BLANKET_KEYS, type BlanketKey } from "./blanket.js";
 
 const ACTION_SOUND: Record<Action, Cue> = {
@@ -902,6 +902,7 @@ function RoomPage({ id }: { id: string }) {
   /** The note this line answers, or null when she is just saying something. */
   const [replyTo, setReplyTo] = useState<number | null>(null);
   const [giftWords, setGiftWords] = useState("");
+  const [clearing, setClearing] = useState(false);
   const [said, setSaid] = useState<SaidSoFar | null>(null);
   const saidTrigger = useRef<HTMLButtonElement>(null);
   const saidPanel = useRef<HTMLElement>(null);
@@ -1242,6 +1243,19 @@ function RoomPage({ id }: { id: string }) {
       setGiftWords(words);
       setErr(e instanceof Error ? e.message : "Couldn't leave that.");
     }
+  };
+
+  /* The one thing that reaches the server's "empty text clears them all". */
+  const clearLines = async () => {
+    setSaving(true);
+    try {
+      setView(await doSay(id, ""));
+      setLineOpen(false);
+      setReplyTo(null);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't do that.");
+    }
+    setSaving(false);
   };
 
   const say = async () => {
@@ -1921,43 +1935,28 @@ function RoomPage({ id }: { id: string }) {
             )}
 
             {lineOpen ? (
-              <div className={s.sayBox}>
-                {replyTo !== null && view.note && (
-                  <p className={s.answerMine} style={{ marginBottom: 6 }}>
-                    answering “{view.note.text}”
-                  </p>
-                )}
-                <textarea
-                  autoFocus
-                  ref={lineBox}
-                  value={line}
-                  maxLength={LINE_MAX}
-                  placeholder={
-                    replyTo !== null ? "Say it back to him" : `Something for ${view.them ?? "him"} to find`
-                  }
-                  onChange={(e) => setLine(e.target.value)}
-                  className={s.sayInput}
-                />
-                {LINE_MAX - line.length <= 20 && (
-                  <p className={s.small} style={{ textAlign: "right", margin: "6px 2px 0" }}>
-                    {LINE_MAX - line.length} left
-                  </p>
-                )}
-                <div className={s.row} style={{ marginTop: 8 }}>
-                  <button
-                    className={s.btn}
-                    onClick={() => {
-                      setLineOpen(false);
-                      setReplyTo(null);
-                    }}
-                  >
-                    Never mind
-                  </button>
-                  <button className={`${s.btn} ${s.btnGo}`} disabled={saving} onClick={() => void say()}>
-                    {saving ? "Leaving it..." : "Leave it"}
-                  </button>
-                </div>
-              </div>
+              <SayBox
+                value={line}
+                max={LINE_MAX}
+                answering={replyTo !== null && view.note ? view.note.text : null}
+                him={view.them ?? "him"}
+                saving={saving}
+                canClear={!!view.herLine}
+                clearing={clearing}
+                boxRef={lineBox}
+                onChange={setLine}
+                onSave={() => void say()}
+                onNeverMind={() => {
+                  setLineOpen(false);
+                  setReplyTo(null);
+                  setClearing(false);
+                }}
+                onClearTap={() => {
+                  if (!clearing) return setClearing(true);
+                  setClearing(false);
+                  void clearLines();
+                }}
+              />
             ) : view.herLine ? (
               /* Opens empty. Saving adds a line rather than replacing this one, and a prefilled
                   box says the opposite. */

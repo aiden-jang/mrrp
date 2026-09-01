@@ -217,3 +217,76 @@ export function SaidPanel({
     </section>
   );
 }
+
+/*
+ * The box she says something in.
+ *
+ * Lives out here because of what the two buttons in it can do. Saving an empty box clears every
+ * line she has ever left him, and the box opens empty, so "Leave it" has to refuse a blank and
+ * clearing has to be its own deliberate thing. Both of those are worth a test that can click.
+ */
+export function SayBox({
+  value,
+  max,
+  answering,
+  him,
+  saving,
+  canClear,
+  clearing,
+  onChange,
+  onSave,
+  onNeverMind,
+  onClearTap,
+  boxRef,
+}: {
+  value: string;
+  max: number;
+  answering: string | null;
+  him: string;
+  saving: boolean;
+  canClear: boolean;
+  clearing: boolean;
+  onChange: (next: string) => void;
+  onSave: () => void;
+  onNeverMind: () => void;
+  onClearTap: () => void;
+  boxRef?: React.Ref<HTMLTextAreaElement>;
+}) {
+  return (
+    <div className={s.sayBox}>
+      {answering !== null && (
+        <p className={s.answerMine} style={{ marginBottom: 6 }}>
+          answering &ldquo;{answering}&rdquo;
+        </p>
+      )}
+      <textarea
+        autoFocus
+        ref={boxRef}
+        value={value}
+        maxLength={max}
+        placeholder={answering !== null ? "Say it back to him" : `Something for ${him} to find`}
+        onChange={(e) => onChange(e.target.value)}
+        className={s.sayInput}
+        aria-label={answering !== null ? "Your answer" : "Something to leave him"}
+      />
+      {max - value.length <= 20 && (
+        <p className={s.small} style={{ textAlign: "right", margin: "6px 2px 0" }}>
+          {max - value.length} left
+        </p>
+      )}
+      <div className={s.row} style={{ marginTop: 8 }}>
+        <button className={s.btn} onClick={onNeverMind}>
+          Never mind
+        </button>
+        <button className={`${s.btn} ${s.btnGo}`} disabled={saving || value.trim() === ""} onClick={onSave}>
+          {saving ? "Leaving it..." : "Leave it"}
+        </button>
+      </div>
+      {canClear && (
+        <button className={s.quiet} onClick={onClearTap}>
+          {clearing ? "Sure? All of it goes." : "Take back everything you've said"}
+        </button>
+      )}
+    </div>
+  );
+}
