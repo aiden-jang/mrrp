@@ -312,6 +312,7 @@ field the browser misspells is a build error rather than a value the worker drop
 | `GET .../notes`               | him only    | his notes, for the panel that edits them. Too big to ride in every view         |
 | `GET .../said`                | either seat | what has passed between them. Stops at the note the room has handed her         |
 | `GET .../alive`               | anyone      | is the room still there. Guards, never seats: the door asks before inviting     |
+| `GET .../live`                | either seat | the socket. A seat, not just the link: a push is presence whatever it carries   |
 | `POST .../leaveout`           | him only    | leaves the yarn, a treat or the catnip for her to find                          |
 | `POST .../gift`               | her only    | picks which of the three he finds. Optional `text` rides along as a line        |
 | `POST .../shelf`              | either seat | puts the mug back. The one write both of them may make                          |
