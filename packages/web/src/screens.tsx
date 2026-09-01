@@ -194,6 +194,19 @@ export function SaidPanel({
         ))}
       </ol>
 
+      {/*
+          A fact about how much he wrote, not a position she is at. The room refuses unread counts
+          and streaks, and this is neither: it does not move when she stays away and nothing goes
+          wrong if she never reaches the end of it.
+      */}
+      {said.total > said.notes.length && (
+        <p className={s.saidMore}>
+          {youAreHer
+            ? `He wrote ${said.total} of these.`
+            : `${said.total} written. She is on day ${said.notes.length}.`}
+        </p>
+      )}
+
       {said.lines.length > 0 && (
         <>
           <p className={s.fieldLabel}>

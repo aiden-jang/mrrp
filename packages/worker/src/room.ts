@@ -629,6 +629,7 @@ export class Room extends DurableObject<Env> {
     }
 
     return {
+      total: all.length,
       notes: all.slice(0, read + 1).map((text, i) => ({
         day: i + 1,
         text,
