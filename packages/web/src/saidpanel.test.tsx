@@ -75,6 +75,15 @@ describe("looking back at what they have said", () => {
     expect(text(one, true)).not.toContain("He wrote 1");
   });
 
+  it("offers to take back only her own words, and only on her side", () => {
+    const hers = renderToStaticMarkup(
+      <SaidPanel said={room} youAreHer them="Bean" onClose={() => {}} onUnsay={() => {}} />,
+    );
+    expect(plain(hers)).toContain("take it back");
+    // His side never gets one: her words are not his to remove.
+    expect(text(room, false)).not.toContain("take it back");
+  });
+
   it("remembers the thing her words came with", () => {
     expect(text(room, false)).toContain("with a moth");
   });

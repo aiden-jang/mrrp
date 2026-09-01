@@ -38,6 +38,7 @@ import {
   doLeaveOut,
   doSay,
   doSettle,
+  doUnsay,
   doWait,
   doSit,
   doTell,
@@ -1074,6 +1075,15 @@ function RoomPage({ id }: { id: string }) {
     }
   };
 
+  const takeBack = async (at: number) => {
+    try {
+      setView(await doUnsay(id, at));
+      setSaid(await fetchSaid(id));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't take that back.");
+    }
+  };
+
   const settleIn = async (on: boolean) => {
     setNudge((v) => v + 1);
     play("purr");
@@ -1421,6 +1431,7 @@ function RoomPage({ id }: { id: string }) {
         youAreHer={view.youAreHer}
         them={view.them}
         onClose={() => setSaid(null)}
+        onUnsay={view.youAreHer ? (at) => void takeBack(at) : undefined}
         panelRef={saidPanel}
       />
     ) : null;

@@ -275,6 +275,13 @@ export async function doSettle(id: string, on: boolean): Promise<RoomView> {
   return r.json() as Promise<RoomView>;
 }
 
+// Takes back one thing she said, leaving everything else where it is.
+export async function doUnsay(id: string, at: number): Promise<RoomView> {
+  const r = await send(`/api/room/${id}/unsay`, { me: myToken(), at });
+  if (!r.ok) throw new Error("Couldn't take that back.");
+  return r.json() as Promise<RoomView>;
+}
+
 export async function doWait(id: string, on: boolean): Promise<RoomView> {
   const r = await send(`/api/room/${id}/wait`, { me: myToken(), on });
   if (!r.ok) throw new Error("Couldn't do that.");

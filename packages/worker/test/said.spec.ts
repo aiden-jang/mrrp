@@ -98,6 +98,48 @@ describe("looking back at what has passed between them", () => {
     expect(body.lines).toEqual([]);
   });
 
+  it("lets her take back one thing without taking back all of it", async () => {
+    await seat();
+    await post("say", { me: HER, text: "first" });
+    await post("say", { me: HER, text: "the one she regrets" });
+    await post("say", { me: HER, text: "third" });
+
+    const { body } = await said(HER);
+    const regret = body.lines.find((l) => l.text === "the one she regrets")!;
+    await post("unsay", { me: HER, at: regret.at });
+
+    const after = (await said(HER)).body;
+    expect(after.lines.map((l) => l.text)).toEqual(["third", "first"]);
+  });
+
+  it("takes back an answer from under the note it sat on", async () => {
+    await seat();
+    await post("notes", { me: HIM, notes: ["you always take the long way home"] });
+    await post("say", { me: HER, text: "regretted answer", aboutDay: 0 });
+
+    const answer = (await said(HER)).body.notes[0]!.answers[0]!;
+    await post("unsay", { me: HER, at: answer.at });
+
+    expect((await said(HER)).body.notes[0]!.answers).toEqual([]);
+  });
+
+  it("is hers, not his", async () => {
+    await seat();
+    await post("say", { me: HER, text: "still here" });
+    const at = (await said(HER)).body.lines[0]!.at;
+    await post("unsay", { me: HIM, at });
+
+    expect((await said(HER)).body.lines).toHaveLength(1);
+  });
+
+  it("leaves the rest alone when the moment does not match anything", async () => {
+    await seat();
+    await post("say", { me: HER, text: "still here" });
+    await post("unsay", { me: HER, at: 1 });
+
+    expect((await said(HER)).body.lines).toHaveLength(1);
+  });
+
   it("is not something a stranger with the link can read", async () => {
     await seat();
     await view(STRANGER);
