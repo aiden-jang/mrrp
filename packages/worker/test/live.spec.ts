@@ -112,15 +112,17 @@ describe("the live channel", () => {
     const noUpgrade = await SELF.fetch(`https://x/api/room/${h.id}/live?me=${HIM}`);
     expect(noUpgrade.status).toBe(426);
 
-    // A stranger gets a socket, because the room seats nobody new here; what matters is that the
-    // view it pushes is the stranger's, which carries no note, no mood and no recovery code.
-    const other = await connect(h.id, STRANGER);
-    await settle();
-    const v = other.got.at(-1)!.view!;
-    expect(v.note).toBeNull();
-    expect(v.recoveryCode).toBeNull();
-    expect(v.theirRecent).toEqual([]);
-    other.ws.close();
+    /*
+     * A seat, not just the link.
+     *
+     * This used to hand a stranger a socket on the grounds that the view it pushes is safe, which it
+     * is. The push itself is not: one arrives after everything either of them does, so the timing
+     * says somebody is in the room right now however little the payload says.
+     */
+    const other = await SELF.fetch(`https://x/api/room/${h.id}/live?me=${STRANGER}`, {
+      headers: { upgrade: "websocket" },
+    });
+    expect(other.status).toBe(403);
 
     expect((await h.post("delete", { me: HIM, name: "Aiden" })).status).toBe(200);
     const gone = await SELF.fetch(`https://x/api/room/${h.id}/live?me=${HIM}`, {

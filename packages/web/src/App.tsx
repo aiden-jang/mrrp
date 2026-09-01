@@ -988,7 +988,9 @@ function RoomPage({ id }: { id: string }) {
     forgetRoom(id);
     setGone({ undoUntil: null });
   }, [id]);
-  const live = useLive(id, !asking && !gone, takeView, liveGone);
+  // Only with a seat. The worker refuses a socket to anybody else, and without this a spectator
+  // watching the cat would sit in a reconnect loop against a 403 for as long as the tab is open.
+  const live = useLive(id, !asking && !gone && view?.seat != null, takeView, liveGone);
 
   // A dead link must not be answered with an invitation. The door screen renders before anything is
   // read, so it has to ask whether the room is still there first.
