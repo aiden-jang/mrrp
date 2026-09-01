@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { Cat as CatLook, Clock, Gift, Mood } from "./types.js";
-import { mixHex, sceneFor } from "./hours.js";
+import { DOOR_X, mixHex, sceneFor } from "./hours.js";
 import { fireflyAt, mothAt, MOTH_CYCLE_MS } from "./critters.js";
 import { play, playPianoNote, setVoice } from "./sound.js";
 import { dreamOf, type Dream, type DreamContext, type DreamScene } from "./dreams.js";
@@ -273,6 +273,7 @@ export function Cat({
   heldByThem = false,
   sitting = false,
   settled = false,
+  waiting = false,
   brushing = false,
   onStroke,
   pokedByThem = null,
@@ -331,6 +332,8 @@ export function Cat({
   /* He has picked the brush up. A drag across her counts strokes instead of petting her. */
   /* She has settled against whoever sat down. */
   settled?: boolean;
+  /* She has gone to the door to wait, whatever the hour had planned for her. */
+  waiting?: boolean;
   brushing?: boolean;
   onStroke?: () => void;
   /** Every press and release of the cat, and every prop this seat touches, for the other screen. */
@@ -530,6 +533,8 @@ export function Cat({
   sittingRef.current = sitting;
   const settledRef = useRef(settled);
   settledRef.current = settled;
+  const waitingRef = useRef(waiting);
+  waitingRef.current = waiting;
   const brushingRef = useRef(brushing);
   brushingRef.current = brushing;
   const onStrokeRef = useRef(onStroke);
@@ -1379,13 +1384,20 @@ export function Cat({
       cam = Math.round(camBase * (1 - pull) + Math.min(camBase, 2) * pull);
       camRef.current = cam;
       const L = lookRef.current;
-      const sc = sceneFor(
+      const hourly = sceneFor(
         clockRef.current,
         Date.now(),
         moodRef.current,
         togetherRef.current,
         spotRef.current,
       );
+      /*
+       * Waiting beats the hour, the mood and him being here.
+       *
+       * The scene puts her where the time of day says she should be. Choosing to wait at the door
+       * has to win, or the caption says she is by the door while she sits in the sun.
+       */
+      const sc = waitingRef.current ? { ...hourly, catX: DOOR_X, atDoor: true, sleepy: 0.1 } : hourly;
       const beamX = Math.round(sc.beam * GW);
 
       rect(0, 0, GW, FLOOR - 9, sc.wallTop);

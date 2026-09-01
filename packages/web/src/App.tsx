@@ -38,6 +38,7 @@ import {
   doLeaveOut,
   doSay,
   doSettle,
+  doWait,
   doSit,
   doTell,
   doTidy,
@@ -65,7 +66,7 @@ import { heard } from "./heard.js";
 import { coveredBy, liveOnly } from "./recent.js";
 import { fadeNote, listOf } from "./fades.js";
 import { standOff } from "./legible.js";
-import { dayApart, HER_SPOT, mixHex, sceneFor, type Scene } from "./hours.js";
+import { DOOR_X, HER_SPOT, dayApart, mixHex, sceneFor, type Scene } from "./hours.js";
 import { moonLine } from "./moon.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
 import { MoodFace } from "./faces.js";
@@ -1105,6 +1106,16 @@ function RoomPage({ id }: { id: string }) {
     });
   };
 
+  const waitAtDoor = async (on: boolean) => {
+    setNudge((v) => v + 1);
+    play(on ? "settle" : "chirp");
+    try {
+      setView(await doWait(id, on));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't do that.");
+    }
+  };
+
   const settleIn = async (on: boolean) => {
     setNudge((v) => v + 1);
     play("purr");
@@ -1436,7 +1447,7 @@ function RoomPage({ id }: { id: string }) {
   }
 
   const herSpot = view.personality ? HER_SPOT : null;
-  const scene = sceneFor(
+  const hourly = sceneFor(
     view.clock,
     Date.now(),
     view.catMood,
@@ -1445,6 +1456,13 @@ function RoomPage({ id }: { id: string }) {
     view.sky,
     view.expectAt,
   );
+
+  /*
+      Waiting beats the hour. `sceneFor` already puts her at the door for the hour before he is
+      normally home; this is the same place, chosen rather than arrived at, so it overrides whatever
+      the sun and her mood had planned.
+  */
+  const scene = view.waitingAtDoor ? { ...hourly, catX: DOOR_X, atDoor: true } : hourly;
 
   const chrome = chromeFor(scene);
   const roomTheme = chrome as React.CSSProperties;
@@ -1547,6 +1565,7 @@ function RoomPage({ id }: { id: string }) {
             heldByThem={view.heldByThem}
             sitting={view.sittingWith || view.sittingWithYou}
             settled={view.settled}
+            waiting={view.waitingAtDoor}
             brushing={strokes !== null}
             onStroke={stroke}
             pokedByThem={view.pokedByThem}
@@ -1611,17 +1630,21 @@ function RoomPage({ id }: { id: string }) {
           */}
           {setup
             ? `Picking out ${previewLook.name}.`
-            : view.settled
+            : view.waitingAtDoor
               ? view.youAreHer
-                ? "You are settled against him, not moving for anybody."
-                : `${previewLook.name} has settled against you.`
-              : view.sittingWith || view.sittingWithYou
+                ? "You are by the door, waiting for him."
+                : `${previewLook.name} is by the door, waiting for you.`
+              : view.settled
                 ? view.youAreHer
-                  ? "You are curled up while he sits with you."
-                  : `${previewLook.name} is curled up beside you.`
-                : view.youAreHer
-                  ? `You are ${scene.doingHers ?? scene.doing}.`
-                  : `${previewLook.name} is ${scene.doing}.`}
+                  ? "You are settled against him, not moving for anybody."
+                  : `${previewLook.name} has settled against you.`
+                : view.sittingWith || view.sittingWithYou
+                  ? view.youAreHer
+                    ? "You are curled up while he sits with you."
+                    : `${previewLook.name} is curled up beside you.`
+                  : view.youAreHer
+                    ? `You are ${scene.doingHers ?? scene.doing}.`
+                    : `${previewLook.name} is ${scene.doing}.`}
         </p>
         <span id="room-actions" tabIndex={-1} />
         {captureRoom && !setup && (
@@ -2032,6 +2055,17 @@ function RoomPage({ id }: { id: string }) {
             <FrameSheet current={view.doodle} saving={drawing} onSave={(c) => void hangUp(c)} />
 
             <BlanketRow current={view.blanket} busy={bedding} onPick={(k, st) => void pickBlanket(k, st)} />
+
+            {!view.sittingWithYou && (
+              <button
+                className={`${s.btn} ${view.waitingAtDoor ? `${s.btnOn} ${s.btnStaying}` : ""}`}
+                style={{ width: "100%", marginTop: 12 }}
+                aria-pressed={view.waitingAtDoor}
+                onClick={() => void waitAtDoor(!view.waitingAtDoor)}
+              >
+                {view.waitingAtDoor ? "Come away from the door" : "Go and wait by the door"}
+              </button>
+            )}
 
             {/*
                 Only while he is sat there. Settling against nobody is sitting still, which she does

@@ -282,6 +282,13 @@ export async function doSettle(id: string, on: boolean): Promise<RoomView> {
   return r.json() as Promise<RoomView>;
 }
 
+/* Went to wait by the door, or came away from it. */
+export async function doWait(id: string, on: boolean): Promise<RoomView> {
+  const r = await send(`/api/room/${id}/wait`, { me: myToken(), on });
+  if (!r.ok) throw new Error("Couldn't do that.");
+  return r.json() as Promise<RoomView>;
+}
+
 /* Touched something. Fire and forget like `doHold`, and throttled by the caller. */
 export function doPoke(id: string, what: string): void {
   void send(`/api/room/${id}/poke`, { me: myToken(), what }).catch(() => {});

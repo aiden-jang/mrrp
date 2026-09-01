@@ -162,6 +162,15 @@ app.post("/api/room/:id/poke", async (c) => {
   return c.json(await room(c.env, id).poke(body.me, body.what!));
 });
 
+app.post("/api/room/:id/wait", async (c) => {
+  const id = c.req.param("id");
+  const body = (await c.req.json().catch(() => null)) as Untrusted<"wait"> | null;
+  if (!ROOM_RE.test(id) || !body?.me || typeof body.on !== "boolean") {
+    return c.json({ error: "bad request" }, 400);
+  }
+  return c.json(await room(c.env, id).waitAtDoor(body.me, body.on));
+});
+
 app.post("/api/room/:id/settle", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as Untrusted<"settle"> | null;

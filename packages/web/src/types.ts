@@ -139,6 +139,7 @@ export interface Bodies {
   say: { me: string; text: string; aboutDay?: number };
   shelf: { me: string };
   settle: { me: string; on: boolean };
+  wait: { me: string; on: boolean };
   sit: { me: string; on: boolean };
   tell: { me: string; mood: Mood };
   undelete: { me: string };
@@ -242,6 +243,8 @@ export interface RoomView {
   sittingWithYou: boolean;
   /* She has settled into it. Only ever true while somebody is sat with her. */
   settled: boolean;
+  /* She is by the door, on purpose. Both seats see it. */
+  waitingAtDoor: boolean;
   /** Something they just touched in the room, for a few seconds. Null on their own side. */
   pokedByThem: { what: string; at: number } | null;
   /** You both reached for the same thing at once. Sent to both, which nothing else is. */
