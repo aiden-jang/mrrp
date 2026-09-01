@@ -26,7 +26,19 @@ async function connect(id: string, me: string): Promise<{ ws: WebSocket; got: Pu
 }
 
 /* Sixty was enough alone and flaked under a full-suite run. */
+/*
+ * A fixed sleep raced the push and went red about one full-suite run in four. Wait for the thing
+ * itself. Counting turns rather than watching the clock, because `away()` fakes the clock.
+ */
 const settle = () => new Promise((r) => setTimeout(r, 140));
+
+const until = async (ready: () => boolean, what: string, turns = 400): Promise<void> => {
+  for (let i = 0; i < turns; i++) {
+    if (ready()) return;
+    await new Promise((r) => setTimeout(r, 5));
+  }
+  throw new Error(`waited for ${what} and it never happened`);
+};
 
 describe("the live channel", () => {
   it("sends the room on connect and again on every write", async () => {
@@ -83,12 +95,10 @@ describe("the live channel", () => {
 
     const her = await connect(h.id, HER);
     const him = await connect(h.id, HIM);
-    await settle();
-    expect(him.got.at(-1)!.view!.bothHereNow, "her socket is her being here").toBe(true);
+    await until(() => him.got.at(-1)?.view?.bothHereNow === true, "her socket to count as her being here");
 
     her.ws.close();
-    await settle();
-    expect(him.got.at(-1)!.view!.bothHereNow, "and closing it is her leaving").toBe(false);
+    await until(() => him.got.at(-1)?.view?.bothHereNow === false, "closing it to count as her leaving");
     him.ws.close();
   });
 
