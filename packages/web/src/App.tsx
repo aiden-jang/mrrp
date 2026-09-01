@@ -88,7 +88,7 @@ import { AUTH_URL } from "./config.js";
 import { foundKeys, noticed } from "./discoveries.js";
 import { awayLine, homingLine, milestoneLine, personalityLine } from "./remembers.js";
 import { myToken } from "./api.js";
-import { GoneCard, LeftCard, SaidPanel, SayBox, TheyLeftNotice } from "./screens.js";
+import { GoneCard, LeftCard, PawMark, SaidPanel, SayBox, TheyLeftNotice } from "./screens.js";
 import { BLANKETS, BLANKET_KEYS, type BlanketKey } from "./blanket.js";
 
 const ACTION_SOUND: Record<Action, Cue> = {
@@ -152,20 +152,6 @@ function SpeakerMark({ off }: { off: boolean }) {
             <path d="M12.7 4.4a5 5 0 0 1 0 7.2" />
           </>
         )}
-      </g>
-    </svg>
-  );
-}
-
-function PawMark() {
-  return (
-    <svg viewBox="0 0 22 22" width="11" height="11" aria-hidden focusable="false" className={s.paw}>
-      <g fill="currentColor">
-        <ellipse cx="4" cy="5" rx="2.6" ry="3" />
-        <ellipse cx="10" cy="3" rx="2.8" ry="3.2" />
-        <ellipse cx="16" cy="5" rx="2.6" ry="3" />
-        <ellipse cx="20.5" cy="10" rx="2.2" ry="2.5" />
-        <ellipse cx="11" cy="15" rx="7.5" ry="5.8" />
       </g>
     </svg>
   );
@@ -1248,8 +1234,9 @@ function RoomPage({ id }: { id: string }) {
     try {
       setView(await doSay(id, line, replyTo ?? undefined));
       // After it lands, the way hanging a drawing does it. Everything else she leaves him makes a
-      // sound and this was the one that did not.
+      // sound and this was the one that did not, and nothing in the room moved either.
       play("settle");
+      setNudge((v) => v + 1);
       setLineOpen(false);
       setReplyTo(null);
     } catch {

@@ -1147,3 +1147,12 @@ details[open] > .recoverySummary::before {
   color: var(--soft);
   font-size: 13px;
 }
+
+/* The end of the notes, not another row in the list. */
+.saidEnd {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--soft);
+  font-size: 13px;
+}

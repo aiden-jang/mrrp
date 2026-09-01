@@ -62,10 +62,17 @@ describe("looking back at what they have said", () => {
     expect(text(early, false)).toContain("100 written. She is on day 1.");
   });
 
-  it("says nothing about a total once she has had all of them", () => {
+  it("marks the end once she has had all of them, instead of going quiet", () => {
     const done = { total: room.notes.length, notes: room.notes, lines: [] };
-    expect(text(done, true)).not.toContain("He wrote");
-    expect(text(done, false)).not.toContain("written.");
+    expect(text(done, true)).toContain("That is all of them. He wrote 2.");
+    expect(text(done, true)).not.toContain("of these");
+    expect(text(done, false)).toContain("She has read all of them. All 2.");
+  });
+
+  it("does not say he wrote one, when one is all he wrote", () => {
+    const one = { total: 1, notes: [room.notes[0]!], lines: [] };
+    expect(text(one, true)).toContain("That is all of them.");
+    expect(text(one, true)).not.toContain("He wrote 1");
   });
 
   it("remembers the thing her words came with", () => {
