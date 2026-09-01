@@ -1508,6 +1508,26 @@ here, and the only way to make it pass is to write the new number down.
 The existing `legible.test.ts` covers marks on the floor and control outlines on the panel, both at
 3:1, because those are graphical objects. Text is the 4.5:1 case and had nothing.
 
+## Two hand-written descriptions of one wire format
+
+The worker and the browser each keep a `types.ts` describing what a room view is. They are not
+copies and cannot be: the worker's imports its weather and memory types, the browser's inlines them,
+and the comments differ because each side reads them for different reasons.
+
+Nothing checked that they still agreed. Add a field to one and forget the other and both packages
+typecheck happily on their own; the browser just reads `undefined` off every view, at runtime, in
+production. That is the failure this kind of duplication actually produces, and it is silent.
+
+`wire.check.ts` asserts the shared shapes are identical. Nothing imports it, so it is absent from
+the bundle; it exists for `tsc`, which CI runs. One assertion per shape, so the error names the one
+that drifted rather than pointing at a tuple.
+
+It compares identity rather than mutual assignability. `[A] extends [B] && [B] extends [A]` calls
+two shapes the same when one carries an extra optional field, and an optional field is precisely
+what gets added to one side and forgotten on the other. The conditional-type identity trick
+distinguishes them; the assignability version was written first and let all three test drifts
+through.
+
 ## What the comments are for
 
 Every explanation of a decision belongs in this file. The comments left in the code are for three
