@@ -642,27 +642,21 @@ export const BOX_FRONT = sprite(
 export const CAKE = sprite(["...r...", "...d...", ".ggggg.", "ddddddd", "ddddddd"], 0, 0);
 
 /**
- * A small bow, for the thing he brings her.
+ * What he left out for her, waiting on the floor.
  *
  * Deliberately not one of her gifts below. Hers are found objects: a leaf, a bottle cap, a moth she
- * carried in. His is chosen, so it is the one object in the room that is obviously shop-bought, and
- * it should not be mistakable for something the cat dragged home.
+ * carried in. His is chosen, and should not be mistakable for something the cat dragged home.
  *
- * `r` the ribbon, `h` its shine.
+ * `r` measured 1.75:1 against the floor it sits on, which is to say it was never once seen. It takes
+ * a legible colour at the call site now; `h` keeps the pink so it is still obviously his.
  */
-export const BROUGHT = sprite([".r.r.", ".rhr.", ".r.r."], 0, 0);
+export const LEFT_OUT = sprite([".r.r.", ".rhr.", ".r.r."], 0, 0);
 
 /**
  * A tuft of her, left on the rug after a brush.
  *
- * Three rows of nothing much, which is the correct amount of drawing for cat hair. `f` takes her own
- * fur colour at the call site, so what is on the rug is always what is on the cat.
- */
-/*
- * A tuft of her, left where he brushed her.
- *
- * Five pixels of lightened fur once, on a floor of nearly the same tone. It measured 1.43:1 against
- * the floor, which is to say nobody ever saw it. The outline is what makes it read at this size.
+ * `f` takes her own fur colour, so what is on the rug is what is on the cat. Five pixels of that
+ * once, on a rug of nearly the same tone: 1.43:1, never seen. The outline is what makes it read.
  */
 export const TUFT = sprite(["w....w", ".w..w.", ".wffw.", "wffffw", ".wwww."], 0, 0);
 

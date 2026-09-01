@@ -608,6 +608,12 @@ is further from what is underneath, which clears 3:1 at every hour, worst case 3
 The tuft also needed to be bigger. Five pixels is not a tuft at any contrast, and an outline is what
 makes a small sprite read, which is why everything else in the room has one.
 
+Sweeping every mark the same way found a third: what he leaves out for her was 1.75:1, dusty pink on
+a dusty pink floor, with not one legible cell out of six. That is the feature whose buttons were
+reported as doing nothing, and it turns out the last inch of it was invisible too. It takes a legible
+colour now and keeps its pink highlight, so it is still obviously his and not something the cat
+dragged home. The photo and her gift were already fine, at 9.02:1 and 5.59:1.
+
 Two things the draw harness caught while this was being written, both the same mistake in different
 clothes. `legible` was being handed the floor, and both marks lie on the rug, which is a different
 colour: right idea, wrong surface. And the test took the highest contrast in the region, which the

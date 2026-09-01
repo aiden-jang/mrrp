@@ -102,6 +102,14 @@ describe("the marks his actions leave", () => {
     expect(hearts(r), "a tap of the button reaches the drawing").toBeGreaterThan(0);
   });
 
+  it("draws what he left out where she can see it", () => {
+    // Six painted cells, and not one of them legible before this: 1.75:1, pink on a pink floor. It
+    // stays small on purpose, so this is four of six rather than a count that means "big".
+    r = room({ brought: true });
+    r.run(0, 300);
+    expect(legibleCells(r, 68, 76, 22, 32)).toBeGreaterThan(3);
+  });
+
   it("draws a dent that is not the same colour as the rug it is in", () => {
     r = room({ satWith: true });
     r.run(0, 300);
