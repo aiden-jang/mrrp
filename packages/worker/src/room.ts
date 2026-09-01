@@ -833,6 +833,17 @@ export class Room extends DurableObject<Env> {
       return new Response("gone", { status: 410 });
     }
 
+    /*
+     * A seat, not just the link.
+     *
+     * The room is happy to let somebody with the link watch the cat, and the HTTP view lets them.
+     * A socket is different: it pushes after every single thing either of them does, so the arrival
+     * of a message is itself presence. Keeping their names out of the payload does not help when the
+     * timing says somebody is here right now.
+     */
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (!people[me]) return new Response("not your seat", { status: 403 });
+
     const pair = new WebSocketPair();
     const [client, server] = [pair[0], pair[1]];
     server.serializeAttachment({ me });

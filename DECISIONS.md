@@ -1689,6 +1689,29 @@ The lapse is ten minutes rather than the thirty seconds a hold gets. A hold is a
 and a stale one is a hand she can see that is not there. Sitting is meant to outlast not touching a
 key.
 
+## The socket was the same leak through another door
+
+The presence fix above took her name and her last-seen out of what a link-holder receives. The
+socket handed it straight back. `fetch` on the Durable Object checked the token length and that the
+room still existed, and nothing else, so anybody with the link got one.
+
+The test that covered it had already thought about this and reached the wrong answer, for a reason
+worth keeping: "a stranger gets a socket, because the room seats nobody new here; what matters is
+that the view it pushes is the stranger's, which carries no note, no mood and no recovery code."
+Every word of that is true and it is not the point. A push arrives after everything either of them
+does. The timing is the signal. Scrubbing the payload does not help when the arrival itself says
+somebody is in the room this second.
+
+So a socket needs a seat now, and the browser only opens one when it has one, or a spectator would
+sit in a reconnect loop against a 403 for as long as the tab stayed open. Watching the cat over the
+HTTP view still works and is still meant to.
+
+Delete and undelete came out clean on the same sweep. Deleting writes a tombstone and erases nothing;
+the alarm does the erasing a week later with `deleteAll()` and then puts the tombstone back, so an
+erased room can never be seated again. The room ids and the recovery codes are both real random from
+`getRandomValues` over a 32-character alphabet, 2^40 and 2^60, and 256 divides 32 exactly so neither
+has modulo bias.
+
 ## A link was a presence feed
 
 `otherId` is how the room works out who the other one is, and it read `youAreHer ? him : her`. That
