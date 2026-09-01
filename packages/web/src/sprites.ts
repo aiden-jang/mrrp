@@ -468,7 +468,7 @@ export const MRRP = sprite(
 /**
  * The same frame with a photo of her in it, used once he has taken one. A separate sprite rather than
  * an overdraw, so the picture is authored: FRAME's inner area is exactly 7x5, enough for ears, two
- * eyes and a nose and not one pixel more. `c` is her fur, so the photo is of HER cat.
+ * eyes and a nose and not one pixel more. `c` is her fur, so it is a photo of her and not of a cat.
  */
 /**
  * Her head alone, for the tab icon.
