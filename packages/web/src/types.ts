@@ -125,6 +125,7 @@ export interface Bodies {
   wait: { me: string; on: boolean };
   sit: { me: string; on: boolean };
   tell: { me: string; mood: Mood };
+  unsay: { me: string; at: number };
   undelete: { me: string };
   unleave: { me: string };
   "window-light": { me: string };

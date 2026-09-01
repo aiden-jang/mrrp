@@ -163,12 +163,15 @@ export function SaidPanel({
   youAreHer,
   them,
   onClose,
+  onUnsay,
   panelRef,
 }: {
   said: SaidSoFar;
   youAreHer: boolean;
   them: string;
   onClose: () => void;
+  // Hers only. He has no business taking her words out of the room.
+  onUnsay?: (at: number) => void;
   panelRef?: React.Ref<HTMLElement>;
 }) {
   /*
@@ -204,6 +207,11 @@ export function SaidPanel({
                 <span className={s.saidWho}>{back}</span>
                 <span>&ldquo;{answer.text}&rdquo;</span>
                 <small className={s.saidWhen}>{dayOf(answer.at)}</small>
+                {onUnsay && (
+                  <button className={s.takeBack} onClick={() => onUnsay(answer.at)}>
+                    take it back
+                  </button>
+                )}
               </p>
             ))}
           </li>
@@ -242,6 +250,11 @@ export function SaidPanel({
                 <span>&ldquo;{line.text}&rdquo;</span>
                 {dayOf(line.at) !== dayOf(said.lines[i - 1]?.at ?? 0) && (
                   <small className={s.saidWhen}>{dayOf(line.at)}</small>
+                )}
+                {onUnsay && (
+                  <button className={s.takeBack} onClick={() => onUnsay(line.at)}>
+                    take it back
+                  </button>
                 )}
               </li>
             ))}

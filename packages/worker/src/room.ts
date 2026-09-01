@@ -1173,6 +1173,25 @@ export class Room extends DurableObject<Env> {
     return old ? [old] : [];
   }
 
+  // One line, not all of them. Emptying the box wipes the lot, which made the 2am sentence she
+  // regretted cost her every other thing she had ever said.
+  async unsay(me: string, at: number): Promise<RoomView> {
+    await this.guard();
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (!people[me]) return this.build(me, people);
+    if (this.roles(people).her !== me) return this.build(me, people);
+
+    const kept = (await this.lines()).filter((line) => line.at !== at);
+    if (kept.length > 0) await this.ctx.storage.put(HER_LINES, kept);
+    else {
+      await this.ctx.storage.delete(HER_LINES);
+      await this.ctx.storage.delete("herLine");
+    }
+    people[me].lastSeen = Date.now();
+    await this.ctx.storage.put("people", people);
+    return this.build(me, people);
+  }
+
   private async keepLine(line: Told2): Promise<void> {
     await this.ctx.storage.put(HER_LINES, [line, ...(await this.lines())].slice(0, LINES_KEPT));
   }
