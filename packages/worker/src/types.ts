@@ -105,6 +105,59 @@ export const GIFTS: { id: Gift; label: string; name: string }[] = [
    worker cuts anything longer, so a mismatch loses her words without saying so. */
 export const LINE_MAX = 140;
 
+/*
+ * Every POST body, named once.
+ *
+ * `send` builds from these, so a field the browser misspells is a compile error rather than a value
+ * the worker silently ignores. The worker takes the field names from the same place and keeps its
+ * own checks on the values, because these describe what the browser means to send and not what
+ * arrived.
+ */
+export interface Bodies {
+  act: { me: string; action: Action };
+  blanket: { me: string; key: string; stripe: boolean };
+  boxout: { me: string; on: boolean };
+  /* Partial: a field left out means "don't change it", not "clear it". Same for `dress`. */
+  clock: { me: string; tz?: string; homeHour?: number };
+  delete: { me: string; name: string };
+  draw: { me: string; cells: string };
+  dress: {
+    me: string;
+    name?: string;
+    fur?: string;
+    furDk?: string;
+    belly?: string;
+    eyes?: string;
+    tabby?: boolean;
+  };
+  found: { me: string; key: string };
+  gift: { me: string; gift: Gift; text?: string };
+  heract: { me: string; act: CatAct };
+  hold: { me: string; on: boolean };
+  leave: { me: string };
+  leaveout: { me: string; treat: Treat };
+  link: { me: string; on: boolean };
+  notes: { me: string; notes: string[] };
+  ourday: { me: string; month?: number; day?: number; label: string };
+  poke: { me: string; what: string };
+  recover: { me: string; code: string };
+  release: { me: string };
+  say: { me: string; text: string; aboutDay?: number };
+  shelf: { me: string };
+  tell: { me: string; mood: Mood };
+  undelete: { me: string };
+  unleave: { me: string };
+  "window-light": { me: string };
+}
+
+/*
+ * A handler's view of one of those bodies: same field names, all optional, because none of it is
+ * guaranteed to arrive. It is a cast over untrusted JSON and not proof of anything, exactly as the
+ * hand-written shapes it replaced were. What it buys is that the names come from one place, so the
+ * browser cannot send `aboutday` to a worker reading `aboutDay` and have it quietly do nothing.
+ */
+export type Untrusted<K extends keyof Bodies> = Partial<Bodies[K]>;
+
 export interface Told2 {
   text: string;
   at: number;

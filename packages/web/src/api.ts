@@ -1,4 +1,4 @@
-import type { Action, Cat, CatAct, Clock, Gift, Mood, RoomView, SaidSoFar, Treat } from "./types.js";
+import type { Action, Bodies, Cat, CatAct, Clock, Gift, Mood, RoomView, SaidSoFar, Treat } from "./types.js";
 
 const TOKEN_KEY = "mrrp:me";
 
@@ -54,7 +54,11 @@ export function adoptSeat(seat: string | null): void {
 }
 
 /** Room actions post through this, so a tunnel says this instead of "Failed to fetch". */
-async function send(path: string, body: unknown): Promise<Response> {
+/* Typed per endpoint, so a misspelled field stops the build instead of being dropped in flight. */
+async function send<K extends keyof Bodies>(
+  path: `/api/room/${string}/${K}`,
+  body: Bodies[K],
+): Promise<Response> {
   try {
     return await fetch(path, {
       method: "POST",

@@ -11,11 +11,12 @@
  */
 import type {
   Arrival as ArrivalSent,
+  Bodies as BodiesSent,
   RoomView as ViewSent,
   SaidSoFar as SaidSent,
   Told2 as Told2Sent,
 } from "../../worker/src/types.js";
-import type { Arrival, RoomView, SaidSoFar, Told2 } from "./types.js";
+import type { Arrival, Bodies, RoomView, SaidSoFar, Told2 } from "./types.js";
 
 /*
  * Identity, not mutual assignability. `[A] extends [B]` calls two shapes the same when one has an
@@ -29,3 +30,5 @@ export const roomViewAgrees: Same<ViewSent, RoomView> = true;
 export const arrivalAgrees: Same<ArrivalSent, Arrival> = true;
 export const saidSoFarAgrees: Same<SaidSent, SaidSoFar> = true;
 export const told2Agrees: Same<Told2Sent, Told2> = true;
+/* What the browser sends against what the worker reads, field by field. */
+export const bodiesAgree: Same<BodiesSent, Bodies> = true;

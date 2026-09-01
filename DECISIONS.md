@@ -1564,6 +1564,29 @@ reading and this is the bug the app keeps growing back; nothing longer than the 
 `setNotes` silently trims to; nothing said twice across a run this long; and no more than the
 hundred and twenty the room will keep.
 
+## The browser could send a field the worker never reads
+
+`send` took `body: unknown`. Every POST body was written out twice, once as an object literal in
+`api.ts` and once as a cast in the route that receives it, and nothing tied the two together. Send
+`aboutday` to a worker reading `aboutDay` and there is no error anywhere: the field is dropped, the
+request returns 200, and the feature quietly does nothing. That is the same silent shape as the two
+`types.ts` drifting apart, one layer up.
+
+Every body is named once now, in `Bodies`, on both sides. `send` is generic over it and takes the
+endpoint from the path, so the browser cannot send a `tell` body to `/say`. Each handler casts to
+`Untrusted<"x">`, which is that body with every field optional, because none of it is guaranteed to
+arrive.
+
+`Untrusted` deliberately keeps the declared types rather than widening everything to `unknown`. The
+hand-written casts it replaced already declared concrete types, and widening them would have forced
+a rewrite of the narrowing in twenty-three handlers. This change is about where the names come from,
+not about what gets validated, and mixing the two would have put a validation bug in code that was
+correct.
+
+Three things fail to compile now that used to fail silently: the browser misspelling a field it
+sends, a handler reading a field nobody sends, and the two sides describing the same body
+differently. The dev-only `age` route keeps its own shape, having no client to disagree with.
+
 ## What the comments are for
 
 Every explanation of a decision belongs in this file. The comments left in the code are for three
