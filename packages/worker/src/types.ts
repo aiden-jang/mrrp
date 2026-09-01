@@ -138,6 +138,8 @@ export type Gift = "leaf" | "cap" | "moth";
 /** Everything either of them has said, for the screen that looks back at it. */
 export interface SaidSoFar {
   notes: { day: number; text: string; answers: { text: string; at: number }[] }[];
+  /** Everything he has written, not just what she has been handed. */
+  total: number;
   /** `about` is set when she answered a note he has since rewritten, so it no longer has a home. */
   lines: { text: string; at: number; gift?: Gift; about?: string }[];
 }

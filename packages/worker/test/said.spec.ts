@@ -37,6 +37,15 @@ describe("looking back at what has passed between them", () => {
     expect((await said(HER)).body.notes.map((n) => n.day)).toEqual([1, 2]);
   });
 
+  it("counts everything he wrote, not just what she has been handed", async () => {
+    await seat();
+    await post("notes", { me: HIM, notes: ["one", "two", "three", "four"] });
+
+    const { body } = await said(HER);
+    expect(body.notes).toHaveLength(1);
+    expect(body.total).toBe(4);
+  });
+
   it("puts her answer under the note it answers", async () => {
     await seat();
     await post("notes", { me: HIM, notes: ["one", "two"] });

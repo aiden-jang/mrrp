@@ -10,6 +10,7 @@ const text = (said: SaidSoFar, youAreHer: boolean) =>
 const AT = Date.parse("2026-04-02T12:00:00Z");
 
 const room: SaidSoFar = {
+  total: 2,
   notes: [
     { day: 1, text: "you always take the long way home", answers: [] },
     { day: 2, text: "the good mug is yours now", answers: [{ text: "it made me laugh", at: AT }] },
@@ -45,6 +46,7 @@ describe("looking back at what they have said", () => {
   it("says what she was answering when he has rewritten that note since", () => {
     const orphan = text(
       {
+        total: 1,
         notes: [{ day: 1, text: "I am selling the car", answers: [] }],
         lines: [{ text: "it made me laugh", at: AT, about: "the good mug is yours now" }],
       },
@@ -54,6 +56,18 @@ describe("looking back at what they have said", () => {
     expect(orphan.indexOf("good mug")).toBeLessThan(orphan.indexOf("it made me laugh"));
   });
 
+  it("tells her how many he wrote, once there are more than she has had", () => {
+    const early = { total: 100, notes: [room.notes[0]!], lines: [] };
+    expect(text(early, true)).toContain("He wrote 100 of these.");
+    expect(text(early, false)).toContain("100 written. She is on day 1.");
+  });
+
+  it("says nothing about a total once she has had all of them", () => {
+    const done = { total: room.notes.length, notes: room.notes, lines: [] };
+    expect(text(done, true)).not.toContain("He wrote");
+    expect(text(done, false)).not.toContain("written.");
+  });
+
   it("remembers the thing her words came with", () => {
     expect(text(room, false)).toContain("with a moth");
   });
@@ -61,6 +75,7 @@ describe("looking back at what they have said", () => {
   it("writes the date once for a run of things said the same day", () => {
     const sameDay = text(
       {
+        total: 0,
         notes: [],
         lines: [
           { text: "one", at: AT },
@@ -73,7 +88,7 @@ describe("looking back at what they have said", () => {
   });
 
   it("leaves out the other-lines heading when every line was an answer", () => {
-    const only = text({ notes: room.notes, lines: [] }, true);
+    const only = text({ total: 2, notes: room.notes, lines: [] }, true);
     expect(only).not.toContain("the rest of what");
     expect(only).toContain("it made me laugh");
   });

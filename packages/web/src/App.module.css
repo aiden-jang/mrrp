@@ -1141,3 +1141,9 @@ details[open] > .recoverySummary::before {
   color: var(--soft);
   font-size: 12px;
 }
+
+.saidMore {
+  margin: 12px 0 0;
+  color: var(--soft);
+  font-size: 13px;
+}
