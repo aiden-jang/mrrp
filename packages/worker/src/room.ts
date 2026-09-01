@@ -1104,8 +1104,8 @@ export class Room extends DurableObject<Env> {
       cat,
       clock,
       blanket: (await this.ctx.storage.get<Blanket>("blanket")) ?? null,
-      ourDay: (await this.ctx.storage.get<OurDay>("ourDay")) ?? null,
-      herDay: (await this.ctx.storage.get<OurDay>(HER_DAY)) ?? null,
+      // The day you named, never theirs. A copy of the room must not be a way round the surprise.
+      ourDay: (await this.ctx.storage.get<OurDay>(youAreHer ? HER_DAY : "ourDay")) ?? null,
       drawing: ((c) => (c ? widenDoodle(c) : null))((await this.ctx.storage.get<Doodle>("doodle"))?.cells),
       notes: youAreHer ? notes.slice(0, readSoFar + 1) : notes,
       notesInAll: notes.length,
