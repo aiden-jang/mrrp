@@ -2,7 +2,18 @@ import type { Mood } from "./types.js";
 import type { Pose } from "./sprites.js";
 
 export interface Response {
+  /*
+   * What she is doing, as he reads it. Several of these address him: "sitting on you", "loafing
+   * right next to you". They are written from the seat that is watching.
+   */
   doing: string;
+  /*
+   * The same, as she reads it, for the ones that cannot simply swap subject.
+   *
+   * Her caption is "You are ___", so anything naming the reader turns into "you are sitting on you".
+   * These describe her rather than her effect on him, because he is not necessarily even here.
+   */
+  doingHers?: string;
   snug: number;
   play: number;
   catX?: number;
@@ -22,7 +33,7 @@ export const RESPONSES: Record<Mood, Response> = {
     visual: "paper",
     pose: "play",
     eyes: 1,
-    doing: "up on her back legs, absolutely unhinged, and everything on that shelf is in danger",
+    doing: "up on two legs, absolutely unhinged, and everything on that shelf is in danger",
     snug: 0.2,
     play: 1,
     sleepy: 0,
@@ -32,7 +43,7 @@ export const RESPONSES: Record<Mood, Response> = {
     visual: "blanket",
     pose: "loaf",
     eyes: 0.1,
-    doing: "lying flat out on the boards like she has been switched off at the wall",
+    doing: "lying flat out on the boards like somebody switched the wall off",
     snug: 0.9,
     play: 0,
     sleepy: 0.7,
@@ -65,6 +76,7 @@ export const RESPONSES: Record<Mood, Response> = {
     pose: "loaf",
     eyes: 0.2,
     doing: "loafing right next to you, doing exactly as little as you are",
+    doingHers: "loafing, doing exactly as little as you feel like",
     snug: 0.7,
     play: 0,
     sleepy: 0.55,
@@ -75,6 +87,7 @@ export const RESPONSES: Record<Mood, Response> = {
     pose: "loaf",
     eyes: 0.55,
     doing: "sitting on you, with no plans to move and no worries about any of it",
+    doingHers: "settled in, with no plans to move and no worries about any of it",
     snug: 1,
     play: 0,
     catX: 0.5,
@@ -86,6 +99,7 @@ export const RESPONSES: Record<Mood, Response> = {
     pose: "sit",
     eyes: 1,
     doing: "sitting with you, and she isn't going anywhere",
+    doingHers: "curled up, and not going anywhere",
     snug: 1,
     play: 0,
     catX: 0.5,
@@ -97,6 +111,7 @@ export const RESPONSES: Record<Mood, Response> = {
     pose: "stand",
     eyes: 0.9,
     doing: "already at the door, and she was there before you said anything",
+    doingHers: "already at the door, waiting",
     snug: 0.85,
     play: 0.15,
     catX: 0.19,
@@ -108,6 +123,7 @@ export const RESPONSES: Record<Mood, Response> = {
     pose: "play",
     eyes: 0.95,
     doing: "sitting next to the one thing she knocked off the shelf, waiting to see what you do",
+    doingHers: "next to the thing you knocked off the shelf, waiting to see what happens",
     snug: 0.2,
     play: 0.8,
     catX: 0.84,
