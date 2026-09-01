@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FOUND_ANNOUNCEMENTS } from "./App.js";
+import { FOUND_ANNOUNCEMENTS, FOUND_AS_HER } from "./App.js";
 import type { DiscoveryKey } from "./discoveries.js";
 
 const DISCOVERY_KEYS: DiscoveryKey[] = [
@@ -37,6 +37,20 @@ describe("spoken discoveries", () => {
     expect(new Set(lines).size, "two secrets share a description").toBe(lines.length);
     for (const [key, line] of Object.entries(FOUND_ANNOUNCEMENTS)) {
       expect(line, `${key} is too vague to be worth speaking`).not.toMatch(/\bsomething\b/i);
+    }
+  });
+
+  /*
+   * Both seats find these, and one of them is the cat. A line about her, read by her, was the room
+   * telling her what she had just done as though it were somebody else.
+   */
+  it("never says 'she' to the one who is the cat", () => {
+    for (const [key, line] of Object.entries(FOUND_ANNOUNCEMENTS)) {
+      if (!/\b(she|her|hers)\b/i.test(line)) continue;
+      expect(FOUND_AS_HER[key], `"${line}" needs a version she can read about herself`).toBeTruthy();
+    }
+    for (const [key, line] of Object.entries(FOUND_AS_HER)) {
+      expect(line, key).not.toMatch(/\b(she|her|hers)\b/i);
     }
   });
 
