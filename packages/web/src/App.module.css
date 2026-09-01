@@ -1087,3 +1087,60 @@ details[open] > .recoverySummary::before {
 .giftWords::placeholder {
   color: var(--soft);
 }
+
+.saidTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.saidList {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.saidNote {
+  border-left: 2px solid var(--line);
+  padding-left: 11px;
+}
+
+.saidDay {
+  margin: 0;
+  color: var(--soft);
+  font-size: 12px;
+}
+
+.saidText {
+  margin: 2px 0 0;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+/* Her answer is indented under his note so the pair reads as one exchange, not two entries. */
+.saidBack {
+  margin: 7px 0 0 12px;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.saidWho {
+  display: block;
+  color: var(--soft);
+  font-size: 12px;
+}
+
+.saidLine {
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.saidWhen {
+  display: block;
+  margin-top: 1px;
+  color: var(--soft);
+  font-size: 12px;
+}

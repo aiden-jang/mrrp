@@ -8,6 +8,7 @@ import type {
   LogAction,
   Mood,
   RoomView,
+  SaidSoFar,
   Treat,
   Visit,
 } from "./types.js";
@@ -28,6 +29,7 @@ import {
   doRelease,
   roomIsGone,
   fetchNotes,
+  fetchSaid,
   doPoke,
   doHold,
   doBoxOut,
@@ -86,7 +88,7 @@ import { AUTH_URL } from "./config.js";
 import { foundKeys, noticed } from "./discoveries.js";
 import { awayLine, homingLine, milestoneLine, personalityLine } from "./remembers.js";
 import { myToken } from "./api.js";
-import { GoneCard, LeftCard, TheyLeftNotice } from "./screens.js";
+import { GoneCard, LeftCard, SaidPanel, TheyLeftNotice } from "./screens.js";
 import { BLANKETS, BLANKET_KEYS, type BlanketKey } from "./blanket.js";
 
 const ACTION_SOUND: Record<Action, Cue> = {
@@ -900,6 +902,10 @@ function RoomPage({ id }: { id: string }) {
   /** The note this line answers, or null when she is just saying something. */
   const [replyTo, setReplyTo] = useState<number | null>(null);
   const [giftWords, setGiftWords] = useState("");
+  const [said, setSaid] = useState<SaidSoFar | null>(null);
+  const saidTrigger = useRef<HTMLButtonElement>(null);
+  const saidPanel = useRef<HTMLElement>(null);
+  const wasSaid = useRef(false);
 
   const lineBox = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
@@ -1130,6 +1136,14 @@ function RoomPage({ id }: { id: string }) {
     }
   };
 
+  const openSaid = async () => {
+    try {
+      setSaid(await fetchSaid(id));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't get that.");
+    }
+  };
+
   const openSetup = async () => {
     if (!view) return;
     // Fetched rather than carried in the view. If it fails the panel still opens, with the notes box
@@ -1154,6 +1168,13 @@ function RoomPage({ id }: { id: string }) {
   const setupTrigger = useRef<HTMLButtonElement>(null);
   const setupPanel = useRef<HTMLDivElement>(null);
   const wasSetup = useRef(false);
+  useEffect(() => {
+    const open = said !== null;
+    if (open && !wasSaid.current) saidPanel.current?.focus();
+    if (!open && wasSaid.current) saidTrigger.current?.focus();
+    wasSaid.current = open;
+  }, [said]);
+
   useEffect(() => {
     if (setup && !wasSetup.current) setupPanel.current?.focus();
     if (!setup && wasSetup.current) setupTrigger.current?.focus();
@@ -1855,6 +1876,14 @@ function RoomPage({ id }: { id: string }) {
                     Say something back
                   </button>
                 )}
+                <button
+                  ref={saidTrigger}
+                  className={s.quiet}
+                  style={{ marginTop: 6 }}
+                  onClick={() => void openSaid()}
+                >
+                  Everything he's written you
+                </button>
               </div>
             )}
 
@@ -2098,6 +2127,12 @@ function RoomPage({ id }: { id: string }) {
             )}
 
             {iAmHim && (
+              <button ref={saidTrigger} className={s.quiet} onClick={() => void openSaid()}>
+                Everything the two of you have said
+              </button>
+            )}
+
+            {iAmHim && (
               <>
                 <div className={s.row} style={{ marginTop: 14 }}>
                   {ACTIONS.map((a) => (
@@ -2196,6 +2231,15 @@ function RoomPage({ id }: { id: string }) {
           <p className={s.errorBar} role="status">
             {err}
           </p>
+        )}
+        {said && view.them && (
+          <SaidPanel
+            said={said}
+            youAreHer={view.youAreHer}
+            them={view.them}
+            onClose={() => setSaid(null)}
+            panelRef={saidPanel}
+          />
         )}
         {!setup && (iAmHim || view.youAreHer) && (
           // Everything about the room rather than about her, under one heading. Loose, these run

@@ -106,6 +106,16 @@ app.get("/api/room/:id/notes", async (c) => {
   return c.json({ notes });
 });
 
+// What has passed between them. Both seats, off RoomView because it grows with the room.
+app.get("/api/room/:id/said", async (c) => {
+  const id = c.req.param("id");
+  const me = c.req.query("me") ?? "";
+  if (!ROOM_RE.test(id) || me.length < 8) return c.json({ error: "bad request" }, 400);
+  const said = await room(c.env, id).saidSoFar(me);
+  if (!said) return c.json({ error: "not yours" }, 403);
+  return c.json(said);
+});
+
 app.get("/api/room/:id", async (c) => {
   const id = c.req.param("id");
   const me = c.req.query("me") ?? "";

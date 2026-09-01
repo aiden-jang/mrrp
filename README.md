@@ -289,6 +289,7 @@ than the UI, because a rule enforced in the browser is a rule anyone can turn of
 | `POST .../hold`               | him only    | took hold of her, or let go. The one thing that is a duration                 |
 | `POST .../poke`               | either seat | touched something in the room. Ephemeral, unlogged, 400 on unknown furniture  |
 | `GET .../notes`               | him only    | his notes, for the panel that edits them. Too big to ride in every view       |
+| `GET .../said`                | either seat | what has passed between them. Stops at the note the room has handed her       |
 | `GET .../alive`               | anyone      | is the room still there. Guards, never seats: the door asks before inviting   |
 | `POST .../leaveout`           | him only    | leaves the yarn, a treat or the catnip for her to find                        |
 | `POST .../gift`               | her only    | picks which of the three he finds. Optional `text` rides along as a line      |

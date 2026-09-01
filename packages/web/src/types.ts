@@ -128,6 +128,12 @@ export interface Personality {
   count: number;
 }
 
+/** Everything either of them has said, for the screen that looks back at it. */
+export interface SaidSoFar {
+  notes: { day: number; text: string; answers: { text: string; at: number }[] }[];
+  lines: { text: string; at: number; gift?: Gift }[];
+}
+
 export interface RoomView {
   cat: Cat;
   clock: Clock;

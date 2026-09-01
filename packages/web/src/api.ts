@@ -1,4 +1,4 @@
-import type { Action, Cat, CatAct, Clock, Gift, Mood, RoomView, Treat } from "./types.js";
+import type { Action, Cat, CatAct, Clock, Gift, Mood, RoomView, SaidSoFar, Treat } from "./types.js";
 
 const TOKEN_KEY = "mrrp:me";
 
@@ -291,6 +291,12 @@ export async function fetchNotes(id: string): Promise<string[]> {
   const r = await fetch(`/api/room/${id}/notes?me=${encodeURIComponent(myToken())}`);
   if (!r.ok) throw new Error("Couldn't get your notes.");
   return (await r.json()).notes as string[];
+}
+
+export async function fetchSaid(id: string): Promise<SaidSoFar> {
+  const r = await fetch(`/api/room/${id}/said?me=${encodeURIComponent(myToken())}`);
+  if (!r.ok) throw new Error("Couldn't get that.");
+  return (await r.json()) as SaidSoFar;
 }
 
 export async function doBoxOut(id: string, on = true): Promise<RoomView> {

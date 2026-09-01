@@ -1,3 +1,4 @@
+import type { SaidSoFar } from "./types.js";
 import s from "./App.module.css";
 
 const dayOf = (at: number) => new Date(at).toLocaleDateString(undefined, { month: "long", day: "numeric" });
@@ -137,5 +138,79 @@ export function TheyLeftNotice({ name, until }: { name: string; until: number })
         this link to somebody else gives the seat away, and that ends it.
       </p>
     </>
+  );
+}
+
+/*
+ * Everything that has passed between them.
+ *
+ * The notes stop where the room has got to, for him as well as her, so this can never show her one
+ * she has not been given. His answer sits under the note it answers because notes carry no
+ * timestamp and her lines do, which makes an interleaved single list impossible to order honestly.
+ */
+export function SaidPanel({
+  said,
+  youAreHer,
+  them,
+  onClose,
+  panelRef,
+}: {
+  said: SaidSoFar;
+  youAreHer: boolean;
+  them: string;
+  onClose: () => void;
+  panelRef?: React.Ref<HTMLElement>;
+}) {
+  // No name on her side. His is a placeholder until he sets one, and "what Someone has written you"
+  // is a worse sentence than the one the button that opened this already used.
+  const wrote = youAreHer ? "what he's written you" : "what you wrote her";
+  const back = youAreHer ? "you said back" : `${them} said back`;
+
+  return (
+    <section
+      ref={panelRef}
+      className={s.panel}
+      aria-label="Everything the two of you have said"
+      tabIndex={-1}
+    >
+      <div className={s.saidTop}>
+        <p className={s.panelTitle}>{wrote}</p>
+        <button type="button" onClick={onClose} className={s.arrivalClose} aria-label="Close">
+          ×
+        </button>
+      </div>
+
+      <ol className={s.saidList}>
+        {said.notes.map((note) => (
+          <li key={note.day} className={s.saidNote}>
+            <p className={s.saidDay}>day {note.day}</p>
+            <p className={s.saidText}>{note.text}</p>
+            {note.answers.map((answer) => (
+              <p key={answer.at} className={s.saidBack}>
+                <span className={s.saidWho}>{back}</span>
+                <span>&ldquo;{answer.text}&rdquo;</span>
+                <small className={s.saidWhen}>{dayOf(answer.at)}</small>
+              </p>
+            ))}
+          </li>
+        ))}
+      </ol>
+
+      {said.lines.length > 0 && (
+        <>
+          <p className={s.fieldLabel}>
+            {youAreHer ? "and the rest of what you said" : `and the rest of what ${them} said`}
+          </p>
+          <ul className={s.saidList}>
+            {said.lines.map((line) => (
+              <li key={line.at} className={s.saidLine}>
+                <span>&ldquo;{line.text}&rdquo;</span>
+                <small className={s.saidWhen}>{dayOf(line.at)}</small>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
   );
 }
