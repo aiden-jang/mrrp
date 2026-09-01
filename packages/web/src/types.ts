@@ -152,6 +152,7 @@ export type Arrival =
   | { kind: "mood"; at: number; mood: Mood }
   | { kind: "line"; at: number; text: string; gift?: Gift; note?: string }
   | { kind: "drawn"; at: number; cells: string }
+  | { kind: "undrawn"; at: number }
   | { kind: "found"; at: number; what: DiscoveryKey | null }
   | { kind: "kept"; at: number; gift: Gift }
   | { kind: "took"; at: number; treat: Treat }
