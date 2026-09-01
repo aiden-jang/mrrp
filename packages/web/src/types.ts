@@ -88,6 +88,11 @@ export const GIFTS: { id: Gift; label: string; name: string }[] = [
 // longer, so if they ever disagree her words are lost and nobody is told.
 export const LINE_MAX = 140;
 
+// His notes. Both sides hold these too: the worker cuts a long one and drops everything past the
+// hundred and twentieth, and the panel counted them for him without saying either.
+export const NOTE_MAX = 280;
+export const NOTES_KEPT = 120;
+
 // Every POST body, named once. The browser builds from these, so a misspelled field stops the build
 // instead of being quietly dropped in the post.
 export interface Bodies {

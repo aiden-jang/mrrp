@@ -19,6 +19,13 @@ describe("the lists both sides keep their own copy of", () => {
     expect(read.GIFTS.map((g) => g.id)).toEqual(served.GIFTS.map((g) => g.id));
   });
 
+  it("agrees how much of his notes the room keeps", () => {
+    // The panel counts what will survive, so if these ever disagree it counts wrong and he is told
+    // a number of notes that is not the number he gets.
+    expect(read.NOTE_MAX).toBe(served.NOTE_MAX);
+    expect(read.NOTES_KEPT).toBe(served.NOTES_KEPT);
+  });
+
   it("agrees how much she can say in one go", () => {
     // The browser stops her typing past it; the worker cuts anything longer. If the browser's grew,
     // she would type a hundred and sixty characters and lose twenty without being told.

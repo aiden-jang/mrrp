@@ -22,7 +22,7 @@ import { NOTES } from "./notes.js";
 import { isBlanketKey, type BlanketKey } from "./blanket.js";
 import { lookOutside, WEATHER_STALE_MS, type Sky, type Weather } from "./weather.js";
 import type { FirstKey } from "./types.js";
-import { GIFTS, LINE_MAX } from "./types.js";
+import { GIFTS, LINE_MAX, NOTE_MAX, NOTES_KEPT } from "./types.js";
 import {
   arrivalsFor,
   bothFound,
@@ -699,9 +699,9 @@ export class Room extends DurableObject<Env> {
     if (this.roles(people).him !== me) return false;
 
     const clean = notes
-      .map((n) => n.trim().slice(0, 280))
+      .map((n) => n.trim().slice(0, NOTE_MAX))
       .filter(Boolean)
-      .slice(0, 120);
+      .slice(0, NOTES_KEPT);
     if (clean.length === 0) {
       await this.ctx.storage.delete("notes");
     } else {
