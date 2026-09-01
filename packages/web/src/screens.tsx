@@ -181,7 +181,7 @@ export function SaidPanel({
   return (
     <section
       ref={panelRef}
-      className={s.panel}
+      className={`${s.panel} ${s.saidPanel}`}
       aria-label="Everything the two of you have said"
       tabIndex={-1}
     >
