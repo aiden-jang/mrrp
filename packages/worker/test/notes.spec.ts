@@ -205,11 +205,41 @@ describe("a day the two of them chose", () => {
     expect((await view(HIM)).milestone?.kind).toBe("ours");
   });
 
-  it("is his to set, and refuses a date that does not exist", async () => {
+  it("refuses a date that does not exist, and anybody who only has the link", async () => {
     await seat();
-    expect((await post("ourday", { me: HER, month: 1, day: 1, label: "nope" })).status).toBe(403);
     expect((await post("ourday", { me: HIM, month: 2, day: 31, label: "nope" })).status).toBe(400);
     expect((await post("ourday", { me: HIM, month: 13, day: 1, label: "nope" })).status).toBe(400);
+    expect((await post("ourday", { me: STRANGER, month: 1, day: 1, label: "nope" })).status).toBe(403);
+  });
+
+  it("gives them one slot each, and never shows either of them the other's", async () => {
+    await seat();
+    await post("ourday", { me: HIM, month: 4, day: 2, label: "his" });
+    await post("ourday", { me: HER, month: 9, day: 9, label: "hers" });
+
+    // Each is shown the day they named. The other one is the surprise.
+    expect((await view(HIM)).ourDay).toEqual({ month: 4, day: 2, label: "his" });
+    expect((await view(HER)).ourDay).toEqual({ month: 9, day: 9, label: "hers" });
+  });
+
+  it("does not let hers overwrite his", async () => {
+    await seat();
+    await post("ourday", { me: HIM, month: 4, day: 2, label: "his" });
+    await post("ourday", { me: HER, month: 9, day: 9, label: "hers" });
+    expect((await view(HIM)).ourDay?.label).toBe("his");
+
+    await post("ourday", { me: HER, label: "" });
+    expect((await view(HIM)).ourDay?.label, "clearing hers leaves his alone").toBe("his");
+  });
+
+  it("says the day out loud to both of them, whichever of them named it", async () => {
+    await seat();
+    const { month, day } = todayThere("America/New_York");
+    await post("ourday", { me: HER, month, day, label: "the day she picked" });
+
+    // He never saw her set it, and this is how he finds out.
+    expect((await view(HIM)).milestone).toEqual({ kind: "ours", years: 0, label: "the day she picked" });
+    expect((await view(HER)).milestone?.label).toBe("the day she picked");
   });
 
   it("is only ever echoed back to him, and clears on an empty label", async () => {

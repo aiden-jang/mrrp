@@ -36,15 +36,15 @@ export function milestoneFor(
   startedAt: number,
   now: number,
   tz: string,
-  ours?: OurDay | null,
+  // One each. Neither of them is shown the other's, so the day itself is how you find out.
+  named: (OurDay | null | undefined)[] = [],
 ): Milestone | null {
   const start = localParts(startedAt, tz);
   const today = localParts(now, tz);
   const days = Math.floor((now - startedAt) / DAY_MS);
 
-  if (ours && today.m === ours.month && today.d === ours.day) {
-    return { kind: "ours", years: 0, label: ours.label };
-  }
+  const today_ = named.find((d) => d && today.m === d.month && today.d === d.day);
+  if (today_) return { kind: "ours", years: 0, label: today_.label };
 
   const sameDate = today.m === start.m && today.d === start.d;
   const leapShifted =
