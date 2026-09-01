@@ -268,6 +268,13 @@ export function doHold(id: string, on: boolean): void {
   void send(`/api/room/${id}/hold`, { me: myToken(), on }).catch(() => {});
 }
 
+/* Sat down with her, or got up. Unlike a hold this wants its view back: the button is a toggle. */
+export async function doSit(id: string, on: boolean): Promise<RoomView> {
+  const r = await send(`/api/room/${id}/sit`, { me: myToken(), on });
+  if (!r.ok) throw new Error("Couldn't do that.");
+  return r.json() as Promise<RoomView>;
+}
+
 /* Touched something. Fire and forget like `doHold`, and throttled by the caller. */
 export function doPoke(id: string, what: string): void {
   void send(`/api/room/${id}/poke`, { me: myToken(), what }).catch(() => {});

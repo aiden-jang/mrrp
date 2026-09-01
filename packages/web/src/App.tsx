@@ -37,6 +37,7 @@ import {
   doLeaveGift,
   doLeaveOut,
   doSay,
+  doSit,
   doTell,
   doTidy,
   doWindowLight,
@@ -1079,6 +1080,16 @@ function RoomPage({ id }: { id: string }) {
     };
   }, [asking, gone, load, live]);
 
+  const sitWith = async (on: boolean) => {
+    setNudge((v) => v + 1);
+    play(on ? "settle" : "thump");
+    try {
+      setView(await doSit(id, on));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't do that.");
+    }
+  };
+
   const act = async (a: Action) => {
     setNudge((v) => v + 1);
     play(ACTION_SOUND[a]);
@@ -1499,6 +1510,7 @@ function RoomPage({ id }: { id: string }) {
             onHold={(on) => doHold(id, on)}
             onTouch={sharePoke}
             heldByThem={view.heldByThem}
+            sitting={view.sittingWith || view.sittingWithYou}
             pokedByThem={view.pokedByThem}
             reachedTogether={view.reachedTogether}
             onPoke={() => {
@@ -1802,9 +1814,14 @@ function RoomPage({ id }: { id: string }) {
         {view.bothHereNow && (
           <div className={s.together}>
             <p className={s.togetherMain}>
-              {view.youAreHer
-                ? `${view.them ?? "He"} is right there. He can reach you.`
-                : `Hold on ${view.cat.name}. She's right there.`}
+              {/* While he is sat there it is the only thing worth saying, on either side. */}
+              {view.sittingWithYou
+                ? `${view.them ?? "He"} is sitting with you.`
+                : view.sittingWith
+                  ? `You are sitting with ${view.cat.name}.`
+                  : view.youAreHer
+                    ? `${view.them ?? "He"} is right there. He can reach you.`
+                    : `Hold on ${view.cat.name}. She's right there.`}
             </p>
           </div>
         )}
@@ -2133,16 +2150,25 @@ function RoomPage({ id }: { id: string }) {
             {iAmHim && (
               <>
                 <div className={s.row} style={{ marginTop: 14 }}>
-                  {ACTIONS.map((a) => (
-                    <button
-                      key={a.id}
-                      aria-pressed={HIS_MARKS[a.id]?.(view) ?? false}
-                      className={`${s.btn} ${HIS_MARKS[a.id]?.(view) ? s.btnOn : ""}`}
-                      onClick={() => void act(a.id)}
-                    >
-                      {a.label}
-                    </button>
-                  ))}
+                  {ACTIONS.map((a) => {
+                    // Sitting is somewhere he is, so its button says whether he is there and takes
+                    // him back out again. The others are things he does, and stay as they were.
+                    const sitting = a.id === "sit" && view.sittingWith;
+                    // Sitting shows where he is, never where he has been. The day's mark still
+                    // exists and she still sees it; dimming the button once he stands up would say
+                    // he had used it up.
+                    const on = a.id === "sit" ? sitting : (HIS_MARKS[a.id]?.(view) ?? false);
+                    return (
+                      <button
+                        key={a.id}
+                        aria-pressed={on}
+                        className={`${s.btn} ${on ? s.btnOn : ""} ${sitting ? s.btnStaying : ""}`}
+                        onClick={() => (a.id === "sit" ? void sitWith(!view.sittingWith) : void act(a.id))}
+                      >
+                        {sitting ? "Get up" : a.label}
+                      </button>
+                    );
+                  })}
                 </div>
                 {hisMarks && (
                   <p className={s.small} style={{ marginTop: 6 }}>

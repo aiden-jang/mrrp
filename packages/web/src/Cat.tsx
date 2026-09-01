@@ -269,6 +269,7 @@ export function Cat({
   onHold,
   onTouch,
   heldByThem = false,
+  sitting = false,
   pokedByThem = null,
   reachedTogether = null,
   onPoke,
@@ -320,6 +321,8 @@ export function Cat({
   onPet?: () => void;
   onHold?: (on: boolean) => void;
   heldByThem?: boolean;
+  /* Somebody is sat with her right now, on either side of the room. */
+  sitting?: boolean;
   /** Every press and release of the cat, and every prop this seat touches, for the other screen. */
   onTouch?: (what: string) => void;
   /** Something they just touched. Replays the wobble and turns her head, nothing else. */
@@ -513,6 +516,8 @@ export function Cat({
   onHoldRef.current = onHold;
   const heldRef = useRef(heldByThem);
   heldRef.current = heldByThem;
+  const sittingRef = useRef(sitting);
+  sittingRef.current = sitting;
   const onTouchRef = useRef(onTouch);
   onTouchRef.current = onTouch;
   const onPokeRef = useRef(onPoke);
@@ -2339,7 +2344,11 @@ export function Cat({
                         ? "flop"
                         : admiring && !walking
                           ? "sit"
-                          : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
+                          : // Somebody sat down with her. She settles, and loafing is the pose that
+                            // breathes, so the room keeps moving very slightly while nothing happens.
+                            sittingRef.current && !walking
+                            ? "loaf"
+                            : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
 
       const breathe = reduce || pose !== "loaf" ? 0 : Math.round(Math.sin(t / 1100));

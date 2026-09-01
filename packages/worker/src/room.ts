@@ -79,6 +79,9 @@ const LEFT_KEEP = 20;
 const HERE_NOW_MS = 3 * 60_000;
 /* A hold is seconds. Anything older is a tab that died without its socket saying so. */
 const HELD_LAPSE_MS = 30_000;
+const SITTING = "sitting";
+/* Longer than a hold: sitting with somebody is meant to outlast a moment of not touching a key. */
+const SITTING_LAPSE_MS = 10 * 60_000;
 /* Long enough for the wobble to play on a slow connection, short enough not to replay on a reload. */
 const POKE_LIVE_MS = 4_000;
 /* Both reaching for the same thing. Long enough to be the same thought, short enough to be a moment. */
@@ -168,6 +171,7 @@ interface Blanket {
 }
 
 /** A hold, not a doing, which is why it is not in the log. `at` catches a tab that died holding. */
+/* Sitting works the same way, and shares the lapse: both are somebody being here right now. */
 interface Held {
   who: string;
   at: number;
@@ -328,6 +332,30 @@ export class Room extends DurableObject<Env> {
       await this.ctx.storage.put("reach", { what, at: Date.now() });
     }
     await this.ctx.storage.put<Poke>("poke", { who: me, what, at: Date.now() });
+    people[me].lastSeen = Date.now();
+    await this.ctx.storage.put("people", people);
+    return this.build(me, people);
+  }
+
+  /*
+   * Sitting with her, for as long as he stays.
+   *
+   * A state and not an event, unlike the day's `satWith` mark, which it still sets the first time.
+   * Sitting is the one thing on his list that is entirely about duration and it was a boolean.
+   */
+  async sitWith(me: string, on: boolean): Promise<RoomView> {
+    await this.guard();
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (!people[me]) return this.build(me, people);
+    if (this.roles(people).him !== me) return this.build(me, people);
+
+    if (on) {
+      await this.ctx.storage.put<Held>(SITTING, { who: me, at: Date.now() });
+      // Sitting down is still the day's `sit`, so the mark and the log come from the one place
+      // that knows how to write them.
+      return this.act(me, "sit");
+    }
+    await this.ctx.storage.delete(SITTING);
     people[me].lastSeen = Date.now();
     await this.ctx.storage.put("people", people);
     return this.build(me, people);
@@ -819,6 +847,10 @@ export class Room extends DurableObject<Env> {
     // He closed the tab mid-hold. Without this she watches a hand that is not there until it lapses.
     const held = await this.ctx.storage.get<Held>("held");
     if (me && held?.who === me) await this.ctx.storage.delete("held");
+    // And the same for sitting, which lasts longer and so is likelier to end this way than any
+    // other way.
+    const sitting = await this.ctx.storage.get<Held>(SITTING);
+    if (me && sitting?.who === me) await this.ctx.storage.delete(SITTING);
     // The other seat is watching a cat that thinks it has company.
     await this.broadcast();
   }
@@ -1276,6 +1308,8 @@ export class Room extends DurableObject<Env> {
     const theyWereTold = undoLeaveUntil && him ? (people[him]?.name ?? null) : null;
     const leftOut = await this.ctx.storage.get<LeftOut>("forHer");
     const held = seated ? await this.ctx.storage.get<Held>("held") : null;
+    const sitting = seated ? ((await this.ctx.storage.get<Held>(SITTING)) ?? null) : null;
+    const sittingNow = !!sitting && Date.now() - sitting.at < SITTING_LAPSE_MS;
     const today = localDayNumber(Date.now(), clock.tz);
     /*
      * When she last opened the room, from before this request touched it.
@@ -1401,6 +1435,8 @@ export class Room extends DurableObject<Env> {
       linked: seated ? (people[me]?.account ?? null) !== null : false,
       // Hers alone. Nobody watches a third person being petted.
       heldByThem: !!held && held.who === otherId && Date.now() - held.at < HELD_LAPSE_MS,
+      sittingWith: sittingNow && sitting.who === me,
+      sittingWithYou: sittingNow && sitting.who === otherId,
       // Theirs only. Your own tap already moved your room; sent back it plays the wobble twice.
       pokedByThem:
         poke && poke.who === otherId && Date.now() - poke.at < POKE_LIVE_MS
