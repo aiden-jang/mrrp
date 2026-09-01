@@ -25,7 +25,8 @@ async function connect(id: string, me: string): Promise<{ ws: WebSocket; got: Pu
   return { ws, got };
 }
 
-const settle = () => new Promise((r) => setTimeout(r, 60));
+/* Sixty was enough alone and flaked under a full-suite run. */
+const settle = () => new Promise((r) => setTimeout(r, 140));
 
 describe("the live channel", () => {
   it("sends the room on connect and again on every write", async () => {

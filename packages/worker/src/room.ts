@@ -16,6 +16,7 @@ import type {
   Told2,
   Visit,
 } from "./types.js";
+import { markLives, type Mark } from "./marks.js";
 import { NOTES } from "./notes.js";
 import { isBlanketKey, type BlanketKey } from "./blanket.js";
 import { lookOutside, WEATHER_STALE_MS, type Sky, type Weather } from "./weather.js";
@@ -244,7 +245,9 @@ export class Room extends DurableObject<Env> {
     if (action === "brush" || action === "sit") {
       const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
       const key = action === "brush" ? "brushedDay" : "satWithDay";
-      await this.ctx.storage.put(key, localDayNumber(Date.now(), clock.tz));
+      // The moment as well as the day. See marks.ts: the day alone loses a late-night one by
+      // midnight, which is the one she is most likely to have missed.
+      await this.ctx.storage.put<Mark>(key, { day: localDayNumber(Date.now(), clock.tz), at: Date.now() });
     }
 
     const onFloor = await this.ctx.storage.get<Gift>("gift");
@@ -1148,6 +1151,14 @@ export class Room extends DurableObject<Env> {
     const theyWereTold = undoLeaveUntil && him ? (people[him]?.name ?? null) : null;
     const leftOut = await this.ctx.storage.get<LeftOut>("forHer");
     const held = seated ? await this.ctx.storage.get<Held>("held") : null;
+    const today = localDayNumber(Date.now(), clock.tz);
+    /*
+     * When she last opened the room, from before this request touched it.
+     *
+     * On her own read her `lastSeen` is already now, so it has to come from `since`, which `view`
+     * captured beforehand. Anywhere else, including a push, her stored one is the honest answer.
+     */
+    const herLastLook = youAreHer ? (since ?? 0) : her ? (people[her]?.lastSeen ?? 0) : 0;
     const poke = seated ? await this.ctx.storage.get<Poke>("poke") : null;
     const reach = seated ? await this.ctx.storage.get<{ what: string; at: number }>("reach") : null;
     const windowLight = await this.ctx.storage.get<WindowLight>("windowLight");
@@ -1248,10 +1259,8 @@ export class Room extends DurableObject<Env> {
         ((await this.ctx.storage.get<number>("boxOutDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
       // Draw it on the floor so it waits there instead of only flashing past in the animation.
       brought: seated && !!leftOut,
-      brushed:
-        ((await this.ctx.storage.get<number>("brushedDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
-      satWith:
-        ((await this.ctx.storage.get<number>("satWithDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
+      brushed: markLives(await this.ctx.storage.get<Mark>("brushedDay"), today, herLastLook),
+      satWith: markLives(await this.ctx.storage.get<Mark>("satWithDay"), today, herLastLook),
       firstEver: seated && (people[me]?.visits ?? 0) <= 1,
       monthsOld: Math.max(0, Math.floor((Date.now() - startedAt) / (DAY_MS * 30))),
       recoveryCode: seated ? await this.recoveryCode(youAreHer ? "her" : "him") : null,

@@ -301,8 +301,9 @@ than the UI, because a rule enforced in the browser is a rule anyone can turn of
 
 ### What his actions leave behind
 
-Everything he does puts something in the room, and all of it lasts **her** local day and no longer,
-like the notes. Nothing in here may pile up on her.
+Everything he does puts something in the room, and all of it lasts **her** local day, like the notes.
+The tuft and the dent also wait until she has been in and seen them, so a brush at eleven at night is
+still there when she wakes. Nothing in here may pile up on her.
 
 | action   | what she finds                                                                                                           |
 | -------- | ------------------------------------------------------------------------------------------------------------------------ |
