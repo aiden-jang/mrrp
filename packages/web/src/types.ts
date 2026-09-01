@@ -138,6 +138,7 @@ export interface Bodies {
   release: { me: string };
   say: { me: string; text: string; aboutDay?: number };
   shelf: { me: string };
+  sit: { me: string; on: boolean };
   tell: { me: string; mood: Mood };
   undelete: { me: string };
   unleave: { me: string };
@@ -235,6 +236,9 @@ export interface RoomView {
   boxOut: boolean;
   /** He is holding on to her at this moment. Hers to see; never his own hand reported back. */
   heldByThem: boolean;
+  /* Sitting is a place he stays, not a thing he did. Both seats see it live. */
+  sittingWith: boolean;
+  sittingWithYou: boolean;
   /** Something they just touched in the room, for a few seconds. Null on their own side. */
   pokedByThem: { what: string; at: number } | null;
   /** You both reached for the same thing at once. Sent to both, which nothing else is. */

@@ -1167,3 +1167,8 @@ details[open] > .recoverySummary::before {
 .sayBox {
   animation: arrive 0.42s var(--ease-bounce) both;
 }
+
+/* Not a mark of something done, but somewhere he currently is. */
+.btnStaying {
+  border-color: var(--honey);
+}

@@ -1605,6 +1605,27 @@ thing on that screen and decorating around them would compete with them. `PawMar
 `screens.tsx` to get there, since a component in `App.tsx` cannot be reached from a file `App.tsx`
 imports.
 
+## Three of his four actions were checkboxes
+
+Pet, brush, sit with her, take her photo. Petting is a press and hold with duration that she watches
+live. The other three set a boolean, dimmed their own button, and were done for the day. Four
+buttons, four sounds, one bounce, and three of them greying out. The room felt thin not because
+there was little to do but because most of what there was completed and stopped.
+
+Sitting was the worst of them, because sitting with somebody is entirely about staying. It is a
+state now, on the same shape as `hold`: a `{who, at}` record, cleared when his socket closes, with a
+lapse in case it does not. Her side says so while he is there, and she settles into the pose that
+breathes, so the room keeps moving very slightly while nothing is happening.
+
+Two things it deliberately keeps. It still writes the day's `sit` mark, by calling `act` rather than
+repeating what `act` knows, so what he did survives him standing up and she still finds it later.
+And his button never shows that mark: it shows where he is, never where he has been, because dimming
+it once he stands up would say he had used it up.
+
+The lapse is ten minutes rather than the thirty seconds a hold gets. A hold is a moment of contact
+and a stale one is a hand she can see that is not there. Sitting is meant to outlast not touching a
+key.
+
 ## What the comments are for
 
 Every explanation of a decision belongs in this file. The comments left in the code are for three
