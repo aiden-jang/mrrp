@@ -1110,9 +1110,11 @@ like every other rule about who may write what. Deliberately one small object ra
 editor beside his, and deliberately the bed: she is the cat, so the thing she decides is where the
 cat sleeps and what it sleeps under.
 
-It stays when she leaves, unlike her moods. What leaving promises her is "your moods, your visits,
-the days you have been in here", and a colour on a bed is none of those. It is furniture, not a
-record of her.
+It used to stay when she leaves, on the argument that a colour on a bed is not a record of her the
+way her moods are. That argument was about her and never about the person who sits down next, which
+is the case that actually happens: he sends the link on, and somebody opens a room where the cat is
+already wearing the last person's blanket and there is already something on the floor she left. Both
+go now, and the undo week puts them back with everything else she took.
 
 The stripe columns are written down by hand rather than stepped by a loop. The cushion runs from
 column 3 to 16, so an even step leaves a half-width gap at one end, and on a bed that is symmetrical
@@ -1454,6 +1456,13 @@ inside the `bar` branch, which is the flag that already means "she is the one go
 
 Her lines ride in the same `LEFT_SIDE` record as everything else she takes, so the undo week puts
 them back exactly as it puts back her mood.
+
+Her discoveries were the last of it, and the subtlest. `wipeHerSide` runs down two paths and set
+`handover` on both, which is the flag that hands the seat's found-secrets to the next token to sit
+in it. That is exactly right when he frees her seat so she can get back in on a new phone. It is
+wrong when she has left for good, because the next token is somebody else, and they arrive credited
+with everything she found. It is set on the release path only now, which also makes it consistent:
+leaving takes everything else of hers, so it should not have been carrying that across either.
 
 The drawing was the same oversight one step further out. The room already removes her window light
 by asking whether she is the one who lit it, and a doodle carries exactly the same `by` field and

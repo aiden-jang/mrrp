@@ -504,12 +504,12 @@ describe("the blanket on her bed", () => {
     expect((await view(HER)).blanket).toEqual({ key: "honey", stripe: false });
   });
 
-  it("stays with the room when she leaves, because it is furniture and not a record", async () => {
+  it("goes when she leaves, so nobody sits down to somebody else's choice", async () => {
     await seat();
     await post("blanket", { me: HER, key: "cream", stripe: true });
     await post("leave", { me: HER });
 
-    expect((await view(HIM)).blanket).toEqual({ key: "cream", stripe: true });
+    expect((await view(HIM)).blanket).toBeNull();
     await post("unleave", { me: HER });
     expect((await view(HER)).blanket).toEqual({ key: "cream", stripe: true });
   });
