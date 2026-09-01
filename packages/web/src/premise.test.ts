@@ -15,12 +15,7 @@ import { NOTES } from "../../worker/src/notes.js";
 /* Comments are allowed to name the old sentence; they are how anybody knows not to write it again. */
 const strip = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
-/*
- * Every file that holds a sentence she can read, not just App.tsx.
- *
- * This guard watched one file while the copy moved into others. The screens the two of them see
- * when somebody leaves, and the panel of everything they have said, were never checked.
- */
+/* Every file holding a sentence she can read. This watched App.tsx while the copy moved out of it. */
 const copy = [app, screens, moods, dreams].map(strip).join("\n");
 
 describe("she is the cat", () => {

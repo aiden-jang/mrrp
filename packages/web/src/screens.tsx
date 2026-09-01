@@ -142,11 +142,8 @@ export function TheyLeftNotice({ name, until }: { name: string; until: number })
 }
 
 /*
- * Everything that has passed between them.
- *
- * The notes stop where the room has got to, for him as well as her, so this can never show her one
- * she has not been given. His answer sits under the note it answers because notes carry no
- * timestamp and her lines do, which makes an interleaved single list impossible to order honestly.
+ * Notes carry no timestamp and her lines do, so the two cannot be ordered into one list. Her answers
+ * hang off the notes they answer, which is the only real link between them.
  */
 export function SaidPanel({
   said,
@@ -161,14 +158,8 @@ export function SaidPanel({
   onClose: () => void;
   panelRef?: React.Ref<HTMLElement>;
 }) {
-  /*
-   * No name on her side: his is a placeholder until he sets one, and "what Someone has written you"
-   * is a worse sentence than the button that opened this already used.
-   *
-   * His side says "read" rather than "wrote" because this stops at the note she has been handed. He
-   * may have written a hundred and twenty, and "what you wrote her" over one of them reads as if
-   * the rest had gone missing.
-   */
+  // Don't print his name on her side: it is a placeholder until he picks one. Don't say "wrote" on
+  // his: this stops at the note she has been handed, and he may have written a hundred more.
   const wrote = youAreHer ? "what he's written you" : "what she has read so far";
   const back = youAreHer ? "you said back" : `${them} said back`;
 
@@ -224,13 +215,7 @@ export function SaidPanel({
   );
 }
 
-/*
- * The box she says something in.
- *
- * Lives out here because of what the two buttons in it can do. Saving an empty box clears every
- * line she has ever left him, and the box opens empty, so "Leave it" has to refuse a blank and
- * clearing has to be its own deliberate thing. Both of those are worth a test that can click.
- */
+/* Out here so a test can click it: an empty save clears every line she has ever left him. */
 export function SayBox({
   value,
   max,

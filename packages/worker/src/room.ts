@@ -598,13 +598,10 @@ export class Room extends DurableObject<Env> {
   }
 
   /*
-   * What has actually passed between them: the notes the room has handed her, each with anything
-   * she said back about it, and her other lines beside them.
+   * The notes the room has handed her, each with what she said back, and her other lines beside them.
    *
-   * It stops at the note she has read, for him too. He has the editing panel for the rest, and a
-   * screen that shows her notes she has not been given yet would be the room spoiling its own
-   * pacing. Notes carry no timestamp, so they cannot be interleaved with her lines by time; the
-   * answers she attached are the only true link between the two, and this uses that.
+   * It stops at the note she has read for him too. He has the editing panel for the rest, and
+   * showing him past her position would be the room spoiling its own pacing.
    */
   async saidSoFar(me: string): Promise<SaidSoFar | null> {
     await this.guard();
@@ -616,9 +613,8 @@ export class Room extends DurableObject<Env> {
     const read = Math.min((await this.ctx.storage.get<number>("noteIdx")) ?? 0, all.length - 1);
     const lines = await this.lines();
 
-    // An answer goes under its note only if that note still says what it said when she answered.
-    // Otherwise he has rewritten it, and putting her words there would attach them to a sentence
-    // she never read. Those fall in beside her other lines, still carrying what they answered.
+    // Only if the note still says what it said when she answered. Otherwise he has rewritten it,
+    // and her words would end up attached to a sentence she never read.
     const home = (line: Told2) =>
       line.aboutDay !== undefined && all[line.aboutDay] === line.about ? line.aboutDay : null;
 
@@ -935,9 +931,8 @@ export class Room extends DurableObject<Env> {
       log.filter((v) => v.who !== her),
     );
     if (light?.from === her) await this.ctx.storage.delete("windowLight");
-    // Only when she is the one leaving. Her words go with her then, because the reason she has a
-    // door of her own is to take her own data out without asking him. When he frees the seat she
-    // has not left, she has lost her way in, so taking her words would be doing it to her.
+    // Only when she is the one leaving. `bar` is that flag. Him freeing her seat runs through here
+    // too, and she has not left there, so taking her words would be doing it to her.
     if (bar) {
       await this.ctx.storage.delete(HER_LINES);
       await this.ctx.storage.delete("herLine");
