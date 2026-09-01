@@ -491,7 +491,33 @@ is already on the right, so the mug appearing on the floor at x 66, which is vis
 position, is the whole of what that event shows you. That is why it mattered so much that the box was
 covering it.
 
+## She goes and knocks it off
+
+"Knock something off the shelf" was the least realised thing in the room. `shelfDown` flipped, the
+mug appeared on the floor, and she never moved. Worse, the shelf is at x 80-95 and the camera only
+reaches it when she is right of 56, so her one deliberate act usually happened entirely off screen and
+landed as a mug quietly appearing somewhere else.
+
+She walks over and does it now. The camera follows her, which is what brings the shelf into view, and
+the mug stays on the shelf until she is under it rather than going over the instant the room says so.
+There is precedent: the door already pulls the camera to itself when somebody arrives.
+
+The trigger is a moment, never the state. Her own tap sets it; his comes off the action arriving in a
+pushed view, from the same signal that already tells him she did it. It is deliberately not derived
+from `shelfDown`, which is true all day and would send her walking to the shelf every time he opened
+the room.
+
+The timing is a pure function in `shelftrip.ts` rather than arithmetic inside the draw loop, because
+this is the one thing in the room that cannot be checked by looking at it. `tips` takes the previous
+frame's age as well as this one's, so the thump fires exactly once even if the frame rate is bad
+enough to step clean over the moment.
+
 ## Seeing the canvas at all
+
+_Updated: this works for a still room and not for animation. A hidden tab renders a few frames after
+load and then freezes entirely, which is enough to check where things are drawn and useless for
+checking anything that moves. Every layering finding here came from a still frame; anything with
+timing in it has to be a pure function with its own tests instead._
 
 Both of those had been reported three times and verified as working three times, because the canvas
 had never once rendered where I could look at it. A hidden tab never fires `requestAnimationFrame`,

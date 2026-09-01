@@ -815,6 +815,14 @@ function RoomPage({ id }: { id: string }) {
   }, [wantsLink, id]);
 
   const [mugFell, setMugFell] = useState<number | null>(null);
+  /*
+   * When she knocked the mug off, so the cat can be seen doing it on both screens.
+   *
+   * Her own tap sets it directly; his comes off the action arriving in a pushed view. It is never
+   * set from `shelfDown`, because that is a state and not a moment: it is true all day, and reading
+   * it would send her walking to the shelf every time he opened the room.
+   */
+  const [shelfAt, setShelfAt] = useState<number | null>(null);
   const [drawing, setDrawing] = useState(false);
   const hangUp = async (cells: string) => {
     setDrawing(true);
@@ -972,6 +980,8 @@ function RoomPage({ id }: { id: string }) {
     const cue = heard(heardAt.current, theirLastAt, theirLastAction);
     if (theirLastAt !== null) heardAt.current = theirLastAt;
     if (cue === false) return;
+    // He watches her do it, from the same signal that tells him she did.
+    if (theirLastAction === "shelf") setShelfAt(theirLastAt);
     if (cue) play(cue);
     setNudge((v) => v + 1);
   }, [theirLastAt, theirLastAction]);
@@ -1078,6 +1088,7 @@ function RoomPage({ id }: { id: string }) {
 
   const catAct = async (act: CatAct) => {
     play("mrrp");
+    if (act === "shelf") setShelfAt(Date.now());
     try {
       setView(await doCatAct(id, act));
     } catch (e) {
@@ -1331,6 +1342,7 @@ function RoomPage({ id }: { id: string }) {
             windowLight={view.windowLight}
             onWindowLight={() => void touchWindowLight()}
             shelfDown={view.shelfDown}
+            shelfAt={shelfAt}
             boxOut={view.boxOut}
             onTidy={() => void tidy()}
             mugFell={mugFell}
