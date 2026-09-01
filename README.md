@@ -450,6 +450,11 @@ split across six files, each with its own room, because a worker gets slower the
 served and one big file is therefore quadratic in its own length. That split is what takes this suite
 from two minutes to four seconds; `test/harness.ts` has the measurements.
 
+The canvas has a headless harness. `canvasHarness.tsx` mounts the cat in jsdom with a recording 2D
+context and a frame clock the test drives, so layering and timing get real assertions instead of
+somebody squinting at a browser. `room.draw.test.tsx` covers the ones that actually bit: the box
+hiding the mug, the box hiding her mood, and the mug waiting on the shelf until she gets there.
+
 Anything that is only true for a fraction of the time is tested numerically, never by looking.
 The moth visits for 18 seconds out of every 100; two attempts at screenshotting it missed both
 times, so `mothAt` is a pure function of `t` with its own tests. Same reasoning for the note
