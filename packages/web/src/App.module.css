@@ -95,8 +95,8 @@
   top: 12px;
   left: min(calc(50% + 300px - 48px), calc(100vw - 48px));
   z-index: 20;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 999px;
   cursor: pointer;
   display: grid;
@@ -104,7 +104,7 @@
   font-size: 15px;
   line-height: 1;
   background: var(--panel);
-  border: 1px solid var(--line);
+  border: 1px solid var(--control);
   color: var(--soft);
 }
 
@@ -319,13 +319,17 @@
   color: var(--ink);
 }
 
+/* Was 28 square, which is a target you aim at rather than one you hit. */
 .arrivalClose {
+  min-width: 44px;
+  min-height: 44px;
+
   width: 28px;
   height: 28px;
   flex-shrink: 0;
   border-radius: 999px;
   cursor: pointer;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control);
   background: var(--air);
   color: var(--soft);
   font: inherit;
@@ -381,7 +385,7 @@
   resize: none;
   padding: 11px 13px;
   border-radius: 14px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control);
   background: var(--panel);
   color: var(--ink);
 }
@@ -504,6 +508,8 @@
    * seventeen more, and that was the difference.
    */
   font-size: clamp(13px, 3.9vw, 15px);
+  /* 38px tall before, and this row is the thing she uses every day. */
+  min-height: 44px;
   white-space: nowrap;
   color: var(--ink);
   background: var(--panel);
@@ -567,10 +573,18 @@
 }
 
 .swatch {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
+  /*
+   * The colour is 34, the target is 44.
+   *
+   * A thumb finds a 44px square without aiming and a 34px one it hunts for, but a 44px swatch of
+   * colour is a slab. The box grows and the paint does not: the extra ten is transparent padding
+   * clipped back to the swatch by the background-clip below.
+   */
+  width: 44px;
+  height: 44px;
+  border-radius: 15px;
+  border: 5px solid transparent;
+  background-clip: padding-box;
   cursor: pointer;
   padding: 0;
 }
@@ -583,7 +597,10 @@
   border: none;
   cursor: pointer;
   display: block;
-  margin: 14px auto 0;
+  /* Text, but still something you tap on a phone: the line was 17px tall on its own. */
+  min-height: 44px;
+  margin: 4px auto 0;
+  padding: 12px 8px;
   text-decoration: underline;
 }
 
@@ -674,6 +691,8 @@
 
 .btn {
   font: inherit;
+  /* Same forty-four as everything else you press. */
+  min-height: 44px;
   font-size: 15px;
   font-weight: 600;
   color: var(--ink);
@@ -753,7 +772,7 @@ details[open] > .recoverySummary::before {
   /* The browser's caret is replaced by the drawn one, so leave it room and take the OS styling off. */
   padding: 11px 34px 11px 13px;
   appearance: none;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control);
   border-radius: 14px;
   background: var(--panel);
   color: var(--ink);
@@ -776,7 +795,7 @@ details[open] > .recoverySummary::before {
   font-size: 16px;
   width: 100%;
   padding: 11px 13px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control);
   border-radius: 14px;
   background: var(--panel);
   color: var(--ink);
@@ -844,7 +863,7 @@ details[open] > .recoverySummary::before {
   gap: 12px;
   margin-top: 10px;
   padding: 10px 14px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--control);
   border-radius: 16px;
   background: var(--panel);
   color: var(--soft);
@@ -887,12 +906,19 @@ details[open] > .recoverySummary::before {
   gap: 8px;
   justify-content: center;
 }
+/*
+ * The colour is 30, the target is 44.
+ *
+ * A 44px slab of colour is a paint chart, so the box grows and the paint does not: the extra is
+ * transparent border, clipped back to the swatch by `background-clip`.
+ */
 .blanketSwatch,
 .blanketStripe {
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  border: 2px solid;
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  border: 7px solid transparent;
+  background-clip: padding-box;
   cursor: pointer;
   padding: 0;
 }

@@ -1393,7 +1393,12 @@ function RoomPage({ id }: { id: string }) {
           {found}
         </p>
         <p className={s.doing}>
-          {setup ? `Picking out ${previewLook.name}.` : `${previewLook.name} is ${scene.doing}.`}
+          {/* Her own name, said back to her, is the room describing her to herself. */}
+          {setup
+            ? `Picking out ${previewLook.name}.`
+            : view.youAreHer
+              ? `You are ${scene.doing}.`
+              : `${previewLook.name} is ${scene.doing}.`}
         </p>
         <span id="room-actions" tabIndex={-1} />
         {captureRoom && !setup && (
@@ -1831,7 +1836,6 @@ function RoomPage({ id }: { id: string }) {
                           justifyContent: "center",
                           padding: "9px 8px",
                           background: moodTint(m.id, nightChrome, chrome["--panel"]!),
-                          borderColor: "transparent",
                         }
                   }
                   onClick={() => void tell(m.id)}
@@ -2242,7 +2246,8 @@ function BlanketRow({
   const stripe = current?.stripe ?? false;
   return (
     <div className={s.blanketRow}>
-      <p className={s.blanketLabel}>her blanket</p>
+      {/* Only she sees this row, and she is the cat, so it is hers rather than the cat's. */}
+      <p className={s.blanketLabel}>your blanket</p>
       <div className={s.blanketSwatches}>
         {BLANKET_KEYS.map((k) => (
           <button

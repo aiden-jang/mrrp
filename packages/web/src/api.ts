@@ -303,6 +303,6 @@ export async function doSay(id: string, text: string): Promise<RoomView> {
 export async function doBlanket(id: string, key: string, stripe: boolean): Promise<RoomView> {
   const r = await send(`/api/room/${id}/blanket`, { me: myToken(), key, stripe });
   if (r.status === 410) throw await goneFrom(r);
-  if (!r.ok) throw new Error("Couldn't change her blanket.");
+  if (!r.ok) throw new Error("Couldn't change your blanket.");
   return fetchRoom(id);
 }

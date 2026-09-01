@@ -189,7 +189,8 @@ const PROP_LABELS: Record<string, string> = {
   shelf: "the shelf",
   door: "the door",
   plant: "the plant",
-  bed: "her bed",
+  // Both seats read this list, and one of them is the cat, so it cannot be "her bed".
+  bed: "the bed",
   box: "the box",
 };
 
