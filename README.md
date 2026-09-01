@@ -273,7 +273,7 @@ than the UI, because a rule enforced in the browser is a rule anyone can turn of
 | `POST .../tell`               | her only    | her mood, one of six                                                          |
 | `POST .../say`                | her only    | one line back, 140 chars, empty clears it                                     |
 | `POST .../act`                | him only    | pet, brush, sit, photo. Each one leaves a mark                                |
-| `POST .../heract`             | her only    | what she does as the cat: shelf, box, gift                                    |
+| `POST .../heract`             | her only    | what she does as the cat: shelf, box, gift. `box` toggles, so she can get out |
 | `POST .../boxout`             | him only    | puts a box in the room. She decides whether to get in                         |
 | `POST .../hold`               | him only    | took hold of her, or let go. The one thing that is a duration                 |
 | `POST .../poke`               | either seat | touched something in the room. Ephemeral, unlogged, 400 on unknown furniture  |
@@ -304,14 +304,14 @@ than the UI, because a rule enforced in the browser is a rule anyone can turn of
 Everything he does puts something in the room, and all of it lasts **her** local day and no longer,
 like the notes. Nothing in here may pile up on her.
 
-| action   | what she finds                                                                                             |
-| -------- | ---------------------------------------------------------------------------------------------------------- |
-| photo    | the picture on the wall, which is the one permanent one                                                    |
-| brush    | a tuft of her on the rug                                                                                   |
-| sit      | the dent he left beside her bed                                                                            |
-| pet      | nothing to find, but the purr deepens the longer he holds on                                               |
-| leaveout | the yarn, a treat or the catnip on the floor, waiting to be found                                          |
-| boxout   | a box in the room, which she can then decide to get into. Press again to take it away, unless she is in it |
+| action   | what she finds                                                                                                           |
+| -------- | ------------------------------------------------------------------------------------------------------------------------ |
+| photo    | the picture on the wall, which is the one permanent one                                                                  |
+| brush    | a tuft of her on the rug                                                                                                 |
+| sit      | the dent he left beside her bed                                                                                          |
+| pet      | nothing to find, but the purr deepens the longer he holds on                                                             |
+| leaveout | the yarn, a treat or the catnip on the floor, waiting to be found                                                        |
+| boxout   | a box in the room. She decides whether to get in, and can get back out. Press again to take it away, unless she is in it |
 
 Every one of these is also reported back in words, under the buttons that made it: "She'll find a
 tuft of her on the rug and the picture on the wall." Her two cat acts get the same, and both rows

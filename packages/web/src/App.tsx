@@ -1765,7 +1765,11 @@ function RoomPage({ id }: { id: string }) {
                     }}
                     onClick={() => void catAct(a.id)}
                   >
-                    {noBox ? "no box to get into" : a.label}
+                    {noBox
+                      ? "no box to get into"
+                      : a.id === "box" && view.box
+                        ? "Get out of the box"
+                        : a.label}
                   </button>
                 );
               })}
