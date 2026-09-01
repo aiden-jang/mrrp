@@ -56,16 +56,18 @@ describe("her line back", () => {
     expect(said).toEqual(["second", "first"]);
   });
 
-  it("stops at twelve, so the card is not an inbox", async () => {
+  it("keeps as many as he can write notes, so the look-back screen does not forget", async () => {
     await seat();
     for (let n = 0; n < 15; n++) await post("say", { me: HER, text: `line ${n}` });
 
     const copy = (await (await SELF.fetch(`https://x/api/room/${id}/export?me=${HER}`)).json()) as {
       herLines: { text: string }[];
     };
-    expect(copy.herLines).toHaveLength(12);
+    // Twelve used to be the cap, and the thirteenth silently took the first one with it, along with
+    // any answer she had left under one of his notes.
+    expect(copy.herLines).toHaveLength(15);
     expect(copy.herLines[0]!.text).toBe("line 14");
-    expect(copy.herLines.at(-1)!.text).toBe("line 3");
+    expect(copy.herLines.at(-1)!.text).toBe("line 0");
   });
 
   it("clears all of them when she empties it, not just the newest", async () => {

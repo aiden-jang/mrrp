@@ -2192,6 +2192,15 @@ function RoomPage({ id }: { id: string }) {
                 She has note {view.noteDay} waiting. Hold on {view.cat.name} to pet her.
               </p>
             )}
+            {/*
+                The end of them, said out loud on his side. She is the only one the room ever told,
+                and he is the only one who can write more.
+            */}
+            {iAmHim && view.sheHasReadAll && (
+              <p className={s.small} style={{ textAlign: "center" }}>
+                She has read all {view.notesInAll} of them. The box below takes more whenever you have some.
+              </p>
+            )}
             {iAmHim && !setup && (
               <button className={s.quiet} onClick={() => void openSetup()}>
                 Write her notes, or change how {view.cat.name} looks
