@@ -6,31 +6,21 @@ import type { Cat as CatLook, Clock } from "./types.js";
 /*
  * Drives the room's draw loop frame by frame and reads the pixels back.
  *
- * The whole of the canvas is `fillStyle` and `fillRect`, so a recording context is enough and beats
- * a real one: no native dependency, and the grid is exact rather than sampled.
- *
- * This exists because the room's one untestable surface was anything that moves. Layering could be
- * checked by hand in a browser, badly; timing could not be checked at all, because an automated
- * browser keeps its tabs hidden and a hidden tab renders a handful of frames and then freezes.
+ * The whole canvas is `fillStyle` and `fillRect`, so a recording context beats a real one: no native
+ * dependency, and the grid is exact rather than sampled. Read DECISIONS.md before changing any of
+ * the four setup steps below; each one was found by getting it wrong.
  */
 
 /** Wide enough to make the grid unmistakable, and never a colour the room draws on its own. */
-export const TEST_FUR = "#ff00ff";
-export const TEST_FUR_DK = "#cc00cc";
+const TEST_FUR = "#ff00ff";
+const TEST_FUR_DK = "#cc00cc";
 /*
- * Deliberately no camera reading.
- *
- * The obvious one, find a fixed prop and subtract, does not work: the outline colour is shared by
- * everything in the room, so it locks onto whatever is leftmost. Assert on what a person would
- * actually notice instead, which is how much of a thing is on screen.
+ * No camera reading on purpose. Finding a fixed prop and subtracting locks onto the outline colour,
+ * which everything shares. Assert on how much of a thing is on screen instead.
  */
 export const SHELF_WOOD = "#8a6a48";
 
-/*
- * Her fur is mixed toward the light before it is drawn, up to about a quarter of the way, so an
- * exact match finds her only in the dark. Magenta survives that: nothing else in the room has red
- * and blue both high with green low, whatever the hour does to it.
- */
+/* Her fur is mixed toward the light before it is drawn, so an exact match finds her only at night. */
 function looksLikeFur(hex: string): boolean {
   if (!hex.startsWith("#") || hex.length !== 7) return false;
   const n = parseInt(hex.slice(1), 16);
@@ -48,48 +38,31 @@ const LOOK: CatLook = {
 };
 
 export interface Room {
-  /** Run one frame at this many ms since the room mounted. */
   frame: (at: number) => void;
   /**
-   * Run frames from `from` to `to`, which is usually what you want.
+   * Run frames from `from` to `to`. Almost always what you want.
    *
-   * Nothing about her position is instant: she eases 5% of the way toward where she wants to be per
-   * frame, so a walk across the room needs sixty-odd frames. A test that steps straight from 0ms to
-   * 2000ms in one frame moves her 5% and proves nothing.
+   * She eases 5% of the way toward where she wants to be each frame, so crossing the room takes
+   * sixty of them. One frame from 0ms to 2000ms moves her 5% and proves nothing.
    */
   run: (from: number, to: number, step?: number) => void;
   /**
-   * Change a prop mid-run, which is how anything that happens to a room already open happens.
+   * Change a prop mid-run, which is how anything happens to a room that is already open.
    *
-   * Mount-time is not the same thing and can mislead: her position initialises to wherever she wants
-   * to be on the first frame, so a moment that is already running at mount puts her at the far end
-   * of it rather than walking there.
+   * Not the same as passing it at mount: her position initialises to wherever she wants to be on the
+   * first frame, so a moment already running then puts her at the end of it rather than walking.
    */
   set: (next: Partial<Parameters<typeof Cat>[0]>) => void;
-  /** The colour at a viewport cell, or null where nothing was painted. */
   at: (x: number, y: number) => string | null;
-  /** Viewport columns containing her fur, or null when she is not on screen. */
   furSpan: () => [number, number] | null;
-  /** How many cells of this colour are painted anywhere in the band. */
   count: (colour: string, y0: number, y1: number) => number;
   unmount: () => void;
 }
 
-/*
- * `scale` has to match what the component computes, or every read is off by a row.
- *
- * It takes the largest whole number of device pixels per cell that fits, which in jsdom comes out of
- * `innerHeight` because the container measures zero. Read it back off the canvas rather than
- * predicting it: the rule it follows is exactly the thing a test should not be duplicating.
- */
+/* Read `scale` off the canvas rather than predicting it: the rule it follows is under test. */
 export function room(props: Partial<Parameters<typeof Cat>[0]> = {}, when = "2026-04-02T09:00:00Z"): Room {
-  /*
-   * Recorded one logical cell per fill, not one device pixel.
-   *
-   * Every fill comes from the room's `px`, which paints exactly one cell, so the cell is all the
-   * information there is. Storing device pixels instead means a hundred and sixty thousand writes a
-   * frame, which turned a hundred-frame test into a timeout.
-   */
+  // One cell per fill, not one device pixel. Every fill is one cell, and storing device pixels is
+  // 160,000 writes a frame, which turns a hundred-frame test into a timeout.
   const grid: (string | null)[] = new Array(80 * 80).fill(null);
   let scale = 1;
 
@@ -103,10 +76,7 @@ export function room(props: Partial<Parameters<typeof Cat>[0]> = {}, when = "202
   };
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(context as never);
 
-  /*
-   * The handful of browser APIs the room reaches for that jsdom does not have. Reduced motion is
-   * forced off: with it on she skips most of what these tests are about.
-   */
+  // What the room reaches for and jsdom lacks. Reduced motion off, or she skips most of this.
   vi.stubGlobal("matchMedia", (query: string) => ({
     matches: false,
     media: query,
@@ -121,12 +91,9 @@ export function room(props: Partial<Parameters<typeof Cat>[0]> = {}, when = "202
     },
   );
 
-  /*
-   * One clock for both. In a browser the timestamp handed to a frame callback and `performance.now`
-   * share an origin, and the room relies on that: a moment is stamped with `performance.now` outside
-   * the loop and compared against the frame's `t` inside it. Two clocks here would make every such
-   * comparison come out as "hugely negative", which is to say "not happening".
-   */
+  // One clock for both. The room stamps a moment with `performance.now` outside the loop and
+  // compares it to the frame's `t` inside it, so two clocks make every moment look like it never
+  // started.
   let now = 0;
   vi.stubGlobal("performance", { now: () => now });
 
@@ -134,12 +101,8 @@ export function room(props: Partial<Parameters<typeof Cat>[0]> = {}, when = "202
   vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => pending.push(cb));
   vi.stubGlobal("cancelAnimationFrame", () => {});
 
-  /*
-   * A pinned clock, and one a test can choose. The room is drawn from the hour: where she sits, how
-   * bright it is, whether she is asleep. Left to the real one, a test asserting she walked somewhere
-   * passes or fails by time of day, which is how this harness first went wrong. `when` matters if a
-   * test is about her moving, because it decides where she starts.
-   */
+  // Pin the clock. The room is drawn from the hour, down to where she sits, so on the real clock a
+  // test about her walking somewhere passes or fails by time of day.
   // Only Date. Faking the timers wholesale replaces requestAnimationFrame with vitest's own, which
   // silently takes over the frame queue below and nothing is ever painted.
   vi.useFakeTimers({ toFake: ["Date"] });

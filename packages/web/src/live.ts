@@ -5,23 +5,15 @@ import { myToken } from "./api.js";
 /*
  * The room, pushed rather than polled.
  *
- * Before this, the client re-read the room every 15 seconds and "you are both in here right now"
- * meant "the other one made a request in the last three minutes". The cat already had a whole
- * greeting built for co-presence and it was being fed by a signal too slow to feel like presence.
- *
- * The socket only ever receives. Everything that changes the room still goes through the ordinary
- * routes, where the seat checks are, so this cannot become a second way to write.
+ * Receives only. Everything that changes the room still goes through the ordinary routes, where the
+ * seat checks are, so this cannot become a second way to write.
  */
 export type LiveState = "connecting" | "open" | "closed";
 
 /* Long enough that a dead socket is not a busy loop, short enough that a flaky tunnel recovers. */
 const BACKOFF_MS = [1_000, 2_000, 5_000, 10_000, 20_000];
 
-/*
- * Keepalive. Carriers and office proxies hang up a socket that has said nothing for a while, and a
- * room can be quiet for hours, which is the normal case rather than the odd one. The server answers
- * "pong" and nothing else; this exists to make the connection look alive to whatever is in between.
- */
+/* Keepalive. Carriers and proxies hang up a quiet socket, and a quiet room is the normal case. */
 const PING_MS = 30_000;
 
 export function useLive(
@@ -61,8 +53,7 @@ export function useLive(
         setState("open");
         if (beat) clearInterval(beat);
         beat = setInterval(() => {
-          // Sending on a socket that has closed under you throws, and the throw would kill the timer
-          // rather than the socket.
+          // Sending on a closed socket throws, and that would kill the timer rather than the socket.
           if (socket.readyState !== WebSocket.OPEN) return;
           try {
             socket.send("ping");

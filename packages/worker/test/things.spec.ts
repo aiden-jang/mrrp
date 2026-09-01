@@ -235,9 +235,8 @@ describe("the thing she knocks off the shelf", () => {
 });
 
 describe("the room's dice", () => {
-  // She is the cat, so the shelf is hers to knock off. The room used to roll it on an 18% chance
-  // every time she opened it, which put the mug on the floor with no line saying who did it. Fifty
-  // reads is a 1 in 20,000,000 chance of seeing nothing if that roll ever comes back.
+  // The shelf is hers to knock off, so the room must never do it for her. Fifty reads is a 1 in
+  // 20,000,000 chance of seeing nothing if the old 18% roll ever comes back.
   it("never knocks the mug off on her behalf, however many times she looks in", async () => {
     await seat();
     for (let i = 0; i < 50; i++) await view(HER);

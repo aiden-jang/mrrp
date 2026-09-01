@@ -75,13 +75,7 @@ const WIN_X = 60,
   WIN_CX = WIN_X + 8;
 const BOX_X = 44,
   BOX_Y = FLOOR + 9;
-/*
- * Where she sits when she is in it. Measured off the sprite, not written down.
- *
- * This was `BOX_X + 2`, which is the box's left edge: she stood with her front half out of it and
- * the near wall cutting her in two. That reads as a cat beside a box, which is the wrong picture and
- * is exactly what "she doesn't go in the box" looked like.
- */
+/* Measured off the sprite, never written down. Its left edge puts her half out of the box. */
 const BOX_CENTRE = BOX_X + Math.round(BOX_FRONT.w / 2);
 const ZOOM_MS = 1600;
 const BIRD_MS = 5200;
@@ -261,7 +255,7 @@ export function Cat({
   together = false,
   onPet,
   onHold,
-  onPoke2,
+  onTouch,
   heldByThem = false,
   pokedByThem = null,
   reachedTogether = null,
@@ -310,12 +304,10 @@ export function Cat({
   role?: "him" | "her" | null;
   together?: boolean;
   onPet?: () => void;
-  /** Called on every press and release of the cat, by him. */
   onHold?: (on: boolean) => void;
-  /** He is holding on to her right now. Drives the same look his own hold does. */
   heldByThem?: boolean;
-  /** Called when this seat touches something, so the other one can watch it move. */
-  onPoke2?: (what: string) => void;
+  /** Every press and release of the cat, and every prop this seat touches, for the other screen. */
+  onTouch?: (what: string) => void;
   /** Something they just touched. Replays the wobble and turns her head, nothing else. */
   pokedByThem?: { what: string; at: number } | null;
   /** You both reached for the same thing at once. Plays on both screens, not one. */
@@ -497,8 +489,8 @@ export function Cat({
   onHoldRef.current = onHold;
   const heldRef = useRef(heldByThem);
   heldRef.current = heldByThem;
-  const onPoke2Ref = useRef(onPoke2);
-  onPoke2Ref.current = onPoke2;
+  const onTouchRef = useRef(onTouch);
+  onTouchRef.current = onTouch;
   const onPokeRef = useRef(onPoke);
   const onFoundRef = useRef(onFound);
   roleRef.current = role;
@@ -576,14 +568,10 @@ export function Cat({
   }, [nudge]);
 
   /*
-   * Their touch, replayed on this screen.
+   * Their touch, replayed here: the wobble and her head, never the tap handler.
    *
-   * Only the wobble and her head turning, never the tap handler itself. That one opens the curtains,
-   * starts the rain, collects a glint and counts towards easter eggs, and none of that is theirs to
-   * do to your room from a distance.
-   *
-   * Keyed on `at`, so the same poke arriving twice, and every later view that still carries it
-   * inside its four seconds, plays once.
+   * That handler opens curtains, starts rain and collects glints, none of which is theirs to do to
+   * your room from a distance. Keyed on `at` so a poke that arrives twice plays once.
    */
   const playedPoke = useRef(0);
   useEffect(() => {
@@ -595,13 +583,8 @@ export function Cat({
     if (prop) lookAt.current = { x: prop.x + prop.sp.w / 2, until: now + 2400 };
   }, [pokedByThem]);
 
-  /*
-   * Both of you reaching for the same thing.
-   *
-   * She comes to look, and both screens get it, which is what makes it different from every other
-   * moment in the room: nobody did this one to the other one. Keyed on `at` like the poke above, so
-   * the four seconds it stays in the view play once.
-   */
+  // Both of you at once, so both screens get it: nobody did this one to the other. Keyed on `at`
+  // like the poke above, so the four seconds it sits in the view play once.
   const playedReach = useRef(0);
   useEffect(() => {
     if (!reachedTogether || reachedTogether.at === playedReach.current) return;
@@ -1042,7 +1025,7 @@ export function Cat({
           }
         }
         poked.current = { key: hit.key, at: performance.now() };
-        onPoke2Ref.current?.(hit.key);
+        onTouchRef.current?.(hit.key);
         lookAt.current = {
           x: rainStarted ? WIN_CX : hit.x + hit.sp.w / 2,
           until: performance.now() + (rainStarted ? 4200 : 2400),
@@ -1052,7 +1035,7 @@ export function Cat({
         floorPress.current = { x, y, at: performance.now(), active: false };
         lookAt.current = { x, until: performance.now() + 900 };
         poked.current = { key: "floor", at: performance.now() };
-        onPoke2Ref.current?.("floor");
+        onTouchRef.current?.("floor");
       }
     };
     const onUp = () => {
@@ -1427,11 +1410,8 @@ export function Cat({
 
       const wy = (row: number) => 4 + 1 + row;
 
-      /*
-       * She goes and knocks it off, rather than the mug simply being down. The camera follows her,
-       * which is what brings the shelf into view at all. See shelftrip.ts for the timing and why it
-       * is a pure function.
-       */
+      // She goes and knocks it off, and the camera follows her, which is what brings the shelf into
+      // view at all. See shelftrip.ts.
       const tripAge = t - tripFrom.current;
       const trip = shelfTrip(tripAge, lastTripAge.current);
       lastTripAge.current = tripAge;
@@ -2068,9 +2048,8 @@ export function Cat({
       const nesting = t < bedNestUntil.current && !sc.atDoor && !zooming;
       const laserPlaying = !reduce && t < laser.current.until && !sc.atDoor;
       const summoning = !reduce && t < summonUntil.current && !sc.atDoor;
-      // Don't let the door pose suppress this the way it suppresses easter eggs. The door holds
-      // for 90 minutes around his expected hour, which is exactly when she is most likely to look
-      // in, and the server spends the treat whether or not it drew.
+      // Don't let the door pose suppress this the way it does easter eggs. It holds for 90 minutes
+      // around his expected hour, which is when she is most likely to look in.
       const showingLeftOut = t < leftOutUntil.current;
       const doorBlocks = sc.atDoor && !showingLeftOut;
       const yarnPlaying = !reduce && t < yarnUntil.current && !doorBlocks;
@@ -2709,12 +2688,8 @@ export function Cat({
           px(Math.round(point.x), Math.round(point.y), `rgba(255,107,107,${opacity})`);
         }
       }
-      /*
-       * Her mood, on the floor beside her, below BOX_FRONT for the same reason as everything else
-       * down here. These are drawn at kx +- 13, so when she is in the box they land inside its
-       * footprint, and one of them was 96% behind the near wall: the room's whole point is that you
-       * can read her mood, and getting in a box was switching it off.
-       */
+      // Her mood, below BOX_FRONT like everything else on the floor. Drawn at kx +- 13, so in the
+      // box they land inside it, and one was 96% behind the near wall.
       const activeMood = moodRef.current;
       const moodLeft = kx - 13;
       const moodRight = kx + 11;
@@ -2762,11 +2737,10 @@ export function Cat({
       }
 
       /*
-       * Below BOX_FRONT, not above it.
+       * Everything on the floor goes below BOX_FRONT. Only the cat goes behind it.
        *
-       * The box's near wall covers x 44-71 at floor level, which is where the treat (68), the catnip
-       * (54) and the mug she knocked off (66) all land. Drawn any earlier, a box he put out paints
-       * straight over them, and knocking the mug off looks like nothing happening.
+       * Its near wall covers x 44-71 at floor level, which is where the treat (68), the catnip (54)
+       * and the mug she knocks off (66) all land.
        */
       // Down, unless she is still on her way to knock it off.
       if (downRef.current && !trip.mugStillUp) {

@@ -19,19 +19,16 @@ export interface Harness {
 }
 
 /*
- * One room per file, wiped between tests.
+ * One room per file, wiped between tests. Do not merge these files back together.
  *
- * Requests get slower the more the worker has served, so one big file is quadratic in its own length:
- * sixty reads cost 76ms at the start and 3402ms after four hundred. Each file gets its own worker and
- * its own counter, so splitting them is what took this suite from two minutes to four seconds. Do not
- * merge these files back together.
+ * A worker gets slower the more it has served, so one big file is quadratic in its own length: sixty
+ * reads cost 76ms at the start and 3402ms after four hundred.
  */
 export function harness(room: string): Harness {
   const id = room;
 
-  // Both of these are set here, not read from `.dev.vars`: that file is gitignored, so tests that
-  // needed it passed here and failed on a fresh clone. WEATHER_URL points at a port that refuses so
-  // no test ever calls the real forecast.
+  // Set here, never read from `.dev.vars`: that file is gitignored, so tests needing it pass here
+  // and fail on a fresh clone. WEATHER_URL points at a port that refuses.
   beforeEach(() => {
     env.DEV_TOOLS = "on";
     env.WEATHER_URL = "http://127.0.0.1:1";
@@ -68,9 +65,8 @@ export function harness(room: string): Harness {
     vi.setSystemTime(new Date(Date.now() + hours * 60 * 60 * 1000));
   }
 
-  // "What arrived since your last visit" is `at > since`, both from Date.now(). A test that reads,
-  // acts and reads again inside one millisecond correctly gets nothing. People cannot do that over a
-  // network; this suite can, now that it is fast.
+  // "Since your last visit" is `at > since`, so a test that reads, acts and reads again inside one
+  // millisecond correctly gets nothing. People cannot do that over a network; this suite can.
   async function tick(ms = 10): Promise<void> {
     if (vi.isFakeTimers()) vi.setSystemTime(new Date(Date.now() + ms));
     else await new Promise((resolve) => setTimeout(resolve, ms));

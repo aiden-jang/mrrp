@@ -3,13 +3,7 @@ import type { Action, LogAction } from "./types.js";
 
 const ACTION_CUE: Record<Action, Cue> = { pet: "purr", brush: "brush", sit: "settle", photo: "shutter" };
 
-/*
- * What it sounds like when the other one does something while you are watching.
- *
- * The same cue their own tap makes, so a pet sounds the same from either side of it. Petting is why
- * this exists: it is the one action that leaves no mark, so it reached her as a silent no-op even
- * once the room started pushing it to her in the same second.
- */
+/* The same cue their own tap makes, so a pet sounds the same from either side of it. */
 const CUE: Partial<Record<LogAction, Cue>> = {
   ...ACTION_CUE,
   shelf: "thump",
@@ -20,11 +14,10 @@ const CUE: Partial<Record<LogAction, Cue>> = {
 };
 
 /*
- * Whether a view that just arrived is them doing something now, rather than something they did
- * before you opened the room.
+ * Did they just do something, or is this the first view of the room?
  *
- * `seen` is null only on the very first view, and that one must never fire: it carries whatever they
- * last did, which could be from an hour ago, and the room would greet you with a purr for it.
+ * The first view carries whatever they last did, maybe an hour ago. Fire on it and the room greets
+ * you with a purr for something you already knew about, so `seen` being null always means no.
  */
 export function heard(seen: number | null, at: number | null, action: LogAction | null): Cue | null | false {
   if (at === null) return false;

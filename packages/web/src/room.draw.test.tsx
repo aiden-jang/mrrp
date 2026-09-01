@@ -33,8 +33,7 @@ describe("her trip to the shelf", () => {
   });
 
   it("brings the shelf on screen, which is the whole point of walking there", () => {
-    // The shelf is at x 80-95 in a room 100 wide with an 80 wide viewport, so it is only ever seen
-    // when the camera is right of 16, and the camera only goes there when she does.
+    // The shelf sits at x 80-95 with an 80 wide viewport, so it is only ever seen when she is.
     // Just before the hour he is due home, when she waits by the door: as far from the shelf as she
     // ever gets, and the case the feature exists for.
     r = room({}, "2026-04-02T17:40:00Z");
@@ -72,11 +71,8 @@ describe("the box's near wall", () => {
     // Long enough for her to have eased all the way into it: her mood props ride at kx +- 13, so
     // they only land inside the box once she is actually sitting in it.
     r.run(16, 1400);
-    /*
-     * Twenty, not one. The mat runs from x 45 to 72 and the box's near wall covers 44 to 71, so
-     * three cells peek past its right edge whichever order they are drawn in. "Greater than zero"
-     * passes with the mood entirely hidden, which is the bug this is here for.
-     */
+    // Twenty, not one. Three cells of the mat peek past the box whichever order they are drawn in,
+    // so "greater than zero" passes with her mood entirely hidden.
     expect(r.count(stressedMat, 55, 75), "her mood survives the box").toBeGreaterThan(20);
   });
 });

@@ -157,24 +157,13 @@ interface Blanket {
   stripe: boolean;
 }
 
-/*
- * Him holding on her, right now.
- *
- * The only thing in the room that is a duration rather than an event, which is why it is not in the
- * log: it is not something he did, it is something he is doing. `at` is a lapse guard for a tab that
- * dies mid-hold without its socket noticing; a real hold is seconds.
- */
+/** A hold, not a doing, which is why it is not in the log. `at` catches a tab that died holding. */
 interface Held {
   who: string;
   at: number;
 }
 
-/*
- * One of them touching something in the room, for the other one to watch.
- *
- * Not in the log and not in the tally. Touching the plant is not a thing you did for her, it is a
- * thing she saw you do, and it is gone four seconds later.
- */
+/** Something one of them touched, for the other to watch. Not logged: it is not a doing. */
 interface Poke {
   who: string;
   what: string;
@@ -307,19 +296,13 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  /** Touched something in the room. Ephemeral: it is not a doing, it is a thing to watch. */
   async poke(me: string, what: string): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     const { him, her } = this.roles(people);
     if (me !== him && me !== her) return this.build(me, people);
 
-    /*
-     * Both of you reaching for the same thing at the same time.
-     *
-     * The only thing in the room neither of you can do alone, other than her rolling over, and it
-     * costs nothing to notice: the last poke is already sitting there waiting to be replaced.
-     */
+    // Both at once. The last poke is already here waiting to be replaced, so this costs nothing.
     const last = await this.ctx.storage.get<Poke>("poke");
     if (last && last.who !== me && last.what === what && Date.now() - last.at < REACH_MS) {
       await this.ctx.storage.put("reach", { what, at: Date.now() });
@@ -330,7 +313,6 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  /** Held on, or let go. See `Held`. */
   async hold(me: string, on: boolean): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -344,14 +326,7 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  /*
-   * Puts a box out, or takes it away again.
-   *
-   * Taking it away is refused while she is sitting in it. Rule one: nothing in this room can go
-   * wrong for the cat, and pulling the box out from under her is the smallest possible version of
-   * something going wrong. It is also not logged, because "took the box away again" is not a thing
-   * she needs told.
-   */
+  /** Out, or away again. Never away while she is in it: nothing here goes wrong for the cat. */
   async putBoxOut(me: string, on = true): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -380,7 +355,6 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  /** What he leaves out for her. The other half of the gift she leaves him. */
   async leaveOut(me: string, treat: Treat): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -579,14 +553,7 @@ export class Room extends DurableObject<Env> {
     return true;
   }
 
-  /*
-   * His own notes, fetched when he opens the panel that edits them.
-   *
-   * These used to ride in every RoomView. That was cheap while the client pulled one every fifteen
-   * seconds and stopped being cheap the moment the room started pushing on every write: they are
-   * capped at 120 notes of 280 characters, so up to 33KB of his own writing was going back to him on
-   * every pet, poke and press. One reader, one fetch, when the panel actually opens.
-   */
+  // Keep these out of RoomView. Up to 33KB, and the room pushes a view on every single write.
   async notesFor(me: string): Promise<string[] | null> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
@@ -666,24 +633,13 @@ export class Room extends DurableObject<Env> {
     return this.hereNow(people, him) && this.hereNow(people, her);
   }
 
-  /*
-   * Here means an open socket, or a request inside the last three minutes for anyone still polling.
-   *
-   * A socket is the honest answer: the tab is open right now. The lastSeen window is the fallback for
-   * a client whose socket a proxy refused, and it is why "both here" used to be up to three minutes
-   * stale even though the room drew a whole greeting off it.
-   */
+  // An open socket, or a recent request for anyone whose upgrade a proxy refused.
   private hereNow(people: Record<string, Person>, token: string): boolean {
     if (this.liveTokens().has(token)) return true;
     return Date.now() - (people[token]?.lastSeen ?? 0) < HERE_NOW_MS;
   }
 
-  /*
-   * The seat a socket belongs to, kept on the socket itself.
-   *
-   * Hibernation throws away everything in memory, so a Map from socket to token does not survive an
-   * idle room waking up. `serializeAttachment` is stored with the connection and comes back with it.
-   */
+  // On the socket, not in a Map: hibernation throws memory away and the socket comes back.
   private tokenOf(ws: WebSocket): string | null {
     try {
       const held = ws.deserializeAttachment() as { me?: string } | null;
@@ -703,14 +659,10 @@ export class Room extends DurableObject<Env> {
   }
 
   /*
-   * Every open socket gets its own view, never one shared payload.
+   * One view per socket, and `build` not `view`.
    *
-   * `build` answers differently for each seat: her note, his copy of it, what the other one has been
-   * doing, the recovery code. Broadcasting one object would hand each of them the other's.
-   *
-   * It calls `build` and not `view`, which matters. `view` seats people, counts a visit, rolls the
-   * gift and spends whatever he left out. Running that on a push would mark a treat found because
-   * her phone was in her pocket with the tab open.
+   * Each seat gets different answers, so one shared payload hands each of them the other's. And
+   * `view` spends what he left out, so pushing through it marks a treat found by a phone in a pocket.
    */
   private async broadcast(): Promise<void> {
     const sockets = this.ctx.getWebSockets();
@@ -727,14 +679,8 @@ export class Room extends DurableObject<Env> {
     }
   }
 
-  /*
-   * Called by the router after any write.
-   *
-   * It guards like everything else, and the guard is the interesting half. A deleted room has its
-   * storage wiped, so `build` would answer with a perfectly good view of an empty room and push it
-   * to whatever tabs were still open. That is the dead-link-becomes-a-fresh-room bug with a socket
-   * in place of a page load. Tell those tabs the room is gone and close them instead.
-   */
+  // Guard, or a deleted room pushes a view of an empty room to whatever tabs are still open and a
+  // dead link becomes a fresh room again. Close them instead.
   async notify(): Promise<void> {
     try {
       await this.guard();
@@ -750,15 +696,8 @@ export class Room extends DurableObject<Env> {
       throw e;
     }
 
-    /*
-     * Not coalesced, deliberately. Merging writes inside a short window was tried and backed out: it
-     * needs a timer and two fields of in-memory state on an object that hibernates, and it can only
-     * ever fail in the direction of the room silently going quiet.
-     *
-     * The number that made it not worth it is above. A view is about 1.1KB now that his notes are
-     * fetched rather than pushed; coalescing would have saved another 1.1KB on a double-write like a
-     * press, against the 6.9KB that taking the notes out already saved.
-     */
+    // Don't coalesce these. It was tried: it needs timing state on an object that hibernates, and
+    // every way it fails is the room going quiet. DECISIONS.md has the numbers.
     await this.broadcast();
   }
 
@@ -777,20 +716,16 @@ export class Room extends DurableObject<Env> {
     const pair = new WebSocketPair();
     const [client, server] = [pair[0], pair[1]];
     server.serializeAttachment({ me });
-    // Hibernatable, not `server.accept()`. An idle room with two tabs open would otherwise hold this
-    // object in memory all day, and almost every room is idle almost all of the time.
+    // Hibernatable, never `server.accept()`: that holds the object in memory all day.
     this.ctx.acceptWebSocket(server);
 
-    // One broadcast, not a send to the new socket and then a broadcast. `acceptWebSocket` has
-    // already put this one in `getWebSockets()`, so it is served by the same loop that tells the
-    // other seat somebody just arrived, which is the whole point of the socket.
+    // One broadcast. `acceptWebSocket` has already added this one, so the same loop serves it.
     await this.broadcast();
     return new Response(null, { status: 101, webSocket: client });
   }
 
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
-    // The only thing a client may say. Everything that changes the room goes through the routes,
-    // where the seat checks live; a socket that could write would be a second way in past them.
+    // The only thing a client may say. A socket that could write would be a way past the seat checks.
     if (typeof message === "string" && message === "ping") ws.send("pong");
   }
 
@@ -1281,8 +1216,7 @@ export class Room extends DurableObject<Env> {
       you: nameOf(me),
       them: nameOf(otherId),
       themLastAt: them?.lastSeen ?? null,
-      // Same rule as `bothHereNow`. Reading lastSeen straight had the room saying they were both in
-      // here while this said the other one had gone.
+      // Same rule as `bothHereNow`, or the room says they are both here and that she has gone.
       themHereNow: !!otherId && this.hereNow(people, otherId),
       bothHereNow: (me === him || me === her) && this.bothHere(people),
       herLine: seated ? ((await this.ctx.storage.get<Told2>("herLine")) ?? null) : null,
@@ -1315,11 +1249,9 @@ export class Room extends DurableObject<Env> {
       recoveryCode: seated ? await this.recoveryCode(youAreHer ? "her" : "him") : null,
       seat: seated ? me : null,
       linked: seated ? (people[me]?.account ?? null) !== null : false,
-      // Only ever true for the seat being held on to, which is hers. Nobody watches a third person
-      // being petted.
+      // Hers alone. Nobody watches a third person being petted.
       heldByThem: !!held && held.who === otherId && Date.now() - held.at < HELD_LAPSE_MS,
-      // Theirs only. Your own taps already moved your own room; being sent them back would play the
-      // wobble twice.
+      // Theirs only. Your own tap already moved your room; sent back it plays the wobble twice.
       pokedByThem:
         poke && poke.who === otherId && Date.now() - poke.at < POKE_LIVE_MS
           ? { what: poke.what, at: poke.at }

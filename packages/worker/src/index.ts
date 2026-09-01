@@ -49,11 +49,10 @@ app.get("/api/me", async (c) => {
 });
 
 /*
- * The live channel. One socket per open tab, forwarded straight to the room.
+ * The live channel, one socket per open tab.
  *
- * This is the only route that hands the raw request to the Durable Object rather than calling a
- * method on it: a 101 upgrade cannot come back through RPC. The room re-checks the seat and whether
- * it still exists, so nothing here is the only thing standing between a stranger and a socket.
+ * The only route that hands the raw request to the Durable Object: a 101 upgrade cannot come back
+ * through RPC. The room re-checks the seat, so nothing here is the last line.
  */
 app.get("/api/room/:id/live", async (c) => {
   const id = c.req.param("id");
@@ -68,13 +67,9 @@ app.get("/api/room/:id/live", async (c) => {
 /*
  * Push the room to both tabs after anything that changed it.
  *
- * One place on purpose. The alternative is a broadcast at the end of each of the twenty-odd methods
- * that write, which is the sort of list that is complete on the day it is written. `waitUntil` keeps
- * it off the response, so the person who pressed the button waits for nothing.
- *
- * The plain GET is in here too, and has to be. Reading the room is not read-only: it seats whoever
- * turns up, counts a visit, and spends whatever he left out for her. That last one is the moment he
- * most wants to see, and without this he would wait for his own next poll to learn she found it.
+ * One place, not a broadcast at the end of each of the twenty-odd methods that write: that list is
+ * complete on the day it is written. The plain GET is in here too and has to be, because reading the
+ * room spends what he left out, which is the moment he most wants to see.
  */
 const pushAfter = async (c: Context<{ Bindings: Env }>, next: Next) => {
   await next();

@@ -68,20 +68,6 @@ clear of the rule that you never see your own actions echoed back.
 Petting is the exception and stays unlit, because it genuinely leaves nothing: the purr is the whole
 of it.
 
-## The box's near wall covered the treats
-
-`BOX_FRONT` is drawn after the cat, which is what puts her inside the box rather than behind it. It
-is 28 pixels wide at `BOX_X = 44`, so it covers x 44-71 at floor level. The treat sits at x 68 and
-the catnip at x 54, both on the floor, and both were drawn earlier in the frame. Any day he had put a
-box out, the box painted straight over whatever he left out for her.
-
-The floor props are drawn after the box now, in the same layer the yarn was already in. A test pins
-that order, because the symptom is invisible in a screenshot of a room with no box in it.
-
-The tap target had the same shape of bug: the draw gate read `boxOut || box || secretBox` and the hit
-test read `box || secretBox`, so a box he put out was drawn and could not be tapped. The test checks
-the two gates name the same three things.
-
 ## Finding a thing is being handed it
 
 He can leave the yarn, a treat or the catnip out for her. All three were typed easter eggs: animations
@@ -442,37 +428,34 @@ It costs almost nothing to notice, because the last poke is already sitting in s
 replaced. Three conditions and each has its own test: the other seat, the same thing, within three
 seconds. A stranger cannot be half of it, and drumming on the plant on your own is not a moment.
 
-## The box hid the two things it was sitting on top of
-
-Three separate reports of "I don't see anything happening in the room" turned out to be one bug with
-two halves, and neither was visible in any test.
+## Everything on the floor goes in front of the box, and only the cat goes behind
 
 The box's near wall is drawn after the cat, which is what puts her inside it rather than behind it.
-It is 28 wide at `BOX_X = 44`, so it covers x 44-71 at floor level. The treat (68), the catnip (54)
-and the mug she knocks off the shelf (66) all land inside that. The treat and the catnip were moved
-below it once; the mug was missed, so with a box out, knocking the mug off the shelf moved it from
-the shelf to underneath the box, which looks exactly like nothing happening. The regression test now
-names all four.
+It is 28 wide at `BOX_X = 44`, so it covers x 44-71 at floor level, and four things land in there:
+the treat (68), the catnip (54), the mug she knocks off the shelf (66) and her mood props, which
+ride at `kx +- 13` and so sit inside the box whenever she does.
 
-The other half: she was sent to `BOX_X + 2` when she got in, which is the box's left edge, not its
-middle. That constant would have been right for a box a few pixels wide. She stood with her front
-half out of it and the near wall cutting her in two, which reads as a cat beside a box. It is
-measured off the sprite now, `BOX_X + BOX_FRONT.w / 2`, so a box that changes size takes her with it.
+Each one was found separately and each looked like a different bug. The widest, the mat for
+"stressed", was 81 of its 84 cells behind the wall, and the room's whole point is that you can read
+her mood. Knocking the mug off moved it from the shelf to underneath the box, which looks exactly
+like nothing happening, and that one was reported three times.
 
-## What else the box was covering, and what the camera cuts off
+The rule is one line now, and the layering test pins all five: floor-level things are drawn after the
+near wall, and only the cat goes behind it.
 
-Two audits, because they are different failures.
+Two more of the same shape, worth knowing because they are not about drawing order:
 
-**Behind the box.** The near wall is opaque and covers x 44-71, y 60-67. Anything drawn before it that
-lands in that rectangle disappears. Sweeping every draw call in that vertical band turned up one more
-after the mug: her mood props, drawn at `kx - 13` and `kx + 11`. When she is in the box `kx` is 58, so
-they land inside it, and the widest of them, the mat for "stressed", was 81 of its 84 cells behind the
-wall. The room's whole point is that you can read her mood, and getting in a box was switching it off.
+**She was sent to the box's left edge.** `BOX_X + 2` would have been right for a box a few pixels
+wide. She stood with her front half out of it and the wall cutting her in two, which reads as a cat
+beside a box. It is measured off the sprite now, so a box that changes size takes her with it.
 
-The rule is now consistent and the layering test pins all five: floor-level things are drawn after the
-box's near wall, and only the cat goes behind it.
+**The tap target disagreed with the drawing.** The draw gate read `boxOut || box || secretBox` and
+the hit test read `box || secretBox`, so a box he put out was drawn and could not be tapped. A test
+checks the two gates name the same three things.
 
-**Off the camera.** The room is 100 columns, the viewport is 80, and the camera follows the cat
+## What the camera cuts off
+
+The room is 100 columns, the viewport is 80, and the camera follows the cat
 between 0 and 20. Every prop's reachable camera range, from the sprite widths:
 
 | prop   | x     | visible when the camera is |
@@ -548,24 +531,18 @@ mood one was caught being useless: the mat runs to x 72 and the box's wall stops
 always show and "greater than zero" passed with her mood entirely hidden. It is 72 cells against 3
 now, and the threshold sits between them.
 
-## Seeing the canvas at all
+## Why none of that was caught by looking
 
-_Updated: this works for a still room and not for animation. A hidden tab renders a few frames after
-load and then freezes entirely, which is enough to check where things are drawn and useless for
-checking anything that moves. Every layering finding here came from a still frame; anything with
-timing in it has to be a pure function with its own tests instead._
+Every one of these was reported more than once and checked more than once, because the canvas had
+never rendered anywhere it could be looked at. A hidden tab never fires `requestAnimationFrame`, and
+an automated browser keeps its tabs hidden, so the canvas sat at its unsized default and every
+screenshot came back black. Each change was verified by reading the state that feeds the drawing
+rather than the drawing.
 
-Both of those had been reported three times and verified as working three times, because the canvas
-had never once rendered where I could look at it. A hidden tab never fires `requestAnimationFrame`,
-and the automated browser keeps its tabs hidden, so the canvas stayed at its unsized 300x150 default
-and every screenshot came back black. Every canvas change was being checked by reading the state that
-feeds the drawing rather than the drawing.
-
-What works: patch `requestAnimationFrame` to a timer and stub `innerHeight`, both before the app
-boots, then read the pixels back with `getImageData`. Positions have to be converted out of screen
-space first, because the room is 100 columns wide, the viewport is 80, and the camera follows the
-cat, so the same object is at a different screen x in two rooms. The box is at a fixed x, so finding
-it gives you the camera and everything else follows.
+Forcing it to draw is possible, and worth knowing for a quick look: patch `requestAnimationFrame` to
+a timer and stub `innerHeight`, both before the app boots. It renders a handful of frames and then
+freezes, so it settles a question about layout and cannot answer one about motion. That is what the
+harness above is for.
 
 ## Taking the box away
 
@@ -1128,8 +1105,11 @@ things only:
 - why not the obvious thing, where somebody would reasonably try the obvious thing and quietly break
   something
 
-Everything else is deleted. The comment load has been cut four times now: 3124 lines to 564, then
-1381 back to 462, then to 391, and most recently 630 back to 384. Every time the growth came the same
-way: a feature lands with a paragraph explaining why, which is a good paragraph in the wrong file.
-The other repeat offender is a comment that narrates what the code used to do. The reader has no
-access to the old version, so it costs attention and returns nothing, and it rots on the next edit.
+Everything else is deleted. The comment load has been cut five times now: 3124 lines to 564, then
+1381 back to 462, then to 391, then 630 back to 401, and most recently 879 back to 689. Every time
+the growth arrives the same way: a feature lands with a paragraph explaining why, which is a good
+paragraph in the wrong file. This one is that file.
+
+Two repeat offenders. A comment that narrates what the code used to do costs the reader attention
+and returns nothing, because they have no access to the old version, and it rots on the next edit.
+And a docstring that restates the name below it: `/** Held on, or let go. */` above `hold()`.
