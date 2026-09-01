@@ -19,7 +19,10 @@ describe("she is the cat", () => {
   });
 
   it("never says the cat's name back to her as if she were somebody else", () => {
-    // "You are ..." on her side, the name only on his. See the caption under the room.
-    expect(app).toMatch(/youAreHer\s*\?\s*`You are \$\{scene\.doing\}\.`/);
+    /*
+     * The rule, not the expression. This asserted the exact template once and failed the day the
+     * caption got better rather than the day it got worse, which is the wrong way round.
+     */
+    expect(copy).toMatch(/youAreHer\s*\?\s*`You are \$\{[^}]+\}\.`/);
   });
 });

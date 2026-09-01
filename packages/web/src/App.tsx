@@ -1489,7 +1489,7 @@ function RoomPage({ id }: { id: string }) {
           {setup
             ? `Picking out ${previewLook.name}.`
             : view.youAreHer
-              ? `You are ${scene.doing}.`
+              ? `You are ${scene.doingHers ?? scene.doing}.`
               : `${previewLook.name} is ${scene.doing}.`}
         </p>
         <span id="room-actions" tabIndex={-1} />

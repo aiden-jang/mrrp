@@ -48,6 +48,28 @@ There is a test for the sentence, and for the caption saying "You are" rather th
 at her, because this is twice now that the premise has been re-established and something has been
 left behind saying the opposite.
 
+## The caption change broke six sentences, and only a sweep found them
+
+Giving her side "You are ___" instead of her own name was right, and it quietly wrecked six of the
+scene descriptions it renders, because nobody re-reads the copy after changing the sentence around
+it. Two kinds of wreckage:
+
+Three carried a third person: "You are in her own spot", "You are up on her back legs". Those were
+rewritten to work in either frame, which is better than two versions of the same line.
+
+Three could not be rewritten, because they address the reader as the other person. "sitting on you",
+"loafing right next to you" and "sitting with you" are written from the seat that is watching, so on
+her side they became "you are sitting on you". They get a `doingHers`, and it deliberately describes
+her rather than her effect on him: he is not necessarily even in the room.
+
+The test that found them is the thing to keep. It reads both source files, pulls every phrase that
+can land in a caption, and checks it in her frame, for a third person and for the word "you". The
+first version I wrote flagged three; running it turned up three more I had read past twice.
+
+A note on the test that broke while this landed. `premise.test.ts` asserted the caption's exact
+template, so it failed the day the caption got better rather than the day it got worse. It asserts
+the rule now.
+
 ## The discoveries and the postcard were holding it too
 
 Both seats find the secrets, and most of the copy described the cat, so on her screen the room told

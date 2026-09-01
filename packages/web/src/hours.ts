@@ -24,6 +24,8 @@ export interface Scene {
   sleepy: number;
   atDoor: boolean;
   doing: string;
+  /** What she reads, where `doing` names the reader. See moods.ts. */
+  doingHers?: string;
   snug: number;
   play: number;
   purring: boolean;
@@ -110,7 +112,7 @@ function doingAt(
   }
   if (hour < 13) return "loafing";
   if (hour < homeHour) {
-    if (grey) return "in her own spot, with no sun to follow";
+    if (grey) return "in the usual spot, with no sun to follow";
     return summer ? "lying just beside the sunbeam" : "moving with the sunbeam, one patch at a time";
   }
   if (hour < 21) return "settled, now that everyone's in";
@@ -198,6 +200,7 @@ export function sceneFor(
                 : sunnySpot),
     sleepy: r?.sleepy ?? (watching ? 0.12 : closed && free ? Math.min(1, sleepy + 0.12) : sleepy),
     atDoor: r ? r.catX === 0.19 : atDoor,
+    doingHers: r?.doingHers,
     doing:
       r?.doing ??
       (watching
