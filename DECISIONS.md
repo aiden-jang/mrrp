@@ -1587,6 +1587,24 @@ Three things fail to compile now that used to fail silently: the browser misspel
 sends, a handler reading a field nobody sends, and the two sides describing the same body
 differently. The dev-only `age` route keeps its own shape, having no client to disagree with.
 
+## Three places the room went quiet
+
+The bounce is the app's way of saying something just happened here. It fires on the local person's
+own tap and, since the room went live, on the other seat's too. It did not fire when she wrote him a
+line, which by then was the most significant thing she could do in here. Her mood bounced, his four
+actions bounced, and the one that took her actual words landed in silence.
+
+The screen that reads the notes back went quiet in the other direction. The line saying how many he
+wrote is gated on there being more to come, which is right, and it meant that the moment she reached
+the end of a hundred days of them the panel said nothing at all. It marks the end now, and does not
+count to one when one is all he wrote.
+
+The panel itself had none of the app's own vocabulary in it. It carries the paw the arrival card
+uses, once beside the title and once at the end, rather than anything new: the notes are the warm
+thing on that screen and decorating around them would compete with them. `PawMark` moved into
+`screens.tsx` to get there, since a component in `App.tsx` cannot be reached from a file `App.tsx`
+imports.
+
 ## What the comments are for
 
 Every explanation of a decision belongs in this file. The comments left in the code are for three

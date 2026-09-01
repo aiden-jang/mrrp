@@ -2,6 +2,20 @@ import type { SaidSoFar } from "./types.js";
 import { GIFTS } from "./types.js";
 import s from "./App.module.css";
 
+export function PawMark() {
+  return (
+    <svg viewBox="0 0 22 22" width="11" height="11" aria-hidden focusable="false" className={s.paw}>
+      <g fill="currentColor">
+        <ellipse cx="4" cy="5" rx="2.6" ry="3" />
+        <ellipse cx="10" cy="3" rx="2.8" ry="3.2" />
+        <ellipse cx="16" cy="5" rx="2.6" ry="3" />
+        <ellipse cx="20.5" cy="10" rx="2.2" ry="2.5" />
+        <ellipse cx="11" cy="15" rx="7.5" ry="5.8" />
+      </g>
+    </svg>
+  );
+}
+
 const dayOf = (at: number) => new Date(at).toLocaleDateString(undefined, { month: "long", day: "numeric" });
 
 // No cat on this screen. Every other empty state draws her asleep and promises to keep trying,
@@ -172,7 +186,9 @@ export function SaidPanel({
       tabIndex={-1}
     >
       <div className={s.saidTop}>
-        <p className={s.panelTitle}>{wrote}</p>
+        <p className={s.panelTitle}>
+          <PawMark /> {wrote}
+        </p>
         <button type="button" onClick={onClose} className={s.arrivalClose} aria-label="Close">
           ×
         </button>
@@ -199,11 +215,19 @@ export function SaidPanel({
           and streaks, and this is neither: it does not move when she stays away and nothing goes
           wrong if she never reaches the end of it.
       */}
-      {said.total > said.notes.length && (
+      {said.total > said.notes.length ? (
         <p className={s.saidMore}>
           {youAreHer
             ? `He wrote ${said.total} of these.`
             : `${said.total} written. She is on day ${said.notes.length}.`}
+        </p>
+      ) : (
+        /* The end of a hundred days of them, which used to arrive as an empty space. */
+        <p className={s.saidEnd}>
+          <PawMark />{" "}
+          {youAreHer
+            ? `That is all of them.${said.total > 1 ? ` He wrote ${said.total}.` : ""}`
+            : `She has read all of them.${said.total > 1 ? ` All ${said.total}.` : ""}`}
         </p>
       )}
 
