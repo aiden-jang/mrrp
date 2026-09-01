@@ -558,6 +558,34 @@ saying "she's in it", which reads as right now and meant today.
 Neither direction of undo is logged. The room shows her leaving the box, and "took the box away
 again" and "got out of the box again" are not things the other one needs told.
 
+## A mark nobody can see is not a mark
+
+Every fix this year made his actions reach her: a line saying what is in the room, a button that
+lights up, a box that stopped covering things. None of it helped, because there was nothing legible
+at the end of it. Measured against the rug they lie on:
+
+| mark                        | before            | after                        |
+| --------------------------- | ----------------- | ---------------------------- |
+| tuft, from brushing her     | 5 cells at 1.43:1 | 22 cells, outlined, over 3:1 |
+| dent, from sitting with her | 1.18:1            | over 3:1                     |
+
+Three to one is the bar for a graphical object being perceptible at all. The dent was mixed 13% away
+from the surface it sits on, which is another way of saying it was the surface it sits on.
+
+The colour cannot be a constant, and neither can the direction. The floor changes all day, so a fixed
+mix toward ink is legible at noon and gone at night. Worse, at dusk the floor is mid-toned and ink
+cannot reach 3:1 from it at all. `legible()` tries both ends of the room's palette and takes whichever
+is further from what is underneath, which clears 3:1 at every hour, worst case 3.01 in the afternoon.
+
+The tuft also needed to be bigger. Five pixels is not a tuft at any contrast, and an outline is what
+makes a small sprite read, which is why everything else in the room has one.
+
+Two things the draw harness caught while this was being written, both the same mistake in different
+clothes. `legible` was being handed the floor, and both marks lie on the rug, which is a different
+colour: right idea, wrong surface. And the test took the highest contrast in the region, which the
+dent's lit lip clears whatever the dent is doing, so it passed with the mark invisible. It counts how
+many cells are legible now. The old dent scores 2 and the old tuft scores 0.
+
 ## Nothing accumulates into an inbox
 
 The arrival card is capped and clears itself. The visit log is bounded. There is no unread count, no

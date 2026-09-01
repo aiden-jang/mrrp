@@ -658,7 +658,13 @@ export const BROUGHT = sprite([".r.r.", ".rhr.", ".r.r."], 0, 0);
  * Three rows of nothing much, which is the correct amount of drawing for cat hair. `f` takes her own
  * fur colour at the call site, so what is on the rug is always what is on the cat.
  */
-export const TUFT = sprite(["f.f", ".ff", "f.f"], 0, 0);
+/*
+ * A tuft of her, left where he brushed her.
+ *
+ * Five pixels of lightened fur once, on a floor of nearly the same tone. It measured 1.43:1 against
+ * the floor, which is to say nobody ever saw it. The outline is what makes it read at this size.
+ */
+export const TUFT = sprite(["..ww..", ".wffw.", "wfffw.", ".wffw.", "..ww.."], 0, 0);
 
 /**
  * The things she leaves on the floor while he's away. Tiny on purpose: a cat's gift is specific, not

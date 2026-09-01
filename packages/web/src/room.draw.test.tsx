@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { room, SHELF_WOOD, type Room } from "./canvasHarness.js";
 import { SHELF_TIP_MS } from "./shelftrip.js";
+import { contrast } from "./legible.js";
 
 const MUG = "#cfe0e4";
 let r: Room | null = null;
@@ -53,6 +54,40 @@ describe("her trip to the shelf", () => {
     r = room({ shelfDown: true });
     r.frame(16);
     expect(r.count(MUG, 56, 70)).toBeGreaterThan(0);
+  });
+});
+
+describe("the marks his actions leave", () => {
+  /*
+   * Cells that clear 3:1 against the rug they lie on, counted rather than maxed.
+   *
+   * The maximum is no use: the dent has a lit lip that clears 3:1 whatever the dent itself is doing,
+   * so "something here is legible" passes with the mark invisible. How much of it you can see is the
+   * question, so count.
+   */
+  const legibleCells = (r: Room, y0: number, y1: number, x0: number, x1: number) => {
+    const under = r.at(x0 - 1, y1)!;
+    let n = 0;
+    for (let y = y0; y <= y1; y++)
+      for (let x = x0; x <= x1; x++) {
+        const c = r.at(x, y);
+        if (c && c !== under && contrast(c, under) >= 3) n++;
+      }
+    return n;
+  };
+
+  it("draws a tuft big enough and dark enough to find", () => {
+    r = room({ brushed: true });
+    r.run(0, 300);
+    // Five cells at 1.43:1 before this. Neither number was ever going to be seen.
+    expect(legibleCells(r, 68, 76, 46, 56)).toBeGreaterThan(8);
+  });
+
+  it("draws a dent that is not the same colour as the rug it is in", () => {
+    r = room({ satWith: true });
+    r.run(0, 300);
+    // The body is about 22 cells. The lip alone is 9, so this cannot pass on the lip.
+    expect(legibleCells(r, 68, 74, 34, 47)).toBeGreaterThan(14);
   });
 });
 

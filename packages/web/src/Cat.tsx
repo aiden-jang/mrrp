@@ -8,6 +8,7 @@ import { catCallCode } from "./secrets.js";
 import { moonPhase, moonPixelLit } from "./moon.js";
 import { cellAt, DOODLE_INK } from "./doodle.js";
 import { blanketPalette } from "./blanket.js";
+import { legible } from "./legible.js";
 import { SHELF_REACH_X, shelfTrip } from "./shelftrip.js";
 import {
   BED_STRIPES,
@@ -1343,6 +1344,9 @@ export function Cat({
       const rugShadow = mixHex(sc.floorNear, INK, 0.25);
       const rugEdge = mixHex(sc.floorNear, "#765367", 0.58);
       const rugBody = mixHex(sc.floorNear, "#a8737e", 0.48);
+      // What the tuft and the dent are actually lying on. Both sit inside the rug, so measuring
+      // their contrast against the bare floor gets the wrong surface and the wrong answer.
+      const under = rugBody;
       const rugThread = mixHex(rugBody, sc.beamWarm, 0.16);
       rect(35, FLOOR + 12, 40, 1, rugShadow);
       rect(32, FLOOR + 13, 46, 13, rugEdge);
@@ -1960,11 +1964,12 @@ export function Cat({
       }
 
       if (brushedRef.current) {
-        blit(TUFT, 48, FLOOR + 22, { f: mixHex(L.fur, "#ffffff", 0.25) });
+        blit(TUFT, 48, FLOOR + 22, { f: mixHex(L.fur, "#ffffff", 0.25), w: legible(under) });
       }
 
       if (satWithRef.current) {
-        const dent = mixHex(sc.floorNear, INK, 0.13);
+        // 0.13 toward ink was 1.18:1 against the floor it sits on. See legible.ts.
+        const dent = legible(under);
         const dentLip = mixHex(sc.floorNear, sc.beamWarm, 0.16);
         rect(36, FLOOR + 21, 9, 1, dentLip);
         rect(35, FLOOR + 22, 11, 2, dent);
