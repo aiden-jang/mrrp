@@ -242,6 +242,11 @@ a negative `ox`, and `STRETCH` is not centred at all, so she reaches 17 columns 
 `dither()` takes an optional `phase`. Do not pass `y` to it: the parity becomes `x + 2y`, which
 depends on `x` alone, and your checkerboard silently becomes vertical stripes.
 
+**Anything you press stands off its panel by at least 3:1.** Controls used to borrow `--line`, the
+faint divider, which measured 1.38:1. `--control` is derived from the panel at the hour it is drawn,
+because the chrome is tinted per hour, and it takes the least of the palette that still clears the
+bar.
+
 **The interface goes dark when the room does**, rather than crossfading. Blending a light panel into
 a dark one drags it through mid grey, where neither dark nor light text clears 4.5:1 against it, so
 the chrome is two palettes and the text polarity flips with the surfaces at a single point. Checked

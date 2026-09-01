@@ -277,10 +277,14 @@
 .together {
   animation: arrive 0.42s var(--ease-bounce) both;
   margin: 14px 0 6px;
-  padding: 13px 16px;
+  padding: 11px 15px;
   border-radius: 18px;
-  background: var(--honey);
-  color: var(--on-honey);
+  /* Was a full honey block at 9.2:1 against the page: the loudest thing on screen, for an
+     invitation. The room says they are both here by swinging the door and crossing to purr, so this
+     only has to carry what the scene cannot, which is what you can do about it. */
+  background: color-mix(in srgb, var(--honey) 22%, var(--panel));
+  border: 1px solid var(--honey);
+  color: var(--ink);
 }
 
 /* Was 17.5/700 under a headline. On its own it is an invitation, not the loudest thing on screen. */
@@ -424,6 +428,27 @@
   margin: 3px 0 0;
 }
 
+/*
+ * Everything in here now arrives over a socket rather than a poll, and appeared without moving,
+ * which reads as a repaint. Newest first, so the stagger runs down the list from the new one.
+ */
+.recent li {
+  animation: arrive 0.34s var(--ease-spring) both;
+}
+.recent li:nth-child(2) {
+  animation-delay: 60ms;
+}
+.recent li:nth-child(3) {
+  animation-delay: 120ms;
+}
+.recent li:nth-child(4) {
+  animation-delay: 180ms;
+}
+
+.fades {
+  animation: arrive 0.34s var(--ease-spring) both;
+}
+
 /* The live list of what the other one has been doing, as against `.came`, which is one sentence. */
 .recent {
   list-style: none;
@@ -482,7 +507,7 @@
   white-space: nowrap;
   color: var(--ink);
   background: var(--panel);
-  border: 1px solid var(--line);
+  border: 1px solid var(--control);
   border-radius: 999px;
   padding: 8px 15px;
   cursor: pointer;
@@ -653,7 +678,7 @@
   font-weight: 600;
   color: var(--ink);
   background: var(--panel);
-  border: 1px solid var(--line);
+  border: 1px solid var(--control);
   border-radius: 14px;
   padding: 11px 12px;
   cursor: pointer;

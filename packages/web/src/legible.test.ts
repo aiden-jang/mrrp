@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contrast, legible } from "./legible.js";
+import { contrast, legible, standOff } from "./legible.js";
 
 /** The floor at noon, afternoon, dusk, evening and the small hours. */
 const FLOORS = ["#c4918a", "#b98c81", "#8a6a68", "#6d5450", "#3b3243", "#2c2636"];
@@ -22,5 +22,20 @@ describe("marks you can actually see", () => {
   it("agrees with the contrast numbers everyone else uses", () => {
     expect(contrast("#ffffff", "#000000")).toBeCloseTo(21, 1);
     expect(contrast("#777777", "#ffffff")).toBeCloseTo(4.48, 1);
+  });
+});
+
+describe("outlines that can be seen without shouting", () => {
+  it("clears 3:1 on the panel at every hour, day and night", () => {
+    // The chrome is tinted per hour off the wall colour, so a fixed hex holds for part of the day.
+    for (const panel of ["#fffaf0", "#fdf3e4", "#efe0d2", "#3a3346", "#272232"]) {
+      expect(contrast(standOff(panel), panel), `panel ${panel}`).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("takes no more of the palette than it has to", () => {
+    // A one pixel outline wants exactly enough. `legible` jumps to 0.82 and would box every control.
+    const panel = "#fffaf0";
+    expect(contrast(standOff(panel), panel)).toBeLessThan(contrast(legible(panel), panel));
   });
 });

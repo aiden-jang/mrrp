@@ -596,6 +596,30 @@ a clean one, once, and knows what "still there" means.
 Her midnight, never his and never the server's, for the same reason as everything else: the room runs
 on her clock.
 
+## The edge of something you press is not a separator
+
+`--line` is the room's faint divider and every control borrowed it, which measured 1.38:1 on the
+panel. That is not a button, it is text floating with a ghost around it. A separator can be faint; the
+edge of a thing you press cannot.
+
+`--control` is a second token derived from the panel at the hour it is being drawn, because the chrome
+is tinted per hour and a fixed hex holds for part of the day and fails for the rest. `standOff` walks
+up until it clears 3:1 and stops, rather than jumping to the strength the floor marks use: an outline
+wants exactly enough, or every pill in the room turns into a hard box. Measured 3.07:1 after.
+
+## The banner was louder than the room
+
+"You're both in here right now" came off first, and what was left under it, an invitation to hold on
+to her, was still a full honey block at 9.2:1 against the page. The loudest object on the screen, for
+a suggestion. It is a tinted panel with a honey edge now.
+
+The room also got a chunk of the screen back. It was about 40% of a phone with four stacked cards
+under it, which is the wrong way round for the thing the app is about.
+
+And things that arrive now arrive. Everything in the live list comes over a socket rather than a
+poll, and it was appearing without moving, which reads as a repaint rather than as something
+happening. It eases in, staggered down from the newest.
+
 ## A mark nobody can see is not a mark
 
 Every fix this year made his actions reach her: a line saying what is in the room, a button that
