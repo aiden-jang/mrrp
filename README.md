@@ -277,6 +277,9 @@ That last part is enforced, not assumed. A third person with the link gets no no
 both in here", and a 403 on anything that writes. All of it lives in the Durable Object rather
 than the UI, because a rule enforced in the browser is a rule anyone can turn off.
 
+Every POST body is named once, in `Bodies`, which both sides import. `send` is generic over it, so a
+field the browser misspells is a build error rather than a value the worker drops in silence.
+
 | endpoint                      | who         | notes                                                                         |
 | ----------------------------- | ----------- | ----------------------------------------------------------------------------- |
 | `GET /api/room/:id`           | anyone      | seats the first two callers. Only her read advances the note                  |
