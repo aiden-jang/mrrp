@@ -1491,6 +1491,23 @@ shown only when there is something to clear, and it arms on the first tap and go
 The box moved out of `App.tsx` to make that testable. It is the only control in the app that can
 destroy something of hers, and it had no test that could click it.
 
+## A number in prose has no way of being wrong out loud
+
+The README says the chrome was checked across all 24 keyframe hours and the worst text ratio
+anywhere is 4.53. That sentence was written once, by hand, from a check run once, by hand. Nothing
+re-ran it. It had already drifted: it said 4.54 while the palette measured 4.53.
+
+`chrome.test.ts` walks every hour through `sceneFor`, builds the chrome the app actually renders,
+and measures every place text meets a surface. Two assertions: nothing anywhere drops below 4.5:1,
+and the figure written in the README equals the one the code produces.
+
+The second one is the point. Asserting against a constant in the test would just move the same
+stale number somewhere else. Asserting the doc against the code means retinting the chrome fails
+here, and the only way to make it pass is to write the new number down.
+
+The existing `legible.test.ts` covers marks on the floor and control outlines on the panel, both at
+3:1, because those are graphical objects. Text is the 4.5:1 case and had nothing.
+
 ## What the comments are for
 
 Every explanation of a decision belongs in this file. The comments left in the code are for three
