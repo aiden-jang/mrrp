@@ -296,8 +296,9 @@ field the browser misspells is a build error rather than a value the worker drop
 | ----------------------------- | ----------- | ----------------------------------------------------------------------------- |
 | `GET /api/room/:id`           | anyone      | seats the first two callers. Only her read advances the note                  |
 | `POST .../tell`               | her only    | her mood, one of six                                                          |
-| `POST .../say`                | her only    | a line back, 140 chars, kept twelve deep. `aboutDay` answers a note she has   |
+| `POST .../say`                | her only    | a line back, 140 chars. `aboutDay` answers a note she has                     |
 |                               |             | read. Empty text clears all of them                                           |
+| `POST .../unsay`              | her only    | takes back the one line left at that moment, and nothing else                 |
 | `POST .../act`                | him only    | pet, brush, sit, photo. Each one leaves a mark                                |
 | `POST .../heract`             | her only    | what she does as the cat: shelf, box, gift. `box` toggles, so she can get out |
 | `POST .../boxout`             | him only    | puts a box in the room. She decides whether to get in                         |
