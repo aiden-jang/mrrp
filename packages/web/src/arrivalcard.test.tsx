@@ -1,15 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { plain } from "./rendered.js";
 import { ArrivalCard } from "./App.js";
 import type { Arrival } from "./types.js";
 
 const text = (items: Arrival[]) =>
-  renderToStaticMarkup(<ArrivalCard name="Bean" items={items} youAreHer={false} onClose={() => {}} />)
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&#x27;/g, "'")
-    .replace(/&#x201C;|&#x201D;|&quot;|\u201c|\u201d/g, '"')
-    .replace(/\s+/g, " ")
-    .trim();
+  plain(renderToStaticMarkup(<ArrivalCard name="Bean" items={items} youAreHer={false} onClose={() => {}} />));
 
 const AT = Date.now();
 

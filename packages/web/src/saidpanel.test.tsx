@@ -1,15 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { plain } from "./rendered.js";
 import { SaidPanel } from "./screens.js";
 import type { SaidSoFar } from "./types.js";
 
 const text = (said: SaidSoFar, youAreHer: boolean) =>
-  renderToStaticMarkup(<SaidPanel said={said} youAreHer={youAreHer} them="Bean" onClose={() => {}} />)
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&#x27;/g, "'")
-    .replace(/&#x201C;|&#x201D;|&quot;/g, '"')
-    .replace(/\s+/g, " ")
-    .trim();
+  plain(renderToStaticMarkup(<SaidPanel said={said} youAreHer={youAreHer} them="Bean" onClose={() => {}} />));
 
 const AT = Date.parse("2026-04-02T12:00:00Z");
 
@@ -42,6 +38,18 @@ describe("looking back at what they have said", () => {
     expect(text(room, true)).toContain("you said back");
     expect(text(room, false)).toContain("what you wrote her");
     expect(text(room, false)).toContain("Bean said back");
+  });
+
+  it("says what she was answering when he has rewritten that note since", () => {
+    const orphan = text(
+      {
+        notes: [{ day: 1, text: "I am selling the car", answers: [] }],
+        lines: [{ text: "it made me laugh", at: AT, about: "the good mug is yours now" }],
+      },
+      false,
+    );
+    expect(orphan).toContain('answering "the good mug is yours now"');
+    expect(orphan.indexOf("good mug")).toBeLessThan(orphan.indexOf("it made me laugh"));
   });
 
   it("leaves out the other-lines heading when every line was an answer", () => {

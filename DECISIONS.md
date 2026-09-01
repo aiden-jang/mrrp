@@ -1455,6 +1455,20 @@ inside the `bar` branch, which is the flag that already means "she is the one go
 Her lines ride in the same `LEFT_SIDE` record as everything else she takes, so the undo week puts
 them back exactly as it puts back her mood.
 
+## Her answer pointed at a slot, and he can move what is in it
+
+An answer stored the index of the note it answered. He can rewrite his notes whenever he likes, from
+the same panel he wrote them in, and `setNotes` replaces the whole array. So: she answers "the good
+mug is yours now" with "it made me laugh", he rewrites that note to "I am selling the car", and the
+room shows her laughing at him selling the car. It put words in her mouth.
+
+An answer now stores both where the note sat and what it said. It goes under that note only when the
+note still says the same thing. When it does not, her words move in beside her other lines carrying
+the sentence she was actually answering, so nothing is lost and nothing is misattributed.
+
+Both are needed. The text alone would attach one answer to every note that happens to repeat a line;
+the index alone is the bug. Index picks the note, text vouches for it.
+
 ## What the comments are for
 
 Every explanation of a decision belongs in this file. The comments left in the code are for three

@@ -1,13 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { plain } from "./rendered.js";
 import { GoneCard, LeftCard, TheyLeftNotice } from "./screens.js";
 
-const text = (html: string) =>
-  html
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&#x27;/g, "'")
-    .replace(/\s+/g, " ")
-    .trim();
+const text = plain;
 
 const APRIL_2 = Date.parse("2026-04-02T12:00:00Z");
 const noop = () => {};

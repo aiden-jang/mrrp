@@ -204,6 +204,9 @@ export function SaidPanel({
           <ul className={s.saidList}>
             {said.lines.map((line) => (
               <li key={line.at} className={s.saidLine}>
+                {/* She answered this one, and he has since rewritten it. Show what she was
+                    answering, or her words sit here looking like a reply to nothing. */}
+                {line.about && <span className={s.saidWho}>answering &ldquo;{line.about}&rdquo;</span>}
                 <span>&ldquo;{line.text}&rdquo;</span>
                 <small className={s.saidWhen}>{dayOf(line.at)}</small>
               </li>

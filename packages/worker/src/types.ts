@@ -91,14 +91,16 @@ export interface Visit {
 /*
  * Something she left him. These stack; nothing else she leaves does.
  *
- * `gift` is set when the words came with the thing on the floor, `aboutDay` when they answer one of
- * his notes.
+ * `gift` is set when the words came with the thing on the floor. An answer carries both `aboutDay`,
+ * where the note sat, and `about`, what it actually said. He can rewrite his notes at any time, and
+ * the index alone would then hang her words off a sentence she never read.
  */
 export interface Told2 {
   text: string;
   at: number;
   gift?: Gift;
   aboutDay?: number;
+  about?: string;
 }
 
 export interface Told {
@@ -126,7 +128,8 @@ export type Gift = "leaf" | "cap" | "moth";
 /** Everything either of them has said, for the screen that looks back at it. */
 export interface SaidSoFar {
   notes: { day: number; text: string; answers: { text: string; at: number }[] }[];
-  lines: { text: string; at: number; gift?: Gift }[];
+  /** `about` is set when she answered a note he has since rewritten, so it no longer has a home. */
+  lines: { text: string; at: number; gift?: Gift; about?: string }[];
 }
 
 export interface RoomView {
