@@ -427,6 +427,8 @@ const SIGNED_OUT = "Sign in first.";
 const pad = (n: number) => String(n).padStart(2, "0");
 
 const MUG_AGAIN_MS = 1400;
+/* Matches PET_TAP_MS in Cat.tsx: how long a tap of the pet button reads as a hold. */
+const PET_TAP_MS = 1800;
 const FINISH_LINK = "mrrp:finish-link";
 
 const LINE_MAX = 140;
@@ -814,6 +816,7 @@ function RoomPage({ id }: { id: string }) {
   // Never set this from `shelfDown`. That is true all day, so she would walk to the shelf every
   // time he opened the room. This is the moment it happened, not the state.
   const [shelfAt, setShelfAt] = useState<number | null>(null);
+  const [petAt, setPetAt] = useState<number | null>(null);
   const [drawing, setDrawing] = useState(false);
   const hangUp = async (cells: string) => {
     setDrawing(true);
@@ -995,6 +998,18 @@ function RoomPage({ id }: { id: string }) {
     setNudge((v) => v + 1);
     play(ACTION_SOUND[a]);
     if (a === "pet" || a === "brush") buzz(a);
+    /*
+     * The button is a short hold, because that is what it is.
+     *
+     * Petting is the one action with no mark, so the hold is the whole of it, and the button was
+     * firing neither half: nothing on his own cat and nothing on hers. `petAt` draws it here and
+     * the two `doHold` calls send it to her down the same path a real hold uses.
+     */
+    if (a === "pet") {
+      setPetAt(Date.now());
+      doHold(id, true);
+      window.setTimeout(() => doHold(id, false), PET_TAP_MS);
+    }
     try {
       setView(await doAct(id, a));
       const said = ACTIONS.find((x) => x.id === a)?.mine;
@@ -1317,6 +1332,7 @@ function RoomPage({ id }: { id: string }) {
             onWindowLight={() => void touchWindowLight()}
             shelfDown={view.shelfDown}
             shelfAt={shelfAt}
+            petAt={petAt}
             boxOut={view.boxOut}
             onTidy={() => void tidy()}
             mugFell={mugFell}

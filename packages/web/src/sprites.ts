@@ -664,7 +664,7 @@ export const BROUGHT = sprite([".r.r.", ".rhr.", ".r.r."], 0, 0);
  * Five pixels of lightened fur once, on a floor of nearly the same tone. It measured 1.43:1 against
  * the floor, which is to say nobody ever saw it. The outline is what makes it read at this size.
  */
-export const TUFT = sprite(["..ww..", ".wffw.", "wfffw.", ".wffw.", "..ww.."], 0, 0);
+export const TUFT = sprite(["w....w", ".w..w.", ".wffw.", "wffffw", ".wwww."], 0, 0);
 
 /**
  * The things she leaves on the floor while he's away. Tiny on purpose: a cat's gift is specific, not

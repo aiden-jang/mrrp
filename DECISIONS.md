@@ -558,6 +558,34 @@ saying "she's in it", which reads as right now and meant today.
 Neither direction of undo is logged. The room shows her leaving the box, and "took the box away
 again" and "got out of the box again" are not things the other one needs told.
 
+## The pet button was not connected to the drawing
+
+Holding on to her sets a flag in the canvas and everything hangs off it: her eyes shut, a heart rises
+off her, the purr deepens. The "Pet her" button never touched that flag. It played a sound, bumped a
+counter and posted the action, so tapping it changed nothing you could see, on either screen.
+
+That is worse for petting than it would be for anything else, because petting is the one action with
+no mark. There is nothing left over afterwards to notice, so if the moment itself does not draw, the
+whole action is silent.
+
+The button is a short hold now, which is what it always was. `petAt` draws it on his own cat, and the
+two `doHold` calls send it to her down the same path a real hold already uses.
+
+## Everything the room keeps lasts one of her days
+
+`brushedDay`, `satWithDay`, `boxDay` and `boxOutDay` are day numbers in her timezone, not timers, so
+everything clears at her midnight rather than a day after whenever it happened.
+
+A duration would have been the obvious choice and is worse. It puts the room on a different schedule
+every day, so a tuft left at nine in the morning goes at nine and one left at eleven at night goes at
+eleven, and she can never tell what she is looking at without knowing when it was left. A day is the
+unit the room already runs on: the light crosses the floor over her day, the note turns over on her
+day, and he is expected home at an hour of her day. Marks clearing with it means she opens the room to
+a clean one, once, and knows what "still there" means.
+
+Her midnight, never his and never the server's, for the same reason as everything else: the room runs
+on her clock.
+
 ## A mark nobody can see is not a mark
 
 Every fix this year made his actions reach her: a line saying what is in the room, a button that
