@@ -720,6 +720,17 @@ is tinted per hour and a fixed hex holds for part of the day and fails for the r
 up until it clears 3:1 and stops, rather than jumping to the strength the floor marks use: an outline
 wants exactly enough, or every pill in the room turns into a hard box. Measured 3.07:1 after.
 
+## The sound toggle was sitting on the notes box
+
+It was `position: fixed`, so it floated over whatever scrolled underneath it. On a phone the content
+column is the full width, which put it on the top-right corner of the notes textarea: the one field
+in the app where he writes the thing the room is for. A tap there muted the app instead of placing a
+cursor. On a wide screen it sits outside the column and none of this happens, which is why it lasted.
+
+It is absolute now, so it scrolls away with the room it belongs to. Measured across every scroll
+position on both seats and the setup panel: no overlap anywhere, and it is still the first thing at
+the top.
+
 ## Everything you press is 44 across
 
 Nothing was. The mood row, which is the thing she uses every day, was 38 tall; the blanket swatches
