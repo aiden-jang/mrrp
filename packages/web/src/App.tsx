@@ -12,7 +12,7 @@ import type {
   Treat,
   Visit,
 } from "./types.js";
-import { ACTIONS, CAT_ACTS, LINE_MAX, MOODS, TREATS } from "./types.js";
+import { ACTIONS, CAT_ACTS, GIFTS, LINE_MAX, MOODS, TREATS } from "./types.js";
 import {
   doAct,
   doClock,
@@ -294,19 +294,6 @@ const pastTense = (a: LogAction) =>
       ? "put a box out for you"
       : (ACTIONS.find((x) => x.id === a)?.past ?? CAT_ACTS.find((x) => x.id === a)?.past ?? "was here");
 
-const GIFT_NAMES: Record<string, string> = {
-  leaf: "leaf",
-  cap: "bottle cap",
-  moth: "moth",
-};
-
-/** The same three, as something to pick rather than something the room rolls. */
-const GIFT_CHOICES: { id: Gift; label: string }[] = [
-  { id: "leaf", label: "a leaf" },
-  { id: "cap", label: "a bottle cap" },
-  { id: "moth", label: "a moth" },
-];
-
 /*
  * What she reads when the secret is about her.
  *
@@ -415,7 +402,7 @@ export function ArrivalCard({
                 </>
               ) : item.kind === "kept" ? (
                 <>
-                  <b>{name}</b> took the {GIFT_NAMES[item.gift] ?? "thing"} you left.
+                  <b>{name}</b> took the {GIFTS.find((g) => g.id === item.gift)?.name ?? "thing"} you left.
                 </>
               ) : item.kind === "first" ? (
                 <>{FIRSTS[item.what] ?? "something happened here for the first time."}</>
@@ -438,8 +425,8 @@ export function ArrivalCard({
                 </>
               ) : item.gift ? (
                 <>
-                  <b>{name}</b> left you {GIFT_CHOICES.find((g) => g.id === item.gift)?.label ?? "something"},
-                  and said: “{item.text}”
+                  <b>{name}</b> left you {GIFTS.find((g) => g.id === item.gift)?.label ?? "something"}, and
+                  said: “{item.text}”
                 </>
               ) : (
                 <>
@@ -2036,7 +2023,7 @@ function RoomPage({ id }: { id: string }) {
               aria-label="Something to say with the thing you leave him"
             />
             <div className={s.moodRow}>
-              {GIFT_CHOICES.map((g) => (
+              {GIFTS.map((g) => (
                 <button
                   key={g.id}
                   aria-pressed={view.gift === g.id}

@@ -1,6 +1,7 @@
 import { Hono, type Context, type Next } from "hono";
 import { getSessionUser } from "@aidenjang/auth-client";
 import type { Action, CatAct, Gift, Mood, Treat } from "./types.js";
+import { ACTIONS, GIFTS, TREATS } from "./types.js";
 import type { Tally, TallyKey } from "./remembers.js";
 import type { Env } from "./env.js";
 import { ROOM_GONE } from "./room.js";
@@ -11,10 +12,12 @@ const app = new Hono<{ Bindings: Env }>();
 const ROOM_RE = /^[a-z0-9]{6,24}$/;
 // Fifteen by nine. The room checks the same thing again; this is the cheap gate at the door.
 const DOODLE_RE = /^[0-4]{135}$/;
-const VALID: Action[] = ["pet", "brush", "sit", "photo"];
+const VALID: Action[] = ACTIONS.map((a) => a.id);
+// Deliberately not CAT_ACTS. That list holds `gift` too, which has its own endpoint because it
+// carries her words; accepting it here would be a second, wordless way to leave one.
 const VALID_CAT_ACTS: CatAct[] = ["shelf", "box"];
-const VALID_GIFTS: Gift[] = ["leaf", "cap", "moth"];
-const VALID_TREATS: Treat[] = ["yarn", "treat", "catnip"];
+const VALID_GIFTS: Gift[] = GIFTS.map((g) => g.id);
+const VALID_TREATS: Treat[] = TREATS.map((t) => t.id);
 // The things in the room you can touch. An unknown key is a 400, not a new prop, for the same reason
 // `found` refuses one: the client does not get to invent room furniture.
 const VALID_POKES = ["window", "frame", "shelf", "door", "plant", "bed", "box", "floor"];

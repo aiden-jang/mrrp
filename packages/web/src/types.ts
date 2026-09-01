@@ -88,6 +88,13 @@ export interface Visit {
  * An answer keeps both `aboutDay` and `about`. He can rewrite his notes whenever he likes, so the
  * index alone would hang her words off a sentence she never read.
  */
+/* The three things she can leave on the floor. `label` carries its article, `name` does not. */
+export const GIFTS: { id: Gift; label: string; name: string }[] = [
+  { id: "leaf", label: "a leaf", name: "leaf" },
+  { id: "cap", label: "a bottle cap", name: "bottle cap" },
+  { id: "moth", label: "a moth", name: "moth" },
+];
+
 /* What she can leave in one go. Both sides hold it: the browser stops her typing past it and the
    worker cuts anything longer, so a mismatch loses her words without saying so. */
 export const LINE_MAX = 140;

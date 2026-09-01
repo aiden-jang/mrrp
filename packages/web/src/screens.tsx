@@ -1,4 +1,5 @@
 import type { SaidSoFar } from "./types.js";
+import { GIFTS } from "./types.js";
 import s from "./App.module.css";
 
 const dayOf = (at: number) => new Date(at).toLocaleDateString(undefined, { month: "long", day: "numeric" });
@@ -199,13 +200,20 @@ export function SaidPanel({
             {youAreHer ? "and the rest of what you said" : `and the rest of what ${them} said`}
           </p>
           <ul className={s.saidList}>
-            {said.lines.map((line) => (
+            {said.lines.map((line, i) => (
               <li key={line.at} className={s.saidLine}>
                 {/* She answered this one, and he has since rewritten it. Show what she was
                     answering, or her words sit here looking like a reply to nothing. */}
                 {line.about && <span className={s.saidWho}>answering &ldquo;{line.about}&rdquo;</span>}
+                {line.gift && (
+                  <span className={s.saidWho}>
+                    with {GIFTS.find((g) => g.id === line.gift)?.label ?? "something"}
+                  </span>
+                )}
                 <span>&ldquo;{line.text}&rdquo;</span>
-                <small className={s.saidWhen}>{dayOf(line.at)}</small>
+                {dayOf(line.at) !== dayOf(said.lines[i - 1]?.at ?? 0) && (
+                  <small className={s.saidWhen}>{dayOf(line.at)}</small>
+                )}
               </li>
             ))}
           </ul>
