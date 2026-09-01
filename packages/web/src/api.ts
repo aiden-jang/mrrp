@@ -3,11 +3,9 @@ import type { Action, Bodies, Cat, CatAct, Clock, Gift, Mood, RoomView, SaidSoFa
 const TOKEN_KEY = "mrrp:me";
 
 // App matches on this to show the room-is-gone screen. A deleted room answers 410 everywhere, and
-// must never look like an ordinary failure the client would retry into.
+// must never look like an ordinary failure.
 export const GONE = "mrrp: this room is gone";
 
-// `undoUntil` is set only for the one who deleted it, and only for the week. Everyone else gets
-// null, because for them the room is simply gone.
 export class GoneError extends Error {
   constructor(readonly undoUntil: number | null) {
     super(GONE);
@@ -28,8 +26,8 @@ export function myToken(): string {
   return t;
 }
 
-// A brand new identity for this browser. The room bars her old token on purpose, so coming back
-// has to mint a new one; unbarring the old one would make the bar meaningless.
+// A brand new identity for this browser. The room bars her old token on purpose, so coming back has
+// to mint a new one; unbarring the old one would make the bar meaningless.
 export function forgetMe(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
@@ -53,7 +51,6 @@ export function adoptSeat(seat: string | null): void {
   if (seat && seat !== localStorage.getItem(TOKEN_KEY)) localStorage.setItem(TOKEN_KEY, seat);
 }
 
-/** Room actions post through this, so a tunnel says this instead of "Failed to fetch". */
 /* Typed per endpoint, so a misspelled field stops the build instead of being dropped in flight. */
 async function send<K extends keyof Bodies>(
   path: `/api/room/${string}/${K}`,
@@ -82,8 +79,8 @@ export const lastRoom = {
   set: (id: string) => localStorage.setItem("mrrp:room", id),
 };
 
-// Call when a room turns out to be gone, or the landing page keeps offering "back to the room".
-// Keep the seat token: it is this browser's name, not this room's.
+// Call when a room turns out to be gone, or the landing page keeps offering "back to the room". Keep
+// the seat token: it is the same browser and it may still have another room.
 export function forgetRoom(id: string): void {
   try {
     if (localStorage.getItem("mrrp:room") === id) localStorage.removeItem("mrrp:room");
@@ -95,7 +92,7 @@ export function forgetRoom(id: string): void {
 }
 
 // Without this, a link opened on a phone that has used mrrp before seats you silently under the
-// remembered name. Don't use `lastRoom`: App writes that for any id in the path, opened or not.
+// remembered name.
 export function beenHere(id: string): boolean {
   try {
     return (
@@ -110,7 +107,7 @@ export function markMine(id: string): void {
   try {
     localStorage.setItem(`mrrp:mine:${id}`, "1");
   } catch {
-    // Private mode. They get asked their name again, which is the safe way to be wrong.
+    // Private mode. The write just does not survive a reload.
   }
 }
 
@@ -189,8 +186,8 @@ export async function doRelease(id: string): Promise<void> {
   if (!r.ok) throw new Error("Couldn't free her seat.");
 }
 
-// His. Typing the cat's name beats a confirm dialog: the room is both of their years, and a
-// dialog is one mis-tap from gone.
+// His. Typing the cat's name beats a confirm dialog: the room is both of their years, and a dialog is
+// one mis-tap from gone.
 export async function doDelete(id: string, name: string): Promise<number> {
   const r = await send(`/api/room/${id}/delete`, { me: myToken(), name });
   if (r.status === 410) throw await goneFrom(r);
@@ -209,7 +206,6 @@ export async function doUndelete(id: string): Promise<void> {
   if (!r.ok) throw new Error("The week is up, so there is nothing to put back.");
 }
 
-// Hers. Takes her side with her and leaves his room standing.
 export async function doLeave(id: string): Promise<void> {
   const r = await send(`/api/room/${id}/leave`, { me: myToken() });
   if (r.status === 410) throw await goneFrom(r);
@@ -259,55 +255,45 @@ export async function doCatAct(id: string, act: CatAct): Promise<RoomView> {
 }
 
 /*
- * Took hold, or let go. Fire and forget, and it must stay that way.
- *
- * It fires on every press and release of the cat, and a dropped one costs a hand she does not see.
- * That is not worth a red bar across a room where somebody is petting a cat.
+ * Fire and forget, and it must stay that way. It fires on every press and release of the cat, and a
+ * dropped one costs a hand she does not see. Not worth a red bar across a room somebody is petting a
+ * cat in.
  */
 export function doHold(id: string, on: boolean): void {
   void send(`/api/room/${id}/hold`, { me: myToken(), on }).catch(() => {});
 }
 
-/* Sat down with her, or got up. Unlike a hold this wants its view back: the button is a toggle. */
 export async function doSit(id: string, on: boolean): Promise<RoomView> {
   const r = await send(`/api/room/${id}/sit`, { me: myToken(), on });
   if (!r.ok) throw new Error("Couldn't do that.");
   return r.json() as Promise<RoomView>;
 }
 
-/* Settled into it, or shifted off again. Her half of him sitting down. */
 export async function doSettle(id: string, on: boolean): Promise<RoomView> {
   const r = await send(`/api/room/${id}/settle`, { me: myToken(), on });
   if (!r.ok) throw new Error("Couldn't do that.");
   return r.json() as Promise<RoomView>;
 }
 
-/* Went to wait by the door, or came away from it. */
 export async function doWait(id: string, on: boolean): Promise<RoomView> {
   const r = await send(`/api/room/${id}/wait`, { me: myToken(), on });
   if (!r.ok) throw new Error("Couldn't do that.");
   return r.json() as Promise<RoomView>;
 }
 
-/* Touched something. Fire and forget like `doHold`, and throttled by the caller. */
 export function doPoke(id: string, what: string): void {
   void send(`/api/room/${id}/poke`, { me: myToken(), what }).catch(() => {});
 }
 
-/* His notes. Keep them out of RoomView: up to 33KB, pushed on every write. */
-/*
- * Whether the room is still there, without taking a seat in it.
- *
- * The door screen has to know before it invites anybody in, and it cannot ask by reading the room:
- * on a live one that would seat the very person it is asking.
- */
+/* Keep these out of RoomView: up to 33KB, pushed on every write. */
+// Whether the room is still there, without taking a seat in it. The door screen has to know before it
+// invites anybody in, and it cannot ask by reading the room: that would take the seat.
 export async function roomIsGone(id: string): Promise<boolean> {
   try {
     const r = await fetch(`/api/room/${id}/alive`);
     return r.status === 410;
   } catch {
-    // A dropped connection is not a deleted room. The door stays open and the read behind it
-    // will say so properly.
+    // A dropped connection is not a deleted room. The door stays open and the read behind it says so properly.
     return false;
   }
 }

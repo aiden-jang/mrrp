@@ -1,7 +1,7 @@
 import { hourIn } from "./hours.js";
 import type { RoomView } from "./types.js";
 
-/** "a, b and c", or null when there is nothing to name. */
+/* "a, b and c", or null when there is nothing to name. */
 export function listOf(parts: (string | false | null | undefined)[]): string | null {
   const kept = parts.filter((v): v is string => typeof v === "string" && v.length > 0);
   if (kept.length === 0) return null;
@@ -20,12 +20,8 @@ function inAbout(hours: number): string {
   return `in about ${Math.round(hours)} hours`;
 }
 
-/*
- * When what is in the room goes.
- *
- * Three lifetimes share one room: most marks clear at her midnight, the photo never goes, and what
- * he leaves out waits until she finds it. His side has to say whose midnight it means.
- */
+// When what is in the room goes. Three lifetimes share one room: most marks clear at her midnight,
+// the photo never does.
 export function fadeNote(view: RoomView, mine: "him" | "her", at = Date.now()): string | null {
   const hours = untilMidnight(view.clock.tz, at);
   const parts: string[] = [];

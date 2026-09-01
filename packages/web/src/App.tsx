@@ -101,12 +101,6 @@ const ACTION_SOUND: Record<Action, Cue> = {
   photo: "shutter",
 };
 
-/*
- * What the other one has been doing while you watch, newest first.
- *
- * The arrival card is the other half and is for what happened while you were away, which is why its
- * copy says it waited for you.
- */
 function TheirRecent({ subject, items }: { subject: ReactNode; items: Visit[] }) {
   if (items.length === 0) return null;
   return (
@@ -283,15 +277,6 @@ const pastTense = (a: LogAction) =>
       ? "put a box out for you"
       : (ACTIONS.find((x) => x.id === a)?.past ?? CAT_ACTS.find((x) => x.id === a)?.past ?? "was here");
 
-/*
- * What she reads when the secret is about her.
- *
- * Both seats can find these, and most of them describe the cat, so on her screen the room was
- * telling her what she had just done as though it were somebody else. Same shape as `past` and
- * `mine` on ACTIONS: one act, two sentences, because the two seats are not the same reader.
- *
- * Only the ones that name her need an entry. The bubbles are the bubbles to everybody.
- */
 export const FOUND_AS_HER: Record<string, string> = {
   mrrp: "you are purring.",
   summon: "you came over.",
@@ -460,8 +445,7 @@ const SIGNED_OUT = "Sign in first.";
 const pad = (n: number) => String(n).padStart(2, "0");
 
 const MUG_AGAIN_MS = 1400;
-/* Matches PET_TAP_MS in Cat.tsx: how long a tap of the pet button reads as a hold. */
-/* Strokes that make a brushing. Few enough to be a moment, enough that one flick is not it. */
+/* Must match PET_TAP_MS in Cat.tsx: how long a tap of the pet button reads as a hold. */
 const STROKES_NEEDED = 5;
 
 const PET_TAP_MS = 1800;
@@ -588,8 +572,8 @@ function RoomPage({ id }: { id: string }) {
   const handleCaptureReady = useCallback((capture: () => Promise<Blob | null>) => {
     setCaptureRoom(() => capture);
   }, []);
-  // Keep this memoized. An inline arrow is a new function every render, and it is in the canvas
-  // effect's deps, so the canvas remounts and calls this again forever.
+  // Keep this memoized. An inline arrow is a new function on every render, and it is in the canvas
+  // effect's deps, so the canvas would remount.
   const handleRoomProps = useCallback(
     (props: { key: string; label: string }[], poke: (key: string) => void) => {
       setRoomProps({ props, poke });
@@ -612,7 +596,7 @@ function RoomPage({ id }: { id: string }) {
         void fetchRoom(r).then(setView);
       }, MUG_AGAIN_MS);
     } catch {
-      // Nothing to say. The thing you tapped is still there to tap again.
+      // The mug can fall again tomorrow.
     }
   }, []);
   const [bedding, setBedding] = useState(false);
@@ -622,7 +606,7 @@ function RoomPage({ id }: { id: string }) {
     try {
       setView(await doBlanket(id, key, stripe));
     } catch {
-      // Nothing to say. The thing you tapped is still there to tap again.
+      // The swatch you tapped is still there to tap again.
     }
     setBedding(false);
   };
@@ -681,7 +665,7 @@ function RoomPage({ id }: { id: string }) {
     try {
       setView(await doWindowLight(id));
     } catch {
-      // An easter egg. A failed glint leaves the ordinary window untouched.
+      // A missed glint leaves the ordinary window.
     } finally {
       windowLightPending.current = false;
     }
@@ -808,20 +792,14 @@ function RoomPage({ id }: { id: string }) {
     if (prev === null || !now || prev) return;
     play("mrrp");
     setNudge((v) => v + 1);
-    /*
-     * Point at the room for two seconds, and bring it back on screen if it has been scrolled off.
-     *
-     * Everything worth watching happens up there and the controls are all down here, so the moment
-     * one of you walks in was reliably missed by the one already sitting in the room.
-     */
     setArriving(true);
     stage.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     const done = window.setTimeout(() => setArriving(false), 2000);
     return () => window.clearTimeout(done);
   }, [view?.bothHereNow]);
 
-  // Only ever the door, never a form. She is the cat and he named her when he made the room, so
-  // never ask her for a name. Gate on whether she has been in this room, not on a stored name.
+  // Only ever the door, never a form. She is the cat and he named her when he made the room, so never
+  // ask her for a name.
   const [asking, setAsking] = useState(() => !beenHere(id));
   const [shareResult, setShareResult] = useState<"copied" | "shared" | null>(null);
   const [did, setDid] = useState<string | null>(null);
@@ -858,8 +836,8 @@ function RoomPage({ id }: { id: string }) {
   }, [wantsLink, id]);
 
   const [mugFell, setMugFell] = useState<number | null>(null);
-  // Never set this from `shelfDown`. That is true all day, so she would walk to the shelf every
-  // time he opened the room. This is the moment it happened, not the state.
+  // Never set this from `shelfDown`. That is true all day, so she would walk to the shelf every time he
+  // opened the room. This is the moment it happened.
   const [shelfAt, setShelfAt] = useState<number | null>(null);
   const [petAt, setPetAt] = useState<number | null>(null);
   const [drawing, setDrawing] = useState(false);
@@ -877,11 +855,9 @@ function RoomPage({ id }: { id: string }) {
 
   const [line, setLine] = useState("");
   const [lineOpen, setLineOpen] = useState(false);
-  /** The note this line answers, or null when she is just saying something. */
   const [replyTo, setReplyTo] = useState<number | null>(null);
   const [giftWords, setGiftWords] = useState("");
   const [clearing, setClearing] = useState(false);
-  /* Null when the brush is down. A count of strokes when it is not. */
   const [strokes, setStrokes] = useState<number | null>(null);
   const [said, setSaid] = useState<SaidSoFar | null>(null);
   const saidTrigger = useRef<HTMLButtonElement>(null);
@@ -899,15 +875,14 @@ function RoomPage({ id }: { id: string }) {
   const [arrivalCard, setArrivalCard] = useState<Arrival[] | null>(null);
   const [arriving, setArriving] = useState(false);
   const stage = useRef<HTMLDivElement>(null);
-  // Coarse on purpose. Without it "in about 5 hours" still says five three hours later in a room
-  // nobody touched, and the string is in hours anyway.
+  // Coarse on purpose. Without it "in about 5 hours" still says five three hours later in a room nobody touched.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 300_000);
     return () => clearInterval(t);
   }, []);
-  // How far the card has already told them. See recent.ts: it is a mark rather than a flag so that
-  // dismissing the card does not put everything it showed back into the list.
+  // How far the card has already told them. See recent.ts: a mark rather than a flag, so dismissing the
+  // card does not put everything back.
   const covered = useRef(0);
   const showArrivals = useCallback((arrivals: Arrival[]) => {
     if (arrivals.length === 0) return;
@@ -966,8 +941,8 @@ function RoomPage({ id }: { id: string }) {
         showArrivals(next.arrivals);
         setErr(null);
       } catch (e) {
-        // The one failure that must not be retried into. Everything else here is a dropped
-        // connection; this one is an answer.
+        // The one failure that must not be retried into. Everything else here is a dropped connection; this
+        // one is an answer.
         if (e instanceof Error && e.message === GONE) {
           forgetRoom(id);
           setGone({ undoUntil: e instanceof GoneError ? e.undoUntil : null });
@@ -979,8 +954,6 @@ function RoomPage({ id }: { id: string }) {
     [id, showArrivals],
   );
 
-  // What `load` does, for a view that arrived on its own. No `adoptSeat` and no away line: both
-  // belong to opening the room, and "you were away four hours" is a greeting, not a notification.
   const takeView = useCallback(
     (next: RoomView) => {
       setView(next);
@@ -1008,13 +981,8 @@ function RoomPage({ id }: { id: string }) {
   }, [id]);
   const live = useLive(id, !asking && !gone, takeView, liveGone);
 
-  /*
-   * A dead link must not be answered with an invitation.
-   *
-   * The door screen renders before anything is read, so somebody following the link to a room that
-   * has been deleted was told a room had been made for them, invited in, and only then told it was
-   * gone. This asks the one question the door needs without seating anybody.
-   */
+  // A dead link must not be answered with an invitation. The door screen renders before anything is
+  // read, so it has to ask whether the room is still there first.
   useEffect(() => {
     if (!asking) return;
     let stale = false;
@@ -1026,16 +994,6 @@ function RoomPage({ id }: { id: string }) {
     };
   }, [asking, id]);
 
-  // Their last action, felt rather than read. A pet leaves no mark, so a rising timestamp on the
-  // pushed view is the only thing it gives her to react to. See heard.ts for why the first view
-  // never fires.
-  /*
-   * Her mood, landing on his screen while he is looking at it.
-   *
-   * `tell` writes to the moods record and not to the log, so none of the machinery that notices the
-   * other one doing something ever sees it: the room simply became a different room between frames.
-   * It is the one thing in here that is actually about her, so it should be the loudest arrival.
-   */
   const heardMood = useRef<number | null>(null);
   const moodAt = view?.catMoodAt ?? null;
   useEffect(() => {
@@ -1055,7 +1013,6 @@ function RoomPage({ id }: { id: string }) {
     const cue = heard(heardAt.current, theirLastAt, theirLastAction);
     if (theirLastAt !== null) heardAt.current = theirLastAt;
     if (cue === false) return;
-    // He watches her do it, from the same signal that tells him she did.
     if (theirLastAction === "shelf") setShelfAt(theirLastAt);
     if (cue) play(cue);
     setNudge((v) => v + 1);
@@ -1071,7 +1028,6 @@ function RoomPage({ id }: { id: string }) {
     return () => clearTimeout(t);
   }, [asking, view, err, gone, load]);
 
-  // A backstop, not the transport: it only has to cover an upgrade a proxy refused.
   useEffect(() => {
     if (asking || gone) return;
     const every = live === "open" ? 120_000 : 15_000;
@@ -1088,10 +1044,6 @@ function RoomPage({ id }: { id: string }) {
     };
   }, [asking, gone, load, live]);
 
-  /*
-   * Brushing takes brushing. The button picks the brush up and putting it down is what marks the
-   * day, so the action is the strokes rather than the tap that starts them.
-   */
   const stroke = () => {
     setStrokes((n) => {
       if (n === null) return null;
@@ -1140,13 +1092,8 @@ function RoomPage({ id }: { id: string }) {
     setNudge((v) => v + 1);
     play(ACTION_SOUND[a]);
     if (a === "pet" || a === "brush") buzz(a);
-    /*
-     * The button is a short hold, because that is what it is.
-     *
-     * Petting is the one action with no mark, so the hold is the whole of it, and the button was
-     * firing neither half: nothing on his own cat and nothing on hers. `petAt` draws it here and
-     * the two `doHold` calls send it to her down the same path a real hold uses.
-     */
+    // The button is a short hold, because that is what it is. Petting leaves no mark, so the hold is the
+    // whole of it, and the two `doHold` calls send it down the path a real hold uses.
     if (a === "pet") {
       setPetAt(Date.now());
       doHold(id, true);
@@ -1175,8 +1122,6 @@ function RoomPage({ id }: { id: string }) {
 
   const openSetup = async () => {
     if (!view) return;
-    // Fetched rather than carried in the view. If it fails the panel still opens, with the notes box
-    // empty, and saving an empty box is what restores the defaults anyway.
     const notes = await fetchNotes(id).catch(() => [] as string[]);
     const look =
       LOOKS.find((l) => l.cat.fur.toLowerCase() === view.cat.fur.toLowerCase())?.id ?? LOOKS[0]!.id;
@@ -1273,7 +1218,7 @@ function RoomPage({ id }: { id: string }) {
     }
   };
 
-  /* The one thing that reaches the server's "empty text clears them all". */
+  /* The one thing that reaches the server's "empty text clears every line". */
   const clearLines = async () => {
     setSaving(true);
     try {
@@ -1290,14 +1235,12 @@ function RoomPage({ id }: { id: string }) {
     setSaving(true);
     try {
       setView(await doSay(id, line, replyTo ?? undefined));
-      // After it lands, the way hanging a drawing does it. Everything else she leaves him makes a
-      // sound and this was the one that did not, and nothing in the room moved either.
       play("settle");
       setNudge((v) => v + 1);
       setLineOpen(false);
       setReplyTo(null);
     } catch {
-      // Nothing to say. The thing you tapped is still there to tap again.
+      // Nothing sent. The box is still open with her words in it.
     }
     setSaving(false);
   };
@@ -1361,11 +1304,8 @@ function RoomPage({ id }: { id: string }) {
       <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
         <ChromeSync night={isNightChrome(door.sun)} />
         {/*
-            The first thing she ever sees, and for a long time it was an empty screen with "someone
-            made you a cat" on it. That is the sentence the whole app moved away from: it means
-            somebody gave her a pet. She is the cat.
-
-            It shows the room now, because there is a room and this was the one screen without one.
+            The first thing she ever sees, and for a long time it said "someone made you a cat". That is the
+            sentence the whole app moved away from: it means somebody gave her a pet. She is the cat.
         */}
         <div className={s.card} style={{ textAlign: "center" }}>
           <div className={s.stage} style={{ marginBottom: 14 }}>
@@ -1457,11 +1397,8 @@ function RoomPage({ id }: { id: string }) {
     view.expectAt,
   );
 
-  /*
-      Waiting beats the hour. `sceneFor` already puts her at the door for the hour before he is
-      normally home; this is the same place, chosen rather than arrived at, so it overrides whatever
-      the sun and her mood had planned.
-  */
+  // Waiting beats the hour, and settling beats it too. Both override where the scene would have put
+  // her, so the caption below has to be told as well.
   const scene = view.waitingAtDoor ? { ...hourly, catX: DOOR_X, atDoor: true } : hourly;
 
   const chrome = chromeFor(scene);
@@ -1471,13 +1408,6 @@ function RoomPage({ id }: { id: string }) {
 
   const iAmHim = view.you !== null && !view.youAreHer;
 
-  /*
-      Rendered next to whichever button opened it, not once at the foot of the page.
-
-      His button sits under her last line, near the top, and the panel was down beside "this room",
-      so opening it threw him past every action in the room. The two branches are exclusive, so this
-      element only ever mounts once.
-  */
   const saidBack =
     said && view.them ? (
       <SaidPanel
@@ -1488,7 +1418,6 @@ function RoomPage({ id }: { id: string }) {
         panelRef={saidPanel}
       />
     ) : null;
-  // What they have done since the arrival card's last word, so the two never say the same thing.
   const theirLive = liveOnly(view.theirRecent, covered.current);
   const hisMarks = listOf([
     view.brushed && "a tuft of her on the rug",
@@ -1498,7 +1427,6 @@ function RoomPage({ id }: { id: string }) {
     view.boxOut && "a box",
   ]);
   const herMarks = listOf([view.shelfDown && "the mug on the floor", view.box && "you in the box"]);
-  // Three lifetimes share one room and nothing said which was which. See fades.ts.
   const hisFades = fadeNote(view, "him", now);
   const herFades = fadeNote(view, "her", now);
 
@@ -1585,7 +1513,6 @@ function RoomPage({ id }: { id: string }) {
             onProps={handleRoomProps}
             dreamContext={{
               found: foundKeys(),
-              // She dreams about what he does for her, never her own doings: she did those.
               recent: view.theirRecent
                 .map((visit) => visit.action)
                 .filter((a): a is Action | "leaveout" => a === "leaveout" || ACTIONS.some((x) => x.id === a)),
@@ -1622,12 +1549,6 @@ function RoomPage({ id }: { id: string }) {
           {found}
         </p>
         <p className={s.doing}>
-          {/* Her own name, said back to her, is the room describing her to herself. */}
-          {/*
-              Settling overrides the scene, because it overrides the pose. The line is drawn from
-              the hour and the mood and knows nothing about somebody having sat down, so leaving it
-              alone said she was up and in the middle of the room while she lay on the bed.
-          */}
           {setup
             ? `Picking out ${previewLook.name}.`
             : view.waitingAtDoor
@@ -1682,8 +1603,6 @@ function RoomPage({ id }: { id: string }) {
               </p>
             ))}
         {!setup && nudge === 0 && (iAmHim || view.youAreHer) && (
-          // Never say "tap {her own name}" to her. His first move is on her; hers is telling him
-          // how she is.
           <p className={s.hint}>{iAmHim ? `Hold on ${view.cat.name} to pet her` : "Tell him how you are"}</p>
         )}
         {iAmHim && setup && draft && (
@@ -1883,12 +1802,9 @@ function RoomPage({ id }: { id: string }) {
             </div>
           </div>
         )}
-        {/* No headline. The room already says this: the door swings, and she crosses the room to
-            purr. What is left is the one thing the scene cannot tell you, which is what to do. */}
         {view.bothHereNow && (
           <div className={s.together}>
             <p className={s.togetherMain}>
-              {/* While he is sat there it is the only thing worth saying, on either side. */}
               {view.sittingWithYou
                 ? `${view.them ?? "He"} is sitting with you.`
                 : view.sittingWith
@@ -1930,14 +1846,6 @@ function RoomPage({ id }: { id: string }) {
                 Write her notes, name her, choose how she looks
               </button>
             )}
-            {/*
-                Not the loud button while she can still come back.
-
-                The sentence above it says that sending this to somebody else gives her seat away and
-                ends her week, and then this was the brightest thing on the screen. During the undo
-                window the room's own position is that waiting is fine, so this reads as an option
-                rather than the next step. It goes back to primary once her week is up.
-            */}
             <button
               className={`${s.btn} ${view.theyLeft ? "" : s.btnGo}`}
               style={{ width: "100%", marginTop: 8 }}
@@ -1977,8 +1885,6 @@ function RoomPage({ id }: { id: string }) {
               </div>
             )}
 
-            {/* Outside the note, not inside it. The panel is its own card, and nesting one card in
-                another put a rounded border inside a rounded border. */}
             {view.note && (
               <>
                 <button ref={saidTrigger} className={s.quiet} onClick={() => void openSaid()}>
@@ -1988,8 +1894,6 @@ function RoomPage({ id }: { id: string }) {
               </>
             )}
 
-            {/* Not hidden while you are both here. This is the live one, and hiding it muted the
-                moment they are most likely to be watching. */}
             {theirLive.length > 0 ? (
               <TheirRecent subject={<b>{view.them}</b>} items={theirLive} />
             ) : view.themHereNow ? null : view.themLastAt ? (
@@ -2026,8 +1930,7 @@ function RoomPage({ id }: { id: string }) {
                 }}
               />
             ) : view.herLine ? (
-              /* Opens empty. Saving adds a line rather than replacing this one, and a prefilled
-                  box says the opposite. */
+              /* Opens empty. Saving adds a line rather than replacing this one, and a prefilled box says the opposite. */
               <button
                 className={s.yourLine}
                 onClick={() => {
@@ -2067,10 +1970,6 @@ function RoomPage({ id }: { id: string }) {
               </button>
             )}
 
-            {/*
-                Only while he is sat there. Settling against nobody is sitting still, which she does
-                anyway, and it is the one thing she does that lasts rather than happening once.
-            */}
             {view.sittingWithYou && (
               <button
                 className={`${s.btn} ${view.settled ? `${s.btnOn} ${s.btnStaying}` : s.btnGo}`}
@@ -2082,12 +1981,9 @@ function RoomPage({ id }: { id: string }) {
               </button>
             )}
 
-            {/* The cat's own doings, hers to choose rather than the room's to roll. */}
             <p className={s.tellLabel}>Be a cat about it</p>
             <div className={s.moodRow}>
               {CAT_ACTS.filter((a) => a.id !== "gift").map((a) => {
-                // She cannot get into a box that is not there, and a button that silently does
-                // nothing is worse than one visibly not ready.
                 const noBox = a.id === "box" && !view.boxOut;
                 const done = a.id === "shelf" ? view.shelfDown : view.box;
                 return (
@@ -2188,14 +2084,12 @@ function RoomPage({ id }: { id: string }) {
                     </>
                   )}
                 </p>
-                {/* The other half of the gift she leaves him: something out for her to find. */}
                 <p className={s.small} style={{ marginTop: 8 }}>
                   {view.forHer
                     ? `${TREATS.find((t) => t.id === view.forHer)?.label ?? "Something"} is out, waiting for her.`
                     : "Leave something out for her"}
                 </p>
                 <div className={s.moodRow}>
-                  {/* Press it again to take the box away, unless she is sitting in it. */}
                   <button
                     aria-pressed={view.boxOut}
                     disabled={view.box}
@@ -2222,7 +2116,6 @@ function RoomPage({ id }: { id: string }) {
                   ))}
                 </div>
 
-                {/* What she has been doing in there, the way she is told what he did. */}
                 <TheirRecent subject="She" items={theirLive} />
                 <p className={s.small} style={{ marginTop: 4 }}>
                   Go and be in there. That's all it takes.
@@ -2251,12 +2144,9 @@ function RoomPage({ id }: { id: string }) {
               <>
                 <div className={s.row} style={{ marginTop: 14 }}>
                   {ACTIONS.map((a) => {
-                    // Sitting is somewhere he is, so its button says whether he is there and takes
-                    // him back out again. The others are things he does, and stay as they were.
                     const brushingNow = a.id === "brush" && strokes !== null;
                     const sitting = a.id === "sit" && view.sittingWith;
-                    // Sitting shows where he is, never where he has been. The day's mark still
-                    // exists and she still sees it; dimming the button once he stands up would say
+                    // Sitting shows where he is, never where he has been. Dimming the button once he stands up would say
                     // he had used it up.
                     const on = a.id === "sit" ? sitting : brushingNow || (HIS_MARKS[a.id]?.(view) ?? false);
                     return (
@@ -2359,19 +2249,18 @@ function RoomPage({ id }: { id: string }) {
             )}
           </>
         )}
-        {/* Keep this pinned. One `err` serves a room twice a phone screen tall, so unpinned it
-            lands below the fold and a failure looks like nothing happening. */}
+        {/*
+            Keep this pinned. One `err` serves a room twice a phone screen tall, so unpinned it lands below the
+            fold and a failure looks like nothing happening.
+        */}
         {err && (
           <p className={s.errorBar} role="status">
             {err}
           </p>
         )}
         {!setup && (iAmHim || view.youAreHer) && (
-          // Everything about the room rather than about her, under one heading. Loose, these run
-          // eight deep at identical weight and "draw something" reads as big as "delete this room".
           <section className={s.roomBits} aria-label="This room">
             <p className={s.roomBitsTitle}>this room</p>
-            {/* Keep the way back in first and a button: it is what most people open this for. */}
             {!setup && view.recoveryCode && (
               <div className={s.accountInBits}>
                 <p className={s.small}>
@@ -2598,7 +2487,6 @@ function BlanketRow({
   const stripe = current?.stripe ?? false;
   return (
     <div className={s.blanketRow}>
-      {/* Only she sees this row, and she is the cat, so it is hers rather than the cat's. */}
       <p className={s.blanketLabel}>your blanket</p>
       <div className={s.blanketSwatches}>
         {BLANKET_KEYS.map((k) => (
@@ -2825,7 +2713,6 @@ function Select({
   );
 }
 
-/** Petting leaves nothing to find, which is why it is not in here. */
 const HIS_MARKS: Partial<Record<Action, (v: RoomView) => boolean>> = {
   brush: (v) => v.brushed,
   sit: (v) => v.satWith,
@@ -2850,8 +2737,8 @@ export function chromeFor(scene: Scene): Record<string, string> {
     "--air-warm": tint("warm", scene.beamWarm),
     "--panel": tint("panel", scene.wallTop),
     "--line": tint("line", scene.wallBottom),
-    // A separator can be faint. The edge of something you press cannot: `--line` measured 1.38:1 on
-    // the panel, so every pill in the room was text floating with a ghost around it.
+    // A separator can be faint. The edge of something you press cannot: `--line` measured 1.38:1 on the
+    // panel, so every pill in the room was text floating with a ghost around it.
     "--control": standOff(tint("panel", scene.wallTop)),
     "--honey": mixHex(from.honey, to.honey, t),
     "--ink": night ? INK_ON_DARK : "#3f2f1f",

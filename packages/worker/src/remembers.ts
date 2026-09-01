@@ -70,8 +70,7 @@ export const TRAIT_MIN_DAYS = 14;
 
 export type Trait = "petted" | "brushed" | "fed" | "accompanied" | "photographed";
 
-// "leaveout" is counted but is not an Action: he does it from his own panel, not the room. It is
-// what the "fed" trait is made of.
+// "leaveout" is counted but is not an Action: he does it from his own panel. It is what "fed" is made of.
 export type TallyKey = Action | "leaveout";
 
 export type Tally = Partial<Record<TallyKey, number>>;
@@ -79,7 +78,7 @@ export type Tally = Partial<Record<TallyKey, number>>;
 const HIS_ACTIONS: TallyKey[] = ["pet", "brush", "sit", "photo", "leaveout"];
 
 // Only his doings. The log carries both seats, and her personality comes out of this tally, so
-// counting her own acts would have her learning traits from herself.
+// counting her own would have her learning traits from herself.
 export function tallyFrom(log: Visit[]): Tally {
   const tally: Tally = {};
   for (const visit of log) {
@@ -121,25 +120,18 @@ export function personalityFrom(tally: Tally, daysKnown: number): Personality | 
   return { trait, count };
 }
 
-// When he actually turns up, not the hour he typed once at setup and never revised. The room
-// watches his first look-in each day so the cat waits at the door at the real time.
-
-/** One sample a day, so an evening spent opening the room twenty times counts once. */
+/* One sample a day, so an evening spent opening the room twenty times counts once. */
 export interface Homing {
-  /** A running mean of the hour he first looked in, in her timezone. */
   hour: number;
-  /** How many days have gone into it. */
   days: number;
-  /** The last local day counted, so the same day cannot count twice. */
   lastDay: number;
 }
 
-// Cap the mean rather than letting it accumulate, or a new job never moves it off the first
-// month. Under the threshold say nothing: three data points is not a habit.
+// Cap the mean rather than letting it accumulate, or a new job never moves it off the first month.
 export const HOMING_MIN_DAYS = 14;
 export const HOMING_MEMORY = 14;
 
-/** Half an hour. Below that it is the same time of day and not worth a sentence. */
+/* Half an hour. Below that it is the same time of day and not worth a sentence. */
 export const HOMING_DRIFT = 0.5;
 
 export function homingWith(previous: Homing | null, hour: number, day: number): Homing | null {
@@ -153,7 +145,6 @@ export function homingWith(previous: Homing | null, hour: number, day: number): 
   };
 }
 
-/** The hour she should expect him, or null while the room is still only going on what he typed. */
 export function learnedHour(homing: Homing | null, told: number): number | null {
   if (!homing || homing.days < HOMING_MIN_DAYS) return null;
   return Math.abs(homing.hour - told) < HOMING_DRIFT ? null : homing.hour;

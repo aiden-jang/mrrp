@@ -15,10 +15,9 @@ export const ACTIONS: { id: Action; label: string; past: string; mine: string }[
   { id: "photo", label: "Take her photo", past: "took a photo of you", mine: "took her photo" },
 ];
 
-// `past` finishes "<she> ___", which HE reads. `mine` finishes "He'll see that you ___", hers.
+// Two of them, because the two seats read different sentences. One shared string gave "you brushed you".
 export type CatAct = "shelf" | "box" | "gift";
 
-/** Everything the log can hold: his buttons, her cat acts, and what he does from his own panel. */
 export type LogAction = Action | CatAct | "leaveout" | "boxout";
 
 export const CAT_ACTS: { id: CatAct; label: string; past: string; mine: string }[] = [
@@ -29,11 +28,9 @@ export const CAT_ACTS: { id: CatAct; label: string; past: string; mine: string }
     mine: "knocked something off the shelf",
   },
   { id: "box", label: "Get in the box", past: "got in the box", mine: "got in the box" },
-  // Not a button: she picks the gift itself, and this is how that reaches him.
   { id: "gift", label: "Leave him something", past: "left you something", mine: "left him something" },
 ];
 
-/** What he leaves out for her, mirroring the gift she leaves him. */
 export type Treat = "yarn" | "treat" | "catnip";
 
 export interface LeftOut {
@@ -88,36 +85,25 @@ export interface Visit {
   action: LogAction;
 }
 
-/*
- * Something she left him. These stack; nothing else she leaves does.
- *
- * An answer keeps both `aboutDay` and `about`. He can rewrite his notes whenever he likes, so the
- * index alone would hang her words off a sentence she never read.
- */
-/* The three things she can leave on the floor. `label` carries its article, `name` does not. */
+// Something she left him. An answer keeps both `aboutDay` and `about`: he can rewrite his notes
+// whenever he likes, and the number alone would hang her words off a sentence she never read.
 export const GIFTS: { id: Gift; label: string; name: string }[] = [
   { id: "leaf", label: "a leaf", name: "leaf" },
   { id: "cap", label: "a bottle cap", name: "bottle cap" },
   { id: "moth", label: "a moth", name: "moth" },
 ];
 
-/* What she can leave in one go. Both sides hold it: the browser stops her typing past it and the
-   worker cuts anything longer, so a mismatch loses her words without saying so. */
+// Both sides hold this number. The browser stops her typing past it and the worker cuts anything
+// longer, so if they ever disagree her words are lost and nobody is told.
 export const LINE_MAX = 140;
 
-/*
- * Every POST body, named once.
- *
- * `send` builds from these, so a field the browser misspells is a compile error rather than a value
- * the worker silently ignores. The worker takes the field names from the same place and keeps its
- * own checks on the values, because these describe what the browser means to send and not what
- * arrived.
- */
+// Every POST body, named once. The browser builds from these, so a misspelled field stops the build
+// instead of being quietly dropped in the post.
 export interface Bodies {
   act: { me: string; action: Action };
   blanket: { me: string; key: string; stripe: boolean };
   boxout: { me: string; on: boolean };
-  /* Partial: a field left out means "don't change it", not "clear it". Same for `dress`. */
+  /* A field left out means "leave it alone", not "clear it". Same for `dress`. */
   clock: { me: string; tz?: string; homeHour?: number };
   delete: { me: string; name: string };
   draw: { me: string; cells: string };
@@ -153,12 +139,8 @@ export interface Bodies {
   "window-light": { me: string };
 }
 
-/*
- * A handler's view of one of those bodies: same field names, all optional, because none of it is
- * guaranteed to arrive. It is a cast over untrusted JSON and not proof of anything, exactly as the
- * hand-written shapes it replaced were. What it buys is that the names come from one place, so the
- * browser cannot send `aboutday` to a worker reading `aboutDay` and have it quietly do nothing.
- */
+// The same fields as a handler sees them: all optional, because nothing is promised to arrive. This
+// is a cast over untrusted JSON and proves nothing. What it buys is one place for the names.
 export type Untrusted<K extends keyof Bodies> = Partial<Bodies[K]>;
 
 export interface Told2 {
@@ -185,18 +167,13 @@ export type Arrival =
   | { kind: "brought"; at: number; treat: Treat }
   | { kind: "first"; at: number; what: FirstKey };
 
-/** Milestones the world hands the room rather than the calendar: first snow, first rain. */
-/** `held` is the app's whole thesis happening, so the room remembers the first one. */
 export type FirstKey = "snow" | "rain" | "storm" | "held" | "settled";
 
 export type Gift = "leaf" | "cap" | "moth";
 
-/** Everything either of them has said, for the screen that looks back at it. */
 export interface SaidSoFar {
   notes: { day: number; text: string; answers: { text: string; at: number }[] }[];
-  /** Everything he has written, not just what she has been handed. */
   total: number;
-  /** `about` is set when she answered a note he has since rewritten, so it no longer has a home. */
   lines: { text: string; at: number; gift?: Gift; about?: string }[];
 }
 
@@ -204,16 +181,11 @@ export interface RoomView {
   cat: Cat;
   clock: Clock;
   youAreHer: boolean;
-  // True only for a browser that used the leave button. It is why the room does not simply seat her
-  // again on her next visit, and it is what the client shows the way back on.
   youLeft: boolean;
-  // When she can still put her side back, if she can. Null once the week is up or once somebody else
-  // has taken the seat she freed.
   undoLeaveUntil: number | null;
-  // Only ever sent to the one whose seat is still there, and only while she can still come back.
   theyLeft: { name: string; until: number } | null;
-  // The other side of that: who was told, sent only to the person who left. Non-null under exactly
-  // the same conditions as `theyLeft`, so neither of them can be told something the other is not.
+  // Non-null under exactly the same conditions as `theyLeft`, so neither of them is ever looking at
+  // something the other is not.
   theyWereTold: string | null;
   catMood: Mood | null;
   catMoodAt: number | null;
@@ -231,28 +203,17 @@ export interface RoomView {
   monthsOld: number;
   shelfDown: boolean;
   gift: Gift | null;
-  /** Whether there is a box in the room for her to get into. */
   boxOut: boolean;
-  /** He is holding on to her at this moment. Hers to see; never his own hand reported back. */
   heldByThem: boolean;
-  /* Sitting is a place he stays, not a thing he did. Both seats see it live. */
   sittingWith: boolean;
   sittingWithYou: boolean;
-  /* She has settled into it. Only ever true while somebody is sat with her. */
   settled: boolean;
-  /* She is by the door, on purpose. Both seats see it. */
   waitingAtDoor: boolean;
-  /** Something they just touched in the room, for a few seconds. Null on their own side. */
   pokedByThem: { what: string; at: number } | null;
-  /** You both reached for the same thing at once. Sent to both, which nothing else is. */
   reachedTogether: { what: string; at: number } | null;
-  /** What he left out for her, until she opens the room and finds it. Null on his side. */
   forHer: Treat | null;
-  // The hour he actually turns up, once the room has watched long enough to disagree with the one
-  // he typed. Null while it still only has his word for it.
   expectAt: number | null;
   sky: Sky;
-  // What she chose for her bed, or null while the room still has the one it came with.
   blanket: { key: BlanketKey; stripe: boolean } | null;
   windowLight: boolean;
   seat: string | null;

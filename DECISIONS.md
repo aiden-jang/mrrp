@@ -1689,6 +1689,16 @@ The lapse is ten minutes rather than the thirty seconds a hold gets. A hold is a
 and a stale one is a hand she can see that is not there. Sitting is meant to outlast not touching a
 key.
 
+## The flaky test was a sleep
+
+`live.spec.ts` waited a flat 140ms after each socket write and then asserted on what had arrived. It
+passed on its own every time and went red about one full-suite run in four, because under load the
+push had not landed yet. The sleep had already been raised once, from 60ms, which is the tell: a
+number that has to keep going up is not a fix.
+
+It waits for the thing itself now. Counting turns rather than watching the clock, because the same
+file fakes the clock to move the room an hour forward.
+
 ## What the comments are for
 
 Every explanation of a decision belongs in this file. The comments left in the code are for three
@@ -1701,11 +1711,31 @@ things only:
 - why not the obvious thing, where somebody would reasonably try the obvious thing and quietly break
   something
 
-Everything else is deleted. The comment load has been cut five times now: 3124 lines to 564, then
-1381 back to 462, then to 391, then 630 back to 401, and most recently 879 back to 689. Every time
-the growth arrives the same way: a feature lands with a paragraph explaining why, which is a good
-paragraph in the wrong file. This one is that file.
+Everything else is deleted. The load has been cut six times now: 3124 lines to 564, then 1381 back
+to 462, then to 391, then 630 back to 401, then 879 back to 689, and most recently 1248 back to 567.
+Every time the growth arrives the same way: a feature lands with a paragraph explaining why, which
+is a good paragraph in the wrong file. This one is that file.
 
-Two repeat offenders. A comment that narrates what the code used to do costs the reader attention
-and returns nothing, because they have no access to the old version, and it rots on the next edit.
-And a docstring that restates the name below it: `/** Held on, or let go. */` above `hold()`.
+Three repeat offenders. A comment that narrates what the code used to do costs the reader attention
+and returns nothing, because they have no access to the old version, and it rots on the next edit. A
+docstring that restates the name below it: `/** Held on, or let go. */` above `hold()`. And design
+rationale, which is most of what the last pass removed: the stylesheet alone was carrying two
+hundred lines on why a footer is one block and why the mood chips do not wrap, none of which stops
+anybody breaking anything.
+
+What survives is written as a warning rather than a description, and mostly as `//` rather than a
+block. Two lines of prose in a four-line box reads as documentation; the same two lines as `//`
+read as somebody leaning over and saying "don't".
+
+Two things in the last pass were nearly deleted and are load-bearing:
+
+- **`// eslint-disable-next-line`, and comments inside empty `catch {}` blocks.** Both are the only
+  thing standing between the file and a lint error. Removing a comment cannot break a build, right
+  up until the comment was doing a job.
+- **`// prettier-ignore`**, eighteen of them in `Cat.tsx` alone, holding the sprite grids readable.
+
+And a warning about the method. Regex over a file is the wrong tool for this. An unanchored `/*`
+matched one sitting after code on the same line, paired with a `*/` four hundred lines away, and
+quietly ate the middle of `App.tsx`. Anchor to the start of a line, handle `{/* ... */}` as one
+piece, and afterwards diff the file with all comments stripped from both sides to prove that only
+comments moved.

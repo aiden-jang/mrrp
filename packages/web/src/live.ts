@@ -2,12 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import type { RoomView } from "./types.js";
 import { myToken } from "./api.js";
 
-/*
- * The room, pushed rather than polled.
- *
- * Receives only. Everything that changes the room still goes through the ordinary routes, where the
- * seat checks are, so this cannot become a second way to write.
- */
+// The room, pushed rather than polled. Receives only: everything that changes the room still goes
+// through the ordinary POSTs.
 export type LiveState = "connecting" | "open" | "closed";
 
 /* Long enough that a dead socket is not a busy loop, short enough that a flaky tunnel recovers. */

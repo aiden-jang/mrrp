@@ -2,17 +2,9 @@ import type { Mood } from "./types.js";
 import type { Pose } from "./sprites.js";
 
 export interface Response {
-  /*
-   * What she is doing, as he reads it. Several of these address him: "sitting on you", "loafing
-   * right next to you". They are written from the seat that is watching.
-   */
+  /* What she is doing, as he reads it. Several address him: "sitting on you", "loafing right next to you". */
   doing: string;
-  /*
-   * The same, as she reads it, for the ones that cannot simply swap subject.
-   *
-   * Her caption is "You are ___", so anything naming the reader turns into "you are sitting on you".
-   * These describe her rather than her effect on him, because he is not necessarily even here.
-   */
+  /* What she is doing, as he reads it. Several address him: "sitting on you", "loafing right next to you". */
   doingHers?: string;
   snug: number;
   play: number;

@@ -1,42 +1,18 @@
-/*
- * The room's chrome. The canvas is not styled from here; see Cat.tsx.
- *
- * These were 62 entries of inline `React.CSSProperties` in App.tsx. Inline styles cannot express a
- * pseudo-class or a media query, which is why the focus ring, the hover states, `::selection` and
- * `::placeholder` all had to be written as global element selectors in index.css and apply to every
- * button on the page whether or not that was wanted. Anything scoped to one component belongs here.
- *
- * Two rules that were free in an object and are not free in a stylesheet:
- *
- *   - Order is precedence. `.btnGo` and `.moodOn` only work because they come after `.btn` and
- *     `.mood`; spreading `{...btn, ...btnGo}` used to say that explicitly. Keep overrides below what
- *     they override.
- *   - The tokens still come from index.css and the live room theme is still set inline on <main>, so
- *     every `var(--…)` in here follows the hour exactly as it did before.
- */
-
 .page {
   /*
-   * `color` is set here, not left to body. A custom property resolves where it is written, so
-   * body's `color: var(--ink)` computes once against the root token and every child inherits that
-   * literal value: overriding --ink further down would never reach anything that did not name it.
+   * Set `color` here, not on body. A `var(--x)` is worked out where you write it, so body would bake
+   * in one colour and every child would copy that. Changing --ink later would then reach nothing.
    */
   color: var(--ink);
-  /* The sound toggle hangs off this rather than the viewport. See `.soundToggle`. */
   position: relative;
   min-height: 100%;
   display: grid;
   place-items: center;
-  /*
-   * vmin, not vw: on a wide short laptop a vw-based pad is at its maximum exactly where there is
-   * least room for it, which is what pushed the landing page's button under the fold.
-   */
   padding: clamp(14px, 3vmin, 28px) 18px clamp(24px, 5vmin, 48px);
   background: radial-gradient(120% 90% at 78% 6%, var(--air-warm) 0%, var(--air) 62%);
   transition: background 0.9s ease;
 }
 
-/* Below this the room scene fills the card, and the fixed sound toggle lands on the art. */
 @media (max-width: 640px) {
   .page {
     padding-top: 56px;
@@ -44,13 +20,9 @@
 }
 
 /*
- * minWidth 0 + overflowWrap: a grid item defaults to min-width:auto, which is its min-content
- * width, and that silently outranks both width:100% and maxWidth. One unbroken 90-character line
- * she left him (a pasted link fits inside the 140-char limit) set that floor to ~900px, so the
- * card ignored its own max width and the whole room scrolled sideways on a phone.
- *
- * `anywhere` rather than `break-word` because break-word does not lower min-content, so the floor
- * would stay put. overflow-wrap inherits, so this covers every line of prose in the card.
+ * A grid item will not shrink below its longest unbroken word unless you say so. One pasted link
+ * she left him pushed this card past its own max width and scrolled the whole room sideways on a
+ * phone. `anywhere` is the one that actually lowers that floor; `break-word` does not.
  */
 .card {
   width: 100%;
@@ -67,10 +39,8 @@
 }
 
 /*
- * Available to a screen reader and to Tab, invisible on screen.
- *
- * Not display:none and not visibility:hidden, either of which would take it out of the accessibility
- * tree and the focus order along with it, which is the exact opposite of the point.
+ * Hide it by clipping, never with display:none or visibility:hidden. Those take it out of the
+ * screen reader and out of the Tab order too, which is the opposite of what this is for.
  */
 .srOnly {
   position: absolute;
@@ -85,19 +55,8 @@
 }
 
 /*
- * Pinned to the column, not to the window.
- *
- * At `right: 12` it sat against the edge of the screen, which on a laptop left it about 430px away
- * from the room it belongs to, floating in empty page. `left: 50%` plus half the column's max width
- * keeps it beside the content at every size, and it falls back to the old corner on anything too
- * narrow for the offset to fit.
- */
-/*
- * Absolute, not fixed. Fixed, it floated over whatever scrolled underneath it, and on a phone the
- * content column is the full width, so it sat on the top-right corner of the notes textarea: the one
- * field in the app where he writes the thing the room is for. Tapping there muted the app.
- *
- * It belongs with the room anyway. Scroll past the room and it goes with it.
+ * Absolute, not fixed. Fixed, this floated over the page, and on a phone it landed on the corner of
+ * the notes box. Tapping where you meant to type muted the app.
  */
 .soundToggle {
   position: absolute;
@@ -131,20 +90,14 @@
   line-height: 1.5;
 }
 
-/**
- * The footer, as one block instead of two grey paragraphs and a floating byline.
- *
- * No rule above it. What read as awkward was the credit sitting 22px below a three-line grey
- * paragraph at almost the same weight: two separate quiet things competing to be last, so neither
- * looked deliberate. Grouped, with the space outside the group rather than inside it, and the credit
- * pulled right up under the line it belongs to.
- */
 .footer {
   margin-top: 28px;
 }
 
-/* No opacity. At 0.55 this sat at 1.66:1 on the page, which is not "quiet", it is unreadable.
- 11px against the lede's 15.5 is the whole hierarchy it needs. */
+/*
+ * Don't dim this with opacity. At 0.55 it measured 1.66:1 against the page, which is not quiet, it
+ * is unreadable. Size is what makes it secondary.
+ */
 .credit {
   font-size: 12px;
   color: var(--soft);
@@ -152,7 +105,6 @@
   margin: 8px 0 0;
 }
 
-/* Sits on the credit's own line and takes its colour, so it reads as part of the sentence. */
 .paw {
   vertical-align: -1px;
   margin-right: 5px;
@@ -164,7 +116,6 @@
   text-underline-offset: 2px;
 }
 
-/** The recovery-code disclosure, on his side. Closed by default: it is reassurance, not a task. */
 .recovery {
   margin-top: 18px;
   padding: 10px 14px;
@@ -186,7 +137,6 @@
   user-select: all;
 }
 
-/** Shown once, until the first touch. Small, centred, and never in the way. */
 .hint {
   font-size: 12px;
   color: var(--soft);
@@ -194,13 +144,6 @@
   margin: 6px 0 0;
 }
 
-/*
- * A centring box, and nothing else to look at.
- *
- * The canvas sizes itself to a whole number of device pixels per logical pixel, so it is usually a
- * little narrower than the column. The frame moved onto the canvas with it: anything drawn here
- * would show as a band down either side of the room.
- */
 .stage {
   position: relative;
   width: 100%;
@@ -208,13 +151,6 @@
   place-items: center;
 }
 
-/*
- * The beat when the other one walks in.
- *
- * The room already does the whole thing: the door swings, she gets up and crosses to the middle to
- * purr. It happens while you are both looking at the buttons underneath it, so nobody has ever seen
- * it. This does not add anything to the room, it just points at it for two seconds.
- */
 .stageArrival::after {
   content: "";
   position: absolute;
@@ -225,7 +161,10 @@
   animation: walkedIn 2s var(--ease-spring) both;
 }
 
-/* Not `noticed`: this file already has a `.noticed` class and the two would share a scoped name. */
+/*
+ * Don't name this keyframe `noticed`. There is a `.noticed` class in this file and CSS Modules would
+ * give them the same scoped name.
+ */
 @keyframes walkedIn {
   0% {
     opacity: 0;
@@ -243,14 +182,6 @@
   }
 }
 
-/*
- * The room leaves the reading column on a screen wide enough to spare it.
- *
- * 600px is a measure for prose, not for the thing the app is actually about, and on a laptop it left
- * the room small in the middle of a very empty page. `width: auto` is what makes the negative margins
- * widen the box instead of just shifting it; symmetric ones keep it on the same centre line as the
- * copy. The canvas still picks its own size inside this, in whole pixels.
- */
 @media (min-width: 860px) {
   .stage {
     width: auto;
@@ -266,11 +197,6 @@
   font-style: italic;
 }
 
-/*
-   * Quieter than `doing` and not italic: a fact about the two of them, not something the cat is doing.
-   * A shade warmer and a touch larger than the discovery count: this is the room saying something, not
-   * a footnote about it.
-   */
 .remembers {
   font-size: 13.5px;
   color: var(--soft);
@@ -288,11 +214,6 @@
   margin: 10px 0 0;
 }
 
-/*
-   * A quiet panel, not a gold block. How she is appears on his side every single day, whereas the
-   * two of you being in the room at the same moment happens rarely — and when it did, two identical
-   * gold cards stacked on top of each other and the rare one lost. Only one of these should shout.
-   */
 .theirs {
   animation: rise 0.42s var(--ease-spring) both;
   margin: 14px 0 2px;
@@ -323,15 +244,11 @@
   margin: 14px 0 6px;
   padding: 11px 15px;
   border-radius: 18px;
-  /* Was a full honey block at 9.2:1 against the page: the loudest thing on screen, for an
-     invitation. The room says they are both here by swinging the door and crossing to purr, so this
-     only has to carry what the scene cannot, which is what you can do about it. */
   background: color-mix(in srgb, var(--honey) 22%, var(--panel));
   border: 1px solid var(--honey);
   color: var(--ink);
 }
 
-/* Was 17.5/700 under a headline. On its own it is an invitation, not the loudest thing on screen. */
 .togetherMain {
   font-size: 15.5px;
   font-weight: 600;
@@ -363,7 +280,6 @@
   color: var(--ink);
 }
 
-/* Was 28 square, which is a target you aim at rather than one you hit. */
 .arrivalClose {
   min-width: 44px;
   min-height: 44px;
@@ -417,9 +333,8 @@
 
 .sayInput {
   font: inherit;
-  /* Two rows of floor. Her box is sized from its content and would otherwise collapse to one. */
   min-height: 72px;
-  /* 16 is a floor, not a preference: iOS zooms the page when you focus anything smaller. */
+  /* Keep this at 16 or more. iOS zooms the whole page in when you tap into anything smaller. */
   font-size: 16px;
   line-height: 1.5;
   width: 100%;
@@ -465,7 +380,6 @@
   margin: 12px 0 0;
 }
 
-/* Quieter than the line it follows: what is in the room matters more than when it goes. */
 .fades {
   font-size: 12.5px;
   color: var(--soft);
@@ -473,10 +387,6 @@
   margin: 3px 0 0;
 }
 
-/*
- * Everything in here now arrives over a socket rather than a poll, and appeared without moving,
- * which reads as a repaint. Newest first, so the stagger runs down the list from the new one.
- */
 .recent li {
   animation: arrive 0.34s var(--ease-spring) both;
 }
@@ -494,7 +404,6 @@
   animation: arrive 0.34s var(--ease-spring) both;
 }
 
-/* The live list of what the other one has been doing, as against `.came`, which is one sentence. */
 .recent {
   list-style: none;
   margin: 12px 0 0;
@@ -509,17 +418,11 @@
   color: var(--soft);
 }
 
-/* Everything below the newest is quieter, so the thing that just happened is the one you read. */
 .recentItem + .recentItem {
   font-size: 12.5px;
   opacity: 0.7;
 }
 
-/*
-   * Sentence case, not letterspaced caps. Caps are the house style of dashboards and settings
-   * screens: they read as a field label on a form you have to fill in. This is somebody asking how
-   * your day was, and it should sound like it.
-   */
 .tellLabel {
   font-size: 15px;
   font-weight: 500;
@@ -528,10 +431,6 @@
   margin: 18px 0 8px;
 }
 
-/*
-   * A 3x3 grid rather than a wrapping flex row. With nine chips, wrap left a single orphan on the last
-   * line, and an odd one out at the bottom of a mood picker reads as an afterthought.
-   */
 .moodRow {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -541,15 +440,7 @@
 
 .mood {
   font: inherit;
-  /*
-   * Shrinks on a narrow phone, and never wraps.
-   *
-   * Three columns of a fixed 15px put "stressed" on two lines inside its own pill at 320px, which
-   * is the width of the smallest phone anybody still opens this on. The face beside it costs about
-   * seventeen more, and that was the difference.
-   */
   font-size: clamp(13px, 3.9vw, 15px);
-  /* 38px tall before, and this row is the thing she uses every day. */
   min-height: 44px;
   white-space: nowrap;
   color: var(--ink);
@@ -576,10 +467,6 @@
   box-shadow: 0 6px 18px -12px rgba(120, 84, 44, 0.35);
 }
 
-/*
-   * The panel's heading, against its field labels below. Both were --soft a point apart, so the whole
-   * panel read as one flat list with nothing saying which line was the title.
-   */
 .panelTitle {
   font-size: 15px;
   font-weight: 600;
@@ -593,13 +480,6 @@
   margin: 14px 0 6px;
 }
 
-/*
- * Grids with a fixed column count, not a wrapping row.
- *
- * Eight fur swatches wrapping at whatever fits put seven on one line and one alone underneath, on
- * a phone. Four and four is two deliberate rows at every width. Same reasoning as the mood chips,
- * which stopped wrapping for the same reason.
- */
 .swatchRow {
   display: grid;
   grid-template-columns: repeat(4, 34px);
@@ -615,11 +495,9 @@
 
 .swatch {
   /*
-   * The colour is 34, the target is 44.
-   *
-   * A thumb finds a 44px square without aiming and a 34px one it hunts for, but a 44px swatch of
-   * colour is a slab. The box grows and the paint does not: the extra ten is transparent padding
-   * clipped back to the swatch by the background-clip below.
+   * The tappable box is 44 and the colour is 34. The extra is see-through padding, cut back to the
+   * swatch by the `background-clip` below, so your thumb gets a big target and the eye gets a small
+   * square of paint.
    */
   width: 44px;
   height: 44px;
@@ -638,25 +516,12 @@
   border: none;
   cursor: pointer;
   display: block;
-  /* Text, but still something you tap on a phone: the line was 17px tall on its own. */
   min-height: 44px;
   margin: 4px auto 0;
   padding: 12px 8px;
   text-decoration: underline;
 }
 
-/*
- * Her note, with the corner turned down.
- *
- * This is the emotional payload of the whole app and it was a rounded panel like every other rounded
- * panel. A dog-ear costs two pseudo-elements and makes it a piece of paper somebody folded rather
- * than a card the app drew.
- *
- * The fold is cut out of the card with `clip-path` and the underside is drawn back over it, so the
- * page shows through the missing corner exactly as it would if the paper were really turned. Only
- * this one card gets it: a room where everything has a folded corner is a room with a texture, not
- * a room with a note in it.
- */
 .note {
   position: relative;
   animation: arrive 0.42s var(--ease-bounce) both;
@@ -669,13 +534,6 @@
   clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
 }
 
-/*
- * The underside of the flap: the same paper, turned over.
- *
- * Only the lower-left half of this box is inside the clip, so only the fold itself paints; the rest
- * is the hole the corner left. The lit edge along the diagonal is what makes it read as a crease
- * rather than a grey wedge, and it is the same warm the room lights everything else with.
- */
 .note::after {
   content: "";
   position: absolute;
@@ -732,7 +590,6 @@
 
 .btn {
   font: inherit;
-  /* Same forty-four as everything else you press. */
   min-height: 44px;
   font-size: 15px;
   font-weight: 600;
@@ -744,7 +601,6 @@
   cursor: pointer;
 }
 
-/* Quieter than .btnGo: this marks something already in the room, not the thing to press next. */
 .btnOn {
   border-color: var(--honey);
   box-shadow: inset 0 0 0 1px var(--honey);
@@ -756,14 +612,9 @@
   color: var(--on-honey);
 }
 
-/** A disclosure is a control, so it gets a control's target size rather than a line of text's. */
 /*
- * Disclosures, with a drawn marker instead of the browser's triangle.
- *
- * The last OS-supplied mark on the page, after the emoji sound toggle and the select's own caret.
- * Same chevron as `.selectCaret`, so the app has one language for "there is more here", and it turns
- * rather than swapping to a second glyph. `list-style: none` is what removes the default; Safari
- * needs the `::-webkit-details-marker` rule below as well.
+ * `list-style: none` removes the default triangle. Safari also needs the `::-webkit-details-marker`
+ * rule below, or it draws its own anyway.
  */
 .summary,
 .recoverySummary {
@@ -810,7 +661,6 @@ details[open] > .recoverySummary::before {
   font: inherit;
   font-size: 16px;
   width: 100%;
-  /* The browser's caret is replaced by the drawn one, so leave it room and take the OS styling off. */
   padding: 11px 34px 11px 13px;
   appearance: none;
   border: 1px solid var(--control);
@@ -859,13 +709,6 @@ details[open] > .recoverySummary::before {
   opacity: 1;
 }
 
-/*
- * The drawing sheet.
- *
- * The grid wears the frame's own mount colour so the thing you are drawing on looks like the thing it
- * will hang in. `touch-action: none` is what lets a finger drag across cells: without it the browser
- * claims the gesture as a scroll after the first few pixels and the drawing stops halfway.
- */
 .sheetGrid {
   display: grid;
   gap: 2px;
@@ -896,7 +739,6 @@ details[open] > .recoverySummary::before {
   cursor: pointer;
 }
 
-/* The button that opens the editor, once there is something in the frame to open. */
 .sheetPeek {
   display: flex;
   width: 100%;
@@ -917,8 +759,10 @@ details[open] > .recoverySummary::before {
   text-align: left;
 }
 .sheetMini {
-  /* inline-grid, not grid: this also sits inside a sentence in the arrival card, and a block-level
-     grid there breaks the line under the words it belongs to. */
+  /*
+   * inline-grid, not grid. This also sits inside a sentence on the arrival card, and a block-level one
+   * would break the line it belongs to.
+   */
   display: inline-grid;
   vertical-align: -4px;
   gap: 1px;
@@ -932,7 +776,6 @@ details[open] > .recoverySummary::before {
   border-radius: 1px;
 }
 
-/* Her blanket. A row of swatches, sized so a thumb hits one and not the next. */
 .blanketRow {
   margin-top: 14px;
   text-align: center;
@@ -947,12 +790,7 @@ details[open] > .recoverySummary::before {
   gap: 8px;
   justify-content: center;
 }
-/*
- * The colour is 30, the target is 44.
- *
- * A 44px slab of colour is a paint chart, so the box grows and the paint does not: the extra is
- * transparent border, clipped back to the swatch by `background-clip`.
- */
+/* Same trick as the fur swatches: the box is 44 for your thumb, the paint stays small. */
 .blanketSwatch,
 .blanketStripe {
   width: 44px;
@@ -977,13 +815,6 @@ details[open] > .recoverySummary::before {
   border-radius: 1px;
 }
 
-/*
- * Everything that is about the room rather than about her, in one block.
- *
- * These were eight quiet links stacked at identical weight, so the thing you do most looked exactly
- * as important as the thing you do once a year. The heading and the rule above it are what say
- * "below here is admin", which is the whole job.
- */
 .roomBits {
   margin-top: 26px;
   padding-top: 14px;
@@ -1003,7 +834,6 @@ details[open] > .recoverySummary::before {
   margin-top: 6px;
 }
 
-/* The way back in is the one thing most people open this block for, so it is a button and not a link. */
 .accountBtn {
   width: 100%;
   margin-top: 10px;
@@ -1014,23 +844,12 @@ details[open] > .recoverySummary::before {
   color: var(--soft);
 }
 
-/*
- * Ending the room is not a peer of resending a link. Set apart rather than coloured red: this is a
- * quiet app and a red button in it would be shouting, but it must not read as one more option.
- */
 .ending {
   margin-top: 22px;
   border-style: dashed;
   background: none;
 }
 
-/*
- * The one thing allowed to sit over the room.
- *
- * Shared by every action in a page more than twice a screen tall, so in the flow of the page it was
- * usually somewhere you were not looking. Pinned low and narrow so it reads as the room muttering
- * rather than as a dialog.
- */
 .errorBar {
   position: fixed;
   left: 50%;
@@ -1070,11 +889,10 @@ details[open] > .recoverySummary::before {
 
 .giftWords {
   font: inherit;
-  /* Same iOS floor as .sayInput: under 16px the page zooms on focus. */
+  /* 16 again, for the same reason: anything smaller and iOS zooms the page on focus. */
   font-size: 16px;
   width: 100%;
   margin-bottom: 8px;
-  /* 11px is what gets this to the 44px the rest of the room is tappable at. */
   padding: 11px 13px;
   border-radius: 12px;
   border: 1px solid var(--control);
@@ -1148,7 +966,6 @@ details[open] > .recoverySummary::before {
   font-size: 13px;
 }
 
-/* The end of the notes, not another row in the list. */
 .saidEnd {
   margin: 14px 0 0;
   padding-top: 12px;
@@ -1158,17 +975,14 @@ details[open] > .recoverySummary::before {
 }
 
 /*
-    The two cards that open in place, arriving the way every other card in the room does.
-
-    Not on `.panel` itself: the setup panel is a long form opened from a button, and a form that
-    springs in reads as a dialog rather than a page growing.
-*/
+ * Not on `.panel` itself. The setup panel is a long form, and a form that springs in reads as a
+ * dialog rather than a page growing.
+ */
 .saidPanel,
 .sayBox {
   animation: arrive 0.42s var(--ease-bounce) both;
 }
 
-/* Not a mark of something done, but somewhere he currently is. */
 .btnStaying {
   border-color: var(--honey);
 }

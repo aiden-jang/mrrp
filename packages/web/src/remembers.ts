@@ -1,13 +1,7 @@
 import type { Milestone, Personality } from "./types.js";
 
-/*
- * The same day, told to each of them.
- *
- * His side watches her; her side is her, so the third person is not available. Told to her, "she has
- * stopped checking the door" is the room narrating her own week back at her, in the name he gave
- * her. The jokes do not all survive the turn either: "she has no idea what that means" is fond about
- * a cat and unkind about a person, so hers points at him remembering instead.
- */
+// The same day, told to each of them. His side watches her; her side is her, so the third person is
+// not available on hers.
 export function milestoneLine(milestone: Milestone, catName: string, youAreHer: boolean): string {
   if (milestone.kind === "ours") {
     return youAreHer
@@ -73,13 +67,7 @@ export function awayLine(awayMs: number | null, catName: string): string | null 
   return `${catName} settles in like you never left, which is the whole trick of her.`;
 }
 
-/*
- * That she has worked out when you actually get in.
- *
- * Told to him alone, because it is about him, and because to her it would read as the room reporting
- * on somebody. Sits low in the quiet lines: rarer than the moon and less important than an
- * anniversary, and it stops being news the moment he has read it once.
- */
+/* That she has worked out when you actually get in. Told to him alone, because it is about him. */
 export function homingLine(expectAt: number | null, told: number, catName: string): string | null {
   if (expectAt === null) return null;
   const earlier = expectAt < told;

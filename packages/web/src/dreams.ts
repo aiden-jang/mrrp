@@ -8,14 +8,7 @@ export type DreamScene = "mouse" | "moth" | "piano" | "stars" | "box" | "brush" 
 
 export interface Dream {
   scene: DreamScene;
-  /*
-   * Written so either seat can read it.
-   *
-   * Both of them watch the same sleeping cat, and one of them is her, so "she is dreaming about
-   * food" was the room narrating her own sleep back to her. There is no second phrasing here
-   * because a dream does not need a subject: it is the inside of a head, and naming whose head it
-   * is adds nothing to it.
-   */
+  /* Written so either seat can read it: one of them is the cat, so no dream may say "she". */
   line: string;
 }
 
@@ -56,9 +49,7 @@ const PLAIN: { scene: DreamScene; line: string }[] = [
   { scene: "moth", line: "something small, nearly caught." },
 ];
 
-// Never dream about a secret this reader has not found. Naming the piano tells them there is a
-// piano, and a sleeping cat is the last place you would look for a leak. That is why this gathers
-// candidates and filters, instead of looking one up. `seed` is a parameter so a test can pin it.
+// Never dream about a secret this reader has not found. Naming the piano tells them there is a piano.
 export function dreamOf(context: DreamContext, seed: number): Dream {
   const found = new Set(context.found);
   const candidates: { scene: DreamScene; line: string }[] = [];
@@ -66,7 +57,6 @@ export function dreamOf(context: DreamContext, seed: number): Dream {
   for (const key of Object.keys(FROM_FOUND) as DiscoveryKey[]) {
     if (found.has(key)) candidates.push(FROM_FOUND[key]!);
   }
-  // A box in the room right now is not a secret being given away.
   if (context.hasBox) candidates.push({ scene: "box", line: "a box. of course it is a box." });
   for (const action of context.recent) {
     const from = FROM_ACTION[action];

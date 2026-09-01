@@ -1,23 +1,14 @@
-/*
- * Her trip to the shelf, as a function of the clock.
- *
- * She walks over and knocks the mug off, and the camera follows her, which is the only thing that
- * ever brings the shelf into view: it sits at x 80-95 and the camera only reaches it when she does.
- *
- * The timing lives out here so it can be tested. The drawing that uses it cannot be.
- */
+// Her trip to the shelf, as a function of the clock: she walks over, knocks the mug off, and the
+// camera follows her, which is what brings the shelf into view at all.
 export const SHELF_TRIP_MS = 2600;
-/** When the mug goes over: long enough to have walked there and reached up for it. */
 export const SHELF_TIP_MS = 1750;
-/** Just left of the shelf, which sits at x 80. */
 export const SHELF_REACH_X = 78;
 
 export interface Trip {
   going: boolean;
   reaching: boolean;
-  /** Hold the mug on the shelf. It goes over when she is under it, not when the room says so. */
+  /* Hold the mug on the shelf. It goes over when she is under it, not when the room says so. */
   mugStillUp: boolean;
-  /** The frame the mug goes over on, for the thump and her looking at it. Exactly one frame. */
   tips: boolean;
 }
 

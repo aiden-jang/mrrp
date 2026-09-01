@@ -11,7 +11,6 @@ export { Room } from "./room.js";
 
 const app = new Hono<{ Bindings: Env }>();
 const ROOM_RE = /^[a-z0-9]{6,24}$/;
-// Fifteen by nine. The room checks the same thing again; this is the cheap gate at the door.
 const DOODLE_RE = /^[0-4]{135}$/;
 const VALID: Action[] = ACTIONS.map((a) => a.id);
 // Deliberately not CAT_ACTS. That list holds `gift` too, which has its own endpoint because it
@@ -20,15 +19,15 @@ const VALID_CAT_ACTS: CatAct[] = ["shelf", "box"];
 const VALID_GIFTS: Gift[] = GIFTS.map((g) => g.id);
 const VALID_TREATS: Treat[] = TREATS.map((t) => t.id);
 // The things in the room you can touch. An unknown key is a 400, not a new prop, for the same reason
-// `found` refuses one: the client does not get to invent room furniture.
+// `found` refuses one.
 const VALID_POKES = ["window", "frame", "shelf", "door", "plant", "bed", "box", "floor"];
 const TALLY_KEYS: TallyKey[] = ["pet", "brush", "sit", "photo", "leaveout"];
 const VALID_MOODS: Mood[] = ["good", "tired", "stressed", "sad", "lonely", "bored", "feral", "done", "horny"];
 
 const room = (env: Env, id: string) => env.ROOM.get(env.ROOM.idFromName(id));
 
-// Forward, never parse: this Worker must not hold the session secret. An outage reads as "not
-// signed in", which the whole app works in.
+// Forward, never parse: this Worker must not hold the session secret. An outage reads as "not signed
+// in", which is the safe way to be wrong.
 async function accountOf(request: Request, env: Env): Promise<string | null> {
   try {
     const user = await getSessionUser(request, env.AUTH_URL);
@@ -52,12 +51,8 @@ app.get("/api/me", async (c) => {
   return c.json({ signedIn: !!user, name: user?.displayName ?? null });
 });
 
-/*
- * The live channel, one socket per open tab.
- *
- * The only route that hands the raw request to the Durable Object: a 101 upgrade cannot come back
- * through RPC. The room re-checks the seat, so nothing here is the last line.
- */
+// The live channel, one socket per open tab. The only route that hands the raw request to the Durable
+// Object: a 101 cannot be built out here.
 app.get("/api/room/:id/live", async (c) => {
   const id = c.req.param("id");
   const me = c.req.query("me") ?? "";
@@ -68,19 +63,11 @@ app.get("/api/room/:id/live", async (c) => {
   return room(c.env, id).fetch(c.req.raw);
 });
 
-/*
- * Push the room to both tabs after anything that changed it.
- *
- * One place, not a broadcast at the end of each of the twenty-odd methods that write: that list is
- * complete on the day it is written. The plain GET is in here too and has to be, because reading the
- * room spends what he left out, which is the moment he most wants to see.
- */
 const pushAfter = async (c: Context<{ Bindings: Env }>, next: Next) => {
   await next();
   const id = c.req.param("id") ?? "";
   if (!ROOM_RE.test(id) || c.res.status >= 400) return;
-  // Swallowed on purpose: a push that fails must not turn a write that worked into an error, and
-  // the one failure that matters, a room deleted mid-request, closes the sockets on its way out.
+  // Swallowed on purpose: a push that fails must not turn a write that worked into an error.
   c.executionCtx.waitUntil(
     room(c.env, id)
       .notify()
@@ -88,8 +75,7 @@ const pushAfter = async (c: Context<{ Bindings: Env }>, next: Next) => {
   );
 };
 
-// Named exactly rather than with a wildcard. `/live` hands back a socket and has already broadcast,
-// and the notes fetch changes nothing, so neither should wake the other tab.
+// Named exactly rather than with a wildcard. `/live` hands back a socket and has already broadcast.
 app.on(["GET"], "/api/room/:id", pushAfter);
 app.on(["POST"], "/api/room/:id/*", pushAfter);
 
@@ -100,7 +86,6 @@ app.get("/api/room/:id/alive", async (c) => {
   return c.json(await room(c.env, id).alive());
 });
 
-// His notes, for the panel that edits them. Not in RoomView: see `notesFor`.
 app.get("/api/room/:id/notes", async (c) => {
   const id = c.req.param("id");
   const me = c.req.query("me") ?? "";
@@ -110,7 +95,6 @@ app.get("/api/room/:id/notes", async (c) => {
   return c.json({ notes });
 });
 
-// What has passed between them. Both seats, off RoomView because it grows with the room.
 app.get("/api/room/:id/said", async (c) => {
   const id = c.req.param("id");
   const me = c.req.query("me") ?? "";
@@ -129,7 +113,7 @@ app.get("/api/room/:id", async (c) => {
     return c.json(await room(c.env, id).view(me, c.req.query("name") ?? null, account));
   } catch (e) {
     // Not the shared gone-handler below: this is the one route that says more than "gone", because
-    // whoever deleted the room can still put it back and lands here when he did not mean it.
+    // whoever deleted the room can still put it back.
     if ((e as Error).message !== ROOM_GONE) throw e;
     return c.json({ error: "gone", undoUntil: await room(c.env, id).undoUntil(me) }, 410);
   }
@@ -260,8 +244,8 @@ app.post("/api/room/:id/link", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "that account already has a seat here" }, 409);
 });
 
-// Dev only, gated on DEV_TOOLS in `.dev.vars`, which `wrangler deploy` never uploads. Don't gate
-// on hostname: `wrangler dev` rewrites the URL to the configured route, so local looks like prod.
+// Dev only, gated on DEV_TOOLS in `.dev.vars`, which `wrangler deploy` never uploads. Don't gate on
+// hostname: `wrangler dev` rewrites the URL to the configured route, so local looks like production.
 app.post("/api/room/:id/age", async (c) => {
   if (c.env.DEV_TOOLS !== "on") return c.json({ error: "not found" }, 404);
 
@@ -431,7 +415,6 @@ app.get("/api/room/:id/export", async (c) => {
   const copy = await room(c.env, id).exportFor(me);
   if (!copy) return c.json({ error: "not your room to copy" }, 403);
 
-  // Name it for the room and date it: this lands in a downloads folder next to everything else.
   const day = new Date().toISOString().slice(0, 10);
   return new Response(JSON.stringify(copy, null, 2), {
     headers: {

@@ -1,5 +1,3 @@
-// What the room looks like at each hour of HER day. Hand-picked at the hours that mean something,
-// blended in between. Nothing here is a sun model. See DECISIONS.md.
 import type { Clock, Mood, RoomView } from "./types.js";
 import { RESPONSES, type MoodVisual } from "./moods.js";
 import type { Pose } from "./sprites.js";
@@ -24,7 +22,6 @@ export interface Scene {
   sleepy: number;
   atDoor: boolean;
   doing: string;
-  /** What she reads, where `doing` names the reader. See moods.ts. */
   doingHers?: string;
   snug: number;
   play: number;
@@ -92,8 +89,6 @@ export const HER_SPOT = 0.55;
 /* Where she stands when she is waiting for him. A mood that puts her here counts as at the door. */
 export const DOOR_X = 0.19;
 
-// `grey` is a closed sky: three of these lines are about the sun, and on a wet afternoon they
-// describe a room that is not there.
 function doingAt(
   hour: number,
   atDoor: boolean,
@@ -156,8 +151,8 @@ export function sceneFor(
   const atDoor = untilHome <= 1 && untilHome > -0.5;
 
   const napping = hour >= NAP_FROM && hour < NAP_TO;
-  // Not just "the sun is down": 5-7am is awake at the window and the hour before he is home is
-  // spent at the door. Both are dark and neither is bed.
+  // Not just "the sun is down": 5-7am is awake at the window, and the hour before he is home is spent
+  // at the door. Both are dark and neither is bed.
   const inBed = !atDoor && (hour < 5 || hour >= 21);
   const dawn = hour >= 5.5 && hour < 7.5;
   const sleepy = atDoor || dawn ? 0.1 : napping ? 1 : Math.max(0, 1 - sun * 1.15);
@@ -166,8 +161,8 @@ export function sceneFor(
   const idle = spot ?? 0.42;
   const settledIn = spot !== null && !inBed && !atDoor && hour >= homeHour && hour < 21 ? spot : null;
 
-  // Weather comes last, after sleep, the door, and anything you told her to do. Without this she
-  // follows the sunbeam through a downpour, lying in light the rain already dimmed away.
+  // Weather comes last, after sleep, the door, and anything you told her to do. Without this she follows
+  // the sunbeam through a downpour.
   const closed = sky !== "clear";
   const free = !inBed && !atDoor && !r;
   const daylight = sun > 0.15;

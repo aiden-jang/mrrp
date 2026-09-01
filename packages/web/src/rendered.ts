@@ -1,8 +1,7 @@
 /*
- * Rendered markup as the words a person would read, for tests that assert on copy.
- *
- * Strip the real curly quotes, not just the entities. React writes “ and ” as characters, and an
- * assertion containing a quote fails against them while looking correct.
+ * Rendered markup as the words a person would read, for tests that assert on copy. Strip the real
+ * curly quotes, not just the entities: React writes them as characters, and an assertion with a quote
+ * in it fails while looking correct.
  */
 export const plain = (html: string) =>
   html
