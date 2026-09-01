@@ -8,6 +8,7 @@ import { catCallCode } from "./secrets.js";
 import { moonPhase, moonPixelLit } from "./moon.js";
 import { cellAt, DOODLE_INK } from "./doodle.js";
 import { blanketPalette } from "./blanket.js";
+import { SHELF_REACH_X, shelfTrip } from "./shelftrip.js";
 import {
   BED_STRIPES,
   EAR,
@@ -252,6 +253,7 @@ export function Cat({
   windowLight = false,
   onWindowLight,
   shelfDown = false,
+  shelfAt = null,
   boxOut = false,
   mugFell = null,
   onTidy,
@@ -300,6 +302,8 @@ export function Cat({
   onWindowLight?: () => void;
   mugFell?: number | null;
   shelfDown?: boolean;
+  /** When she knocked the mug off, so she can be seen doing it. Null on a plain load. */
+  shelfAt?: number | null;
   /** A box is in the room. Separate from `box`, which is whether she is sitting in it. */
   boxOut?: boolean;
   onTidy?: () => void;
@@ -386,6 +390,14 @@ export function Cat({
   boxOutRef.current = boxOut;
   const downRef = useRef(shelfDown);
   downRef.current = shelfDown;
+  const tripFrom = useRef(-1e9);
+  const tipped = useRef(0);
+  const lastTripAge = useRef(-1e9);
+  useEffect(() => {
+    if (!shelfAt || shelfAt === tipped.current) return;
+    tipped.current = shelfAt;
+    tripFrom.current = performance.now();
+  }, [shelfAt]);
   const tidyRef = useRef(onTidy);
   tidyRef.current = onTidy;
   const zoom = useRef({ next: 0, start: -1e9 });
@@ -1415,6 +1427,20 @@ export function Cat({
 
       const wy = (row: number) => 4 + 1 + row;
 
+      /*
+       * She goes and knocks it off, rather than the mug simply being down. The camera follows her,
+       * which is what brings the shelf into view at all. See shelftrip.ts for the timing and why it
+       * is a pure function.
+       */
+      const tripAge = t - tripFrom.current;
+      const trip = shelfTrip(tripAge, lastTripAge.current);
+      lastTripAge.current = tripAge;
+      if (trip.tips) {
+        lookAt.current = { x: MUG_FLOOR_X + 4, until: t + 2200 };
+        speakUntil.current = t + 1100;
+        bounce.current = 1;
+        play("thump");
+      }
       const pk = poked.current;
       const shake = (key: string): number => {
         if (!pk || pk.key !== key) return 0;
@@ -1771,7 +1797,7 @@ export function Cat({
       }
       // The mug on the floor is drawn much further down, with the other things that land on the
       // floor: it sits at x 66-73, inside the box's near wall, so drawn here a box hides it.
-      if (!downRef.current) {
+      if (!downRef.current || trip.mugStillUp) {
         blit(MUG, 84 + shake("shelf"), FLOOR - 29, { w: INK, c: "#cfe0e4", d: "#a9c2c8" });
         const steamAge = t - mugSteamedAt.current;
         if (!reduce && steamAge >= 0 && steamAge < MUG_STEAM_MS) {
@@ -2094,33 +2120,35 @@ export function Cat({
       // Below the games, above the sunbeam: she will not leave a chase to look at a picture, but a
       // new drawing beats a warm patch she has all day.
       const admiring = t < admireUntil.current;
-      let wantX = nameCalled
-        ? GW / 2
-        : bubblePlaying
-          ? bubbleTarget!.x
-          : mouseChasing
-            ? Math.max(12, mouseMoment!.x - 8)
-            : musicPlaying
-              ? music.current.x
-              : catnipActive
-                ? catnipX
-                : zooming
-                  ? 10 + (Math.sin(zp * Math.PI * 2 - Math.PI / 2) * 0.5 + 0.5) * (GW - 34)
-                  : laserPlaying
-                    ? laser.current.x
-                    : yarnPlaying
-                      ? yarnX
-                      : treating
-                        ? TREAT_X
-                        : inBox
-                          ? BOX_CENTRE
-                          : nesting
-                            ? 24
-                            : admiring
-                              ? FRAME_CENTRE
-                              : followingLight
-                                ? warmSeat(sc.catX * GW)
-                                : sc.catX * GW;
+      let wantX = trip.going
+        ? SHELF_REACH_X
+        : nameCalled
+          ? GW / 2
+          : bubblePlaying
+            ? bubbleTarget!.x
+            : mouseChasing
+              ? Math.max(12, mouseMoment!.x - 8)
+              : musicPlaying
+                ? music.current.x
+                : catnipActive
+                  ? catnipX
+                  : zooming
+                    ? 10 + (Math.sin(zp * Math.PI * 2 - Math.PI / 2) * 0.5 + 0.5) * (GW - 34)
+                    : laserPlaying
+                      ? laser.current.x
+                      : yarnPlaying
+                        ? yarnX
+                        : treating
+                          ? TREAT_X
+                          : inBox
+                            ? BOX_CENTRE
+                            : nesting
+                              ? 24
+                              : admiring
+                                ? FRAME_CENTRE
+                                : followingLight
+                                  ? warmSeat(sc.catX * GW)
+                                  : sc.catX * GW;
       const bounded = (x: number) => Math.max(CAT_REACH_LEFT, Math.min(GW - CAT_REACH_RIGHT, x));
       wantX = bounded(wantX);
       if (catX.current === null) catX.current = firstEverRef.current ? 19 : wantX;
@@ -2275,7 +2303,8 @@ export function Cat({
               ? "pounce"
               : walking
                 ? "walk"
-                : bubblePlaying ||
+                : trip.reaching ||
+                    bubblePlaying ||
                     pianoPawing ||
                     pianoRewarding ||
                     musicDancing ||
@@ -2739,7 +2768,8 @@ export function Cat({
        * (54) and the mug she knocked off (66) all land. Drawn any earlier, a box he put out paints
        * straight over them, and knocking the mug off looks like nothing happening.
        */
-      if (downRef.current) {
+      // Down, unless she is still on her way to knock it off.
+      if (downRef.current && !trip.mugStillUp) {
         blit(MUG_DOWN, MUG_FLOOR_X, MUG_FLOOR_Y, { w: INK, c: "#cfe0e4", d: "#a9c2c8" });
       }
       if (treating) {
