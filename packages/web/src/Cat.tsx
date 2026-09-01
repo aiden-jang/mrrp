@@ -39,7 +39,7 @@ import type { DiscoveryKey } from "./discoveries.js";
 import {
   BED,
   BIRD,
-  BROUGHT,
+  LEFT_OUT,
   BOX_BACK,
   BOX_FRONT,
   CAKE,
@@ -1976,7 +1976,7 @@ export function Cat({
         blit(CAKE, 42, FLOOR + 20, { d: "#e8d3b0", g: "#f0a6b4", r: flame });
       }
       if (broughtRef.current) {
-        blit(BROUGHT, 24, FLOOR + 22, { r: "#c26a80", h: "#f0b9c4" });
+        blit(LEFT_OUT, 24, FLOOR + 22, { r: legible(sc.floorNear), h: "#f0b9c4" });
       }
 
       if (brushedRef.current) {
