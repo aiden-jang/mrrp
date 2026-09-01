@@ -200,6 +200,41 @@
 }
 
 /*
+ * The beat when the other one walks in.
+ *
+ * The room already does the whole thing: the door swings, she gets up and crosses to the middle to
+ * purr. It happens while you are both looking at the buttons underneath it, so nobody has ever seen
+ * it. This does not add anything to the room, it just points at it for two seconds.
+ */
+.stageArrival::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 26px;
+  pointer-events: none;
+  box-shadow: 0 0 0 2px var(--honey);
+  animation: walkedIn 2s var(--ease-spring) both;
+}
+
+/* Not `noticed`: this file already has a `.noticed` class and the two would share a scoped name. */
+@keyframes walkedIn {
+  0% {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+  18% {
+    opacity: 1;
+    transform: none;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/*
  * The room leaves the reading column on a screen wide enough to spare it.
  *
  * 600px is a measure for prose, not for the thing the app is actually about, and on a laptop it left

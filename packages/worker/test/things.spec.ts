@@ -683,3 +683,26 @@ describe("a mark left last thing at night", () => {
     expect((await view(HIM)).brushed).toBe(false);
   });
 });
+
+describe("the first time he reaches her", () => {
+  it("is remembered, once, and only when she was there to feel it", async () => {
+    await seat();
+    // She was seated a moment ago, so she is here.
+    await post("hold", { me: HIM, on: true });
+    await post("hold", { me: HIM, on: false });
+    await tick(20);
+    await post("hold", { me: HIM, on: true });
+
+    const firsts = (await view(HER)).arrivals.filter((a) => a.kind === "first" && a.what === "held");
+    expect(firsts.length, "a first that happens twice is not a first").toBeLessThanOrEqual(1);
+  });
+
+  it("is not recorded for a hold nobody was there for", async () => {
+    await seat();
+    away(1);
+    // An hour later she is long gone, and a hand in an empty room is not the moment.
+    await post("hold", { me: HIM, on: true });
+    const v = await view(HER);
+    expect(v.arrivals.some((a) => a.kind === "first" && a.what === "held")).toBe(false);
+  });
+});

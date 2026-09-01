@@ -330,8 +330,11 @@ export class Room extends DurableObject<Env> {
     if (!people[me]) return this.build(me, people);
     if (this.roles(people).him !== me) return this.build(me, people);
 
-    if (on) await this.ctx.storage.put<Held>("held", { who: me, at: Date.now() });
-    else await this.ctx.storage.delete("held");
+    if (on) {
+      await this.ctx.storage.put<Held>("held", { who: me, at: Date.now() });
+      // The first time he ever reached her while she was there to feel it.
+      if (this.hereNow(people, this.roles(people).her ?? "")) await this.noteFirst("held");
+    } else await this.ctx.storage.delete("held");
     people[me].lastSeen = Date.now();
     await this.ctx.storage.put("people", people);
     return this.build(me, people);
