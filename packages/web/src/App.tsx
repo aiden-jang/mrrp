@@ -1417,6 +1417,24 @@ function RoomPage({ id }: { id: string }) {
   const nightChrome = isNightChrome(scene.sun);
 
   const iAmHim = view.you !== null && !view.youAreHer;
+
+  /*
+      Rendered next to whichever button opened it, not once at the foot of the page.
+
+      His button sits under her last line, near the top, and the panel was down beside "this room",
+      so opening it threw him past every action in the room. The two branches are exclusive, so this
+      element only ever mounts once.
+  */
+  const saidBack =
+    said && view.them ? (
+      <SaidPanel
+        said={said}
+        youAreHer={view.youAreHer}
+        them={view.them}
+        onClose={() => setSaid(null)}
+        panelRef={saidPanel}
+      />
+    ) : null;
   // What they have done since the arrival card's last word, so the two never say the same thing.
   const theirLive = liveOnly(view.theirRecent, covered.current);
   const hisMarks = listOf([
@@ -1884,6 +1902,7 @@ function RoomPage({ id }: { id: string }) {
                 >
                   Everything he's written you
                 </button>
+                {saidBack}
               </div>
             )}
 
@@ -2127,9 +2146,12 @@ function RoomPage({ id }: { id: string }) {
             )}
 
             {iAmHim && (
-              <button ref={saidTrigger} className={s.quiet} onClick={() => void openSaid()}>
-                Everything the two of you have said
-              </button>
+              <>
+                <button ref={saidTrigger} className={s.quiet} onClick={() => void openSaid()}>
+                  Everything the two of you have said
+                </button>
+                {saidBack}
+              </>
             )}
 
             {iAmHim && (
@@ -2231,15 +2253,6 @@ function RoomPage({ id }: { id: string }) {
           <p className={s.errorBar} role="status">
             {err}
           </p>
-        )}
-        {said && view.them && (
-          <SaidPanel
-            said={said}
-            youAreHer={view.youAreHer}
-            them={view.them}
-            onClose={() => setSaid(null)}
-            panelRef={saidPanel}
-          />
         )}
         {!setup && (iAmHim || view.youAreHer) && (
           // Everything about the room rather than about her, under one heading. Loose, these run
