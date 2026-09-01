@@ -59,6 +59,7 @@ import { useLive } from "./live.js";
 import { heard } from "./heard.js";
 import { coveredBy, liveOnly } from "./recent.js";
 import { fadeNote, listOf } from "./fades.js";
+import { standOff } from "./legible.js";
 import { dayApart, HER_SPOT, mixHex, sceneFor, type Scene } from "./hours.js";
 import { moonLine } from "./moon.js";
 import { EYES, LOOKS, timezones } from "./looks.js";
@@ -2492,6 +2493,9 @@ function chromeFor(scene: Scene): Record<string, string> {
     "--air-warm": tint("warm", scene.beamWarm),
     "--panel": tint("panel", scene.wallTop),
     "--line": tint("line", scene.wallBottom),
+    // A separator can be faint. The edge of something you press cannot: `--line` measured 1.38:1 on
+    // the panel, so every pill in the room was text floating with a ghost around it.
+    "--control": standOff(tint("panel", scene.wallTop)),
     "--honey": mixHex(from.honey, to.honey, t),
     "--ink": night ? INK_ON_DARK : "#3f2f1f",
     "--soft": night ? SOFT_ON_DARK : "#77634a",

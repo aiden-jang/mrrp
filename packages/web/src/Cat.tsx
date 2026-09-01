@@ -155,7 +155,13 @@ const PAW_CURSOR =
       '<ellipse cx="11" cy="15" rx="7.5" ry="5.8"/></g></svg>',
   );
 
-const ROOM_RESERVE = 270;
+/*
+ * How much of a phone screen the chrome gets before the room starts giving way.
+ *
+ * The room was about 40% of the screen with four stacked cards under it, which is the wrong way
+ * round for the thing the app is about.
+ */
+const ROOM_RESERVE = 210;
 const ROOM_MAX_SHARE = 0.78;
 
 const COLLAR_BAND = "#9c5468";
@@ -721,6 +727,16 @@ export function Cat({
       ptr.in = true;
       const press = floorPress.current;
       const now = performance.now();
+      /*
+       * She watches your finger, not just the one that is dragging her a laser about.
+       *
+       * Kept short and kept behind everything else that has an opinion about where she is looking:
+       * a cat glances at a hand moving nearby, she does not lock onto it. Anything with a real
+       * reason to hold her gaze has already written a later `until` than this one.
+       */
+      if (!press && now > (lookAt.current?.until ?? 0) - 200) {
+        lookAt.current = { x: Math.max(6, Math.min(GW - 6, nextX)), until: now + 700 };
+      }
       if (press && now - press.at >= 460) {
         if (!press.active) {
           press.active = true;
