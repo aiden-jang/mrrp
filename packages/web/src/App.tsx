@@ -12,7 +12,7 @@ import type {
   Treat,
   Visit,
 } from "./types.js";
-import { ACTIONS, CAT_ACTS, MOODS, TREATS } from "./types.js";
+import { ACTIONS, CAT_ACTS, LINE_MAX, MOODS, TREATS } from "./types.js";
 import {
   doAct,
   doClock,
@@ -486,8 +486,6 @@ const MUG_AGAIN_MS = 1400;
 /* Matches PET_TAP_MS in Cat.tsx: how long a tap of the pet button reads as a hold. */
 const PET_TAP_MS = 1800;
 const FINISH_LINK = "mrrp:finish-link";
-
-const LINE_MAX = 140;
 
 const DOOR_CAT = { name: "Bean", ...LOOKS[0]!.cat, eyes: EYES[0]!.hex };
 const DOOR_CLOCK = {

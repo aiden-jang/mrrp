@@ -22,6 +22,7 @@ import { NOTES } from "./notes.js";
 import { isBlanketKey, type BlanketKey } from "./blanket.js";
 import { lookOutside, WEATHER_STALE_MS, type Sky, type Weather } from "./weather.js";
 import type { FirstKey } from "./types.js";
+import { LINE_MAX } from "./types.js";
 import {
   arrivalsFor,
   bothFound,
@@ -415,7 +416,7 @@ export class Room extends DurableObject<Env> {
     // One stamp for both. His card drops the generic gift arrival when a line carries the same gift
     // at the same moment, and two Date.now() calls either side of an await can land apart.
     const now = Date.now();
-    const said = text.trim().slice(0, 140);
+    const said = text.trim().slice(0, LINE_MAX);
     if (said) await this.keepLine({ text: said, at: now, gift });
     const previous = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
     await this.ctx.storage.put(
@@ -1107,7 +1108,7 @@ export class Room extends DurableObject<Env> {
     // Keep what the note said, not just where it sat. He can rewrite his notes whenever he likes.
     const about = day === undefined ? undefined : (await this.notes())[day];
 
-    const trimmed = text.trim().slice(0, 140);
+    const trimmed = text.trim().slice(0, LINE_MAX);
     if (trimmed) await this.keepLine({ text: trimmed, at: Date.now(), aboutDay: day, about });
     else {
       await this.ctx.storage.delete(HER_LINES);

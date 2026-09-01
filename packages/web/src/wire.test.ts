@@ -18,6 +18,12 @@ describe("the lists both sides keep their own copy of", () => {
     expect(read.CAT_ACTS.map((a) => a.id)).toEqual(served.CAT_ACTS.map((a) => a.id));
   });
 
+  it("agrees how much she can say in one go", () => {
+    // The browser stops her typing past it; the worker cuts anything longer. If the browser's grew,
+    // she would type a hundred and sixty characters and lose twenty without being told.
+    expect(read.LINE_MAX).toBe(served.LINE_MAX);
+  });
+
   it("says the same words about them, so one side is not quietly nicer than the other", () => {
     expect(read.MOODS).toEqual(served.MOODS);
     expect(read.TREATS).toEqual(served.TREATS);
