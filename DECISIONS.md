@@ -1689,6 +1689,23 @@ The lapse is ten minutes rather than the thirty seconds a hold gets. A hold is a
 and a stale one is a hand she can see that is not there. Sitting is meant to outlast not touching a
 key.
 
+## A link was a presence feed
+
+`otherId` is how the room works out who the other one is, and it read `youAreHer ? him : her`. That
+is correct for the two of them and quietly wrong for everybody else: anybody holding the link is not
+her, so the room treated them as him and handed them her. Her name, whether she was in the room this
+second, and the moment she was last in it, to anyone the link ever reached, refreshed on every poll.
+
+The room does mean to let a link-holder watch. The screen says so: "This room belongs to two people,
+and both seats are taken. You can watch the cat." So the blanket, the marks on the rug and the mug
+on the floor are all deliberately visible, and they stay that way. The line the copy draws is
+between what the room looks like and what a person is doing, and `otherId` was on the wrong side of
+it.
+
+`otherId` is null unless you have a seat now. The sweep that found it is worth keeping: split every
+field of the view into gated and ungated, then ask of each ungated one whether it is about the room
+or about a person.
+
 ## Two more silent losses, one of them mine from an hour earlier
 
 **A copy of the room was a way round the surprise.** Giving them a day each was the right shape, and

@@ -1321,7 +1321,9 @@ export class Room extends DurableObject<Env> {
     const { him, her } = this.roles(people);
     const youAreHer = !!her && me === her;
     const seated = me === him || me === her;
-    const otherId = youAreHer ? him : her;
+    // Null unless you have a seat. Without that a stranger holding the link counts as him, so `them`
+    // becomes her: her name, whether she is in the room this second, and when she was last in it.
+    const otherId = seated ? (youAreHer ? him : her) : null;
     const them = otherId ? (people[otherId] ?? null) : null;
     const waitingForThem = !her;
     const kept = waitingForThem && me === him ? await this.ctx.storage.get<LeftSide>(LEFT_SIDE) : null;
