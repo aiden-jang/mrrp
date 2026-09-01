@@ -8,6 +8,14 @@ export type DreamScene = "mouse" | "moth" | "piano" | "stars" | "box" | "brush" 
 
 export interface Dream {
   scene: DreamScene;
+  /*
+   * Written so either seat can read it.
+   *
+   * Both of them watch the same sleeping cat, and one of them is her, so "she is dreaming about
+   * food" was the room narrating her own sleep back to her. There is no second phrasing here
+   * because a dream does not need a subject: it is the inside of a head, and naming whose head it
+   * is adds nothing to it.
+   */
   line: string;
 }
 
@@ -20,32 +28,32 @@ export interface DreamContext {
 }
 
 const FROM_FOUND: Partial<Record<DiscoveryKey, { scene: DreamScene; line: string }>> = {
-  mouse: { scene: "mouse", line: "she is dreaming about the mouse. it gets away." },
+  mouse: { scene: "mouse", line: "the mouse, and it gets away." },
   music: { scene: "moth", line: "something small and winged, going round a light." },
-  piano: { scene: "piano", line: "her paws are moving. somewhere in there, a piano." },
-  constellation: { scene: "stars", line: "stars, from the inside of her head this time." },
+  piano: { scene: "piano", line: "paws moving. somewhere in there, a piano." },
+  constellation: { scene: "stars", line: "stars, from the inside this time." },
   box: { scene: "box", line: "a box. of course it is a box." },
-  catnip: { scene: "fish", line: "whatever this one is, she is enjoying it." },
+  catnip: { scene: "fish", line: "whatever this one is, it is going well." },
 };
 
 const FROM_ACTION: Partial<Record<Action | "leaveout", { scene: DreamScene; line: string }>> = {
-  brush: { scene: "brush", line: "she is being brushed, somewhere behind her eyes." },
-  leaveout: { scene: "fish", line: "she is dreaming about food. this is not a surprise." },
+  brush: { scene: "brush", line: "being brushed, somewhere behind shut eyes." },
+  leaveout: { scene: "fish", line: "food. this is not a surprise." },
   photo: { scene: "sun", line: "a bright square of light, and somebody holding still." },
 };
 
 const FROM_TRAIT: Partial<Record<Trait, { scene: DreamScene; line: string }>> = {
   petted: { scene: "sun", line: "a warm patch, and a hand that keeps going." },
-  brushed: { scene: "brush", line: "she is being brushed, somewhere behind her eyes." },
-  fed: { scene: "fish", line: "she is dreaming about food. this is not a surprise." },
+  brushed: { scene: "brush", line: "being brushed, somewhere behind shut eyes." },
+  fed: { scene: "fish", line: "food. this is not a surprise." },
   accompanied: { scene: "sun", line: "somebody sat nearby. that is the whole dream." },
   photographed: { scene: "sun", line: "a bright square of light, and somebody holding still." },
 };
 
 const PLAIN: { scene: DreamScene; line: string }[] = [
   { scene: "fish", line: "a fish, probably. it usually is." },
-  { scene: "sun", line: "a warm patch of floor that moved when she did." },
-  { scene: "moth", line: "something small she nearly caught." },
+  { scene: "sun", line: "a warm patch of floor that keeps moving." },
+  { scene: "moth", line: "something small, nearly caught." },
 ];
 
 // Never dream about a secret this reader has not found. Naming the piano tells them there is a

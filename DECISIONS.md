@@ -48,6 +48,20 @@ There is a test for the sentence, and for the caption saying "You are" rather th
 at her, because this is twice now that the premise has been re-established and something has been
 left behind saying the opposite.
 
+## Dreams have no subject
+
+Both of them watch the same sleeping cat and one of them is her, so ten of the nineteen dream lines
+were the room narrating her own sleep back to her: "she is dreaming about food", "her paws are
+moving".
+
+No second phrasing for these, unlike the moods. A dream does not need a subject. "food. this is not
+a surprise." is the inside of a head, and naming whose head it is adds nothing, so one line now
+works from either seat. Where a mood has to say who is doing what to whom, a dream never does.
+
+That was the last file. Every surface both seats read has been swept, and the four tests that guard
+it, on the notes, the announcements, the captions and the dreams, are the reason it is worth saying
+so rather than just believing it.
+
 ## The caption change broke six sentences, and only a sweep found them
 
 Giving her side "You are ___" instead of her own name was right, and it quietly wrecked six of the
