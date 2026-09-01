@@ -278,6 +278,14 @@ export class Room extends DurableObject<Env> {
     if (act === "box") {
       const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
       const today = localDayNumber(Date.now(), clock.tz);
+      // In, or back out. Getting out is not logged and returns here before the log below: the room
+      // shows her leaving it, and "got out of the box again" is not news.
+      if (((await this.ctx.storage.get<number>("boxDay")) ?? -1) === today) {
+        await this.ctx.storage.delete("boxDay");
+        people[me].lastSeen = Date.now();
+        await this.ctx.storage.put("people", people);
+        return this.build(me, people);
+      }
       // Nothing to get into unless he has put one out.
       if (((await this.ctx.storage.get<number>("boxOutDay")) ?? -1) !== today) {
         return this.build(me, people);

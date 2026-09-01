@@ -544,12 +544,19 @@ a timer and stub `innerHeight`, both before the app boots. It renders a handful 
 freezes, so it settles a question about layout and cannot answer one about motion. That is what the
 harness above is for.
 
-## Taking the box away
+## The box is the one thing either of them can undo
 
-The button that puts a box out takes it away again on a second press, except while she is sitting in
-it, where it says so and does nothing. Rule one is that nothing in this room can go wrong for the
-cat, and pulling the box out from under her is the smallest possible version of that. Taking it away
-is not logged either: "took the box away again" is not a thing she needs told.
+His button puts a box out and takes it away again on a second press, except while she is sitting in
+it, where it says so and does nothing. Rule one is that nothing in this room goes wrong for the cat,
+and pulling the box out from under her is the smallest possible version of that.
+
+Her button is the same shape: she gets in, and she gets back out. It was not, for a while, and that
+made getting in the only act in the room with no undo. `boxDay` is a day number, so she was in the
+box until her midnight however long ago she chose it, and his button stayed blocked all that time
+saying "she's in it", which reads as right now and meant today.
+
+Neither direction of undo is logged. The room shows her leaving the box, and "took the box away
+again" and "got out of the box again" are not things the other one needs told.
 
 ## Nothing accumulates into an inbox
 

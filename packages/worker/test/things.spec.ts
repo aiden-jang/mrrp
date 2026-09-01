@@ -607,3 +607,45 @@ describe("taking the box away again", () => {
     expect((await view(HER)).boxOut).toBe(true);
   });
 });
+
+describe("getting out of the box again", () => {
+  it("is the same button, both ways", async () => {
+    await seat();
+    await post("boxout", { me: HIM, on: true });
+    await post("heract", { me: HER, act: "box" });
+    expect((await view(HER)).box).toBe(true);
+
+    await post("heract", { me: HER, act: "box" });
+    expect((await view(HER)).box, "back out").toBe(false);
+    await post("heract", { me: HER, act: "box" });
+    expect((await view(HER)).box, "and in again").toBe(true);
+  });
+
+  it("does not log her getting out, only her getting in", async () => {
+    await seat();
+    await post("boxout", { me: HIM, on: true });
+    await post("heract", { me: HER, act: "box" });
+    await tick();
+    await post("heract", { me: HER, act: "box" });
+    // The room shows her leaving it. "Got out of the box again" is not news.
+    expect((await view(HIM)).theirRecent.filter((v) => v.action === "box")).toHaveLength(1);
+  });
+
+  it("unblocks his button, so he can take the box away once she is out", async () => {
+    await seat();
+    await post("boxout", { me: HIM, on: true });
+    await post("heract", { me: HER, act: "box" });
+    await post("boxout", { me: HIM, on: false });
+    expect((await view(HER)).boxOut, "not while she is in it").toBe(true);
+
+    await post("heract", { me: HER, act: "box" });
+    await post("boxout", { me: HIM, on: false });
+    expect((await view(HER)).boxOut, "but yes once she is out").toBe(false);
+  });
+
+  it("still refuses to let her into a box that is not there", async () => {
+    await seat();
+    await post("heract", { me: HER, act: "box" });
+    expect((await view(HER)).box).toBe(false);
+  });
+});
