@@ -12,7 +12,7 @@ import type {
   Treat,
   Visit,
 } from "./types.js";
-import { ACTIONS, CAT_ACTS, GIFTS, LINE_MAX, MOODS, TREATS } from "./types.js";
+import { ACTIONS, CAT_ACTS, GIFTS, LINE_MAX, MOODS, NOTE_MAX, NOTES_KEPT, TREATS } from "./types.js";
 import {
   doAct,
   doClock,
@@ -1733,9 +1733,28 @@ function RoomPage({ id }: { id: string }) {
               placeholder="One a day, in your own words."
               onChange={(e) => setDraft((d) => ({ ...d!, notes: e.target.value }))}
             />
+            {/*
+                Count what the room will actually keep, and say so when that is fewer than he wrote.
+                This counted every line he typed, so pasting a hundred and fifty said a hundred and
+                fifty and the room quietly kept a hundred and twenty.
+            */}
             <p className={s.small} style={{ marginTop: 6 }}>
-              {draft.notes.split("\n").filter((l) => l.trim()).length} notes. She gets one a day and the last
-              one stays. Leave this empty to use the ones it came with.
+              {(() => {
+                const lines = draft.notes.split("\n").filter((l) => l.trim());
+                const overLong = lines.filter((l) => l.trim().length > NOTE_MAX).length;
+                return (
+                  <>
+                    {Math.min(lines.length, NOTES_KEPT)} notes.
+                    {lines.length > NOTES_KEPT
+                      ? ` The room keeps the first ${NOTES_KEPT}, so the last ${lines.length - NOTES_KEPT} will not be saved.`
+                      : ""}
+                    {overLong > 0
+                      ? ` ${overLong === 1 ? "One is" : `${overLong} are`} longer than ${NOTE_MAX} characters and will be cut.`
+                      : ""}{" "}
+                  </>
+                );
+              })()}
+              She gets one a day and the last one stays. Leave this empty to use the ones it came with.
             </p>
 
             <details style={{ marginTop: 8 }}>

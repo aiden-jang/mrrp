@@ -1689,6 +1689,24 @@ The lapse is ten minutes rather than the thirty seconds a hold gets. A hold is a
 and a stale one is a hand she can see that is not there. Sitting is meant to outlast not touching a
 key.
 
+## Two more silent losses, one of them mine from an hour earlier
+
+**A copy of the room was a way round the surprise.** Giving them a day each was the right shape, and
+then `exportFor` emitted both slots side by side. It already knows which seat is asking, and already
+uses that to stop her downloading notes she has not been handed, so the field went in one line below
+a guard that existed for exactly this. Either of them could have downloaded the room and read the
+other's date. Found by grepping my own change for the pattern I had spent the session hunting.
+
+**His notes were the one field with no limit on his side.** The worker cuts a note at 280 characters
+and drops everything past the hundred and twentieth. Every other field in the app agrees with the
+worker: the name is 24 both sides, the day's label 32, her line is one shared constant. Notes had
+nothing, and the panel counted every line he typed, so pasting a hundred and fifty said "150 notes"
+and the room kept 120 without a word. He would find out months later, from a room that ran out
+early.
+
+The limits are shared constants now, held identical by the same test that holds the moods and the
+line length, and the panel counts what will survive rather than what he typed.
+
 ## Four things the room did to her without saying so
 
 Found by reading the app from her seat rather than from the code. Four of them turned out to be the
