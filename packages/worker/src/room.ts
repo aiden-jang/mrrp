@@ -944,6 +944,9 @@ export class Room extends DurableObject<Env> {
       if (doodle?.by === her) await this.ctx.storage.delete("doodle");
     }
     await this.ctx.storage.delete("recoveryHer");
+    // Set even when she is the one leaving, which looks wrong and is not. The next token to take
+    // the seat is how she comes back on a new phone, and the room cannot tell that from a stranger.
+    // Dropping it here would cost her her own way back.
     await this.ctx.storage.put("handover", her);
 
     if (bar) {
