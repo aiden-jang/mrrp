@@ -212,6 +212,21 @@ describe("a day the two of them chose", () => {
     expect((await post("ourday", { me: STRANGER, month: 1, day: 1, label: "nope" })).status).toBe(403);
   });
 
+  it("keeps the other one's day out of a downloaded copy of the room", async () => {
+    await seat();
+    await post("ourday", { me: HIM, month: 4, day: 2, label: "the day he picked" });
+    await post("ourday", { me: HER, month: 9, day: 9, label: "the day she picked" });
+
+    for (const [who, mine, theirs] of [
+      [HIM, "the day he picked", "the day she picked"],
+      [HER, "the day she picked", "the day he picked"],
+    ] as const) {
+      const body = await (await SELF.fetch(`https://x/api/room/${id}/export?me=${who}`)).text();
+      expect(body).toContain(mine);
+      expect(body, "a copy of the room is not a way round the surprise").not.toContain(theirs);
+    }
+  });
+
   it("gives them one slot each, and never shows either of them the other's", async () => {
     await seat();
     await post("ourday", { me: HIM, month: 4, day: 2, label: "his" });
