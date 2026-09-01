@@ -1605,6 +1605,29 @@ thing on that screen and decorating around them would compete with them. `PawMar
 `screens.tsx` to get there, since a component in `App.tsx` cannot be reached from a file `App.tsx`
 imports.
 
+## Everything that lasted started with him
+
+Hold, sit, and now brushing are all his. Settling is hers but it is an answer: it only exists once he
+has sat down. So every lasting moment in the room began on his side, and hers was to reply to it or
+to send something that happens once.
+
+The obvious fix is the one this app cannot have. Letting her ask for something puts a request in a
+room whose whole position is that nothing in here needs anything from you, and a request he does not
+answer is a way of failing that the room has spent every other decision avoiding.
+
+Waiting by the door is the version that cannot fail. She goes and waits; he is usually not even
+there to see it; nothing is owed and nothing has gone wrong if he never comes. The room already puts
+her there for the hour before he is normally home, so this is her choosing the same spot rather than
+arriving at it, and `DOOR_X` is now named rather than being `0.19` in three places.
+
+It ends when he looks in, cleared on his own read, because the thing she was waiting for happened.
+That is the only ending it should have.
+
+The trap, and it cost a screenshot to find: `Cat` does not take the scene. It builds its own from
+the clock and the mood, so overriding `catX` in `App.tsx` moved the caption and not the cat, and the
+room cheerfully said she was by the door while she sat in the middle of it. Anything that changes
+where she is has to go in as a prop and be applied inside the draw loop.
+
 ## She had nothing that lasted either
 
 Fixing his side made hers the thin one. Everything she does is a tap or a piece of typing: a mood, a

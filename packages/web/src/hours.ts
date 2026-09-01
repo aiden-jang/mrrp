@@ -89,6 +89,8 @@ const BED_X = 0.23;
 const WINDOW_X = 0.68;
 
 export const HER_SPOT = 0.55;
+/* Where she stands when she is waiting for him. A mood that puts her here counts as at the door. */
+export const DOOR_X = 0.19;
 
 // `grey` is a closed sky: three of these lines are about the sun, and on a wet afternoon they
 // describe a room that is not there.
@@ -194,12 +196,12 @@ export function sceneFor(
           : r
             ? sunnySpot
             : atDoor
-              ? 0.19
+              ? DOOR_X
               : settledIn !== null
                 ? settledIn
                 : sunnySpot),
     sleepy: r?.sleepy ?? (watching ? 0.12 : closed && free ? Math.min(1, sleepy + 0.12) : sleepy),
-    atDoor: r ? r.catX === 0.19 : atDoor,
+    atDoor: r ? r.catX === DOOR_X : atDoor,
     doingHers: r?.doingHers,
     doing:
       r?.doing ??

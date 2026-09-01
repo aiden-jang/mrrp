@@ -81,6 +81,9 @@ const HERE_NOW_MS = 3 * 60_000;
 const HELD_LAPSE_MS = 30_000;
 const SITTING = "sitting";
 const SETTLED = "settled";
+const WAITING = "waiting";
+/* Long enough to be a wait, short enough that she is not still at the door tomorrow. */
+const WAITING_LAPSE_MS = 90 * 60_000;
 /* Longer than a hold: sitting with somebody is meant to outlast a moment of not touching a key. */
 const SITTING_LAPSE_MS = 10 * 60_000;
 /* Long enough for the wobble to play on a slow connection, short enough not to replay on a reload. */
@@ -210,7 +213,12 @@ export class Room extends DurableObject<Env> {
       await this.ctx.storage.put("people", people);
     }
 
-    if (this.roles(people).him === me) await this.noteHomecoming();
+    if (this.roles(people).him === me) {
+      await this.noteHomecoming();
+      // She was waiting at the door and he has walked through it. Waiting is over because the
+      // thing she was waiting for happened, which is the only ending it should have.
+      if (await this.ctx.storage.get<Held>(WAITING)) await this.ctx.storage.delete(WAITING);
+    }
 
     const handover = await this.ctx.storage.get<string>("handover");
     if (handover && handover !== me && this.roles(people).her === me) {
@@ -384,6 +392,26 @@ export class Room extends DurableObject<Env> {
       await this.noteFirst("settled");
     } else await this.ctx.storage.delete(SETTLED);
 
+    people[me].lastSeen = Date.now();
+    await this.ctx.storage.put("people", people);
+    return this.build(me, people);
+  }
+
+  /*
+   * Waiting by the door for him.
+   *
+   * The one lasting thing she starts rather than answers. It is deliberately not a request: he is
+   * usually not even here to see it, nothing is owed, and if he never comes she was by the door.
+   * The room already puts her there for the hour before he is normally home; this is her saying so.
+   */
+  async waitAtDoor(me: string, on: boolean): Promise<RoomView> {
+    await this.guard();
+    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    if (!people[me]) return this.build(me, people);
+    if (this.roles(people).her !== me) return this.build(me, people);
+
+    if (on) await this.ctx.storage.put<Held>(WAITING, { who: me, at: Date.now() });
+    else await this.ctx.storage.delete(WAITING);
     people[me].lastSeen = Date.now();
     await this.ctx.storage.put("people", people);
     return this.build(me, people);
@@ -1342,6 +1370,7 @@ export class Room extends DurableObject<Env> {
     const sitting = seated ? ((await this.ctx.storage.get<Held>(SITTING)) ?? null) : null;
     const sittingNow = !!sitting && Date.now() - sitting.at < SITTING_LAPSE_MS;
     const settled = sittingNow ? ((await this.ctx.storage.get<Held>(SETTLED)) ?? null) : null;
+    const waiting = seated ? ((await this.ctx.storage.get<Held>(WAITING)) ?? null) : null;
     const today = localDayNumber(Date.now(), clock.tz);
     /*
      * When she last opened the room, from before this request touched it.
@@ -1470,6 +1499,7 @@ export class Room extends DurableObject<Env> {
       sittingWith: sittingNow && sitting.who === me,
       sittingWithYou: sittingNow && sitting.who === otherId,
       settled: !!settled,
+      waitingAtDoor: !!waiting && Date.now() - waiting.at < WAITING_LAPSE_MS,
       // Theirs only. Your own tap already moved your room; sent back it plays the wobble twice.
       pokedByThem:
         poke && poke.who === otherId && Date.now() - poke.at < POKE_LIVE_MS
