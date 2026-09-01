@@ -171,6 +171,9 @@ const PRINT_FADE_MS = 9000;
 const DOOR_CENTRE = 12;
 const SWIPE_MS = 620;
 const WATCH_DOOR_MS = 7000;
+/* A tap of the pet button, drawn for about as long as a short hold would be. */
+const PET_TAP_MS = 1800;
+
 const MUG_FLOOR_X = 66,
   MUG_FLOOR_Y = FLOOR + 14;
 
@@ -249,6 +252,7 @@ export function Cat({
   onWindowLight,
   shelfDown = false,
   shelfAt = null,
+  petAt = null,
   boxOut = false,
   mugFell = null,
   onTidy,
@@ -299,6 +303,8 @@ export function Cat({
   shelfDown?: boolean;
   /** When she knocked the mug off, so she can be seen doing it. Null on a plain load. */
   shelfAt?: number | null;
+  /** When he tapped the pet button, as against holding on to her. Both have to look the same. */
+  petAt?: number | null;
   /** A box is in the room. Separate from `box`, which is whether she is sitting in it. */
   boxOut?: boolean;
   onTidy?: () => void;
@@ -383,6 +389,16 @@ export function Cat({
   boxOutRef.current = boxOut;
   const downRef = useRef(shelfDown);
   downRef.current = shelfDown;
+  // A tap of the pet button, shown for as long as a short hold. Holding sets `petting` from the
+  // canvas; the button never touched the drawing at all, so tapping it did nothing you could see.
+  const petShownUntil = useRef(-1e9);
+  const petShown = useRef(0);
+  useEffect(() => {
+    if (!petAt || petAt === petShown.current) return;
+    petShown.current = petAt;
+    petShownUntil.current = performance.now() + PET_TAP_MS;
+  }, [petAt]);
+
   const tripFrom = useRef(-1e9);
   const tipped = useRef(0);
   const lastTripAge = useRef(-1e9);
@@ -2172,7 +2188,7 @@ export function Cat({
       const n = near.current;
       // His hand, whichever side of it you are on. `petting` is his own press; `heldRef` is the same
       // press arriving on her screen, and the closed eyes, the purr and the heart all hang off this.
-      const pet = petting.current || heldRef.current;
+      const pet = petting.current || heldRef.current || t < petShownUntil.current;
       bounce.current = Math.max(0, bounce.current - 0.02);
 
       petDepth.current = Math.max(0, Math.min(1, petDepth.current + (pet ? 0.006 : -0.003)));

@@ -83,6 +83,25 @@ describe("the marks his actions leave", () => {
     expect(legibleCells(r, 68, 76, 46, 56)).toBeGreaterThan(8);
   });
 
+  it("shows the pet button on the cat, the same as holding on to her does", () => {
+    // Petting leaves no mark, so the hold is the whole of it. The button used to fire neither half:
+    // nothing on his cat, nothing on hers. Her eyes close while she is being petted.
+    // The heart that rises off her, which is drawn only while she is being petted.
+    const hearts = (rm: Room) => {
+      let n = 0;
+      for (let y = 30; y < 70; y++)
+        for (let x = 0; x < 80; x++) if (rm.at(x, y)?.startsWith("rgba(232,120,140")) n++;
+      return n;
+    };
+    r = room();
+    r.run(0, 400);
+    expect(hearts(r), "not being petted").toBe(0);
+
+    r.set({ petAt: 1 });
+    r.run(416, 900);
+    expect(hearts(r), "a tap of the button reaches the drawing").toBeGreaterThan(0);
+  });
+
   it("draws a dent that is not the same colour as the rug it is in", () => {
     r = room({ satWith: true });
     r.run(0, 300);
