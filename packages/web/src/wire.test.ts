@@ -1,0 +1,25 @@
+import { describe, expect, it } from "vitest";
+import * as served from "../../worker/src/types.js";
+import * as read from "./types.js";
+
+/*
+ * The lists the two sides both hold. `wire.check.ts` covers the shapes; `tsc` cannot see values,
+ * and a value is what breaks here: the browser offers a mood the worker does not accept, the POST
+ * comes back 400, the client swallows it, and the button does nothing for the rest of time.
+ */
+describe("the lists both sides keep their own copy of", () => {
+  it("offers exactly the moods the worker will take", () => {
+    expect(read.MOODS.map((m) => m.id)).toEqual(served.MOODS.map((m) => m.id));
+  });
+
+  it("offers exactly the treats, actions and cat acts the worker will take", () => {
+    expect(read.TREATS.map((t) => t.id)).toEqual(served.TREATS.map((t) => t.id));
+    expect(read.ACTIONS.map((a) => a.id)).toEqual(served.ACTIONS.map((a) => a.id));
+    expect(read.CAT_ACTS.map((a) => a.id)).toEqual(served.CAT_ACTS.map((a) => a.id));
+  });
+
+  it("says the same words about them, so one side is not quietly nicer than the other", () => {
+    expect(read.MOODS).toEqual(served.MOODS);
+    expect(read.TREATS).toEqual(served.TREATS);
+  });
+});
