@@ -33,6 +33,23 @@ the same sentence about a person:
 The seat-awareness tests cover milestones for this reason, and they caught a draft that read "you
 have not once thanked". The room never implies anything owed.
 
+## The notes were the last place still holding the old idea
+
+Twenty of the thirty default notes talked about a cat in the third person: "she is asleep in the
+sun", "she knocked something off the shelf earlier", "somebody made you a cat, she lives here now".
+They are read by her and nobody else, one a day, and she is the cat. Every other surface had been
+turned over months before and these had not, because they read fine to whoever wrote them and only
+read wrong to the one person who sees them.
+
+They are rewritten to her. A test fails on any note containing "she" or "her", which is the cheapest
+possible guard against the same drift arriving with the next batch somebody adds.
+
+Three smaller ones in the same family, found by reading her screen rather than the code. The caption
+under the room said "Bean is up, in the middle of the room", which is the room describing her to
+herself; it says "You are" on her side now. The blanket row, which only she sees, was labelled "her
+blanket". And the list of things in the room called the bed "her bed" to both seats, so that one went
+neutral rather than per-seat.
+
 ## She acts as the cat, the room does not roll for her
 
 Everything the cat did was the room's dice. The shelf came down on an 18% roll when she looked in,
@@ -606,6 +623,30 @@ edge of a thing you press cannot.
 is tinted per hour and a fixed hex holds for part of the day and fails for the rest. `standOff` walks
 up until it clears 3:1 and stops, rather than jumping to the strength the floor marks use: an outline
 wants exactly enough, or every pill in the room turns into a hard box. Measured 3.07:1 after.
+
+## Everything you press is 44 across
+
+Nothing was. The mood row, which is the thing she uses every day, was 38 tall; the blanket swatches
+were 30 square; the sound toggle 36; the arrival card's close button 28. The one `min-height: 44px`
+in the stylesheet was on a date input, to work around Safari.
+
+The swatches are the interesting case: a 44px slab of colour is a paint chart, so the box grows and
+the paint does not. The extra is transparent border with `background-clip: padding-box`, which gives
+a thumb something to hit around a swatch that stays the size it looked best at.
+
+Left alone: links sitting inside a sentence, which the target-size rule exempts and which would
+break the line if they were boxed out, and anything inside a screen-reader-only container, which has
+no touch target at all.
+
+## The mood tint says which mood, the border says it is a button
+
+The mood buttons overrode their border to transparent and leaned on a tint that measured 1.25:1 on
+the panel. That is right for a hint and nowhere near enough to be the only thing giving a control its
+shape.
+
+It also exposed the hole in the change that introduced `--control`: any control setting its own
+`borderColor` skipped it silently. The inputs, the selects and the arrival card's close button were
+all still on `--line`, the faint divider. A token only helps where nothing overrides it.
 
 ## The banner was louder than the room
 
