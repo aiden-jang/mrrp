@@ -458,6 +458,9 @@ const pad = (n: number) => String(n).padStart(2, "0");
 
 const MUG_AGAIN_MS = 1400;
 /* Matches PET_TAP_MS in Cat.tsx: how long a tap of the pet button reads as a hold. */
+/* Strokes that make a brushing. Few enough to be a moment, enough that one flick is not it. */
+const STROKES_NEEDED = 5;
+
 const PET_TAP_MS = 1800;
 const FINISH_LINK = "mrrp:finish-link";
 
@@ -875,6 +878,8 @@ function RoomPage({ id }: { id: string }) {
   const [replyTo, setReplyTo] = useState<number | null>(null);
   const [giftWords, setGiftWords] = useState("");
   const [clearing, setClearing] = useState(false);
+  /* Null when the brush is down. A count of strokes when it is not. */
+  const [strokes, setStrokes] = useState<number | null>(null);
   const [said, setSaid] = useState<SaidSoFar | null>(null);
   const saidTrigger = useRef<HTMLButtonElement>(null);
   const saidPanel = useRef<HTMLElement>(null);
@@ -1079,6 +1084,24 @@ function RoomPage({ id }: { id: string }) {
       document.removeEventListener("visibilitychange", onShow);
     };
   }, [asking, gone, load, live]);
+
+  /*
+   * Brushing takes brushing. The button picks the brush up and putting it down is what marks the
+   * day, so the action is the strokes rather than the tap that starts them.
+   */
+  const stroke = () => {
+    setStrokes((n) => {
+      if (n === null) return null;
+      const next = n + 1;
+      if (next < STROKES_NEEDED) {
+        play("brush");
+        buzz("brush");
+        return next;
+      }
+      void act("brush");
+      return null;
+    });
+  };
 
   const sitWith = async (on: boolean) => {
     setNudge((v) => v + 1);
@@ -1511,6 +1534,8 @@ function RoomPage({ id }: { id: string }) {
             onTouch={sharePoke}
             heldByThem={view.heldByThem}
             sitting={view.sittingWith || view.sittingWithYou}
+            brushing={strokes !== null}
+            onStroke={stroke}
             pokedByThem={view.pokedByThem}
             reachedTogether={view.reachedTogether}
             onPoke={() => {
@@ -2153,23 +2178,33 @@ function RoomPage({ id }: { id: string }) {
                   {ACTIONS.map((a) => {
                     // Sitting is somewhere he is, so its button says whether he is there and takes
                     // him back out again. The others are things he does, and stay as they were.
+                    const brushingNow = a.id === "brush" && strokes !== null;
                     const sitting = a.id === "sit" && view.sittingWith;
                     // Sitting shows where he is, never where he has been. The day's mark still
                     // exists and she still sees it; dimming the button once he stands up would say
                     // he had used it up.
-                    const on = a.id === "sit" ? sitting : (HIS_MARKS[a.id]?.(view) ?? false);
+                    const on = a.id === "sit" ? sitting : brushingNow || (HIS_MARKS[a.id]?.(view) ?? false);
                     return (
                       <button
                         key={a.id}
                         aria-pressed={on}
-                        className={`${s.btn} ${on ? s.btnOn : ""} ${sitting ? s.btnStaying : ""}`}
-                        onClick={() => (a.id === "sit" ? void sitWith(!view.sittingWith) : void act(a.id))}
+                        className={`${s.btn} ${on ? s.btnOn : ""} ${sitting || brushingNow ? s.btnStaying : ""}`}
+                        onClick={() => {
+                          if (a.id === "sit") return void sitWith(!view.sittingWith);
+                          if (a.id === "brush") return setStrokes(brushingNow ? null : 0);
+                          void act(a.id);
+                        }}
                       >
-                        {sitting ? "Get up" : a.label}
+                        {sitting ? "Get up" : brushingNow ? `Brushing${".".repeat(strokes)}` : a.label}
                       </button>
                     );
                   })}
                 </div>
+                {strokes !== null && (
+                  <p className={s.hint} style={{ marginTop: 6 }} aria-live="polite">
+                    Brush her: drag across {view.cat.name}, back and forth.
+                  </p>
+                )}
                 {hisMarks && (
                   <p className={s.small} style={{ marginTop: 6 }}>
                     She'll find {hisMarks}.

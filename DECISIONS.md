@@ -1605,6 +1605,25 @@ thing on that screen and decorating around them would compete with them. `PawMar
 `screens.tsx` to get there, since a component in `App.tsx` cannot be reached from a file `App.tsx`
 imports.
 
+## Brushing takes brushing
+
+It was a tap that set a boolean. The button picks the brush up now, and the strokes are the action:
+dragging back and forth across her, five of them, and the day's mark is what putting the brush down
+leaves behind rather than what the tap did.
+
+Strokes are measured in distance travelled over her, not in move events. A mouse fires several times
+more of those than a finger does for the same gesture, so counting events would have made it about
+four times quicker on a laptop than on the phone this is mostly used on.
+
+While the brush is up, a press on her starts a stroke instead of a pet. Petting is a press and hold
+on the same pixels, and the two cannot both own a press.
+
+Worth writing down, because it was not in the original list: nothing here ever greyed out. `btnOn` is
+a lit honey border, not a disabled state, and none of the four buttons has ever been disabled. The
+chore feeling came from three of them completing and having nothing further to offer, not from the
+styling. Sitting and brushing having somewhere to go is the whole of the fix; there was no grey to
+retire.
+
 ## Three of his four actions were checkboxes
 
 Pet, brush, sit with her, take her photo. Petting is a press and hold with duration that she watches
