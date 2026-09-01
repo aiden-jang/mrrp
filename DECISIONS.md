@@ -512,6 +512,42 @@ this is the one thing in the room that cannot be checked by looking at it. `tips
 frame's age as well as this one's, so the thump fires exactly once even if the frame rate is bad
 enough to step clean over the moment.
 
+## The draw loop has a test harness now
+
+The room's one untestable surface was anything that moved. `canvasHarness.tsx` mounts the cat in
+jsdom, replaces the 2D context with one that records, and hands the frame loop a clock a test drives
+by hand. Five things had to be right, and each was found by the harness being wrong first:
+
+**One clock.** In a browser the timestamp a frame callback receives and `performance.now` share an
+origin, and the room depends on it: a moment is stamped outside the loop and compared against the
+frame's `t` inside it. Two clocks make every such comparison come out hugely negative, which reads as
+"not happening".
+
+**Fake only `Date`.** `vi.useFakeTimers()` replaces `requestAnimationFrame` as well, which silently
+takes the frame queue away from the harness, and nothing is painted at all.
+
+**Record cells, not device pixels.** Every fill comes from `px`, which paints exactly one cell, so
+the cell is the whole of the information. Storing device pixels is a hundred and sixty thousand
+writes a frame and turns a hundred-frame test into a timeout.
+
+**Run frames, not moments.** She eases five per cent of the way toward where she wants to be each
+frame, so crossing the room takes sixty-odd of them. A test that jumps from 0ms to 2000ms in one
+frame moves her five per cent and proves nothing.
+
+**Change props mid-run.** Her position initialises to wherever she wants to be on the first frame, so
+a moment already running at mount puts her at the far end of it instead of walking there. That cannot
+happen in the app, where the trigger starts null, and it quietly made the first version of the shelf
+test meaningless.
+
+No camera reading. The obvious one, find a fixed prop and subtract, locks onto the outline colour,
+which everything in the room shares. Assert on what a person would notice instead: how much of a
+thing is on screen.
+
+Every test in `room.draw.test.tsx` was checked by reintroducing the bug it describes. That is how the
+mood one was caught being useless: the mat runs to x 72 and the box's wall stops at 71, so three cells
+always show and "greater than zero" passed with her mood entirely hidden. It is 72 cells against 3
+now, and the threshold sits between them.
+
 ## Seeing the canvas at all
 
 _Updated: this works for a still room and not for animation. A hidden tab renders a few frames after
