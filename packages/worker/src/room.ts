@@ -68,6 +68,10 @@ function widenDoodle(cells: string): string {
   return out.join("");
 }
 
+const HER_LINES = "herLines";
+/* A note card is not an inbox. Twelve is a fortnight away and still all of it. */
+const LINES_KEPT = 12;
+
 const LOG_KEEP = 40;
 const LEFT_KEEP = 20;
 const HERE_NOW_MS = 3 * 60_000;
@@ -398,19 +402,24 @@ export class Room extends DurableObject<Env> {
   }
 
   /** The room still rolls a gift on its own if she has not picked one. */
-  async leaveGift(me: string, gift: Gift): Promise<RoomView> {
+  async leaveGift(me: string, gift: Gift, text = ""): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (!people[me]) return this.build(me, people);
     if (this.roles(people).her !== me) return this.build(me, people);
 
     await this.ctx.storage.put("gift", gift);
+    // One stamp for both. His card drops the generic gift arrival when a line carries the same gift
+    // at the same moment, and two Date.now() calls either side of an await can land apart.
+    const now = Date.now();
+    const said = text.trim().slice(0, 140);
+    if (said) await this.keepLine({ text: said, at: now, gift });
     const previous = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
     await this.ctx.storage.put(
       "log",
-      [{ at: Date.now(), who: me, action: "gift" as const }, ...previous].slice(0, LOG_KEEP),
+      [{ at: now, who: me, action: "gift" as const }, ...previous].slice(0, LOG_KEEP),
     );
-    people[me].lastSeen = Date.now();
+    people[me].lastSeen = now;
     await this.ctx.storage.put("people", people);
     return this.build(me, people);
   }
@@ -992,7 +1001,7 @@ export class Room extends DurableObject<Env> {
       notes: youAreHer ? notes.slice(0, readSoFar + 1) : notes,
       notesInAll: notes.length,
       found: Object.keys(await this.found()),
-      herLine: (await this.ctx.storage.get<Told2>("herLine")) ?? null,
+      herLines: await this.lines(),
       moodNow: (await this.ctx.storage.get<Record<string, Told>>("moods"))?.[her ?? ""] ?? null,
       whatHeHasDone: (await this.ctx.storage.get<Tally>("tally")) ?? {},
       lately: (await this.ctx.storage.get<Visit[]>("log")) ?? [],
@@ -1023,19 +1032,45 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  async say(me: string, text: string): Promise<RoomView> {
+  /* Adds a line; it does not replace the last one. Empty text clears every one of them. */
+  async say(me: string, text: string, aboutDay?: number): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (!people[me]) return this.build(me, people);
     if (this.roles(people).her !== me) return this.build(me, people);
 
+    // She can only answer a note the room has actually handed her. The button is only ever on a
+    // note she has read, but the button is not the rule.
+    const read = (await this.ctx.storage.get<number>("noteIdx")) ?? 0;
+    const about = aboutDay !== undefined && aboutDay <= read ? aboutDay : undefined;
+
     const trimmed = text.trim().slice(0, 140);
-    if (trimmed) await this.ctx.storage.put<Told2>("herLine", { text: trimmed, at: Date.now() });
-    else await this.ctx.storage.delete("herLine");
+    if (trimmed) await this.keepLine({ text: trimmed, at: Date.now(), aboutDay: about });
+    else {
+      await this.ctx.storage.delete(HER_LINES);
+      await this.ctx.storage.delete("herLine");
+    }
 
     people[me].lastSeen = Date.now();
     await this.ctx.storage.put("people", people);
     return this.build(me, people);
+  }
+
+  /*
+   * Her lines, newest first.
+   *
+   * Don't move the old single-line key to a write-side migration. A room nobody opens is a room
+   * nobody writes to, so her line would vanish from every untouched room.
+   */
+  private async lines(): Promise<Told2[]> {
+    const kept = await this.ctx.storage.get<Told2[]>(HER_LINES);
+    if (kept) return kept;
+    const old = await this.ctx.storage.get<Told2>("herLine");
+    return old ? [old] : [];
+  }
+
+  private async keepLine(line: Told2): Promise<void> {
+    await this.ctx.storage.put(HER_LINES, [line, ...(await this.lines())].slice(0, LINES_KEPT));
   }
 
   async draw(me: string, cells: string): Promise<RoomView> {
@@ -1192,12 +1227,22 @@ export class Room extends DurableObject<Env> {
         );
       } else if (her) {
         const mood = moods[her];
-        const line = (await this.ctx.storage.get<Told2>("herLine")) ?? null;
+        const lines = await this.lines();
         if (mood && mood.at > since) arrivals.push({ kind: "mood", at: mood.at, mood: mood.mood });
-        if (line && line.at > since) arrivals.push({ kind: "line", at: line.at, text: line.text });
+        // An answer carries his note with it. He wrote it, and the pair is the point.
+        const said = lines.filter((x) => x.at > since).slice(0, 6);
+        const hisNotes = said.some((l) => l.aboutDay !== undefined) ? await this.notes() : [];
+        for (const l of said) {
+          const note = l.aboutDay === undefined ? undefined : hisNotes[l.aboutDay];
+          arrivals.push({ kind: "line", at: l.at, text: l.text, gift: l.gift, note });
+        }
+        // A gift she sent words with is already named by the line carrying them. Both would put
+        // "Bean left you a moth" and "Bean left you something" on the same card, for one moth.
+        const spokenFor = new Set(said.filter((l) => l.gift).map((l) => l.at));
         arrivals.push(
           ...log
             .filter((visit) => visit.who === her && visit.at > since)
+            .filter((visit) => !(visit.action === "gift" && spokenFor.has(visit.at)))
             .slice(0, 4)
             .map((visit) => ({ kind: "action" as const, at: visit.at, action: visit.action })),
         );
@@ -1252,7 +1297,7 @@ export class Room extends DurableObject<Env> {
       // Same rule as `bothHereNow`, or the room says they are both here and that she has gone.
       themHereNow: !!otherId && this.hereNow(people, otherId),
       bothHereNow: (me === him || me === her) && this.bothHere(people),
-      herLine: seated ? ((await this.ctx.storage.get<Told2>("herLine")) ?? null) : null,
+      herLine: seated ? ((await this.lines())[0] ?? null) : null,
       doodle: await this.doodleFor(me, seated),
       note: youAreHer ? note : null,
       noteDay: seated && !youAreHer ? (note?.day ?? null) : null,

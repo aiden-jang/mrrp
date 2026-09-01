@@ -82,9 +82,17 @@ export interface Visit {
   action: LogAction;
 }
 
+/*
+ * Something she left him. These stack; nothing else she leaves does.
+ *
+ * `gift` is set when the words came with the thing on the floor, `aboutDay` when they answer one of
+ * his notes.
+ */
 export interface Told2 {
   text: string;
   at: number;
+  gift?: Gift;
+  aboutDay?: number;
 }
 
 export interface Told {
@@ -95,7 +103,7 @@ export interface Told {
 export type Arrival =
   | { kind: "action"; at: number; action: LogAction }
   | { kind: "mood"; at: number; mood: Mood }
-  | { kind: "line"; at: number; text: string }
+  | { kind: "line"; at: number; text: string; gift?: Gift; note?: string }
   | { kind: "drawn"; at: number; cells: string }
   | { kind: "found"; at: number; what: DiscoveryKey | null }
   | { kind: "kept"; at: number; gift: Gift }

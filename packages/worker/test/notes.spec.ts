@@ -312,7 +312,7 @@ describe("what a copy of the room actually contains", () => {
 
     for (const who of [HIM, HER]) {
       const mine = await copy(who);
-      expect((mine.herLine as { text: string }).text).toBe("still here");
+      expect((mine.herLines as { text: string }[])[0]!.text).toBe("still here");
       expect((mine.moodNow as { mood: string }).mood).toBe("good");
       expect(mine.whatHeHasDone).toEqual({ brush: 1 });
       expect((mine.lately as unknown[]).length).toBeGreaterThan(0);

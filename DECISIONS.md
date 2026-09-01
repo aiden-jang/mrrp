@@ -1372,6 +1372,44 @@ It is one endpoint on mrrp's own Worker instead, with one caller and one meaning
 the session cookie is scoped to the parent domain and only a Worker may forward it. It answers "signed
 out" rather than failing when auth cannot be reached, which is a state the whole app already works in.
 
+## He could leave her a hundred and twenty things, and she could leave him one
+
+He writes the notes at setup and the room hands her one a day for months. She had a single line,
+stored under one key, replaced every time she wrote a new one. Everything else she leaves is the
+same shape: a mood, a gift, a blanket, a drawing, each one a current value rather than a thing that
+accumulates.
+
+So the person the room was made for was the only one who could not leave anything that lasted. For
+an app whose whole subject is two people leaving things for each other, that was the wrong way
+round, and it is the sort of asymmetry nobody reports as a bug because each half looks reasonable on
+its own.
+
+Her lines are a list now, newest first, capped at twelve. He sees the newest on the card he already
+had, and his arrival card carries every one since he last looked, so a fortnight away is a fortnight
+of them rather than whichever she happened to write last.
+
+Three things fell out of that, and they are the reason this is one change and not three:
+
+- **Her words can ride along with the thing she leaves on the floor.** They are stored as a line
+  with the gift attached, so his card says which thing she meant instead of "she left you
+  something". A gift with no words behaves exactly as it did.
+- **She can answer a note.** The line carries the note it answers, and his card shows the two
+  together. He wrote the note, so quoting it back to him gives away nothing, and the pair is the
+  whole reason to allow an answer at all. Which note she may answer is checked in the Durable
+  Object against the one the room has actually handed her, not by which button exists.
+- **Her side stopped pretending it was an edit.** The box used to open prefilled with her last line
+  because saving replaced it. Saving adds now, so it opens empty. Emptying it still clears all of
+  them, because taking a line back was the only way she ever had to take one back.
+
+Rooms written before this have their line under the old key. It is read on the way out rather than
+migrated on the way in: a room nobody opens is a room nobody writes to, and her line vanishing from
+an untouched room is not a fair price for one tidy key.
+
+The dedupe is why the gift's log entry and its line share one timestamp. His card drops the generic
+gift arrival when a line carries the same gift at the same moment, and two `Date.now()` calls with
+an `await` between them can land a millisecond apart, which would have put the moth on the card
+twice.
+
 ## What the comments are for
 
 Every explanation of a decision belongs in this file. The comments left in the code are for three
