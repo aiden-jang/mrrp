@@ -187,7 +187,7 @@ the way it is and the code does not say, that is deliberate: it is in the doc.
 ## Before you send it
 
 **Write the notes.** In the app, not in the source. Open the setup panel and there is a box for them,
-one per line. The thirty it ships with are generic on purpose so a new room is never a blank page, but
+one per line. The hundred it ships with are generic on purpose so a new room is never a blank page, but
 they are a floor: a note written by someone else is not a gift from you, and that difference is the
 whole app. Editing them no longer needs a deploy.
 

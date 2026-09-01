@@ -1539,6 +1539,22 @@ what gets added to one side and forgotten on the other. The conditional-type ide
 distinguishes them; the assignability version was written first and let all three test drifts
 through.
 
+## A hundred days of floor
+
+The shipped notes went from thirty to a hundred, and the last dozen or so lean on time having
+passed. The room hands them out in order, one a day, so a note read three months in can say things
+the first one cannot: that the dent in the bed is not new any more, that this is still here and so
+is she. Thirty could never do that, because thirty is a month and a month is not long enough for
+duration to be the subject.
+
+They stay generic on purpose. A note written by somebody else is not a gift from you, and that
+difference is the whole app, so these are a floor to stand on rather than the thing itself.
+
+`notes.spec.ts` holds four lines on them: nothing in the third person, because she is the one
+reading and this is the bug the app keeps growing back; nothing longer than the 280 characters
+`setNotes` silently trims to; nothing said twice across a run this long; and no more than the
+hundred and twenty the room will keep.
+
 ## What the comments are for
 
 Every explanation of a decision belongs in this file. The comments left in the code are for three

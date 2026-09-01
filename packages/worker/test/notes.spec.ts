@@ -328,3 +328,24 @@ describe("what a copy of the room actually contains", () => {
     expect((await copy(HER)).expectsHimAt).toBeNull();
   });
 });
+
+describe("the notes the room ships with", () => {
+  it("never talks about a cat in the third person, because she is the one reading", () => {
+    // Twenty of the original thirty did. It is the bug this app keeps growing back.
+    const wrong = NOTES.filter((note) => /\b(she|her|hers|the cat|a cat|your cat)\b/i.test(note));
+    expect(wrong).toEqual([]);
+  });
+
+  it("fits inside what the room will store, so none of them arrive cut in half", () => {
+    // setNotes trims to 280 and says nothing about it.
+    expect(NOTES.filter((note) => note.length > 280)).toEqual([]);
+  });
+
+  it("says nothing twice, in a run this long", () => {
+    expect(NOTES.length).toBe(new Set(NOTES).size);
+  });
+
+  it("fits inside the hundred and twenty the room will keep", () => {
+    expect(NOTES.length).toBeLessThanOrEqual(120);
+  });
+});
