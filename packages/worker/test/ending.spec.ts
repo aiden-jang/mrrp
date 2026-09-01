@@ -208,6 +208,30 @@ describe("her leaving on her own", () => {
     expect(v.catMood).toBeNull();
   });
 
+  it("takes the words she wrote him with her, and the next seat cannot read them", async () => {
+    await seat();
+    await post("say", { me: HER, text: "something only for him" });
+    await post("say", { me: HER, text: "and this one too" });
+    await post("leave", { me: HER });
+
+    expect((await view(HIM)).herLine).toBeNull();
+    const body = await (await SELF.fetch(`https://x/api/room/${id}?me=${HIM}`)).text();
+    expect(body).not.toContain("something only for him");
+
+    // The screen that reads them back is the other way to reach the same words.
+    const said = await (await SELF.fetch(`https://x/api/room/${id}/said?me=${HIM}`)).json();
+    expect(JSON.stringify(said)).not.toContain("something only for him");
+  });
+
+  it("brings her words back if she changes her mind inside the week", async () => {
+    await seat();
+    await post("say", { me: HER, text: "still true" });
+    await post("leave", { me: HER });
+    expect((await post("unleave", { me: HER })).status).toBe(200);
+
+    expect((await view(HIM)).herLine?.text).toBe("still true");
+  });
+
   it("leaves his room standing, notes and all", async () => {
     await seat();
     await post("notes", { me: HIM, notes: ["one of his", "two of his"] });

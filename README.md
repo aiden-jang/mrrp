@@ -377,7 +377,7 @@ data in a room nobody opens again. One alarm serves both deadlines: whichever is
 reschedules itself for the other.
 
 **She can leave**, which takes her side with her and leaves his room standing: her moods, her visits,
-the days she has been in here. Her seat goes back to empty, so he can send the link on. She gets a
+the days she has been in here, and every line she wrote him. Her seat goes back to empty, so he can send the link on. She gets a
 door of her own rather than a share of his because the alternatives are both worse. If only he could
 delete, she would have to ask someone else to remove her own data. If she could delete the whole room,
 one bad evening could erase his year.
