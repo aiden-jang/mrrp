@@ -36,7 +36,9 @@ describe("looking back at what they have said", () => {
     // His name is a placeholder until he picks one, so her side never prints it.
     expect(text(room, true)).not.toContain("Bean has written");
     expect(text(room, true)).toContain("you said back");
-    expect(text(room, false)).toContain("what you wrote her");
+    // Not "what you wrote her": this stops where she has got to, and he may have written far more.
+    expect(text(room, false)).toContain("what she has read so far");
+    expect(text(room, false)).not.toContain("what you wrote her");
     expect(text(room, false)).toContain("Bean said back");
   });
 
