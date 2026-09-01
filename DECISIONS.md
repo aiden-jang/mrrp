@@ -417,6 +417,34 @@ that were meant for her. Four seconds is also what stops a reload replaying the 
 An unknown prop key is a 400, the same way an unknown discovery key is. The client does not get to
 invent room furniture.
 
+## The moment one of you walks in
+
+The room already did the whole thing: the door swings, she gets up, crosses to the middle and purrs.
+Nobody had ever seen it. Everything worth watching is up in the room and every control is below it,
+so the arrival reliably happened while the person already sitting there was looking at buttons.
+
+Nothing was added to the room. It is pointed at for two seconds, and scrolled back on screen if it
+had been scrolled off. The sound and the bounce were already there.
+
+## Her mood, arriving rather than appearing
+
+`tell` writes to the moods record and not to the log, so none of the machinery that notices the other
+one doing something ever saw it: the room simply became a different room between two frames. It is
+the one thing in here that is actually about her, so it should be the loudest arrival, and it was the
+quietest. It fires the same cue and bounce her own tap does.
+
+Its guard is the same as `heard`: the first view carries whatever she last said, which could be
+hours old, so a rising timestamp is the signal rather than the value.
+
+## The first time he reaches her
+
+There is already a system for things that happen to a room once, and it held nothing but weather.
+The first time he holds on to her while she is there to feel it is the app's whole thesis happening,
+so the room remembers it and tells her.
+
+Only when she was there. A hand in an empty room is not the moment, and a first that can happen twice
+is not a first.
+
 ## The room says you are both here; the app used to say it as well
 
 Rule four is that the room does things and the app does not announce them. When both seats are live,

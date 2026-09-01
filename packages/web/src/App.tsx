@@ -326,6 +326,7 @@ const FIRSTS: Record<string, string> = {
   snow: "it has snowed on this room, for the first time.",
   rain: "it has rained on this room, for the first time.",
   storm: "the first storm this room has been through.",
+  held: "the first time he reached you while you were here to feel it.",
 };
 
 function ArrivalCard({ name, items, onClose }: { name: string; items: Arrival[]; onClose: () => void }) {
@@ -774,6 +775,16 @@ function RoomPage({ id }: { id: string }) {
     if (prev === null || !now || prev) return;
     play("mrrp");
     setNudge((v) => v + 1);
+    /*
+     * Point at the room for two seconds, and bring it back on screen if it has been scrolled off.
+     *
+     * Everything worth watching happens up there and the controls are all down here, so the moment
+     * one of you walks in was reliably missed by the one already sitting in the room.
+     */
+    setArriving(true);
+    stage.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    const done = window.setTimeout(() => setArriving(false), 2000);
+    return () => window.clearTimeout(done);
   }, [view?.bothHereNow]);
 
   // Only ever the door, never a form. She is the cat and he named her when he made the room, so
@@ -843,6 +854,8 @@ function RoomPage({ id }: { id: string }) {
   }, [line, lineOpen]);
   const [awayNote, setAwayNote] = useState<string | null>(null);
   const [arrivalCard, setArrivalCard] = useState<Arrival[] | null>(null);
+  const [arriving, setArriving] = useState(false);
+  const stage = useRef<HTMLDivElement>(null);
   // Coarse on purpose. Without it "in about 5 hours" still says five three hours later in a room
   // nobody touched, and the string is in hours anyway.
   const [now, setNow] = useState(() => Date.now());
@@ -955,6 +968,25 @@ function RoomPage({ id }: { id: string }) {
   // Their last action, felt rather than read. A pet leaves no mark, so a rising timestamp on the
   // pushed view is the only thing it gives her to react to. See heard.ts for why the first view
   // never fires.
+  /*
+   * Her mood, landing on his screen while he is looking at it.
+   *
+   * `tell` writes to the moods record and not to the log, so none of the machinery that notices the
+   * other one doing something ever sees it: the room simply became a different room between frames.
+   * It is the one thing in here that is actually about her, so it should be the loudest arrival.
+   */
+  const heardMood = useRef<number | null>(null);
+  const moodAt = view?.catMoodAt ?? null;
+  useEffect(() => {
+    if (moodAt === null) return;
+    const before = heardMood.current;
+    heardMood.current = moodAt;
+    // Same rule as `heard`: the first view carries whatever she last said, possibly hours ago.
+    if (before === null || moodAt <= before) return;
+    play("chirp");
+    setNudge((v) => v + 1);
+  }, [moodAt]);
+
   const heardAt = useRef<number | null>(null);
   const theirLastAt = view?.theirRecent[0]?.at ?? null;
   const theirLastAction = view?.theirRecent[0]?.action ?? null;
@@ -1321,7 +1353,7 @@ function RoomPage({ id }: { id: string }) {
       <h1 className={s.srOnly}>{`${view.cat.name}'s room`}</h1>
       <SoundToggle />
       <div className={s.card}>
-        <div className={s.stage}>
+        <div ref={stage} className={`${s.stage} ${arriving ? s.stageArrival : ""}`}>
           <Cat
             collectionKey={id}
             label={`${previewLook.name} is ${scene.doing}.`}

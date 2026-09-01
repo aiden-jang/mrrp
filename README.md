@@ -58,6 +58,11 @@ the other's screen in the same second. "You're both in here right now" means an 
 request in the last three minutes, and the cat's whole co-presence routine finally runs on a signal
 worth the name.
 
+When one of you walks in, the room is pointed at for two seconds, because the door swinging and the
+cat crossing to purr had always happened while you were both looking at the buttons underneath it.
+Her mood lands the same way. And the first time he reaches her while she is there to feel it, the room
+keeps it.
+
 When they do something while you are watching, the cat bounces and makes the same sound their own tap
 makes, and it joins a short list of what they have been doing. That list is for while you are both
 there; the card that says "the room kept this for you" is still for what happened while you were

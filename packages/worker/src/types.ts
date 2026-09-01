@@ -110,7 +110,8 @@ export type Arrival =
   | { kind: "first"; at: number; what: FirstKey };
 
 /** Milestones the world hands the room rather than the calendar: first snow, first rain. */
-export type FirstKey = "snow" | "rain" | "storm";
+/** `held` is the app's whole thesis happening, so the room remembers the first one. */
+export type FirstKey = "snow" | "rain" | "storm" | "held";
 
 export type Gift = "leaf" | "cap" | "moth";
 
