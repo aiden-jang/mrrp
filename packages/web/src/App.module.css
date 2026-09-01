@@ -1156,3 +1156,14 @@ details[open] > .recoverySummary::before {
   color: var(--soft);
   font-size: 13px;
 }
+
+/*
+    The two cards that open in place, arriving the way every other card in the room does.
+
+    Not on `.panel` itself: the setup panel is a long form opened from a button, and a form that
+    springs in reads as a dialog rather than a page growing.
+*/
+.saidPanel,
+.sayBox {
+  animation: arrive 0.42s var(--ease-bounce) both;
+}
