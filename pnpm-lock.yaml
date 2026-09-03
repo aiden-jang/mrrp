@@ -30,8 +30,8 @@ importers:
   packages/web:
     dependencies:
       '@aidenjang/auth-client':
-        specifier: ^0.1.0
-        version: 0.1.0
+        specifier: ^0.2.0
+        version: 0.2.0
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -67,8 +67,8 @@ importers:
   packages/worker:
     dependencies:
       '@aidenjang/auth-client':
-        specifier: ^0.1.0
-        version: 0.1.0
+        specifier: ^0.2.0
+        version: 0.2.0
       hono:
         specifier: ^4.6.14
         version: 4.12.34
@@ -91,8 +91,8 @@ importers:
 
 packages:
 
-  '@aidenjang/auth-client@0.1.0':
-    resolution: {integrity: sha512-5oP5ozI0HtBXGYBhscIlLE8R3YGiivJg0C8tayB5laurvw/HFDQ/lOaSMl2VqkhStJi/ads5XdihEx7WBQA1Cw==}
+  '@aidenjang/auth-client@0.2.0':
+    resolution: {integrity: sha512-biPBn1EW7hgLNohSVzfr/f275pxujkkI8SoZJVVFp7cH927KTQpVjyed0wB/I8VicFpElXgo4izMM68DajIKPg==}
 
   '@asamuzakjp/css-color@6.0.7':
     resolution: {integrity: sha512-vC/bk1Lz7Tn/EfU9/apOTBk80/8dyGyWMowPoV1tJ52muDGsDqt2HPT2klrFUiY60MQmQv9q8yIht15JnBgDGw==}
@@ -2426,7 +2426,7 @@ packages:
 
 snapshots:
 
-  '@aidenjang/auth-client@0.1.0': {}
+  '@aidenjang/auth-client@0.2.0': {}
 
   '@asamuzakjp/css-color@6.0.7':
     dependencies:
