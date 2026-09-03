@@ -402,7 +402,9 @@ describe("working out who is signed in", () => {
     it("turns down the one thing that does need one, without failing", async () => {
       await seat();
       const r = await link(HER, cookie);
-      expect(r.status).toBe(401);
+      // 503, not 401: she may be signed in perfectly well and we simply could not ask, so telling
+      // her to sign in would be both wrong and useless. Still not a 500.
+      expect(r.status).toBe(503);
       expect(r.status).not.toBe(500);
     });
   });

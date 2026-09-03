@@ -70,6 +70,8 @@ async function send<K extends keyof Bodies>(
 export async function doLink(id: string, on: boolean): Promise<void> {
   const r = await send(`/api/room/${id}/link`, { me: myToken(), on });
   if (r.status === 401) throw new Error("Sign in first.");
+  // Not "sign in first": she may well be signed in, and we could not reach the service to ask.
+  if (r.status === 503) throw new Error("Sign-in is having a moment. Try again in a bit.");
   if (r.status === 409) throw new Error("That account already has a seat in this room.");
   if (!r.ok) throw new Error("Couldn't do that.");
 }

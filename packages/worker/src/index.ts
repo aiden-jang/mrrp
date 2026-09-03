@@ -1,5 +1,5 @@
 import { Hono, type Context, type Next } from "hono";
-import { getSessionUser } from "@aidenjang/auth-client";
+import { resolveSession } from "@aidenjang/auth-client";
 import type { Action, CatAct, Gift, Mood, Treat } from "./types.js";
 import { ACTIONS, GIFTS, TREATS } from "./types.js";
 import type { Untrusted } from "./types.js";
@@ -26,15 +26,17 @@ const VALID_MOODS: Mood[] = ["good", "tired", "stressed", "sad", "lonely", "bore
 
 const room = (env: Env, id: string) => env.ROOM.get(env.ROOM.idFromName(id));
 
-// Forward, never parse: this Worker must not hold the session secret. An outage reads as "not signed
-// in", which is the safe way to be wrong.
-async function accountOf(request: Request, env: Env): Promise<string | null> {
-  try {
-    const user = await getSessionUser(request, env.AUTH_URL);
-    return user?.id ?? null;
-  } catch {
-    return null;
-  }
+// Forward, never parse: this Worker must not hold the session secret.
+//
+// Three states, not two. Reading an outage as "not signed in" is right for the room view, where it
+// just means an anonymous visitor, and wrong for linking a seat, where it tells somebody who is
+// signed in to go and sign in.
+type Caller = { state: "signed-in"; id: string } | { state: "signed-out" } | { state: "unavailable" };
+
+async function accountOf(request: Request, env: Env): Promise<Caller> {
+  const session = await resolveSession(request, env.AUTH_URL);
+  if (session.state === "signed-in") return { state: "signed-in", id: session.user.id };
+  return { state: session.state };
 }
 
 // One place, so a deleted room answers the same way on every route rather than each one remembering.
@@ -47,7 +49,10 @@ app.get("/api/health", (c) => c.json({ ok: true }));
 
 // Same-origin on purpose: only this Worker may forward the auth cookie.
 app.get("/api/me", async (c) => {
-  const user = await getSessionUser(c.req.raw, c.env.AUTH_URL).catch(() => null);
+  // An outage reads as signed out here on purpose: the anonymous app is the honest degraded
+  // state. Linking a seat is the route that has to tell them apart.
+  const session = await resolveSession(c.req.raw, c.env.AUTH_URL);
+  const user = session.state === "signed-in" ? session.user : null;
   return c.json({ signedIn: !!user, name: user?.displayName ?? null });
 });
 
@@ -110,7 +115,8 @@ app.get("/api/room/:id", async (c) => {
   if (!ROOM_RE.test(id) || me.length < 8) return c.json({ error: "bad request" }, 400);
   const account = await accountOf(c.req.raw, c.env);
   try {
-    return c.json(await room(c.env, id).view(me, c.req.query("name") ?? null, account));
+    const who = account.state === "signed-in" ? account.id : null;
+    return c.json(await room(c.env, id).view(me, c.req.query("name") ?? null, who));
   } catch (e) {
     // Not the shared gone-handler below: this is the one route that says more than "gone", because
     // whoever deleted the room can still put it back.
@@ -247,9 +253,14 @@ app.post("/api/room/:id/link", async (c) => {
   if (!ROOM_RE.test(id) || me.length < 8) return c.json({ error: "bad request" }, 400);
 
   const account = await accountOf(c.req.raw, c.env);
-  if (!account) return c.json({ error: "not signed in" }, 401);
+  if (account.state === "unavailable") {
+    return c.json({ error: "sign-in is having a moment. try again in a bit." }, 503, {
+      "Retry-After": "30",
+    });
+  }
+  if (account.state === "signed-out") return c.json({ error: "not signed in" }, 401);
 
-  const ok = await room(c.env, id).linkAccount(me, account, body.on !== false);
+  const ok = await room(c.env, id).linkAccount(me, account.id, body.on !== false);
   return ok ? c.json({ ok: true }) : c.json({ error: "that account already has a seat here" }, 409);
 });
 
