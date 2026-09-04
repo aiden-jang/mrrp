@@ -71,6 +71,24 @@ describe("who may do what", () => {
     expect((await view(HIM)).theirRecent).toEqual([]);
   });
 
+  /*
+   * The mirror of the rule above, and the half that went untested for a long time: every heract in
+   * the suite was sent by her, so the refusal path never ran. She is the cat; he looks after her.
+   * Neither of them can do the other's half.
+   */
+  it("ignores him being the cat, because he is not", async () => {
+    await seat();
+    await post("heract", { me: HIM, act: "shelf" });
+    expect((await view(HER)).shelfDown).toBe(false);
+    expect((await view(HIM)).shelfDown).toBe(false);
+  });
+
+  it("ignores a stranger being the cat", async () => {
+    await seat();
+    await post("heract", { me: STRANGER, act: "shelf" });
+    expect((await view(HER)).shelfDown).toBe(false);
+  });
+
   it("never echoes his own actions back to him", async () => {
     await seat();
     await post("act", { me: HIM, action: "pet" });
