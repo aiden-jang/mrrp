@@ -509,6 +509,32 @@ describe("her leaving on her own", () => {
 });
 
 describe("what a deleted room can still be made to keep", () => {
+  it("stops offering to put the room back once the week is up", async () => {
+    await seat();
+    const gone = await post("delete", { me: HIM, name: "Aiden" });
+    expect(gone.status).toBe(200);
+
+    // The offer is live for the week the tombstone lasts, and not one request longer.
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    expect(await runInDurableObject(stub, (instance) => instance.undoUntil(HIM))).not.toBeNull();
+    away(24 * 8);
+    expect(await runInDurableObject(stub, (instance) => instance.undoUntil(HIM))).toBeNull();
+  });
+
+  it("will not delete the room for somebody who cannot type his own name", async () => {
+    await seat();
+    // His name, never hers. Asking for hers would be asking him to type her out of the room.
+    expect((await post("delete", { me: HIM, name: "Bean" })).status).toBe(403);
+    // Empty never reaches the room: the route wants a name before it asks whether it is the right one.
+    expect((await post("delete", { me: HIM, name: "" })).status).toBe(400);
+    expect((await view(HER)).them, "still a room").toBe("Aiden");
+
+    expect(
+      (await post("delete", { me: HIM, name: "  aiden  " })).status,
+      "spacing and case are not the point",
+    ).toBe(200);
+  });
+
   it("does not let a weather lookup put a key back after erasing", async () => {
     /*
      * The lookup has to succeed and land late, or nothing ever reaches the tombstone check. Held

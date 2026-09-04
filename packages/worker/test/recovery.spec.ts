@@ -348,6 +348,15 @@ describe("a seat tied to an account", () => {
     expect((await inRoom((r) => r.view(NEW_PHONE, "x", ME))).youAreHer).toBe(false);
     expect((await inRoom((r) => r.view(HER, "Bea"))).youAreHer).toBe(true);
   });
+
+  it("only unties the account that is actually tied to the seat", async () => {
+    await seat();
+    await inRoom((r) => r.linkAccount(HER, ME, true));
+
+    // Untying names an account, so someone else's must not be able to cut this one loose.
+    expect(await inRoom((r) => r.linkAccount(HER, OTHER, false))).toBe(false);
+    expect((await inRoom((r) => r.view(NEW_PHONE, "x", ME))).youAreHer, "still hers").toBe(true);
+  });
 });
 
 describe("working out who is signed in", () => {

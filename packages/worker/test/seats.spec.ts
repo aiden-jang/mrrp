@@ -83,6 +83,51 @@ describe("who may do what", () => {
     expect((await view(HIM)).shelfDown).toBe(false);
   });
 
+  /*
+   * The rest of what only the cat does. Found by removing each guard in turn and watching the suite
+   * stay green, which is the only way an untested refusal shows itself.
+   */
+  it("ignores him leaving a gift, because gifts are things she brings him", async () => {
+    await seat();
+    await post("gift", { me: HIM, gift: "moth", text: "not from him" });
+    expect((await view(HIM)).gift).toBeNull();
+    expect((await view(HER)).gift).toBeNull();
+  });
+
+  it("ignores him saying how she is", async () => {
+    await seat();
+    await post("tell", { me: HIM, mood: "sad" as Mood });
+    expect((await view(HER)).catMood).toBeNull();
+  });
+
+  it("ignores a third person drawing in the frame", async () => {
+    await seat();
+    // Looking in first, because a room with two seats does not take a third into its people at all.
+    await view(STRANGER);
+    await post("draw", { me: STRANGER, cells: "1".repeat(135) });
+    expect((await view(HER)).doodle).toBeNull();
+  });
+
+  it("refuses a drawing that is not the shape of the sheet", async () => {
+    await seat();
+    await post("draw", { me: HER, cells: "1".repeat(134) });
+    expect((await view(HER)).doodle, "too short").toBeNull();
+
+    await post("draw", { me: HER, cells: "9".repeat(135) });
+    expect((await view(HER)).doodle, "not an ink colour").toBeNull();
+
+    await post("draw", { me: HER, cells: "1".repeat(135) });
+    expect((await view(HER)).doodle, "the right shape gets through").not.toBeNull();
+  });
+
+  it("does not show the frame or her notes to a stranger", async () => {
+    await seat();
+    await post("draw", { me: HER, cells: "1".repeat(135) });
+    const v = await view(STRANGER);
+    expect(v.doodle, "the drawing is theirs, not a passer-by's").toBeNull();
+    expect(v.note, "and neither are his notes to her").toBeNull();
+  });
+
   it("ignores a stranger being the cat", async () => {
     await seat();
     await post("heract", { me: STRANGER, act: "shelf" });
