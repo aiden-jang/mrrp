@@ -16,12 +16,15 @@ const MAX_STATE = 12;
 
 /*
  * Already over, and being decomposed. Listed at their size on the day the gate went in rather than
- * the ceiling being raised for everyone, so nothing else can grow past 400 meanwhile. Shrink an
- * entry as the file shrinks; delete it once the file is under the ceiling.
+ * the ceiling being raised for everyone, so nothing else can grow past 400 meanwhile.
+ *
+ * An entry that sits above its file is a failure too, so shrinking one is not something anybody has
+ * to remember. Left to drift, the headroom a decomposition just won is silently available to grow
+ * back into, which is how the file got here.
  */
 const ALREADY_OVER = {
   "packages/web/src/Cat.tsx": { lines: 3137 },
-  "packages/web/src/App.tsx": { lines: 2851, state: 57 },
+  "packages/web/src/App.tsx": { lines: 2772, state: 48 },
   "packages/worker/src/room.ts": { lines: 1510 },
   "packages/web/src/sprites.ts": { lines: 705 },
   "packages/worker/src/index.ts": { lines: 518 },
@@ -43,6 +46,18 @@ for (const file of files) {
 
   if (lines > lineCap) problems.push(`${file} is ${lines} lines, over ${lineCap}`);
   if (state > stateCap) problems.push(`${file} holds ${state} pieces of state, over ${stateCap}`);
+
+  if (!ALREADY_OVER[file]) continue;
+  if (lines <= MAX_LINES && state <= MAX_STATE) {
+    problems.push(`${file} is under the ceiling now: drop it from ALREADY_OVER`);
+  } else {
+    if (allowed.lines !== undefined && lines < allowed.lines) {
+      problems.push(`${file} is down to ${lines} lines: lower its ALREADY_OVER entry from ${allowed.lines}`);
+    }
+    if (allowed.state !== undefined && state < allowed.state) {
+      problems.push(`${file} is down to ${state} state: lower its ALREADY_OVER entry from ${allowed.state}`);
+    }
+  }
 }
 
 for (const file of Object.keys(ALREADY_OVER)) {

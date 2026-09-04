@@ -15,18 +15,14 @@ import type {
 import { ACTIONS, CAT_ACTS, GIFTS, LINE_MAX, MOODS, NOTE_MAX, NOTES_KEPT, TREATS } from "./types.js";
 import {
   doAct,
-  doClock,
-  doDress,
   adoptSeat,
   doDelete,
   doBlanket,
   doDraw,
   doLeave,
-  doNotes,
   doOurDay,
   doRelease,
   roomIsGone,
-  fetchNotes,
   fetchSaid,
   doPoke,
   doHold,
@@ -86,6 +82,7 @@ import {
 } from "./doodle.js";
 import { faviconFor } from "./favicon.js";
 import { loginUrl, logoutUrl, siteFooterLinks } from "@aidenjang/auth-client";
+import { useCatSetup } from "./useCatSetup.js";
 import { FINISH_LINK, useSeatAccount } from "./useSeatAccount.js";
 import { AUTH_URL } from "./config.js";
 import { foundKeys, noticed } from "./discoveries.js";
@@ -878,38 +875,7 @@ function RoomPage({ id }: { id: string }) {
     setArrivalCard(arrivals);
   }, []);
   const [saving, setSaving] = useState(false);
-  const [setup, setSetup] = useState(false);
   const [releasing, setReleasing] = useState(false);
-  const [savingSetup, setSavingSetup] = useState(false);
-  const [setupErr, setSetupErr] = useState<string | null>(null);
-  const [draft, setDraft] = useState<{
-    name: string;
-    look: string;
-    eyes: string;
-    tz: string;
-    homeHour: number;
-    notes: string;
-  } | null>(null);
-
-  const heardName = useRef<string | null>(null);
-  useEffect(() => {
-    const called = draft?.name.trim() ?? "";
-    if (!setup) {
-      heardName.current = null;
-      return;
-    }
-    if (heardName.current === null) {
-      heardName.current = called;
-      return;
-    }
-    if (!called || called === heardName.current) return;
-    const t = setTimeout(() => {
-      heardName.current = called;
-      play("chirp");
-      setNudge((v) => v + 1);
-    }, 900);
-    return () => clearTimeout(t);
-  }, [setup, draft?.name]);
 
   const load = useCallback(
     async (n?: string | null) => {
@@ -961,6 +927,29 @@ function RoomPage({ id }: { id: string }) {
   const account = useSeatAccount(id, load);
   const { linking, linkError: linkErr, link } = account;
   const { code: claimCode, setCode: setClaimCode, claiming, claimError: claimErr } = account;
+
+  const cat = useCatSetup(id, view, load);
+  const { open: setup, draft, setDraft, saving: savingSetup, error: setupErr } = cat;
+
+  const heardName = useRef<string | null>(null);
+  useEffect(() => {
+    const called = draft?.name.trim() ?? "";
+    if (!setup) {
+      heardName.current = null;
+      return;
+    }
+    if (heardName.current === null) {
+      heardName.current = called;
+      return;
+    }
+    if (!called || called === heardName.current) return;
+    const t = setTimeout(() => {
+      heardName.current = called;
+      play("chirp");
+      setNudge((v) => v + 1);
+    }, 900);
+    return () => clearTimeout(t);
+  }, [setup, draft?.name]);
 
   const liveGone = useCallback(() => {
     forgetRoom(id);
@@ -1141,23 +1130,6 @@ function RoomPage({ id }: { id: string }) {
     }
   };
 
-  const openSetup = async () => {
-    if (!view) return;
-    const notes = await fetchNotes(id).catch(() => [] as string[]);
-    const look =
-      LOOKS.find((l) => l.cat.fur.toLowerCase() === view.cat.fur.toLowerCase())?.id ?? LOOKS[0]!.id;
-    const eyes = EYES.find((e) => e.hex.toLowerCase() === view.cat.eyes.toLowerCase())?.id ?? EYES[0]!.id;
-    setDraft({
-      name: view.cat.name,
-      look,
-      eyes,
-      tz: view.clock.tz,
-      homeHour: view.clock.homeHour,
-      notes: notes.join("\n"),
-    });
-    setSetup(true);
-  };
-
   const setupTrigger = useRef<HTMLButtonElement>(null);
   const setupPanel = useRef<HTMLDivElement>(null);
   const wasSetup = useRef(false);
@@ -1173,25 +1145,6 @@ function RoomPage({ id }: { id: string }) {
     if (!setup && wasSetup.current) setupTrigger.current?.focus();
     wasSetup.current = setup;
   }, [setup]);
-
-  const saveSetup = async () => {
-    if (!draft) return;
-    play("settle");
-    const look = LOOKS.find((l) => l.id === draft.look)!;
-    const eyes = EYES.find((e) => e.id === draft.eyes)!;
-    setSavingSetup(true);
-    setSetupErr(null);
-    try {
-      await doDress(id, { name: draft.name.trim() || "Bean", ...look.cat, eyes: eyes.hex });
-      await doClock(id, { tz: draft.tz, homeHour: draft.homeHour });
-      await doNotes(id, draft.notes.split("\n"));
-      setSetup(false);
-      await load();
-    } catch (e) {
-      setSetupErr(e instanceof Error ? e.message : "Couldn't save that.");
-    }
-    setSavingSetup(false);
-  };
 
   const catAct = async (act: CatAct) => {
     play("mrrp");
@@ -1803,13 +1756,13 @@ function RoomPage({ id }: { id: string }) {
             )}
 
             <div className={s.row} style={{ marginTop: 12 }}>
-              <button className={s.btn} onClick={() => setSetup(false)}>
+              <button className={s.btn} onClick={cat.close}>
                 Cancel
               </button>
               <button
                 className={`${s.btn} ${s.btnGo}`}
                 disabled={savingSetup}
-                onClick={() => void saveSetup()}
+                onClick={() => void cat.save()}
               >
                 {savingSetup ? "Saving..." : "Save"}
               </button>
@@ -1854,7 +1807,7 @@ function RoomPage({ id }: { id: string }) {
                 ref={setupTrigger}
                 className={s.btn}
                 style={{ width: "100%", marginTop: 12 }}
-                onClick={() => void openSetup()}
+                onClick={() => void cat.start()}
                 aria-expanded={setup}
               >
                 Write her notes, name her, choose how she looks
@@ -2227,7 +2180,7 @@ function RoomPage({ id }: { id: string }) {
               </p>
             )}
             {iAmHim && !setup && (
-              <button className={s.quiet} onClick={() => void openSetup()}>
+              <button className={s.quiet} onClick={() => void cat.start()}>
                 Write her notes, or change how {view.cat.name} looks
               </button>
             )}
