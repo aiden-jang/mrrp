@@ -7,7 +7,8 @@
  */
 import { globSync, readFileSync } from "node:fs";
 
-const DOCS = ["README.md", "DECISIONS.md", "ART.md", "docs/art/README.md"];
+// AGENTS.md is a symlink to CLAUDE.md, so listing it here would report every problem twice.
+const DOCS = ["README.md", "DECISIONS.md", "ART.md", "docs/art/README.md", "CLAUDE.md"];
 
 /* Named in the docs because they are absent, or because they belong to somebody else's API.
    Never add a name the code actually lost. */
