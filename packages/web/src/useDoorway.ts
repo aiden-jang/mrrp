@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { play } from "./sound.js";
 import type { RoomView } from "./types.js";
 
@@ -15,15 +15,23 @@ export function useDoorway(view: RoomView | null) {
   const [watchAt, setWatchAt] = useState<number | null>(null);
   const youArrived = useRef(false);
   const wasHere = useRef<boolean | null>(null);
+  const shut = useRef(0);
+
+  /* One timer between both crossings. Two would race: the earlier one shuts the door on the later
+     one's swing, so arriving a second before they do cuts a second off it. */
+  const swing = useCallback(() => {
+    setOpenAt(Date.now());
+    window.clearTimeout(shut.current);
+    shut.current = window.setTimeout(() => setOpenAt(null), OPEN_MS);
+  }, []);
+  useEffect(() => () => window.clearTimeout(shut.current), []);
 
   const yourSeat = view?.you ?? null;
   useEffect(() => {
     if (yourSeat === null || youArrived.current) return;
     youArrived.current = true;
-    setOpenAt(Date.now());
-    const t = setTimeout(() => setOpenAt(null), OPEN_MS);
-    return () => clearTimeout(t);
-  }, [yourSeat]);
+    swing();
+  }, [yourSeat, swing]);
 
   useEffect(() => {
     const here = view?.themHereNow ?? false;
@@ -33,10 +41,8 @@ export function useDoorway(view: RoomView | null) {
     if (prev === null || prev === here) return;
     if (here) play("chirp");
     else setWatchAt(Date.now());
-    setOpenAt(Date.now());
-    const t = setTimeout(() => setOpenAt(null), OPEN_MS);
-    return () => clearTimeout(t);
-  }, [view?.themHereNow]);
+    swing();
+  }, [view?.themHereNow, swing]);
 
   return { openAt, watchAt };
 }
