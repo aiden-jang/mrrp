@@ -16,9 +16,9 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.20.2",
-    "@cloudflare/workers-types": "^4.20241230.0",
+    "@cloudflare/workers-types": "^5.20260904.1",
     "typescript": "^5.7.2",
     "vitest": "^4.1.10",
-    "wrangler": "^3.99.0"
+    "wrangler": "^4.119.0"
   }
 }
