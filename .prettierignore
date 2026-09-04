@@ -4,3 +4,7 @@ dist
 pnpm-lock.yaml
 packages/web/public
 docs/art
+
+# Playwright artefacts
+test-results/
+playwright-report/
