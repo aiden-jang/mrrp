@@ -6,6 +6,24 @@ import { harness, AHEAD, BEHIND, HER, HIM, STRANGER } from "./harness.js";
 const { away, id, post, seat, view } = harness("notesroom");
 
 describe("notes", () => {
+  /*
+   * Asked of the method, not through a view, because no view can reach it: the room hands the note
+   * to her alone, and being her means the second seat is already filled. It is the contract the day
+   * somebody surfaces a note anywhere else, which is the day it stops being unreachable.
+   */
+  it("has no note to give until the second seat is filled", async () => {
+    await view(HIM, "Aiden");
+    const stub = env.ROOM.get(env.ROOM.idFromName(id));
+    const note = await runInDurableObject(stub, (instance) =>
+      (
+        instance as unknown as {
+          noteFor: (c: unknown, isHer: boolean, bothHere: boolean) => Promise<unknown>;
+        }
+      ).noteFor({ tz: "America/New_York", homeHour: 18 }, true, false),
+    );
+    expect(note).toBeNull();
+  });
+
   it("starts her on the first one once both are here", async () => {
     await seat();
     const v = await view(HER);
