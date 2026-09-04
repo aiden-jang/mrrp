@@ -14,12 +14,10 @@ type Draft = {
 };
 
 /*
- * Deciding who she is: her name, her look, the hour she keeps, and the notes she can say. The panel
- * edits a draft rather than the room, so the cat on screen can show the change while it is still
- * being chosen and nothing is written until Save.
+ * The panel edits a draft so the cat on screen can show a change while it is still being chosen.
  *
- * Opening has to fetch the notes, which the room view does not carry, so `open` is the only way in.
- * A draft built without them would save an empty list over whatever was there.
+ * Open it with `start` and nothing else. The room view does not carry her notes, so a draft built
+ * without fetching them first saves an empty list over whatever was there.
  */
 export function useCatSetup(id: string, view: RoomView | null, reload: () => Promise<void>) {
   const [open, setOpen] = useState(false);

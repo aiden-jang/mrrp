@@ -2,8 +2,7 @@ import { useState } from "react";
 import { loginUrl } from "@aidenjang/auth-client";
 import { doLink, doRecover } from "./api.js";
 
-/* What the worker says when the seat is not signed in, which is the one failure that is not an
-   error: it means finish signing in and come back. */
+/* The one failure that is not an error: it means finish signing in and come back. */
 const SIGNED_OUT = "Sign in first.";
 import { AUTH_URL } from "./config.js";
 
@@ -11,12 +10,10 @@ import { AUTH_URL } from "./config.js";
 export const FINISH_LINK = "mrrp:finish-link";
 
 /*
- * The two things a seat can do with an account: tie itself to one, or be taken back by one using a
- * recovery code. Both are a round trip that can fail and has to say so, which is five pieces of
- * state that belong together and nothing else in the room needs.
+ * Tying a seat to an account, or taking it back with a recovery code.
  *
- * Signing in is a full-page redirect, so `link` remembers the room first: coming back from the auth
- * service is a fresh page load with no memory of what it was in the middle of.
+ * `link` stores the room before redirecting. Signing in is a full page load away, so nothing in
+ * memory survives to tell the app where to come back to.
  */
 export interface SeatAccount {
   linking: boolean;
