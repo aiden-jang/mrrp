@@ -318,8 +318,8 @@ The most valuable moment in this app is somebody tapping a link and being in a r
 sign-in page in front of that taxes exactly that moment. So the account does one job: it delivers the
 seat token you already had. The view returns the seat it resolved, the client adopts it, and every code
 path after that is identical to somebody who never signed in — which is why accounts touch one method
-in the Durable Object rather than all of them. An auth outage is indistinguishable from never having
-signed in.
+in the Durable Object rather than all of them. An auth outage looks the same as never having signed
+in everywhere except the one route that needs an account; see below.
 
 ## Sound is on by default
 
@@ -331,14 +331,20 @@ sound that arrives at you unasked.
 
 The `platform_session` cookie is forwarded to the auth service rather than read here. So the thing
 holding your login is one service, and mrrp is not a second place it could leak from. If that service
-is down the answer is "not signed in", which is a state the whole app already works in, rather than an
-error page: a room has never needed an account.
+is down the room still works: a room has never needed an account, so an unreachable auth service reads
+as "not signed in" and everything except linking a seat carries on.
+
+Linking is the exception, and it answers 503 rather than 401. A 401 makes the client say "Sign in
+first." to somebody who is signed in and cannot fix it by signing in again, so the one route that
+genuinely needs an account says the sign-in service is having a moment instead. `accountOf` returns
+three states rather than two, which is what makes the distinction possible at all.
 
 That promise went untested for a long time, which is the worst shape for a promise: the account tests
 all handed the room an account id directly, so every one of them started a step after the question
 "who is this". The seam now has its own tests, and they check the outage by pointing AUTH_URL at a
-port that refuses instantly. They were verified by deleting the `catch` in `accountOf` and confirming
-all three go red, because a test for a swallowed error passes just as happily when nothing is thrown.
+port that refuses instantly. They were verified by collapsing "unavailable" back into "signed out"
+and confirming the link test goes red, because a test for a swallowed error passes just as happily
+when nothing is thrown.
 
 What is still untested is a real session: that needs a cookie, which needs a login, which needs a
 person.
