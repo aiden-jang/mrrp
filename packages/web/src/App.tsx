@@ -27,7 +27,6 @@ import {
   doCatAct,
   doLeaveGift,
   doLeaveOut,
-  doSay,
   doSettle,
   doUnsay,
   doWait,
@@ -81,6 +80,7 @@ import { useCatSetup } from "./useCatSetup.js";
 import { useRoomEnding } from "./useRoomEnding.js";
 import { useOurDay } from "./useOurDay.js";
 import { useDoorway, useStaying } from "./useDoorway.js";
+import { useSayBox } from "./useSayBox.js";
 import { FINISH_LINK, useSeatAccount } from "./useSeatAccount.js";
 import { AUTH_URL } from "./config.js";
 import { foundKeys, noticed } from "./discoveries.js";
@@ -730,11 +730,7 @@ function RoomPage({ id }: { id: string }) {
     }
   };
 
-  const [line, setLine] = useState("");
-  const [lineOpen, setLineOpen] = useState(false);
-  const [replyTo, setReplyTo] = useState<number | null>(null);
   const [giftWords, setGiftWords] = useState("");
-  const [clearing, setClearing] = useState(false);
   const [strokes, setStrokes] = useState<number | null>(null);
   // Armed once he has been told the photo takes her drawing down.
   const [photoOver, setPhotoOver] = useState(false);
@@ -744,13 +740,6 @@ function RoomPage({ id }: { id: string }) {
   const saidPanel = useRef<HTMLElement>(null);
   const wasSaid = useRef(false);
 
-  const lineBox = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
-    const el = lineBox.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
-  }, [line, lineOpen]);
   const [awayNote, setAwayNote] = useState<string | null>(null);
   const [arrivalCard, setArrivalCard] = useState<Arrival[] | null>(null);
   const [arriving, setArriving] = useState(false);
@@ -769,7 +758,6 @@ function RoomPage({ id }: { id: string }) {
     covered.current = coveredBy(arrivals, covered.current);
     setArrivalCard(arrivals);
   }, []);
-  const [saving, setSaving] = useState(false);
   const [releasing, setReleasing] = useState(false);
 
   const load = useCallback(
@@ -838,6 +826,13 @@ function RoomPage({ id }: { id: string }) {
 
   const doorway = useDoorway(view);
   const staying = useStaying();
+
+  const sayBox = useSayBox(
+    id,
+    setView,
+    () => setNudge((v) => v + 1),
+    (message) => setErr(message),
+  );
 
   const heardName = useRef<string | null>(null);
   useEffect(() => {
@@ -1072,33 +1067,6 @@ function RoomPage({ id }: { id: string }) {
       setGiftWords(words);
       setErr(e instanceof Error ? e.message : "Couldn't leave that.");
     }
-  };
-
-  /* The one thing that reaches the server's "empty text clears every line". */
-  const clearLines = async () => {
-    setSaving(true);
-    try {
-      setView(await doSay(id, ""));
-      setLineOpen(false);
-      setReplyTo(null);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Couldn't do that.");
-    }
-    setSaving(false);
-  };
-
-  const say = async () => {
-    setSaving(true);
-    try {
-      setView(await doSay(id, line, replyTo ?? undefined));
-      play("settle");
-      setNudge((v) => v + 1);
-      setLineOpen(false);
-      setReplyTo(null);
-    } catch {
-      // Nothing sent. The box is still open with her words in it.
-    }
-    setSaving(false);
   };
 
   const tell = async (m: Mood) => {
@@ -1723,15 +1691,11 @@ function RoomPage({ id }: { id: string }) {
                 </p>
                 <p className={s.noteText}>{view.note.text}</p>
                 {!view.note.final && <p className={s.noteDay}>day {view.note.day}</p>}
-                {!lineOpen && (
+                {!sayBox.open && (
                   <button
                     className={s.quiet}
                     style={{ marginTop: 8 }}
-                    onClick={() => {
-                      setLine("");
-                      setReplyTo(view.note!.day - 1);
-                      setLineOpen(true);
-                    }}
+                    onClick={() => sayBox.start(view.note!.day - 1)}
                   >
                     Say something back
                   </button>
@@ -1760,51 +1724,29 @@ function RoomPage({ id }: { id: string }) {
               <p className={s.came}>He came in after you said that.</p>
             )}
 
-            {lineOpen ? (
+            {sayBox.open ? (
               <SayBox
-                value={line}
+                value={sayBox.text}
                 max={LINE_MAX}
-                answering={replyTo !== null && view.note ? view.note.text : null}
+                answering={sayBox.replyTo !== null && view.note ? view.note.text : null}
                 him={view.them ?? "him"}
-                saving={saving}
+                saving={sayBox.saving}
                 canClear={!!view.herLine}
-                clearing={clearing}
-                boxRef={lineBox}
-                onChange={setLine}
-                onSave={() => void say()}
-                onNeverMind={() => {
-                  setLineOpen(false);
-                  setReplyTo(null);
-                  setClearing(false);
-                }}
-                onClearTap={() => {
-                  if (!clearing) return setClearing(true);
-                  setClearing(false);
-                  void clearLines();
-                }}
+                clearing={sayBox.clearing}
+                boxRef={sayBox.boxRef}
+                onChange={sayBox.setText}
+                onSave={() => void sayBox.say()}
+                onNeverMind={sayBox.neverMind}
+                onClearTap={() => void sayBox.clearTap()}
               />
             ) : view.herLine ? (
               /* Opens empty. Saving adds a line rather than replacing this one, and a prefilled box says the opposite. */
-              <button
-                className={s.yourLine}
-                onClick={() => {
-                  setLine("");
-                  setReplyTo(null);
-                  setLineOpen(true);
-                }}
-              >
+              <button className={s.yourLine} onClick={() => sayBox.start(null)}>
                 <span className={s.yourLineLabel}>the last thing you said to him</span>
                 <span className={s.yourLineText}>{view.herLine.text}</span>
               </button>
             ) : (
-              <button
-                className={s.quiet}
-                onClick={() => {
-                  setLine("");
-                  setReplyTo(null);
-                  setLineOpen(true);
-                }}
-              >
+              <button className={s.quiet} onClick={() => sayBox.start(null)}>
                 Leave {view.them ?? "him"} a line
               </button>
             )}
