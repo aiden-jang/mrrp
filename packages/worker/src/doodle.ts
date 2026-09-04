@@ -12,7 +12,6 @@ const PAST_DOODLES: [number, number][] = [
   [11, 7],
 ];
 
-/** Re-centres an old drawing on today's sheet. Anything already the current size is left alone. */
 export function widenDoodle(cells: string): string {
   const was = PAST_DOODLES.find(([w, h]) => w * h === cells.length);
   if (!was) return cells;

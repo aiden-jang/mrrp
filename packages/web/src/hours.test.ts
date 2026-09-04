@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { sceneFor } from "./hours.js";
 
-/*
- * What she is doing, said in words, on every view either of them opens. It is a ladder of hours and
- * nothing else read it: every rung could be moved or dropped with the suite still green.
- *
- * UTC so the hour in the test is the hour in the room, and the fifteenth so the season is settled.
- */
+/* UTC so the hour in the test is the hour in the room, and the fifteenth so the season is settled. */
 const clock = { tz: "UTC", homeHour: 18 };
 const at = (month: string, hour: number) =>
   Date.parse(`2026-${month}-15T${String(hour).padStart(2, "0")}:30:00Z`);
