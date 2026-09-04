@@ -5,11 +5,7 @@ import type { RoomView } from "./types.js";
 const OPEN_MS = 4200;
 const STAY_MS = 180_000;
 
-/*
- * The door swings when somebody crosses it: you arriving for the first time, or them coming in or
- * going out. `watchDoorAt` is only the leaving half, because that is the one the cat gets up to
- * watch; an arrival she answers with a chirp instead.
- */
+/* `watchAt` is the leaving half only. An arrival she answers with a chirp instead of getting up. */
 export function useDoorway(view: RoomView | null) {
   const [openAt, setOpenAt] = useState<number | null>(null);
   const [watchAt, setWatchAt] = useState<number | null>(null);
@@ -17,8 +13,6 @@ export function useDoorway(view: RoomView | null) {
   const wasHere = useRef<boolean | null>(null);
   const shut = useRef(0);
 
-  /* One timer between both crossings. Two would race: the earlier one shuts the door on the later
-     one's swing, so arriving a second before they do cuts a second off it. */
   const swing = useCallback(() => {
     setOpenAt(Date.now());
     window.clearTimeout(shut.current);
@@ -37,7 +31,6 @@ export function useDoorway(view: RoomView | null) {
     const here = view?.themHereNow ?? false;
     const prev = wasHere.current;
     wasHere.current = here;
-    // The first view is not a crossing. Without this the door swings on every reload.
     if (prev === null || prev === here) return;
     if (here) play("chirp");
     else setWatchAt(Date.now());
@@ -48,12 +41,10 @@ export function useDoorway(view: RoomView | null) {
 }
 
 /*
- * Whether you have gone quiet with the room still open and in front of you, which is when the cat
- * settles rather than keeps performing.
+ * Whether you have gone quiet with the room in front of you.
  *
- * Losing focus or hiding the tab stops the countdown instead of continuing it. Settling is something
- * she does while you are watching; nobody is there to see it on a tab in the background, and it
- * would already be over by the time you came back.
+ * Hiding the tab stops the countdown rather than continuing it: settling is something she does while
+ * you watch, and it would be over by the time you came back.
  */
 export function useStaying() {
   const [staying, setStaying] = useState(false);

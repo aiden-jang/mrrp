@@ -213,8 +213,8 @@ export class Room extends DurableObject<Env> {
 
     if (action === "photo") {
       await this.ctx.storage.put("framed", true);
-      // The frame holds one thing and a drawing beats a photo, so the photo has to take it down.
-      // Record whose it was: she made it, and until now it left with nothing said to anybody.
+      // The frame holds one thing and a drawing beats a photo, so the photo takes it down. Record
+      // whose it was, or it leaves with nothing said to the person who drew it.
       const hanging = await this.ctx.storage.get<Doodle>("doodle");
       if (hanging) {
         await this.ctx.storage.put("undrawn", { by: hanging.by, at: Date.now() });

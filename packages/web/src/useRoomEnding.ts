@@ -2,13 +2,8 @@ import { useState } from "react";
 import { doDelete, doLeave, doUndelete, doUnleave, forgetRoom } from "./api.js";
 
 /*
- * The four ways out of a room, and they are not the same weight: leaving takes one side out and the
- * room goes on without it, deleting takes the room away from both of them. Deleting is the one that
- * asks you to type her name first.
- *
- * Neither `ending` nor `undoing` is cleared on success, only on failure. Every path that works ends
- * with the room gone or the page reloading, so turning the button back on would only put a live
- * control on a screen that is already on its way out.
+ * Don't add a `setEnding(false)` to the happy paths. Every one of them ends with the room gone or the
+ * page reloading, so it would only re-enable a button on a screen already on its way out.
  */
 export function useRoomEnding(
   id: string,

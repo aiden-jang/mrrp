@@ -7,12 +7,11 @@ const pad = (n: number) => String(n).padStart(2, "0");
 const KEPT_MS = 2400;
 
 /*
- * One date in the year the cat says something on. The room stores a month and a day with no year,
- * because it comes round every year, but `<input type="date">` will not hold a value without one.
- * 2000 is the carrier: it is a leap year, so the 29th of February survives the round trip.
+ * Keep 2000 as the carrier year the stored month and day are shown in. It is a leap year, so the
+ * 29th of February survives; any other year silently blanks it.
  *
- * Loaded from the room once and then left alone. Re-syncing on every poll would overwrite the date
- * being typed, and the room sends a new view every few seconds.
+ * `loaded` stops the effect re-running. The room polls a new view every few seconds, and each one
+ * would overwrite the date being typed.
  */
 export function useOurDay(
   id: string,
@@ -42,7 +41,6 @@ export function useOurDay(
       await doOurDay(id, mm && dd && words ? { month: Number(mm), day: Number(dd), label: words } : null);
       await reload();
       setSaved(true);
-      // Saving again restarts it. The first save's timer would otherwise clear the second's "Kept".
       window.clearTimeout(clearKept.current);
       clearKept.current = window.setTimeout(() => setSaved(false), KEPT_MS);
     } catch (e) {

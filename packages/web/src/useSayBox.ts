@@ -4,14 +4,11 @@ import { play } from "./sound.js";
 import type { RoomView } from "./types.js";
 
 /*
- * Leaving him a line, and the box it is typed in.
+ * `replyTo` is the day being answered, not a line to edit: answering still adds a new line. That is
+ * why every way in opens the box empty.
  *
- * `replyTo` is the day being answered, not the line, so answering yesterday's note still adds a new
- * line rather than editing one. Every way in opens the box empty for the same reason: saving adds to
- * what you have said, and a prefilled box says the opposite.
- *
- * Clearing takes two taps and `clearing` is which tap you are on, because the server reads empty
- * text as "clear every line" and there is no undo behind it.
+ * `clearing` is which of the two taps you are on. The server reads empty text as "clear every line"
+ * and there is no undo behind it.
  */
 export function useSayBox(
   id: string,

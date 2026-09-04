@@ -32,16 +32,7 @@ export type TypedSecret = "herName" | (typeof TYPED)[number][0];
 
 const LONGEST = Math.max(...TYPED.map(([, code]) => code.length));
 
-/*
- * One letter into the rolling buffer, and whichever secret that finished.
- *
- * A code is recognised by what you have just typed rather than by starting clean, so "boxbox" sets
- * the box off twice and mistyping in front of a code does not stop it landing. Trimming to the
- * longest code cannot change that; it is only what stops the buffer growing for as long as the page
- * is open.
- *
- * Her name wins over the fixed codes: he chose it, and a cat named Box should answer to Box.
- */
+/** One letter into the rolling buffer, and whichever secret that finished. */
 export function typeLetter(
   buffer: string,
   letter: string,

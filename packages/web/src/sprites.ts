@@ -647,8 +647,8 @@ export const CAKE = sprite(["...r...", "...d...", ".ggggg.", "ddddddd", "ddddddd
  * Deliberately not one of her gifts below. Hers are found objects: a leaf, a bottle cap, a moth she
  * carried in. His is chosen, and should not be mistakable for something the cat dragged home.
  *
- * `r` measured 1.75:1 against the floor it sits on, which is to say it was never once seen. It takes
- * a legible colour at the call site now; `h` keeps the pink so it is still obviously his.
+ * Don't hardcode `r` here: against the floor it sits on it measured 1.75:1, invisible. The call site
+ * passes a legible colour; `h` keeps the pink so it is still obviously his.
  */
 export const LEFT_OUT = sprite([".r.r.", ".rhr.", ".r.r."], 0, 0);
 
