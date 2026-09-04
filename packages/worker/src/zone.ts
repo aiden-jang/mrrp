@@ -1,7 +1,4 @@
-/*
- * Her clock, not the server's. The room runs on whatever timezone he set, so both of them see the
- * same evening even when they are hours apart, and "today" means her today.
- */
+/* Every hour and day in the room is read in the timezone he set, never the server's. */
 
 /** The hour with minutes as a fraction, so 18:30 is 18.5. */
 export function hourInZone(at: number, tz: string): number {
@@ -13,15 +10,11 @@ export function hourInZone(at: number, tz: string): number {
   }).formatToParts(new Date(at));
   const h = Number(parts.find((x) => x.type === "hour")?.value ?? 12);
   const m = Number(parts.find((x) => x.type === "minute")?.value ?? 0);
-  // en-GB gives "00" at midnight, so the modulo never fires here. It is what stops an hour cycle
-  // that counts midnight as 24 from reading as a whole day, if the locale above ever changes.
+  // Keep the modulo. en-GB never returns 24, but an hour cycle that does would read as a whole day.
   return (h % 24) + m / 60;
 }
 
-/*
- * Days since the epoch in her zone, which is what "same day" is compared on everywhere else.
- * Deliberately not a date string: subtracting two of these is the number of days between them.
- */
+/** A number rather than a date string, so subtracting two of them is the days between them. */
 export function localDayNumber(at: number, tz: string): number {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: tz,

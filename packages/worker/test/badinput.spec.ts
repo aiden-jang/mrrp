@@ -4,11 +4,8 @@ import { harness, HER, HIM } from "./harness.js";
 const { post, seat, view } = harness("badinputroom");
 
 /*
- * What the routes refuse before the room ever hears about it.
- *
- * The room checks who you are; almost nothing in it checks what you sent. `leaveGift` stores the
- * gift it is handed without looking at it, so the list in the route is the only thing standing
- * between a seat and an arbitrary string on the shelf.
+ * The room checks who you are and not what you sent: `leaveGift` stores the gift it is handed
+ * without looking at it. These lists are the only thing between a seat and anything it likes.
  */
 describe("what the routes will not pass on", () => {
   it("refuses a gift that is not one of the things she brings", async () => {
