@@ -30,7 +30,11 @@ const ALREADY_OVER = {
   "packages/worker/src/index.ts": { lines: 518 },
 };
 
-const files = globSync("packages/*/src/**/*.{ts,tsx}").filter((f) => !/\.(test|spec)\.tsx?$/.test(f));
+// The gate scripts are in here too. A check that does not cover its own source stops being checked.
+const files = [
+  ...globSync("packages/*/src/**/*.{ts,tsx}"),
+  ...globSync("{scripts,packages/*/scripts}/*.mjs"),
+].filter((f) => !/\.(test|spec)\.tsx?$/.test(f));
 const problems = [];
 
 for (const file of files) {
