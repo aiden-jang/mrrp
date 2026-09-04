@@ -80,6 +80,7 @@ import { loginUrl, logoutUrl, siteFooterLinks } from "@aidenjang/auth-client";
 import { useCatSetup } from "./useCatSetup.js";
 import { useRoomEnding } from "./useRoomEnding.js";
 import { useOurDay } from "./useOurDay.js";
+import { useDoorway, useStaying } from "./useDoorway.js";
 import { FINISH_LINK, useSeatAccount } from "./useSeatAccount.js";
 import { AUTH_URL } from "./config.js";
 import { foundKeys, noticed } from "./discoveries.js";
@@ -437,8 +438,6 @@ const installed = () =>
   matchMedia("(display-mode: standalone)").matches ||
   (navigator as unknown as { standalone?: boolean }).standalone === true;
 
-const STAY_MS = 180_000;
-
 const MUG_AGAIN_MS = 1400;
 /* Must match PET_TAP_MS in Cat.tsx: how long a tap of the pet button reads as a hold. */
 const STROKES_NEEDED = 5;
@@ -680,55 +679,6 @@ function RoomPage({ id }: { id: string }) {
     }
   };
 
-  const [doorOpenAt, setDoorOpenAt] = useState<number | null>(null);
-  const wasHere = useRef<boolean | null>(null);
-  const youArrived = useRef(false);
-
-  const yourSeat = view?.you ?? null;
-  useEffect(() => {
-    if (yourSeat === null || youArrived.current) return;
-    youArrived.current = true;
-    setDoorOpenAt(Date.now());
-    const t = setTimeout(() => setDoorOpenAt(null), 4200);
-    return () => clearTimeout(t);
-  }, [yourSeat]);
-  const [staying, setStaying] = useState(false);
-  useEffect(() => {
-    let timer = 0;
-    const arm = () => {
-      setStaying(false);
-      window.clearTimeout(timer);
-      if (document.hidden || !document.hasFocus()) return;
-      timer = window.setTimeout(() => setStaying(true), STAY_MS);
-    };
-    const acts = ["pointerdown", "keydown", "touchstart"] as const;
-    arm();
-    acts.forEach((e) => window.addEventListener(e, arm, { passive: true }));
-    document.addEventListener("visibilitychange", arm);
-    window.addEventListener("focus", arm);
-    window.addEventListener("blur", arm);
-    return () => {
-      window.clearTimeout(timer);
-      acts.forEach((e) => window.removeEventListener(e, arm));
-      document.removeEventListener("visibilitychange", arm);
-      window.removeEventListener("focus", arm);
-      window.removeEventListener("blur", arm);
-    };
-  }, []);
-
-  const [watchDoorAt, setWatchDoorAt] = useState<number | null>(null);
-  useEffect(() => {
-    const here = view?.themHereNow ?? false;
-    const prev = wasHere.current;
-    wasHere.current = here;
-    if (prev === null || prev === here) return;
-    if (here) play("chirp");
-    else setWatchDoorAt(Date.now());
-    setDoorOpenAt(Date.now());
-    const t = setTimeout(() => setDoorOpenAt(null), 4200);
-    return () => clearTimeout(t);
-  }, [view?.themHereNow]);
-
   const [nudge, setNudge] = useState(0);
 
   const wasTogether = useRef<boolean | null>(null);
@@ -885,6 +835,9 @@ function RoomPage({ id }: { id: string }) {
   const { armed: leaveArmed, setArmed: setLeaveArmed } = exit;
 
   const ourDay = useOurDay(id, view, load, setErr);
+
+  const doorway = useDoorway(view);
+  const staying = useStaying();
 
   const heardName = useRef<string | null>(null);
   useEffect(() => {
@@ -1370,8 +1323,8 @@ function RoomPage({ id }: { id: string }) {
             blanket={view.blanket}
             sky={view.sky}
             spot={herSpot}
-            doorOpenAt={doorOpenAt}
-            watchDoorAt={watchDoorAt}
+            doorOpenAt={doorway.openAt}
+            watchDoorAt={doorway.watchAt}
             staying={staying && (iAmHim || view.youAreHer)}
             box={view.box}
             brought={view.brought}
