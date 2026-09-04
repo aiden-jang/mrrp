@@ -15,6 +15,10 @@ describe("deleting the room", () => {
     await seat();
     expect((await post("delete", { me: HER, name: "Aiden" })).status).toBe(403);
     expect((await post("delete", { me: STRANGER, name: "Aiden" })).status).toBe(403);
+    // Her own name, which is the only ask the signature check would otherwise accept from her:
+    // it compares against whoever is asking, so "she typed a name that matches" is true for her.
+    // Only the rule that this is his to do stops it.
+    expect((await post("delete", { me: HER, name: "Sofia" })).status).toBe(403);
     expect((await view(HIM)).you).not.toBeNull();
   });
 
