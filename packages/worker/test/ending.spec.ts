@@ -1,5 +1,5 @@
 import { env, runDurableObjectAlarm, runInDurableObject, SELF } from "cloudflare:test";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { harness, HER, HIM, STRANGER } from "./harness.js";
 
 const { away, id, post, seat, view } = harness("endingroom");
@@ -510,6 +510,26 @@ describe("her leaving on her own", () => {
 
 describe("what a deleted room can still be made to keep", () => {
   it("does not let a weather lookup put a key back after erasing", async () => {
+    /*
+     * The lookup has to succeed and land late, or nothing ever reaches the tombstone check. Held
+     * open until after the alarm, which is the only ordering that puts a write behind an erase.
+     */
+    let land = () => {};
+    const held = new Promise<void>((resolve) => {
+      land = resolve;
+    });
+    const realFetch = globalThis.fetch;
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+      const to = String(input instanceof Request ? input.url : input);
+      if (!to.includes("weather.test")) return realFetch(input as RequestInfo, init);
+      await held;
+      return new Response(JSON.stringify({ current: { weather_code: 71 } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    env.WEATHER_URL = "https://weather.test/forecast";
+
     await seat();
     await view(HER);
     await post("delete", { me: HIM, name: "Aiden" });
@@ -518,10 +538,13 @@ describe("what a deleted room can still be made to keep", () => {
     away(24 * 8);
     expect(await runDurableObjectAlarm(stub)).toBe(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    await runInDurableObject(stub, async (_instance, state) => {
-      expect([...(await state.storage.list()).keys()]).toEqual(["deleted"]);
-    });
+    land();
+    await vi.waitFor(() =>
+      runInDurableObject(stub, async (_instance, state) => {
+        expect([...(await state.storage.list()).keys()]).toEqual(["deleted"]);
+      }),
+    );
+    vi.unstubAllGlobals();
   });
 });
 
