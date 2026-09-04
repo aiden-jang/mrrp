@@ -22,10 +22,8 @@ import {
   doBlanket,
   doDraw,
   doLeave,
-  doLink,
   doNotes,
   doOurDay,
-  doRecover,
   doRelease,
   roomIsGone,
   fetchNotes,
@@ -88,6 +86,7 @@ import {
 } from "./doodle.js";
 import { faviconFor } from "./favicon.js";
 import { loginUrl, logoutUrl, siteFooterLinks } from "@aidenjang/auth-client";
+import { FINISH_LINK, useSeatAccount } from "./useSeatAccount.js";
 import { AUTH_URL } from "./config.js";
 import { foundKeys, noticed } from "./discoveries.js";
 import { awayLine, homingLine, milestoneLine, personalityLine } from "./remembers.js";
@@ -446,7 +445,6 @@ const installed = () =>
 
 const STAY_MS = 180_000;
 
-const SIGNED_OUT = "Sign in first.";
 const pad = (n: number) => String(n).padStart(2, "0");
 
 const MUG_AGAIN_MS = 1400;
@@ -454,7 +452,6 @@ const MUG_AGAIN_MS = 1400;
 const STROKES_NEEDED = 5;
 
 const PET_TAP_MS = 1800;
-const FINISH_LINK = "mrrp:finish-link";
 
 const DOOR_CAT = { name: "Bean", ...LOOKS[0]!.cat, eyes: EYES[0]!.hex };
 const DOOR_CLOCK = {
@@ -812,26 +809,6 @@ function RoomPage({ id }: { id: string }) {
   useEffect(() => {
     void whoAmI().then(setMe);
   }, []);
-  const [linking, setLinking] = useState(false);
-  const [linkErr, setLinkErr] = useState<string | null>(null);
-  const link = async (on: boolean) => {
-    setLinking(true);
-    setLinkErr(null);
-    try {
-      await doLink(id, on);
-      await load();
-    } catch (e) {
-      if (on && e instanceof Error && e.message === SIGNED_OUT) {
-        sessionStorage.setItem(FINISH_LINK, id);
-        window.location.href = loginUrl(AUTH_URL, window.location.href);
-        return;
-      }
-      setLinkErr(e instanceof Error ? e.message : "Couldn't do that.");
-    } finally {
-      setLinking(false);
-    }
-  };
-
   const wantsLink = view?.you !== undefined && view?.you !== null && !view?.linked;
   useEffect(() => {
     if (!wantsLink || sessionStorage.getItem(FINISH_LINK) !== id) return;
@@ -903,9 +880,6 @@ function RoomPage({ id }: { id: string }) {
   const [saving, setSaving] = useState(false);
   const [setup, setSetup] = useState(false);
   const [releasing, setReleasing] = useState(false);
-  const [claimCode, setClaimCode] = useState("");
-  const [claiming, setClaiming] = useState(false);
-  const [claimErr, setClaimErr] = useState<string | null>(null);
   const [savingSetup, setSavingSetup] = useState(false);
   const [setupErr, setSetupErr] = useState<string | null>(null);
   const [draft, setDraft] = useState<{
@@ -983,6 +957,10 @@ function RoomPage({ id }: { id: string }) {
     },
     [id],
   );
+
+  const account = useSeatAccount(id, load);
+  const { linking, linkError: linkErr, link } = account;
+  const { code: claimCode, setCode: setClaimCode, claiming, claimError: claimErr } = account;
 
   const liveGone = useCallback(() => {
     forgetRoom(id);
@@ -2286,17 +2264,7 @@ function RoomPage({ id }: { id: string }) {
                     className={`${s.btn} ${s.btnGo}`}
                     style={{ width: "100%", marginTop: 10 }}
                     disabled={claiming || claimCode.trim().length < 8}
-                    onClick={async () => {
-                      setClaiming(true);
-                      setClaimErr(null);
-                      try {
-                        await doRecover(id, claimCode);
-                        await load();
-                      } catch (e) {
-                        setClaimErr(e instanceof Error ? e.message : "That didn't work.");
-                      }
-                      setClaiming(false);
-                    }}
+                    onClick={account.claim}
                   >
                     {claiming ? "Checking..." : "This is my room"}
                   </button>
