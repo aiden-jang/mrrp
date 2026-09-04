@@ -18,13 +18,20 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
+      # `pnpm <name>` is not `pnpm run <name>`: where pnpm has a command of its own it wins and
+      # the script is unreachable. This checks the whole chain, and that verify matches CI.
+      - run: pnpm run gates
+      - run: pnpm run typecheck
       # react-hooks/rules-of-hooks is why this step exists. A hook below an early return is invisible
       # to typecheck, build and tests, and it took every group page in owewell down in production.
-      - run: pnpm lint
-      - run: pnpm exec prettier --check .
-      - run: pnpm build
-      - run: pnpm test
+      - run: pnpm run lint
+      - run: pnpm run format:check
+      - run: pnpm run build
+      - run: pnpm run test
+      # --prod on purpose: what ships is hono and the auth client, and both are clean. Build
+      # tooling carries advisories that never reach a browser or the Worker at request time, and
+      # blocking on those is a light everyone learns to scroll past.
+      - run: pnpm audit --prod --audit-level moderate
 
   # Auto-deploy to Cloudflare on merge to main, only after the checks above pass.
   # Requires a CLOUDFLARE_API_TOKEN repo secret (Workers-scoped). Wrangler infers the
