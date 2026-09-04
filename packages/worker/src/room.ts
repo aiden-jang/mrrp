@@ -33,6 +33,8 @@ import {
   type FoundLedger,
 } from "./discoveries.js";
 import type { Env } from "./env.js";
+import { DOODLE_CELLS, widenDoodle } from "./doodle.js";
+import { hourInZone, localDayNumber } from "./zone.js";
 import {
   DAY_MS,
   milestoneFor,
@@ -45,30 +47,6 @@ import {
   type OurDay,
   type Tally,
 } from "./remembers.js";
-
-const DOODLE_W = 15;
-const DOODLE_H = 9;
-const DOODLE_CELLS = DOODLE_W * DOODLE_H;
-
-const PAST_DOODLES: [number, number][] = [
-  [7, 5],
-  [11, 7],
-];
-
-// Every size the sheet has ever been. A room nobody has opened in a year still holds whatever it
-// held, so never take a size off this list.
-function widenDoodle(cells: string): string {
-  const was = PAST_DOODLES.find(([w, h]) => w * h === cells.length);
-  if (!was) return cells;
-  const [oldW, oldH] = was;
-  const dx = Math.floor((DOODLE_W - oldW) / 2);
-  const dy = Math.floor((DOODLE_H - oldH) / 2);
-  const out = Array.from({ length: DOODLE_CELLS }, () => "0");
-  for (let y = 0; y < oldH; y++) {
-    for (let x = 0; x < oldW; x++) out[(y + dy) * DOODLE_W + (x + dx)] = cells[y * oldW + x]!;
-  }
-  return out.join("");
-}
 
 const HER_LINES = "herLines";
 const HER_DAY = "herDay";
@@ -139,28 +117,6 @@ export class RoomGone extends Error {
 }
 
 const GIFT_AFTER_MS = 8 * 60 * 60 * 1000;
-
-function hourInZone(at: number, tz: string): number {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: tz,
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(new Date(at));
-  const h = Number(parts.find((x) => x.type === "hour")?.value ?? 12);
-  const m = Number(parts.find((x) => x.type === "minute")?.value ?? 0);
-  return (h % 24) + m / 60;
-}
-
-function localDayNumber(at: number, tz: string): number {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: tz,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date(at));
-  return Math.floor(Date.parse(`${parts}T00:00:00Z`) / 86_400_000);
-}
 
 interface Person {
   name: string;
