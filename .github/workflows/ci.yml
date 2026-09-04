@@ -29,6 +29,11 @@ jobs:
       - run: pnpm run format:check
       - run: pnpm run build
       - run: pnpm run test
+      # The layer nothing else sees: whether two people reach the same room and get their own half
+      # of it, in a browser, against the real Worker and Durable Object.
+      - name: Install Playwright browser
+        run: pnpm --filter @mrrp/web exec playwright install --with-deps chromium
+      - run: pnpm run e2e
       # --prod on purpose: what ships is hono and the auth client, and both are clean. Build
       # tooling carries advisories that never reach a browser or the Worker at request time, and
       # blocking on those is a light everyone learns to scroll past.
