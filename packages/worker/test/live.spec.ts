@@ -25,13 +25,12 @@ async function connect(id: string, me: string): Promise<{ ws: WebSocket; got: Pu
   return { ws, got };
 }
 
-/* Sixty was enough alone and flaked under a full-suite run. */
 /*
- * A fixed sleep raced the push and went red about one full-suite run in four. Wait for the thing
- * itself. Counting turns rather than watching the clock, because `away()` fakes the clock.
+ * Wait for the push itself, never for a duration. A fixed sleep went red about one full-suite run
+ * in four: the room pushes when it pushes, and a busy worker is slower than a quiet one.
+ *
+ * Counting turns rather than watching the clock, because `away()` fakes the clock.
  */
-const settle = () => new Promise((r) => setTimeout(r, 140));
-
 const until = async (ready: () => boolean, what: string, turns = 400): Promise<void> => {
   for (let i = 0; i < turns; i++) {
     if (ready()) return;
@@ -44,13 +43,11 @@ describe("the live channel", () => {
   it("sends the room on connect and again on every write", async () => {
     await h.seat();
     const her = await connect(h.id, HER);
-    await settle();
-    expect(her.got.length, "one view on connect").toBe(1);
+    await until(() => her.got.length === 1, "one view on connect");
 
     expect((await h.post("act", { me: HIM, action: "brush" })).status).toBe(200);
-    await settle();
+    await until(() => her.got.at(-1)?.view?.brushed === true, "the brush to reach her");
     expect(her.got.length).toBeGreaterThan(1);
-    expect(her.got.at(-1)!.view!.brushed).toBe(true);
     her.ws.close();
   });
 
@@ -58,10 +55,10 @@ describe("the live channel", () => {
     await h.seat();
     const him = await connect(h.id, HIM);
     const her = await connect(h.id, HER);
-    await settle();
 
     expect((await h.post("tell", { me: HER, mood: "sad" })).status).toBe(200);
-    await settle();
+    await until(() => him.got.at(-1)?.view?.catMood === "sad", "her mood to reach his socket");
+    await until(() => her.got.at(-1)?.view?.catMood === "sad", "her mood to reach her own");
 
     const toHim = him.got.at(-1)!.view!;
     const toHer = her.got.at(-1)!.view!;
@@ -78,9 +75,7 @@ describe("the live channel", () => {
     await h.seat();
     const her = await connect(h.id, HER);
     expect((await h.post("leaveout", { me: HIM, treat: "yarn" })).status).toBe(200);
-    await settle();
-
-    expect(her.got.at(-1)!.view!.forHer, "pushed to her").toBe("yarn");
+    await until(() => her.got.at(-1)?.view?.forHer === "yarn", "pushed to her");
     // A push is not a visit. It is still there when she actually opens the room.
     expect((await h.view(HER)).forHer).toBe("yarn");
     expect((await h.view(HER)).forHer, "spent by the read, not the push").toBeNull();
@@ -134,11 +129,10 @@ describe("the live channel", () => {
   it("tells open tabs the room is gone rather than pushing them an empty one", async () => {
     await h.seat();
     const her = await connect(h.id, HER);
-    await settle();
+    await until(() => her.got.length === 1, "her view on connect");
     expect((await h.post("delete", { me: HIM, name: "Aiden" })).status).toBe(200);
-    await settle();
 
-    expect(her.got.at(-1)!.type, "gone, not a view of a fresh room").toBe("gone");
+    await until(() => her.got.at(-1)?.type === "gone", "gone, not a view of a fresh room");
   });
 });
 
@@ -147,7 +141,7 @@ describe("presence", () => {
     await h.seat();
     h.away(1);
     const her = await connect(h.id, HER);
-    await settle();
+    await until(() => her.got.length === 1, "her socket to be live");
 
     const v = await h.view(HIM);
     expect(v.bothHereNow, "his socket is this request, hers is open").toBe(true);
@@ -162,14 +156,12 @@ describe("her opening the room", () => {
     await h.seat();
     const him = await connect(h.id, HIM);
     expect((await h.post("leaveout", { me: HIM, treat: "catnip" })).status).toBe(200);
-    await settle();
-    expect(him.got.at(-1)!.view!.forHer, "still waiting for her").toBe("catnip");
+    await until(() => him.got.at(-1)?.view?.forHer === "catnip", "still waiting for her");
 
     // Her ordinary read. It is what spends the treat, and it is not a write, so nothing about it
     // looks like something that should reach him.
     await h.view(HER);
-    await settle();
-    expect(him.got.at(-1)!.view!.forHer, "she has been in and found it").toBeNull();
+    await until(() => him.got.at(-1)?.view?.forHer === null, "she has been in and found it");
     him.ws.close();
   });
 });
@@ -178,16 +170,13 @@ describe("him holding on to her", () => {
   it("reaches her while it is happening, and stops when he lets go", async () => {
     await h.seat();
     const her = await connect(h.id, HER);
-    await settle();
-    expect(her.got.at(-1)!.view!.heldByThem).toBe(false);
+    await until(() => her.got.at(-1)?.view?.heldByThem === false, "her view on connect");
 
     expect((await h.post("hold", { me: HIM, on: true })).status).toBe(200);
-    await settle();
-    expect(her.got.at(-1)!.view!.heldByThem, "his hand, on her screen").toBe(true);
+    await until(() => her.got.at(-1)?.view?.heldByThem === true, "his hand, on her screen");
 
     expect((await h.post("hold", { me: HIM, on: false })).status).toBe(200);
-    await settle();
-    expect(her.got.at(-1)!.view!.heldByThem).toBe(false);
+    await until(() => her.got.at(-1)?.view?.heldByThem === false, "him letting go");
     her.ws.close();
   });
 
@@ -203,14 +192,11 @@ describe("him holding on to her", () => {
     await h.seat();
     const him = await connect(h.id, HIM);
     const her = await connect(h.id, HER);
-    await settle();
     await h.post("hold", { me: HIM, on: true });
-    await settle();
-    expect(her.got.at(-1)!.view!.heldByThem).toBe(true);
+    await until(() => her.got.at(-1)?.view?.heldByThem === true, "his hand to reach her");
 
     him.ws.close();
-    await settle();
-    expect(her.got.at(-1)!.view!.heldByThem, "his tab went, so did the hand").toBe(false);
+    await until(() => her.got.at(-1)?.view?.heldByThem === false, "his tab going to take the hand with it");
     her.ws.close();
   });
 
@@ -235,11 +221,8 @@ describe("touching something in the room", () => {
   it("reaches the other one and not the person who did it", async () => {
     await h.seat();
     const her = await connect(h.id, HER);
-    await settle();
     expect((await h.post("poke", { me: HIM, what: "plant" })).status).toBe(200);
-    await settle();
-
-    expect(her.got.at(-1)!.view!.pokedByThem?.what).toBe("plant");
+    await until(() => her.got.at(-1)?.view?.pokedByThem?.what === "plant", "his tap to reach her");
     // His own tap already moved his own room. Sent back, it would play the wobble twice.
     expect((await h.view(HIM)).pokedByThem).toBeNull();
     her.ws.close();
