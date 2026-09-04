@@ -16,10 +16,8 @@ import { ACTIONS, CAT_ACTS, GIFTS, LINE_MAX, MOODS, NOTE_MAX, NOTES_KEPT, TREATS
 import {
   doAct,
   adoptSeat,
-  doDelete,
   doBlanket,
   doDraw,
-  doLeave,
   doOurDay,
   doRelease,
   roomIsGone,
@@ -39,8 +37,6 @@ import {
   doTidy,
   doWindowLight,
   fetchRoom,
-  doUndelete,
-  doUnleave,
   beenHere,
   forgetMe,
   forgetRoom,
@@ -83,6 +79,7 @@ import {
 import { faviconFor } from "./favicon.js";
 import { loginUrl, logoutUrl, siteFooterLinks } from "@aidenjang/auth-client";
 import { useCatSetup } from "./useCatSetup.js";
+import { useRoomEnding } from "./useRoomEnding.js";
 import { FINISH_LINK, useSeatAccount } from "./useSeatAccount.js";
 import { AUTH_URL } from "./config.js";
 import { foundKeys, noticed } from "./discoveries.js";
@@ -610,53 +607,6 @@ function RoomPage({ id }: { id: string }) {
     setBedding(false);
   };
 
-  const [leaveArmed, setLeaveArmed] = useState(false);
-  const [typedName, setTypedName] = useState("");
-  const [ending, setEnding] = useState(false);
-  const endRoom = async () => {
-    setEnding(true);
-    try {
-      const undoUntil = await doDelete(id, typedName);
-      forgetRoom(id);
-      setGone({ undoUntil });
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Couldn't delete the room.");
-      setEnding(false);
-    }
-  };
-  const [undoing, setUndoing] = useState(false);
-  const putBackMySide = async () => {
-    setUndoing(true);
-    try {
-      await doUnleave(id);
-      window.location.reload();
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Couldn't put your side back.");
-      setUndoing(false);
-    }
-  };
-  const putBackRoom = async () => {
-    setUndoing(true);
-    try {
-      await doUndelete(id);
-      window.location.reload();
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Couldn't put it back.");
-      setUndoing(false);
-    }
-  };
-  const leave = async () => {
-    setEnding(true);
-    try {
-      await doLeave(id);
-      forgetRoom(id);
-      window.location.href = "/";
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Couldn't leave the room.");
-      setEnding(false);
-    }
-  };
-
   const windowLightPending = useRef(false);
   const touchWindowLight = useCallback(async () => {
     if (windowLightPending.current) return;
@@ -930,6 +880,14 @@ function RoomPage({ id }: { id: string }) {
 
   const cat = useCatSetup(id, view, load);
   const { open: setup, draft, setDraft, saving: savingSetup, error: setupErr } = cat;
+
+  const exit = useRoomEnding(
+    id,
+    (undoUntil) => setGone({ undoUntil }),
+    (message) => setErr(message),
+  );
+  const { typedName, setTypedName, ending, undoing } = exit;
+  const { armed: leaveArmed, setArmed: setLeaveArmed } = exit;
 
   const heardName = useRef<string | null>(null);
   useEffect(() => {
@@ -1259,7 +1217,7 @@ function RoomPage({ id }: { id: string }) {
           undoUntil={gone.undoUntil}
           undoing={undoing}
           err={err}
-          onPutBack={() => void putBackRoom()}
+          onPutBack={() => void exit.putBackRoom()}
           onHome={() => {
             window.location.href = "/";
           }}
@@ -1345,7 +1303,7 @@ function RoomPage({ id }: { id: string }) {
           seatFree={view.waitingForThem}
           undoing={undoing}
           err={err}
-          onPutBack={() => void putBackMySide()}
+          onPutBack={() => void exit.putBackMySide()}
           onStartFresh={() => {
             forgetMe();
             window.location.reload();
@@ -2420,7 +2378,7 @@ function RoomPage({ id }: { id: string }) {
                         !view.you ||
                         typedName.trim().toLowerCase() !== view.you.trim().toLowerCase()
                       }
-                      onClick={() => void endRoom()}
+                      onClick={() => void exit.endRoom()}
                     >
                       {ending ? "deleting…" : "Delete this room for both of us"}
                     </button>
@@ -2436,7 +2394,7 @@ function RoomPage({ id }: { id: string }) {
                     <button
                       className={s.quiet}
                       disabled={ending}
-                      onClick={() => (leaveArmed ? void leave() : setLeaveArmed(true))}
+                      onClick={() => (leaveArmed ? void exit.leave() : setLeaveArmed(true))}
                     >
                       {ending ? "leaving…" : leaveArmed ? "Yes, take my side out of it" : "Leave this room"}
                     </button>

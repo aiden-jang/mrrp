@@ -24,7 +24,7 @@ const MAX_STATE = 12;
  */
 const ALREADY_OVER = {
   "packages/web/src/Cat.tsx": { lines: 3137 },
-  "packages/web/src/App.tsx": { lines: 2772, state: 48 },
+  "packages/web/src/App.tsx": { lines: 2730, state: 44 },
   "packages/worker/src/room.ts": { lines: 1510 },
   "packages/web/src/sprites.ts": { lines: 705 },
   "packages/worker/src/index.ts": { lines: 518 },
