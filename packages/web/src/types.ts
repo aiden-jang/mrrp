@@ -4,19 +4,19 @@ import type { DiscoveryKey } from "./discoveries.js";
 export type Action = "pet" | "brush" | "sit" | "photo";
 
 // Two of them, because the two seats read different sentences. One shared string gave "you brushed you".
-export const ACTIONS: { id: Action; label: string; past: string; mine: string }[] = [
+export const ACTIONS = [
   { id: "pet", label: "Pet her", past: "petted you", mine: "petted her" },
   { id: "brush", label: "Brush her", past: "brushed you", mine: "brushed her" },
   { id: "sit", label: "Sit with her", past: "sat with you a while", mine: "sat with her" },
   { id: "photo", label: "Take her photo", past: "took a photo of you", mine: "took her photo" },
-];
+] as const satisfies readonly { id: Action; label: string; past: string; mine: string }[];
 
 // Two of them, because the two seats read different sentences. One shared string gave "you brushed you".
 export type CatAct = "shelf" | "box" | "gift";
 
 export type LogAction = Action | CatAct | "leaveout" | "boxout";
 
-export const CAT_ACTS: { id: CatAct; label: string; past: string; mine: string }[] = [
+export const CAT_ACTS = [
   {
     id: "shelf",
     label: "Knock something off the shelf",
@@ -25,19 +25,19 @@ export const CAT_ACTS: { id: CatAct; label: string; past: string; mine: string }
   },
   { id: "box", label: "Get in the box", past: "got in the box", mine: "got in the box" },
   { id: "gift", label: "Leave him something", past: "left you something", mine: "left him something" },
-];
+] as const satisfies readonly { id: CatAct; label: string; past: string; mine: string }[];
 
 export type Treat = "yarn" | "treat" | "catnip";
 
-export const TREATS: { id: Treat; label: string; found: string }[] = [
+export const TREATS = [
   { id: "yarn", label: "the yarn", found: "found the yarn you left out" },
   { id: "treat", label: "a treat", found: "found the treat you left out" },
   { id: "catnip", label: "the catnip", found: "got into the catnip you left out" },
-];
+] as const satisfies readonly { id: Treat; label: string; found: string }[];
 
 export type Mood = "good" | "tired" | "stressed" | "sad" | "lonely" | "bored" | "feral" | "done" | "horny";
 
-export const MOODS: { id: Mood; label: string; said: string }[] = [
+export const MOODS = [
   { id: "good", label: "good", said: "having a good one" },
   { id: "tired", label: "tired", said: "tired" },
   { id: "stressed", label: "stressed", said: "stressed" },
@@ -47,7 +47,7 @@ export const MOODS: { id: Mood; label: string; said: string }[] = [
   { id: "feral", label: "feral", said: "feeling feral" },
   { id: "done", label: "done", said: "completely done with today" },
   { id: "horny", label: "horny", said: "in a mood, and not one of the sad ones" },
-];
+] as const satisfies readonly { id: Mood; label: string; said: string }[];
 
 export interface Cat {
   name: string;
@@ -78,11 +78,11 @@ export interface Visit {
 
 // Something she left him. An answer keeps both `aboutDay` and `about`: he can rewrite his notes
 // whenever he likes, and the number alone would hang her words off a sentence she never read.
-export const GIFTS: { id: Gift; label: string; name: string }[] = [
+export const GIFTS = [
   { id: "leaf", label: "a leaf", name: "leaf" },
   { id: "cap", label: "a bottle cap", name: "bottle cap" },
   { id: "moth", label: "a moth", name: "moth" },
-];
+] as const satisfies readonly { id: Gift; label: string; name: string }[];
 
 // Both sides hold this number. The browser stops her typing past it and the worker cuts anything
 // longer, so if they ever disagree her words are lost and nobody is told.

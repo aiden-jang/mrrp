@@ -16,9 +16,14 @@ import type {
   Treat as TreatSent,
 } from "../../worker/src/types.js";
 import {
+  ACTIONS as ACTIONS_SENT,
+  CAT_ACTS as CAT_ACTS_SENT,
+  GIFTS as GIFTS_SENT,
   LINE_MAX as LINE_MAX_SENT,
+  MOODS as MOODS_SENT,
   NOTES_KEPT as NOTES_KEPT_SENT,
   NOTE_MAX as NOTE_MAX_SENT,
+  TREATS as TREATS_SENT,
 } from "../../worker/src/types.js";
 import type {
   Action,
@@ -32,7 +37,7 @@ import type {
   Told2,
   Treat,
 } from "./types.js";
-import { LINE_MAX, NOTES_KEPT, NOTE_MAX } from "./types.js";
+import { ACTIONS, CAT_ACTS, GIFTS, LINE_MAX, MOODS, NOTES_KEPT, NOTE_MAX, TREATS } from "./types.js";
 
 /*
  * Identity, not mutual assignability. `[A] extends [B]` calls two shapes the same when one has an
@@ -48,16 +53,22 @@ export const saidSoFarAgrees: Same<SaidSent, SaidSoFar> = true;
 export const told2Agrees: Same<Told2Sent, Told2> = true;
 export const bodiesAgree: Same<BodiesSent, Bodies> = true;
 
-/*
- * The names of everything either side is allowed to send. The lists themselves carry labels and
- * cannot be compared this way, but an id in one and not the other is what makes the room refuse
- * something the app just offered.
- */
+/* An id in one and not the other is the room refusing something the app just offered. */
 export const actionsAgree: Same<ActionSent, Action> = true;
 export const catActsAgree: Same<CatActSent, CatAct> = true;
 export const treatsAgree: Same<TreatSent, Treat> = true;
 export const moodsAgree: Same<MoodSent, Mood> = true;
 export const giftsAgree: Same<GiftSent, Gift> = true;
+
+/*
+ * The lists themselves, down to the wording. They are `as const` so their literal types carry every
+ * label, and the same sentence has to be written twice for the two of them to read the same thing.
+ */
+export const actionListAgrees: Same<typeof ACTIONS_SENT, typeof ACTIONS> = true;
+export const catActListAgrees: Same<typeof CAT_ACTS_SENT, typeof CAT_ACTS> = true;
+export const treatListAgrees: Same<typeof TREATS_SENT, typeof TREATS> = true;
+export const moodListAgrees: Same<typeof MOODS_SENT, typeof MOODS> = true;
+export const giftListAgrees: Same<typeof GIFTS_SENT, typeof GIFTS> = true;
 
 /* Trimmed on the way in, counted on the way out. Two different numbers silently lose the tail. */
 export const lineMaxAgrees: Same<typeof LINE_MAX_SENT, typeof LINE_MAX> = true;
