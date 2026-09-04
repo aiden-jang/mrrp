@@ -35,6 +35,21 @@ test("he makes a room, she goes in, and each gets their own half", async ({ page
   await expect(her.getByRole("button", { name: /Draw something for the frame/ })).toBeVisible();
   await expect(her.getByRole("button", { name: /Write her notes/ })).toHaveCount(0);
 
+  // --- she leaves him a line, and it comes back as hers --------------------------------------
+  await her.getByRole("button", { name: /Say something back/ }).click();
+  await her.getByLabel("Your answer").fill("i fed her already");
+  await her.getByRole("button", { name: "Leave it" }).click();
+
+  // The box closes and the line comes back labelled as the last thing she said, which is the
+  // round trip: typed here, stored in the room, read back out of a fresh view.
+  await expect(her.getByLabel("Your answer")).toHaveCount(0);
+  await expect(her.getByText("i fed her already")).toBeVisible();
+
+  // Opening it again opens it empty. Saving adds a line rather than replacing one.
+  await her.getByRole("button", { name: /the last thing you said to him/ }).click();
+  await expect(her.getByLabel(/Your answer|Something to leave him/)).toHaveValue("");
+  await her.getByRole("button", { name: "Never mind" }).click();
+
   // --- and she can do the thing that is only hers to do --------------------------------------
   // A toggle, so the control itself is the state: pressed, and offering the way back out.
   const door = her.getByRole("button", { name: /(Go and wait|Come away) / });
