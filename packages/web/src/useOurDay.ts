@@ -4,6 +4,8 @@ import type { RoomView } from "./types.js";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
+const KEPT_MS = 2400;
+
 /*
  * One date in the year the cat says something on. The room stores a month and a day with no year,
  * because it comes round every year, but `<input type="date">` will not hold a value without one.
@@ -22,6 +24,9 @@ export function useOurDay(
   const [label, setLabel] = useState("");
   const [saved, setSaved] = useState(false);
   const loaded = useRef(false);
+  const clearKept = useRef(0);
+
+  useEffect(() => () => window.clearTimeout(clearKept.current), []);
 
   useEffect(() => {
     if (loaded.current || !view) return;
@@ -37,7 +42,9 @@ export function useOurDay(
       await doOurDay(id, mm && dd && words ? { month: Number(mm), day: Number(dd), label: words } : null);
       await reload();
       setSaved(true);
-      window.setTimeout(() => setSaved(false), 2400);
+      // Saving again restarts it. The first save's timer would otherwise clear the second's "Kept".
+      window.clearTimeout(clearKept.current);
+      clearKept.current = window.setTimeout(() => setSaved(false), KEPT_MS);
     } catch (e) {
       onError(e instanceof Error ? e.message : "Couldn't keep that day.");
     }
