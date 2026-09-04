@@ -18,7 +18,6 @@ import {
   adoptSeat,
   doBlanket,
   doDraw,
-  doOurDay,
   doRelease,
   roomIsGone,
   fetchSaid,
@@ -80,6 +79,7 @@ import { faviconFor } from "./favicon.js";
 import { loginUrl, logoutUrl, siteFooterLinks } from "@aidenjang/auth-client";
 import { useCatSetup } from "./useCatSetup.js";
 import { useRoomEnding } from "./useRoomEnding.js";
+import { useOurDay } from "./useOurDay.js";
 import { FINISH_LINK, useSeatAccount } from "./useSeatAccount.js";
 import { AUTH_URL } from "./config.js";
 import { foundKeys, noticed } from "./discoveries.js";
@@ -439,8 +439,6 @@ const installed = () =>
 
 const STAY_MS = 180_000;
 
-const pad = (n: number) => String(n).padStart(2, "0");
-
 const MUG_AGAIN_MS = 1400;
 /* Must match PET_TAP_MS in Cat.tsx: how long a tap of the pet button reads as a hold. */
 const STROKES_NEEDED = 5;
@@ -791,9 +789,6 @@ function RoomPage({ id }: { id: string }) {
   // Armed once he has been told the photo takes her drawing down.
   const [photoOver, setPhotoOver] = useState(false);
   // The day this seat named. Each of them has one and neither is ever shown the other's.
-  const [ourDate, setOurDate] = useState("");
-  const [ourLabel, setOurLabel] = useState("");
-  const [ourSaved, setOurSaved] = useState(false);
   const [said, setSaid] = useState<SaidSoFar | null>(null);
   const saidTrigger = useRef<HTMLButtonElement>(null);
   const saidPanel = useRef<HTMLElement>(null);
@@ -888,6 +883,8 @@ function RoomPage({ id }: { id: string }) {
   );
   const { typedName, setTypedName, ending, undoing } = exit;
   const { armed: leaveArmed, setArmed: setLeaveArmed } = exit;
+
+  const ourDay = useOurDay(id, view, load, setErr);
 
   const heardName = useRef<string | null>(null);
   useEffect(() => {
@@ -1006,27 +1003,6 @@ function RoomPage({ id }: { id: string }) {
 
   // Fill from the day this seat already named, once, when the room first arrives. Not on every view,
   // or it would overwrite what they are in the middle of typing.
-  const ourDayLoaded = useRef(false);
-  useEffect(() => {
-    if (ourDayLoaded.current || !view) return;
-    ourDayLoaded.current = true;
-    setOurDate(view.ourDay ? `2000-${pad(view.ourDay.month)}-${pad(view.ourDay.day)}` : "");
-    setOurLabel(view.ourDay?.label ?? "");
-  }, [view]);
-
-  const saveOurDay = async () => {
-    const [, mm, dd] = ourDate.match(/^\d{4}-(\d{2})-(\d{2})$/) ?? [];
-    const label = ourLabel.trim();
-    try {
-      await doOurDay(id, mm && dd && label ? { month: Number(mm), day: Number(dd), label } : null);
-      await load();
-      setOurSaved(true);
-      window.setTimeout(() => setOurSaved(false), 2400);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Couldn't keep that day.");
-    }
-  };
-
   const takeBack = async (at: number) => {
     try {
       setView(await doUnsay(id, at));
@@ -2206,20 +2182,20 @@ function RoomPage({ id }: { id: string }) {
                 <input
                   className={`${s.input} ${s.dateInput}`}
                   type="date"
-                  value={ourDate}
+                  value={ourDay.date}
                   min="1900-01-01"
                   max="2100-12-31"
                   aria-label="The date"
-                  onChange={(e) => setOurDate(e.target.value)}
+                  onChange={(e) => ourDay.setDate(e.target.value)}
                 />
                 <input
                   className={s.input}
                   style={{ marginTop: 8 }}
-                  value={ourLabel}
+                  value={ourDay.label}
                   maxLength={32}
                   placeholder="what it is, in a few words"
                   aria-label="What the day is"
-                  onChange={(e) => setOurLabel(e.target.value)}
+                  onChange={(e) => ourDay.setLabel(e.target.value)}
                 />
                 <p className={s.small} style={{ marginTop: 6 }}>
                   {view.cat.name} says it every year on the day, to both of you, in exactly those words.{" "}
@@ -2229,9 +2205,9 @@ function RoomPage({ id }: { id: string }) {
                 <button
                   className={s.btn}
                   style={{ width: "100%", marginTop: 8 }}
-                  onClick={() => void saveOurDay()}
+                  onClick={() => void ourDay.save()}
                 >
-                  {ourSaved ? "Kept" : "Keep this day"}
+                  {ourDay.saved ? "Kept" : "Keep this day"}
                 </button>
               </div>
             </details>
