@@ -475,7 +475,7 @@ local day, so a day she doesn't visit is not a note she never sees.
 ## Tests
 
 ```bash
-pnpm check       # typecheck, lint, then 477 tests: 216 web, 261 worker
+pnpm verify      # gates, size, typecheck, lint, format, build, tests, then the browser journey
 ```
 
 `lint` exists for one rule. owewell shipped a `useEffect` below a component's early returns, so the
@@ -485,9 +485,9 @@ static rule sees that, so `react-hooks/rules-of-hooks` is an error here and CI r
 
 The worker suite runs in real workerd via `@cloudflare/vitest-pool-workers`, so Durable Object
 storage and the seat rules are exercised as they actually behave rather than against a mock. It is
-split across six files, each with its own room, because a worker gets slower the more requests it has
+split a file per area, each with its own room, because a worker gets slower the more requests it has
 served and one big file is therefore quadratic in its own length. That split is what takes this suite
-from two minutes to four seconds; `test/harness.ts` has the measurements.
+from minutes to seconds; `test/harness.ts` has the measurements.
 
 The canvas has a headless harness. `canvasHarness.tsx` mounts the cat in jsdom with a recording 2D
 context and a frame clock the test drives, so layering and timing get real assertions instead of

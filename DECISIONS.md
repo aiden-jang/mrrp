@@ -596,8 +596,8 @@ Two more of the same shape, worth knowing because they are not about drawing ord
 wide. She stood with her front half out of it and the wall cutting her in two, which reads as a cat
 beside a box. It is measured off the sprite now, so a box that changes size takes her with it.
 
-**The tap target disagreed with the drawing.** The draw gate read `boxOut || box || secretBox` and
-the hit test read `box || secretBox`, so a box he put out was drawn and could not be tapped. A test
+**The tap target disagreed with the drawing.** The draw gate read `boxOutRef || boxRef || secretBoxUntil`
+and the hit test read `boxRef || secretBoxUntil`, so a box he put out was drawn and could not be tapped. A test
 checks the two gates name the same three things.
 
 ## What the camera cuts off
