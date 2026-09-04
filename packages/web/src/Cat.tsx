@@ -4,7 +4,7 @@ import { DOOR_X, mixHex, sceneFor } from "./hours.js";
 import { fireflyAt, mothAt, MOTH_CYCLE_MS } from "./critters.js";
 import { play, playPianoNote, setVoice } from "./sound.js";
 import { dreamOf, type Dream, type DreamContext, type DreamScene } from "./dreams.js";
-import { catCallCode } from "./secrets.js";
+import { catCallCode, typeLetter } from "./secrets.js";
 import { moonPhase, moonPixelLit } from "./moon.js";
 import { cellAt, DOODLE_INK } from "./doodle.js";
 import { blanketPalette } from "./blanket.js";
@@ -28,7 +28,7 @@ import type { RoomView } from "./types.js";
 import { seasonFor, seasonalPlantColors } from "./season.js";
 import { mouseRunAt } from "./mouse.js";
 import { BUBBLE_GAME_MS, bubbleMomentAt, bubbleSeeds, type BubbleSeed } from "./bubbles.js";
-import { PIANO_CODE, PIANO_MS, advancePawMelody, pianoKeyAt, pianoKeys } from "./piano.js";
+import { PIANO_MS, advancePawMelody, pianoKeyAt, pianoKeys } from "./piano.js";
 import {
   collectConstellationStar,
   constellationProgress,
@@ -108,27 +108,17 @@ const ROOM_CODE = [
   "ArrowLeft",
   "ArrowRight",
 ];
-const TYPED_ROOM_CODE = "mrrp";
-const SUMMON_CODE = "pspsps";
 const SUMMON_MS = 5200;
-const BOX_CODE = "box";
 const SECRET_BOX_MS = 8200;
-const YARN_CODE = "yarn";
 const YARN_MS = 5200;
-const TREAT_CODE = "treat";
 const TREAT_MS = 5600;
 const TREAT_X = 68;
-const CATNIP_CODE = "catnip";
 const CATNIP_MS = 6200;
 const CATNIP_X = 54;
-const MUSIC_CODE = "music";
 const MUSIC_MS = 5600;
-const MOUSE_CODE = "mouse";
 const MOUSE_MS = 7000;
-const BUBBLE_CODE = "bubbles";
 const BUBBLE_REWARD_MS = 2400;
 const PIANO_REWARD_MS = 4200;
-const STARS_CODE = "stars";
 const CONSTELLATION_REWARD_MS = 7200;
 const STAR_FLIGHT_MS = 1300;
 const NAME_CALL_MS = 6200;
@@ -1132,141 +1122,118 @@ export function Cat({
       }
 
       if (e.key.length === 1 && /[a-z]/i.test(e.key)) {
-        const nameCode = catCallCode(lookRef.current.name);
-        typedRoomCode = `${typedRoomCode}${e.key.toLowerCase()}`.slice(
-          -Math.max(
-            TYPED_ROOM_CODE.length,
-            SUMMON_CODE.length,
-            BOX_CODE.length,
-            YARN_CODE.length,
-            TREAT_CODE.length,
-            CATNIP_CODE.length,
-            MUSIC_CODE.length,
-            MOUSE_CODE.length,
-            BUBBLE_CODE.length,
-            PIANO_CODE.length,
-            STARS_CODE.length,
-            nameCode?.length ?? 0,
-          ),
-        );
-        if (nameCode && typedRoomCode.endsWith(nameCode)) {
-          const now = performance.now();
-          nameCallUntil.current = now + NAME_CALL_MS;
-          onFoundRef.current?.("herName");
-          speakUntil.current = now + 1200;
-          bounce.current = 1;
-          typedRoomCode = "";
-          play("purr");
-          if (bothCalledRef.current && Math.random() < 1 / 3) {
-            summonUntil.current = now + SUMMON_MS;
-          }
-        } else if (typedRoomCode.endsWith(TYPED_ROOM_CODE)) {
-          const now = performance.now();
-          catTaps.current.chorusUntil = now + PURR_CHORUS_MS;
-          speakUntil.current = now + 1250;
-          onFoundRef.current?.("mrrp");
-          typedRoomCode = "";
-          play("purr");
-        } else if (typedRoomCode.endsWith(SUMMON_CODE)) {
-          const now = performance.now();
-          summonUntil.current = now + SUMMON_MS;
-          onFoundRef.current?.("summon");
-          speakUntil.current = now + 1000;
-          typedRoomCode = "";
-          play("chirp");
-        } else if (typedRoomCode.endsWith(BOX_CODE)) {
-          const now = performance.now();
-          secretBoxUntil.current = now + SECRET_BOX_MS;
-          onFoundRef.current?.("box");
-          boxPeekUntil.current = now + 1200;
-          lookAt.current = { x: BOX_X + 5, until: now + 2200 };
-          speakUntil.current = now + 950;
-          bounce.current = 1;
-          typedRoomCode = "";
-          play("thump");
-        } else if (typedRoomCode.endsWith(YARN_CODE)) {
-          const now = performance.now();
-          yarnUntil.current = now + YARN_MS;
-          onFoundRef.current?.("yarn");
-          speakUntil.current = now + 900;
-          bounce.current = 1;
-          typedRoomCode = "";
-          play("brush");
-        } else if (typedRoomCode.endsWith(TREAT_CODE)) {
-          const now = performance.now();
-          treatUntil.current = now + TREAT_MS;
-          onFoundRef.current?.("treat");
-          lookAt.current = { x: TREAT_X, until: now + TREAT_MS };
-          speakUntil.current = now + 900;
-          bounce.current = 1;
-          typedRoomCode = "";
-          play("settle");
-        } else if (typedRoomCode.endsWith(CATNIP_CODE)) {
-          const now = performance.now();
-          catnipUntil.current = now + CATNIP_MS;
-          onFoundRef.current?.("catnip");
-          lookAt.current = { x: CATNIP_X, until: now + CATNIP_MS };
-          speakUntil.current = now + 1100;
-          bounce.current = 1;
-          typedRoomCode = "";
-          play("chirp");
-        } else if (typedRoomCode.endsWith(MUSIC_CODE)) {
-          const now = performance.now();
-          music.current = { until: now + MUSIC_MS, x: catX.current ?? GW / 2 };
-          onFoundRef.current?.("music");
-          speakUntil.current = now + 950;
-          bounce.current = 1;
-          typedRoomCode = "";
-          play("jingle");
-        } else if (typedRoomCode.endsWith(MOUSE_CODE)) {
-          const now = performance.now();
-          mouseStartedAt.current = now;
-          onFoundRef.current?.("mouse");
-          lookAt.current = { x: 14, until: now + MOUSE_MS };
-          speakUntil.current = now + 1100;
-          bounce.current = 1;
-          typedRoomCode = "";
-          play("chirp");
-        } else if (typedRoomCode.endsWith(BUBBLE_CODE)) {
-          const now = performance.now();
-          bubbleGame.current = {
-            startedAt: now,
-            seeds: bubbleSeeds(catX.current ?? GW / 2),
-            popped: new Set(),
-            completedAt: -1e9,
-            lastPop: null,
-          };
-          onFoundRef.current?.("bubbles");
-          speakUntil.current = now + 1050;
-          bounce.current = 1;
-          typedRoomCode = "";
-          play("twinkle");
-        } else if (typedRoomCode.endsWith(PIANO_CODE)) {
-          const now = performance.now();
-          pianoGame.current = {
-            until: now + PIANO_MS,
-            center: catX.current ?? GW / 2,
-            lastKey: -1,
-            lastAt: -1e9,
-            history: [],
-            rewardUntil: -1e9,
-          };
-          onFoundRef.current?.("piano");
-          speakUntil.current = now + 950;
-          bounce.current = 1;
-          typedRoomCode = "";
-          play("twinkle");
-        } else if (typedRoomCode.endsWith(STARS_CODE)) {
-          if (constellation.current.found.size === CONSTELLATION_KEYS.length) {
-            const now = performance.now();
-            constellation.current.rewardUntil = now + CONSTELLATION_REWARD_MS;
-            catTaps.current.chorusUntil = now + PURR_CHORUS_MS;
+        const typed = typeLetter(typedRoomCode, e.key, catCallCode(lookRef.current.name));
+        typedRoomCode = typed.buffer;
+        const now = performance.now();
+        switch (typed.fired) {
+          case "herName":
+            nameCallUntil.current = now + NAME_CALL_MS;
+            onFoundRef.current?.("herName");
             speakUntil.current = now + 1200;
             bounce.current = 1;
+            play("purr");
+            // Both of them having called her is what earns this, so it stays rare once earned.
+            if (bothCalledRef.current && Math.random() < 1 / 3) {
+              summonUntil.current = now + SUMMON_MS;
+            }
+            break;
+          case "mrrp":
+            catTaps.current.chorusUntil = now + PURR_CHORUS_MS;
+            speakUntil.current = now + 1250;
+            onFoundRef.current?.("mrrp");
+            play("purr");
+            break;
+          case "summon":
+            summonUntil.current = now + SUMMON_MS;
+            onFoundRef.current?.("summon");
+            speakUntil.current = now + 1000;
+            play("chirp");
+            break;
+          case "box":
+            secretBoxUntil.current = now + SECRET_BOX_MS;
+            onFoundRef.current?.("box");
+            boxPeekUntil.current = now + 1200;
+            lookAt.current = { x: BOX_X + 5, until: now + 2200 };
+            speakUntil.current = now + 950;
+            bounce.current = 1;
+            play("thump");
+            break;
+          case "yarn":
+            yarnUntil.current = now + YARN_MS;
+            onFoundRef.current?.("yarn");
+            speakUntil.current = now + 900;
+            bounce.current = 1;
+            play("brush");
+            break;
+          case "treat":
+            treatUntil.current = now + TREAT_MS;
+            onFoundRef.current?.("treat");
+            lookAt.current = { x: TREAT_X, until: now + TREAT_MS };
+            speakUntil.current = now + 900;
+            bounce.current = 1;
+            play("settle");
+            break;
+          case "catnip":
+            catnipUntil.current = now + CATNIP_MS;
+            onFoundRef.current?.("catnip");
+            lookAt.current = { x: CATNIP_X, until: now + CATNIP_MS };
+            speakUntil.current = now + 1100;
+            bounce.current = 1;
+            play("chirp");
+            break;
+          case "music":
+            music.current = { until: now + MUSIC_MS, x: catX.current ?? GW / 2 };
+            onFoundRef.current?.("music");
+            speakUntil.current = now + 950;
+            bounce.current = 1;
+            play("jingle");
+            break;
+          case "mouse":
+            mouseStartedAt.current = now;
+            onFoundRef.current?.("mouse");
+            lookAt.current = { x: 14, until: now + MOUSE_MS };
+            speakUntil.current = now + 1100;
+            bounce.current = 1;
+            play("chirp");
+            break;
+          case "bubbles":
+            bubbleGame.current = {
+              startedAt: now,
+              seeds: bubbleSeeds(catX.current ?? GW / 2),
+              popped: new Set(),
+              completedAt: -1e9,
+              lastPop: null,
+            };
+            onFoundRef.current?.("bubbles");
+            speakUntil.current = now + 1050;
+            bounce.current = 1;
             play("twinkle");
-            onFoundRef.current?.("constellation");
-          }
-          typedRoomCode = "";
+            break;
+          case "piano":
+            pianoGame.current = {
+              until: now + PIANO_MS,
+              center: catX.current ?? GW / 2,
+              lastKey: -1,
+              lastAt: -1e9,
+              history: [],
+              rewardUntil: -1e9,
+            };
+            onFoundRef.current?.("piano");
+            speakUntil.current = now + 950;
+            bounce.current = 1;
+            play("twinkle");
+            break;
+          case "stars":
+            // Typing it always spends the code. Finding every star is what makes it do anything.
+            if (constellation.current.found.size === CONSTELLATION_KEYS.length) {
+              constellation.current.rewardUntil = now + CONSTELLATION_REWARD_MS;
+              catTaps.current.chorusUntil = now + PURR_CHORUS_MS;
+              speakUntil.current = now + 1200;
+              bounce.current = 1;
+              play("twinkle");
+              onFoundRef.current?.("constellation");
+            }
+            break;
         }
       } else if (!ROOM_CODE.includes(e.key)) {
         typedRoomCode = "";
