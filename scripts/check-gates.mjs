@@ -20,6 +20,7 @@ const PNPM_OWN = new Set([
   "create",
   "deploy",
   "dlx",
+  "docs",
   "env",
   "exec",
   "fetch",
