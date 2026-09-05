@@ -2071,8 +2071,8 @@ function RoomPage({ id }: { id: string }) {
                 One slot each, and neither is shown the other's. It used to sit in his setup panel,
                 which is where you name and dress her: the one thing in there that was not about her.
             */}
-            <details className={s.disclosure}>
-              <summary className={s.disclosureHead}>a day worth remembering</summary>
+            <details>
+              <summary>a day worth remembering</summary>
               <div style={{ marginTop: 8 }}>
                 <input
                   className={`${s.input} ${s.dateInput}`}
