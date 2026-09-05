@@ -4,7 +4,7 @@ import type { Pose } from "./sprites.js";
 export interface Response {
   /* What she is doing, as he reads it. Several address him: "sitting on you", "loafing right next to you". */
   doing: string;
-  /* What she is doing, as he reads it. Several address him: "sitting on you", "loafing right next to you". */
+  /* The same moment as she reads it, so "sitting on you" becomes "settled in". Falls back to `doing`. */
   doingHers?: string;
   snug: number;
   play: number;

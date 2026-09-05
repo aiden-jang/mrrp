@@ -12,12 +12,13 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "gates": "node scripts/check-gates.mjs",
+    "size": "node scripts/check-size.mjs",
+    "comments": "node scripts/check-comments.mjs",
     "docs": "node scripts/check-docs.mjs",
     "lint": "eslint . --ext .ts,.tsx",
-    "size": "node scripts/check-size.mjs",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
-    "verify": "pnpm run gates && pnpm run size && pnpm run docs && pnpm run typecheck && pnpm run lint && pnpm run format:check && pnpm run build && pnpm run test && pnpm run e2e"
+    "verify": "pnpm run gates && pnpm run size && pnpm run comments && pnpm run docs && pnpm run typecheck && pnpm run lint && pnpm run format:check && pnpm run build && pnpm run test && pnpm run e2e"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.18.0",
