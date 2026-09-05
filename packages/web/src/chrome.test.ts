@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { chromeFor } from "./App.js";
 import { sceneFor } from "./hours.js";
 import { contrast } from "./legible.js";
-import readme from "../../../README.md?raw";
+import decisions from "../../../DECISIONS.md?raw";
 
 const CLOCK = { tz: "UTC", homeHour: 20 };
 
@@ -36,10 +36,10 @@ describe("text you can read at any hour", () => {
     expect(bad).toEqual([]);
   });
 
-  it("keeps the number written down in README.md true", () => {
+  it("keeps the number written down in DECISIONS.md true", () => {
     /*
-     * The README states the worst ratio to two decimals. A number in prose has no way of being
-     * wrong out loud, so it drifts: it said 4.54 while the palette had moved to 4.53.
+     * The doc states the worst ratio to two decimals. A number in prose has no way of being wrong
+     * out loud, so it drifts: it said 4.54 while the palette had moved to 4.53.
      *
      * This asserts the doc against the code rather than against a constant, so retinting the
      * chrome fails here and the fix is to write the new number down.
@@ -47,8 +47,8 @@ describe("text you can read at any hour", () => {
     const worst = Math.min(
       ...HOURS.flatMap(({ chrome }) => PAIRS.map(([fg, bg]) => contrast(chrome[fg]!, chrome[bg]!))),
     );
-    const claimed = readme.match(/the worst ratio anywhere is (\d+\.\d+)/)?.[1];
-    expect(claimed, "README.md no longer states a worst ratio").toBeDefined();
+    const claimed = decisions.match(/the worst ratio anywhere is (\d+\.\d+)/)?.[1];
+    expect(claimed, "DECISIONS.md no longer states a worst ratio").toBeDefined();
     expect(worst.toFixed(2)).toBe(claimed);
   });
 });

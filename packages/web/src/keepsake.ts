@@ -89,7 +89,7 @@ async function keepsakeFontReady(): Promise<void> {
   try {
     await Promise.all([document.fonts.load("600 42px Quicksand"), document.fonts.load("700 32px Quicksand")]);
   } catch {
-    // Private mode. The write just does not survive a reload.
+    // The card draws in the fallback stack rather than not at all.
   }
 }
 
