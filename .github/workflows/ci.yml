@@ -24,6 +24,9 @@ jobs:
       - run: pnpm run size
       - run: pnpm run comments
       - run: pnpm run css-vars
+      # `s.typo` is undefined, which React renders as no class at all: the element appears, unstyled,
+      # and nothing errors. The room's date disclosure sat like that.
+      - run: pnpm run css-classes
       - run: pnpm run docs
       - run: pnpm run typecheck
       # react-hooks/rules-of-hooks is why this step exists. A hook below an early return is invisible
