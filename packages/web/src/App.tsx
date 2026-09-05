@@ -2072,7 +2072,7 @@ function RoomPage({ id }: { id: string }) {
                 which is where you name and dress her: the one thing in there that was not about her.
             */}
             <details>
-              <summary>a day worth remembering</summary>
+              <summary className={s.summary}>a day worth remembering</summary>
               <div style={{ marginTop: 8 }}>
                 <input
                   className={`${s.input} ${s.dateInput}`}

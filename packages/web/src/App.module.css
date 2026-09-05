@@ -652,6 +652,12 @@ details[open] > .recoverySummary::before {
   transform: rotate(45deg);
 }
 
+/* The room strip is centred, and a flex summary is a full-width row: without this the chevron and
+   its label sit against the left edge of a section where everything else is in the middle. */
+.roomBits .summary {
+  justify-content: center;
+}
+
 .selectWrap {
   position: relative;
   display: block;
