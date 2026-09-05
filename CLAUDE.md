@@ -99,3 +99,28 @@ context and a frame clock the test drives, so layering and timing get assertions
 somebody squinting at a browser.
 
 Anything true only some of the time is tested numerically, never by looking.
+
+## Reading the code
+
+The reasoning lives in [`DECISIONS.md`](DECISIONS.md), not in the source. That split is the whole
+convention here: if a change needed a paragraph to justify, the paragraph goes in that file and the
+code gets a warning. Comments in the code are kept for three things only:
+
+- a trap that has actually bitten somebody, like the whole-pixel rule or the two gain stages in
+  `sound.ts` where one node would let the LFO and the envelope fight over the same parameter
+- a rule that fails silently when broken, like the seat checks in the Durable Object or the spoiler
+  filter in `dreams.ts`
+- why not the obvious alternative, where a reader would reasonably try the obvious thing and quietly
+  break something
+
+Everything else was moved to `DECISIONS.md` or deleted. If you are wondering why something is shaped
+the way it is and the code does not say, that is deliberate: it is in the doc.
+
+They are written as warnings, not descriptions, and mostly as `//` rather than block comments. Two
+lines of prose inside a four-line box reads as documentation; the same two lines as `//` read as
+somebody leaning over your shoulder saying "don't".
+
+Three kinds of comment here are load-bearing and must survive any tidy-up: `// prettier-ignore`,
+which holds the sprite grids readable, `// eslint-disable-next-line`, and the line inside every
+empty `catch {}`, which is the only thing keeping `no-empty` quiet. Removing a comment cannot break
+a build, right up until the comment was doing a job.
