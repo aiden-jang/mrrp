@@ -23,6 +23,7 @@ jobs:
       - run: pnpm run gates
       - run: pnpm run size
       - run: pnpm run comments
+      - run: pnpm run css-vars
       - run: pnpm run docs
       - run: pnpm run typecheck
       # react-hooks/rules-of-hooks is why this step exists. A hook below an early return is invisible
