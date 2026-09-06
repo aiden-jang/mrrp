@@ -39,7 +39,7 @@ export interface SignedInAs {
 
 export async function whoAmI(): Promise<SignedInAs> {
   try {
-    const r = await fetch("/api/me");
+    const r = await timed("/api/me");
     if (!r.ok) return { signedIn: false, name: null };
     return (await r.json()) as SignedInAs;
   } catch {
@@ -52,12 +52,27 @@ export function adoptSeat(seat: string | null): void {
 }
 
 /* Typed per endpoint, so a misspelled field stops the build instead of being dropped in flight. */
+/* A hung request never settles, so `load` never reaches its catch, the error line never appears and
+   a stale room sits on screen looking live -- which for a room about whether somebody is there is the
+   one wrong answer. Under the shortest poll gap, so a timed-out read cannot overlap the next one. */
+const REQUEST_TIMEOUT_MS = 10_000;
+
+async function timed(path: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(path, { ...init, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+  } catch (e) {
+    // The abort reads as "signal timed out", which is not a sentence to hand somebody here.
+    if (e instanceof DOMException && e.name === "TimeoutError") throw new Error("That took too long.");
+    throw e;
+  }
+}
+
 async function send<K extends keyof Bodies>(
   path: `/api/room/${string}/${K}`,
   body: Bodies[K],
 ): Promise<Response> {
   try {
-    return await fetch(path, {
+    return await timed(path, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
@@ -152,7 +167,7 @@ export async function fetchRoom(id: string, name?: string | null): Promise<RoomV
   if (name) q.set("name", name);
   let r: Response;
   try {
-    r = await fetch(`/api/room/${id}?${q}`);
+    r = await timed(`/api/room/${id}?${q}`);
   } catch {
     throw new Error("Can't reach the room. Still trying.");
   }
@@ -299,7 +314,7 @@ export function doPoke(id: string, what: string): void {
 // invites anybody in, and it cannot ask by reading the room: that would take the seat.
 export async function roomIsGone(id: string): Promise<boolean> {
   try {
-    const r = await fetch(`/api/room/${id}/alive`);
+    const r = await timed(`/api/room/${id}/alive`);
     return r.status === 410;
   } catch {
     // A dropped connection is not a deleted room. The door stays open and the read behind it says so properly.
@@ -308,13 +323,13 @@ export async function roomIsGone(id: string): Promise<boolean> {
 }
 
 export async function fetchNotes(id: string): Promise<string[]> {
-  const r = await fetch(`/api/room/${id}/notes?me=${encodeURIComponent(myToken())}`);
+  const r = await timed(`/api/room/${id}/notes?me=${encodeURIComponent(myToken())}`);
   if (!r.ok) throw new Error("Couldn't get your notes.");
   return (await r.json()).notes as string[];
 }
 
 export async function fetchSaid(id: string): Promise<SaidSoFar> {
-  const r = await fetch(`/api/room/${id}/said?me=${encodeURIComponent(myToken())}`);
+  const r = await timed(`/api/room/${id}/said?me=${encodeURIComponent(myToken())}`);
   if (!r.ok) throw new Error("Couldn't get that.");
   return (await r.json()) as SaidSoFar;
 }
