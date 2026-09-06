@@ -51,10 +51,8 @@ export function adoptSeat(seat: string | null): void {
   if (seat && seat !== localStorage.getItem(TOKEN_KEY)) localStorage.setItem(TOKEN_KEY, seat);
 }
 
-/* Typed per endpoint, so a misspelled field stops the build instead of being dropped in flight. */
-/* A hung request never settles, so `load` never reaches its catch, the error line never appears and
-   a stale room sits on screen looking live -- which for a room about whether somebody is there is the
-   one wrong answer. Under the shortest poll gap, so a timed-out read cannot overlap the next one. */
+/* A hang settles nothing, so no catch runs and a stale room sits on screen looking live. Under the
+   shortest poll gap, so a timed-out read cannot overlap the next one. */
 const REQUEST_TIMEOUT_MS = 10_000;
 
 async function timed(path: string, init?: RequestInit): Promise<Response> {
@@ -67,6 +65,7 @@ async function timed(path: string, init?: RequestInit): Promise<Response> {
   }
 }
 
+/* Typed per endpoint, so a misspelled field stops the build instead of being dropped in flight. */
 async function send<K extends keyof Bodies>(
   path: `/api/room/${string}/${K}`,
   body: Bodies[K],

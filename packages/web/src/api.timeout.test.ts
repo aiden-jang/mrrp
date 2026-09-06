@@ -4,12 +4,8 @@ import { fetchRoom, fetchSaid, roomIsGone } from "./api";
 
 afterEach(() => vi.unstubAllGlobals());
 
-/**
- * What a bounded request does when it gives up.
- *
- * The bound itself is the platform's; what is worth pinning is that timing out is handled like a
- * dropped connection rather than escaping as "signal timed out" or reading as a deleted room.
- */
+/* The bound itself is the platform's. What is worth pinning is that a timeout is handled like a
+   dropped connection rather than escaping raw or reading as a deleted room. */
 function timesOut(): void {
   vi.stubGlobal("fetch", () => Promise.reject(new DOMException("signal timed out", "TimeoutError")));
 }
