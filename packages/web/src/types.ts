@@ -136,10 +136,6 @@ export interface Bodies {
   "window-light": { me: string };
 }
 
-// The same fields as a handler sees them: all optional, because nothing is promised to arrive. This
-// is a cast over untrusted JSON and proves nothing. What it buys is one place for the names.
-export type Untrusted<K extends keyof Bodies> = Partial<Bodies[K]>;
-
 export interface Told2 {
   text: string;
   at: number;
