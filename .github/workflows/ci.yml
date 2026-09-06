@@ -28,6 +28,8 @@ jobs:
       # and nothing errors. The room's date disclosure sat like that.
       - run: pnpm run css-classes
       - run: pnpm run docs
+      # An export nothing imports and a dependency nothing uses are both dead weight nobody notices.
+      - run: pnpm run knip
       - run: pnpm run typecheck
       # react-hooks/rules-of-hooks is why this step exists. A hook below an early return is invisible
       # to typecheck, build and tests, and it took every group page in owewell down in production.

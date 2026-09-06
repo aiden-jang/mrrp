@@ -14,10 +14,6 @@ export const BLANKET_KEYS = Object.keys(BLANKETS) as BlanketKey[];
 
 export const DEFAULT_BLANKET: BlanketKey = "rose";
 
-export function isBlanketKey(value: unknown): value is BlanketKey {
-  return typeof value === "string" && (BLANKET_KEYS as string[]).includes(value);
-}
-
 export function blanketPalette(key: BlanketKey | null): Record<string, string> {
   return BLANKETS[key ?? DEFAULT_BLANKET];
 }

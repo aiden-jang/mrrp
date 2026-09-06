@@ -12,6 +12,7 @@ import type {
   Mood as MoodSent,
   RoomView as ViewSent,
   SaidSoFar as SaidSent,
+  Told as ToldSent,
   Told2 as Told2Sent,
   Treat as TreatSent,
 } from "../../worker/src/types.js";
@@ -34,6 +35,7 @@ import type {
   Mood,
   RoomView,
   SaidSoFar,
+  Told,
   Told2,
   Treat,
 } from "./types.js";
@@ -50,6 +52,7 @@ type Same<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 
 export const roomViewAgrees: Same<ViewSent, RoomView> = true;
 export const arrivalAgrees: Same<ArrivalSent, Arrival> = true;
 export const saidSoFarAgrees: Same<SaidSent, SaidSoFar> = true;
+export const toldAgrees: Same<ToldSent, Told> = true;
 export const told2Agrees: Same<Told2Sent, Told2> = true;
 export const bodiesAgree: Same<BodiesSent, Bodies> = true;
 
