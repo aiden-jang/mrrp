@@ -248,8 +248,8 @@ today is keyed to her local day; this is too now.
 No sprite sheets, no generated art, no images fetched at runtime. The cat and the room are grids of
 characters in the source, and one logical pixel is drawn as one aligned rectangle.
 
-The pipeline for generated art was actually built — six room states, nine poses, a DOM interaction
-layer — and then reverted. A generated room is a picture of a room, and this app is two people
+The pipeline for generated art was actually built (six room states, nine poses, a DOM interaction
+layer) and then reverted. A generated room is a picture of a room, and this app is two people
 watching a cat notice things. Every interaction had to be re-aligned to artwork that no longer knew
 where the furniture was, and the result was richer and deader. See `ART.md`.
 
@@ -304,7 +304,7 @@ browser is what makes the app frictionless: no account, no email, nothing asked 
 
 Automatic reclaim of an abandoned seat was built and reverted. The rule was "a seat used for under a
 day and cold for a day goes to the next person who opens the link". It broke a rule the test suite
-already encoded — a stranger stays a stranger — because a real second person who looked once and got
+already encoded, and a stranger stays a stranger, because a real second person who looked once and got
 busy for a week would lose her seat to anyone with the link. It also did not fix the case that
 prompted it: opening the link in a private window and sending it on the same day leaves the seat warm,
 so she would still be locked out. Recovery is the answer, not expiry.
@@ -317,7 +317,7 @@ asks you to.
 The most valuable moment in this app is somebody tapping a link and being in a room with a cat. A
 sign-in page in front of that taxes exactly that moment. So the account does one job: it delivers the
 seat token you already had. The view returns the seat it resolved, the client adopts it, and every code
-path after that is identical to somebody who never signed in — which is why accounts touch one method
+path after that is identical to somebody who never signed in, which is why accounts touch one method
 in the Durable Object rather than all of them. An auth outage looks the same as never having signed
 in everywhere except the one route that needs an account; see below.
 
