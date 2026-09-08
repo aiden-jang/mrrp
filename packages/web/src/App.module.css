@@ -613,6 +613,18 @@
 }
 
 /*
+ * The browser's own disabled rendering washes this to about 1.8:1, which reads as neither a button
+ * nor a reason. Recessed but legible instead, at 4.8:1, so "waiting on your name" is visible.
+ */
+.btn:disabled {
+  background: color-mix(in srgb, var(--honey) 22%, var(--panel));
+  border-color: color-mix(in srgb, var(--honey) 45%, var(--panel));
+  color: color-mix(in srgb, var(--ink) 75%, var(--panel));
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+/*
  * `list-style: none` removes the default triangle. Safari also needs the `::-webkit-details-marker`
  * rule below, or it draws its own anyway.
  */
