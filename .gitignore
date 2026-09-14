@@ -7,3 +7,7 @@ dist/
 
 test-results/
 playwright-report/
+
+# Claude Code: launch.json is committed so the repo says how to run itself; local settings are
+# per-machine permission grants with absolute paths in them.
+.claude/settings.local.json
