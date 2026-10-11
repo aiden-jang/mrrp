@@ -51,6 +51,7 @@ import {
 } from "./api.js";
 import { Cat } from "./Cat.js";
 import { Welcome } from "./Welcome.js";
+import { Invitation, MoodResponse, RoomHeader } from "./RoomChrome.js";
 import { useLive } from "./live.js";
 import { heard } from "./heard.js";
 import { coveredBy, liveOnly } from "./recent.js";
@@ -638,8 +639,7 @@ function RoomPage({ id }: { id: string }) {
     return () => window.clearTimeout(done);
   }, [view?.bothHereNow]);
 
-  // Only ever the door, never a form. She is the cat and he named her when he made the room, so never
-  // ask her for a name.
+  // The recipient is the cat; the creator already chose her name.
   const [asking, setAsking] = useState(() => !beenHere(id));
   const [shareResult, setShareResult] = useState<"copied" | "shared" | null>(null);
   const [did, setDid] = useState<string | null>(null);
@@ -1070,36 +1070,21 @@ function RoomPage({ id }: { id: string }) {
     return (
       <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
         <ChromeSync night={isNightChrome(door.sun)} />
-        {/*
-            The first thing she ever sees, and for a long time it said "someone made you a cat". That is the
-            sentence the whole app moved away from: it means somebody gave her a pet. She is the cat.
-        */}
-        <div className={s.card} style={{ textAlign: "center" }}>
-          <div className={s.stage} style={{ marginBottom: 14 }}>
-            <Cat
-              label="A pixel cat in a quiet room, waiting."
-              look={DOOR_CAT}
-              clock={DOOR_CLOCK}
-              mood={null}
-              nudge={0}
-              reserveBelow={300}
-            />
-          </div>
-          <h1 className={s.h1}>mrrp</h1>
-          <p className={s.lede} style={{ margin: "0 auto 20px" }}>
-            Somebody made you a room, and you are the cat in it.
-          </p>
-          <button
-            className={`${s.btn} ${s.btnGo}`}
-            style={{ width: "100%", marginTop: 10 }}
-            onClick={() => {
-              markMine(id);
-              setAsking(false);
-            }}
-          >
-            Go in
-          </button>
-        </div>
+        <Invitation
+          onEnter={() => {
+            markMine(id);
+            setAsking(false);
+          }}
+        >
+          <Cat
+            label="A pixel cat in a quiet room, waiting."
+            look={DOOR_CAT}
+            clock={DOOR_CLOCK}
+            mood={null}
+            nudge={0}
+            reserveBelow={300}
+          />
+        </Invitation>
       </main>
     );
   }
@@ -1217,9 +1202,24 @@ function RoomPage({ id }: { id: string }) {
       <VoiceSync fur={view.cat.fur} monthsOld={view.monthsOld} />
       <DocTitle name={view.cat.name} />
       <FaviconSync cat={view.cat} />
-      <h1 className={s.srOnly}>{`${view.cat.name}'s room`}</h1>
-      <SoundToggle />
       <div className={s.card}>
+        <RoomHeader
+          name={view.cat.name}
+          presence={
+            view.themHereNow
+              ? "Both here. Excellent use of time."
+              : view.youAreHer
+                ? `${view.them ?? "Your person"} isn’t here right now. The room is.`
+                : "Just you for now. Make yourself comfortable."
+          }
+        >
+          <SoundToggle />
+        </RoomHeader>
+        {did === "saved" && (
+          <p className={s.saveFeedback} role="status">
+            Saved. A very considered look.
+          </p>
+        )}
         <div ref={stage} className={`${s.stage} ${arriving ? s.stageArrival : ""}`}>
           <Cat
             collectionKey={id}
@@ -1558,7 +1558,12 @@ function RoomPage({ id }: { id: string }) {
               <button
                 className={`${s.btn} ${s.btnGo}`}
                 disabled={savingSetup}
-                onClick={() => void cat.save()}
+                onClick={async () => {
+                  if (await cat.save()) {
+                    setDid("saved");
+                    setTimeout(() => setDid(null), 2600);
+                  }
+                }}
               >
                 {savingSetup ? "Saving..." : "Save"}
               </button>
@@ -1785,7 +1790,7 @@ function RoomPage({ id }: { id: string }) {
                 <button
                   key={m.id}
                   aria-pressed={view.catMood === m.id}
-                  className={`${s.mood} ${view.catMood === m.id ? s.moodOn : ""}`}
+                  className={`${s.mood} ${s.moodChoice} ${view.catMood === m.id ? s.moodOn : ""}`}
                   style={
                     view.catMood === m.id
                       ? { justifyContent: "center", padding: "9px 8px" }
@@ -1804,6 +1809,7 @@ function RoomPage({ id }: { id: string }) {
                 </button>
               ))}
             </div>
+            <MoodResponse mood={view.catMood} />
           </>
         ) : (
           <>
@@ -1928,8 +1934,8 @@ function RoomPage({ id }: { id: string }) {
             )}
 
             {iAmHim && (
-              <p className={s.did} style={{ opacity: did ? 1 : 0 }} aria-live="polite">
-                {did ? `She'll see that you ${did}.` : "\u00a0"}
+              <p className={s.did} style={{ opacity: did && did !== "saved" ? 1 : 0 }} aria-live="polite">
+                {did && did !== "saved" ? `She'll see that you ${did}.` : "\u00a0"}
               </p>
             )}
 
@@ -1996,22 +2002,15 @@ function RoomPage({ id }: { id: string }) {
             )}
           </>
         )}
-        {/*
-            Keep this pinned. One `err` serves a room twice a phone screen tall, so unpinned it lands below the
-            fold and a failure looks like nothing happening.
-        */}
+        {/* Keep errors visible while the room or settings scroll beneath them. */}
         {err && (
           <p className={s.errorBar} role="status">
             {err}
           </p>
         )}
         {!setup && (iAmHim || view.youAreHer) && (
-          <section className={s.roomBits} aria-label="This room">
-            <p className={s.roomBitsTitle}>this room</p>
-            {/*
-                One slot each, and neither is shown the other's. It used to sit in his setup panel,
-                which is where you name and dress her: the one thing in there that was not about her.
-            */}
+          <details className={s.roomBits}>
+            <summary className={s.roomBitsTitle}>Room & account</summary>
             <details>
               <summary className={s.summary}>a day worth remembering</summary>
               <div style={{ marginTop: 8 }}>
@@ -2214,7 +2213,7 @@ function RoomPage({ id }: { id: string }) {
                 )}
               </details>
             )}
-          </section>
+          </details>
         )}
         <footer className={s.footer}>
           <p className={s.small} style={{ textAlign: "center" }}>

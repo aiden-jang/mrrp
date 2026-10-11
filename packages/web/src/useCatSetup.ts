@@ -43,7 +43,7 @@ export function useCatSetup(id: string, view: RoomView | null, reload: () => Pro
   };
 
   const save = async () => {
-    if (!draft) return;
+    if (!draft) return false;
     play("settle");
     const look = LOOKS.find((l) => l.id === draft.look)!;
     const eyes = EYES.find((e) => e.id === draft.eyes)!;
@@ -55,10 +55,13 @@ export function useCatSetup(id: string, view: RoomView | null, reload: () => Pro
       await doNotes(id, draft.notes.split("\n"));
       setOpen(false);
       await reload();
+      return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't save that.");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
+    return false;
   };
 
   return { open, draft, setDraft, saving, error, start, save, close: () => setOpen(false) };
