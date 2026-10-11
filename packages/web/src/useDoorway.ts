@@ -5,7 +5,7 @@ import type { RoomView } from "./types.js";
 const OPEN_MS = 4200;
 const STAY_MS = 180_000;
 
-/* `watchAt` is the leaving half only. An arrival she answers with a chirp instead of getting up. */
+/* Only presence changes trigger a glance; regular room updates must not replay it. */
 export function useDoorway(view: RoomView | null) {
   const [openAt, setOpenAt] = useState<number | null>(null);
   const [watchAt, setWatchAt] = useState<number | null>(null);
@@ -28,14 +28,15 @@ export function useDoorway(view: RoomView | null) {
   }, [yourSeat, swing]);
 
   useEffect(() => {
-    const here = view?.themHereNow ?? false;
+    if (!view) return;
+    const here = view.themHereNow;
     const prev = wasHere.current;
     wasHere.current = here;
     if (prev === null || prev === here) return;
     if (here) play("chirp");
-    else setWatchAt(Date.now());
+    if (!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) setWatchAt(Date.now());
     swing();
-  }, [view?.themHereNow, swing]);
+  }, [view, swing]);
 
   return { openAt, watchAt };
 }

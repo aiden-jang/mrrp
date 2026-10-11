@@ -138,3 +138,16 @@ describe("the box's near wall", () => {
     expect(r.count(stressedMat, 55, 75), "her mood survives the box").toBeGreaterThan(20);
   });
 });
+
+describe("noticing their arrival", () => {
+  it("looks up before the slow blink, then opens her eyes again", () => {
+    r = room({ together: false });
+    r.set({ together: true, watchDoorAt: 1 });
+    r.run(16, 2000);
+    expect(r.count("#fffdf6", 44, 67), "awake while looking toward the door").toBeGreaterThan(0);
+    r.run(2016, 2600);
+    expect(r.count("#fffdf6", 44, 67), "slow blink after the glance").toBe(0);
+    r.frame(3300);
+    expect(r.count("#fffdf6", 44, 67), "back to the room").toBeGreaterThan(0);
+  });
+});

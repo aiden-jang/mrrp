@@ -163,7 +163,7 @@ const PRINT_FADE_MS = 9000;
 
 const DOOR_CENTRE = 12;
 const SWIPE_MS = 620;
-const WATCH_DOOR_MS = 7000;
+const WATCH_DOOR_MS = 2200;
 const PET_TAP_MS = 1800;
 
 const MUG_FLOOR_X = 66,
@@ -2213,13 +2213,13 @@ export function Cat({
         play("purr");
       }
       if (!togetherRef.current) slowBlink.current.greeted = false;
-      if (togetherRef.current && !slowBlink.current.greeted && t >= slowBlink.current.until) {
+      const ready = t >= Math.max(slowBlink.current.until, watchDoorUntil.current);
+      if (togetherRef.current && !slowBlink.current.greeted && ready) {
         slowBlink.current.greeted = true;
         slowBlink.current.until = t + SLOW_BLINK_MS;
       }
 
       const slowBlinking = t < slowBlink.current.until;
-
       const expression = facialMoment(t, moodRef.current);
       const blink = !reduce && expression.blink;
       const la = lookAt.current;
