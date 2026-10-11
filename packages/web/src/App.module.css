@@ -1123,3 +1123,72 @@ details[open] > .recoverySummary::before {
   font-size: 13px;
   margin: 0 0 16px;
 }
+
+.decorPicker {
+  margin: 24px 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.decorPicker legend {
+  padding: 0 8px;
+  font-weight: 600;
+}
+.decorPalettes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 16px 0;
+}
+.decorPalettes button {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 10px 4px;
+  font-size: 12px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--ink);
+}
+.decorPalettes button[aria-pressed="true"] {
+  border-color: var(--honey);
+  box-shadow: inset 0 0 0 1px var(--honey);
+}
+.decorPalettes span {
+  width: 30px;
+  height: 30px;
+  border: 6px solid;
+  border-radius: 10px;
+}
+.decorObjects {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.decorObjects label {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+}
+.decorObjects select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px;
+  font: inherit;
+  color: var(--ink);
+  background: var(--panel);
+}
+@media (max-width: 440px) {
+  .decorPalettes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .decorObjects {
+    grid-template-columns: 1fr;
+  }
+}

@@ -23,6 +23,31 @@ test("he makes a room, she goes in, and each gets their own half", async ({ page
   await expect(page.getByRole("button", { name: /Write her notes/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Say something back/ })).toHaveCount(0);
 
+  await page.getByRole("button", { name: /Write her notes/ }).click();
+  await page.getByRole("button", { name: "Moss", exact: true }).click();
+  await page.getByLabel("Rug", { exact: true }).selectOption("stripe");
+  await page.getByLabel("Wall print", { exact: true }).selectOption("moon");
+  await page.getByLabel("Mug", { exact: true }).selectOption("rose");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("Saved. A very considered look.");
+  await page.reload();
+  await page.getByRole("button", { name: /Write her notes/ }).click();
+  await expect(page.getByRole("button", { name: "Moss", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(page.getByLabel("Rug", { exact: true })).toHaveValue("stripe");
+  await expect(page.getByLabel("Wall print", { exact: true })).toHaveValue("moon");
+  await expect(page.getByLabel("Mug", { exact: true })).toHaveValue("rose");
+  await page.getByRole("button", { name: "Midnight", exact: true }).click();
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await page.getByRole("button", { name: /Write her notes/ }).click();
+  await expect(page.getByRole("button", { name: "Moss", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+
   // --- her side, a different browser entirely -----------------------------------------------
   const hers = await browser.newContext();
   const her = await hers.newPage();

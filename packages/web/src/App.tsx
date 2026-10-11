@@ -1,3 +1,4 @@
+import { RoomDecorPicker } from "./RoomDecorPicker.js";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type {
   Action,
@@ -509,8 +510,7 @@ function RoomPage({ id }: { id: string }) {
   const handleCaptureReady = useCallback((capture: () => Promise<Blob | null>) => {
     setCaptureRoom(() => capture);
   }, []);
-  // Keep this memoized. An inline arrow is a new function on every render, and it is in the canvas
-  // effect's deps, so the canvas would remount.
+  // Keep this stable to avoid remounting the canvas.
   const handleRoomProps = useCallback(
     (props: { key: string; label: string }[], poke: (key: string) => void) => {
       setRoomProps({ props, poke });
@@ -639,7 +639,6 @@ function RoomPage({ id }: { id: string }) {
     return () => window.clearTimeout(done);
   }, [view?.bothHereNow]);
 
-  // The recipient is the cat; the creator already chose her name.
   const [asking, setAsking] = useState(() => !beenHere(id));
   const [shareResult, setShareResult] = useState<"copied" | "shared" | null>(null);
   const [did, setDid] = useState<string | null>(null);
@@ -656,8 +655,7 @@ function RoomPage({ id }: { id: string }) {
   }, [wantsLink, id]);
 
   const [mugFell, setMugFell] = useState<number | null>(null);
-  // Never set this from `shelfDown`. That is true all day, so she would walk to the shelf every time he
-  // opened the room. This is the moment it happened.
+  // Use the trip moment, not all-day `shelfDown`, to avoid repeat walks.
   const [shelfAt, setShelfAt] = useState<number | null>(null);
   const [petAt, setPetAt] = useState<number | null>(null);
   const [drawing, setDrawing] = useState(false);
@@ -1225,6 +1223,7 @@ function RoomPage({ id }: { id: string }) {
             collectionKey={id}
             label={`${previewLook.name} is ${scene.doing}.`}
             look={previewLook}
+            decor={setup && draft ? draft.decor : view.decor}
             clock={setup && draft ? { ...view.clock, tz: draft.tz, homeHour: draft.homeHour } : view.clock}
             mood={view.catMood}
             nudge={nudge}
@@ -1318,7 +1317,7 @@ function RoomPage({ id }: { id: string }) {
         </p>
         <p className={s.doing}>
           {setup
-            ? `Picking out ${previewLook.name}.`
+            ? "A few small adjustments."
             : view.waitingAtDoor
               ? view.youAreHer
                 ? "You are by the door, waiting for him."
@@ -1379,7 +1378,7 @@ function RoomPage({ id }: { id: string }) {
             id="setup-panel"
             ref={setupPanel}
             tabIndex={-1}
-            aria-label="Write her notes, name her and choose how she looks"
+            aria-label="Edit notes, cat appearance, and room"
           >
             <p className={s.panelTitle}>her</p>
 
@@ -1432,6 +1431,7 @@ function RoomPage({ id }: { id: string }) {
               ))}
             </div>
 
+            <RoomDecorPicker value={draft.decor} onChange={(decor) => setDraft((d) => ({ ...d!, decor }))} />
             <p className={s.fieldLabel}>her timezone</p>
             <Select value={draft.tz} onChange={(e) => setDraft((d) => ({ ...d!, tz: e.target.value }))}>
               {timezones().map((z) => (
@@ -1611,7 +1611,7 @@ function RoomPage({ id }: { id: string }) {
                 onClick={() => void cat.start()}
                 aria-expanded={setup}
               >
-                Write her notes, name her, choose how she looks
+                Write her notes, name her, or decorate the room
               </button>
             )}
             <button
@@ -1953,7 +1953,7 @@ function RoomPage({ id }: { id: string }) {
             )}
             {iAmHim && !setup && (
               <button className={s.quiet} onClick={() => void cat.start()}>
-                Write her notes, or change how {view.cat.name} looks
+                Write her notes, or change the cat and room
               </button>
             )}
             {!iAmHim && (

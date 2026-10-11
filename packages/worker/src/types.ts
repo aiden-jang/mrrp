@@ -113,6 +113,7 @@ export interface Bodies {
   delete: { me: string; name: string };
   draw: { me: string; cells: string };
   dress: {
+    decor?: RoomDecor;
     me: string;
     name?: string;
     fur?: string;
@@ -184,7 +185,15 @@ export interface SaidSoFar {
   lines: { text: string; at: number; gift?: Gift; about?: string }[];
 }
 
+export interface RoomDecor {
+  palette: "oat" | "rose" | "moss" | "midnight";
+  rug: "plain" | "stripe" | "check";
+  art: "fish" | "moon" | "flower";
+  mug: "cloud" | "rose" | "ink";
+}
+
 export interface RoomView {
+  decor?: RoomDecor;
   cat: Cat;
   clock: Clock;
   youAreHer: boolean;

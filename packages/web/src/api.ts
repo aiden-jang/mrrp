@@ -1,4 +1,16 @@
-import type { Action, Bodies, Cat, CatAct, Clock, Gift, Mood, RoomView, SaidSoFar, Treat } from "./types.js";
+import type {
+  RoomDecor,
+  Action,
+  Bodies,
+  Cat,
+  CatAct,
+  Clock,
+  Gift,
+  Mood,
+  RoomView,
+  SaidSoFar,
+  Treat,
+} from "./types.js";
 
 const TOKEN_KEY = "mrrp:me";
 
@@ -187,8 +199,8 @@ export async function doTell(id: string, mood: Mood): Promise<RoomView> {
   return r.json() as Promise<RoomView>;
 }
 
-export async function doDress(id: string, cat: Partial<Cat>): Promise<void> {
-  const r = await send(`/api/room/${id}/dress`, { me: myToken(), ...cat });
+export async function doDress(id: string, cat: Partial<Cat>, decor?: RoomDecor): Promise<void> {
+  const r = await send(`/api/room/${id}/dress`, { me: myToken(), ...cat, decor });
   if (!r.ok) throw new Error("Couldn't save how she looks.");
 }
 

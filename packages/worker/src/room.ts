@@ -12,6 +12,7 @@ import type {
   Mood,
   Note,
   RoomView,
+  RoomDecor,
   Told,
   Told2,
   SaidSoFar,
@@ -50,9 +51,7 @@ import {
 
 const HER_LINES = "herLines";
 const HER_DAY = "herDay";
-// As many as he can write notes. Twelve was picked for the note card, which only ever shows the
-// newest, and it quietly dropped her older lines and her answers out of the screen built to read
-// them back.
+// Keep as many answers as notes, or older replies disappear from their history.
 const LINES_KEPT = 120;
 
 const LOG_KEEP = 40;
@@ -198,8 +197,7 @@ export class Room extends DurableObject<Env> {
     return built;
   }
 
-  // Arrival order decides who is who, so anything handing a seat to a new token has to carry the old
-  // `firstSeen` across. Stamp it fresh and he becomes the cat.
+  // Preserve `firstSeen` when moving seats; arrival order decides who is the cat.
   private roles(people: Record<string, Person>): { him: string | null; her: string | null } {
     const ids = Object.keys(people).sort((a, b) => people[a]!.firstSeen - people[b]!.firstSeen);
     return { him: ids[0] ?? null, her: ids[1] ?? null };
@@ -465,15 +463,15 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  async dress(me: string, cat: Partial<Cat>): Promise<boolean> {
+  async dress(me: string, cat: Partial<Cat>, decor?: RoomDecor): Promise<boolean> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (this.roles(people).him !== me) return false;
     const current = (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT;
-    // Drop the keys nobody sent. The route builds all six every time, so spreading the undefined ones
-    // straight in would wipe her fur and leave a cat with no colour.
+    // Omitted dress fields must not wipe her existing colors.
     const given = Object.fromEntries(Object.entries(cat).filter(([, v]) => v !== undefined));
     await this.ctx.storage.put("cat", { ...current, ...given });
+    if (decor) await this.ctx.storage.put("decor", decor);
     return true;
   }
 
@@ -1069,6 +1067,7 @@ export class Room extends DurableObject<Env> {
         ),
       ).toISOString(),
       cat,
+      decor: await this.ctx.storage.get<RoomDecor>("decor"),
       clock,
       blanket: (await this.ctx.storage.get<Blanket>("blanket")) ?? null,
       // The day you named, never theirs. A copy of the room must not be a way round the surprise.
@@ -1390,6 +1389,7 @@ export class Room extends DurableObject<Env> {
 
     return {
       cat,
+      decor: await this.ctx.storage.get<RoomDecor>("decor"),
       clock,
       youAreHer,
       youLeft,

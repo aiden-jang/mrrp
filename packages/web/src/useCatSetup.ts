@@ -1,10 +1,12 @@
+import { DEFAULT_DECOR } from "./roomDecor.js";
 import { useState } from "react";
 import { doClock, doDress, doNotes, fetchNotes } from "./api.js";
 import { EYES, LOOKS } from "./looks.js";
 import { play } from "./sound.js";
-import type { RoomView } from "./types.js";
+import type { RoomDecor, RoomView } from "./types.js";
 
 type Draft = {
+  decor: RoomDecor;
   name: string;
   look: string;
   eyes: string;
@@ -32,6 +34,7 @@ export function useCatSetup(id: string, view: RoomView | null, reload: () => Pro
       LOOKS.find((l) => l.cat.fur.toLowerCase() === view.cat.fur.toLowerCase())?.id ?? LOOKS[0]!.id;
     const eyes = EYES.find((e) => e.hex.toLowerCase() === view.cat.eyes.toLowerCase())?.id ?? EYES[0]!.id;
     setDraft({
+      decor: view.decor ?? DEFAULT_DECOR,
       name: view.cat.name,
       look,
       eyes,
@@ -50,7 +53,7 @@ export function useCatSetup(id: string, view: RoomView | null, reload: () => Pro
     setSaving(true);
     setError(null);
     try {
-      await doDress(id, { name: draft.name.trim() || "Bean", ...look.cat, eyes: eyes.hex });
+      await doDress(id, { name: draft.name.trim() || "Bean", ...look.cat, eyes: eyes.hex }, draft.decor);
       await doClock(id, { tz: draft.tz, homeHour: draft.homeHour });
       await doNotes(id, draft.notes.split("\n"));
       setOpen(false);

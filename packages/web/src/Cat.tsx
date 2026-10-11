@@ -1,6 +1,7 @@
+import { DEFAULT_DECOR, decorateScene, mugColors, ROOM_ART, rugColors, rugPattern } from "./roomDecor.js";
 import { useEffect, useRef } from "react";
 import { companionCushion, facialMoment } from "./roomPolish.js";
-import type { Cat as CatLook, Clock, Gift, Mood } from "./types.js";
+import type { Cat as CatLook, Clock, Gift, Mood, RoomDecor } from "./types.js";
 import { DOOR_X, mixHex, sceneFor } from "./hours.js";
 import { fireflyAt, mothAt, MOTH_CYCLE_MS } from "./critters.js";
 import { play, playPianoNote, setVoice } from "./sound.js";
@@ -229,6 +230,7 @@ export function Cat({
   doodle = null,
   blanket = null,
   sky = "clear",
+  decor = DEFAULT_DECOR,
   spot = null,
   doorOpenAt = null,
   watchDoorAt = null,
@@ -308,6 +310,7 @@ export function Cat({
   onHold?: (on: boolean) => void;
   heldByThem?: boolean;
   sitting?: boolean;
+  decor?: RoomDecor;
   settled?: boolean;
   waiting?: boolean;
   brushing?: boolean;
@@ -329,6 +332,8 @@ export function Cat({
   const lookRef = useRef(look);
   const clockRef = useRef(clock);
   const moodRef = useRef(mood);
+  const decorRef = useRef(decor);
+  decorRef.current = decor;
   const eyesRef = useRef(eyesOpen);
   eyesRef.current = eyesOpen;
   const framedRef = useRef(framed);
@@ -1309,14 +1314,10 @@ export function Cat({
       cam = Math.round(camBase * (1 - pull) + Math.min(camBase, 2) * pull);
       camRef.current = cam;
       const L = lookRef.current;
-      const hourly = sceneFor(
-        clockRef.current,
-        Date.now(),
-        moodRef.current,
-        togetherRef.current,
-        spotRef.current,
+      const hourly = decorateScene(
+        sceneFor(clockRef.current, Date.now(), moodRef.current, togetherRef.current, spotRef.current),
+        decorRef.current,
       );
-      // Waiting must override the scene itself; moving only the caption leaves her elsewhere.
       const sc = waitingRef.current ? { ...hourly, catX: DOOR_X, atDoor: true, sleepy: 0.1 } : hourly;
       const beamX = Math.round(sc.beam * GW);
 
@@ -1351,8 +1352,7 @@ export function Cat({
       }
 
       const rugShadow = mixHex(sc.floorNear, INK, 0.25);
-      const rugEdge = mixHex(sc.floorNear, "#765367", 0.58);
-      const rugBody = mixHex(sc.floorNear, "#a8737e", 0.48);
+      const { edge: rugEdge, body: rugBody } = rugColors(sc, decorRef.current);
       const under = rugBody;
       const rugThread = mixHex(rugBody, sc.beamWarm, 0.16);
       rect(35, FLOOR + 12, 40, 1, rugShadow);
@@ -1372,6 +1372,7 @@ export function Cat({
       dither(38, FLOOR + 22, 34, 1, rugThread, 1);
       for (const x of [35, 40, 69, 74]) px(x, FLOOR + 27, rugEdge);
 
+      rugPattern(rect, decorRef.current, rugBody);
       const outside = skyRef.current;
       const raining = plantTaps.current.rainUntil - t > 0 || outside === "rain";
       const snowing = plantTaps.current.rainUntil - t <= 0 && outside === "snow";
@@ -1789,7 +1790,7 @@ export function Cat({
         px(90, FLOOR - 29, "#ffd79a");
       }
       if (!downRef.current || trip.mugStillUp) {
-        blit(MUG, 84 + shake("shelf"), FLOOR - 29, { w: INK, c: "#cfe0e4", d: "#a9c2c8" });
+        blit(MUG, 84 + shake("shelf"), FLOOR - 29, { w: INK, ...mugColors(decorRef.current) });
         const steamAge = t - mugSteamedAt.current;
         if (!reduce && steamAge >= 0 && steamAge < MUG_STEAM_MS) {
           const p = steamAge / MUG_STEAM_MS;
@@ -1865,7 +1866,7 @@ export function Cat({
           n: PINK,
         });
       } else {
-        blit(FRAME, fx, 12, { w: INK, f: "#c69a63", h: "#cfe0e4", g: "#e2926f" });
+        blit(ROOM_ART[decorRef.current.art], fx, 12, { w: INK, f: "#c69a63", h: "#cfe0e4", g: "#e2926f" });
       }
       const glintAge = t - photoGlint.current;
       if (!reduce && framedRef.current && glintAge >= 0 && glintAge < PHOTO_GLINT_MS) {
@@ -2059,7 +2060,6 @@ export function Cat({
       const nesting = t < bedNestUntil.current && !sc.atDoor && !zooming;
       const laserPlaying = !reduce && t < laser.current.until && !sc.atDoor;
       const summoning = !reduce && t < summonUntil.current && !sc.atDoor;
-      // The door pose lasts 90 minutes, so it must not suppress this.
       const showingLeftOut = t < leftOutUntil.current;
       const doorBlocks = sc.atDoor && !showingLeftOut;
       const yarnPlaying = !reduce && t < yarnUntil.current && !doorBlocks;
@@ -2752,7 +2752,7 @@ export function Cat({
 
       // Only the cat goes behind BOX_FRONT; otherwise the box hides floor treats.
       if (downRef.current && !trip.mugStillUp) {
-        blit(MUG_DOWN, MUG_FLOOR_X, MUG_FLOOR_Y, { w: INK, c: "#cfe0e4", d: "#a9c2c8" });
+        blit(MUG_DOWN, MUG_FLOOR_X, MUG_FLOOR_Y, { w: INK, ...mugColors(decorRef.current) });
       }
       if (treating) {
         const ty = FLOOR + 18;

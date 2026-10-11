@@ -1,3 +1,4 @@
+import { isRoomDecor } from "./decor.js";
 import { Hono, type Context, type Next } from "hono";
 import { resolveSession } from "@aidenjang/auth-client";
 import type { Action, CatAct, Gift, Mood, Treat } from "./types.js";
@@ -13,24 +14,18 @@ const app = new Hono<{ Bindings: Env }>();
 const ROOM_RE = /^[a-z0-9]{6,24}$/;
 const DOODLE_RE = /^[0-4]{135}$/;
 const VALID: Action[] = ACTIONS.map((a) => a.id);
-// Deliberately not CAT_ACTS. That list holds `gift` too, which has its own endpoint because it
-// carries her words; accepting it here would be a second, wordless way to leave one.
+// Gifts carry her words through their own endpoint, never the wordless act route.
 const VALID_CAT_ACTS: CatAct[] = ["shelf", "box"];
 const VALID_GIFTS: Gift[] = GIFTS.map((g) => g.id);
 const VALID_TREATS: Treat[] = TREATS.map((t) => t.id);
-// The things in the room you can touch. An unknown key is a 400, not a new prop, for the same reason
-// `found` refuses one.
+// Unknown touch targets must be rejected, not become new props.
 const VALID_POKES = ["window", "frame", "shelf", "door", "plant", "bed", "box", "floor"];
 const TALLY_KEYS: TallyKey[] = ["pet", "brush", "sit", "photo", "leaveout"];
 const VALID_MOODS: Mood[] = ["good", "tired", "stressed", "sad", "lonely", "bored", "feral", "done", "horny"];
 
 const room = (env: Env, id: string) => env.ROOM.get(env.ROOM.idFromName(id));
 
-// Forward, never parse: this Worker must not hold the session secret.
-//
-// Three states, not two. Reading an outage as "not signed in" is right for the room view, where it
-// just means an anonymous visitor, and wrong for linking a seat, where it tells somebody who is
-// signed in to go and sign in.
+// Forward sessions without their secret; distinguish outages when linking a seat.
 type Caller = { state: "signed-in"; id: string } | { state: "signed-out" } | { state: "unavailable" };
 
 async function accountOf(request: Request, env: Env): Promise<Caller> {
@@ -343,14 +338,19 @@ app.post("/api/room/:id/dress", async (c) => {
   const pick = <T>(k: keyof Untrusted<"dress">, ok: (v: unknown) => boolean): T | undefined =>
     ok(body[k]) ? (body[k] as T) : undefined;
   const hex = (v: unknown) => typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v);
-  const ok = await room(c.env, id).dress(me, {
-    name: pick<string>("name", (v) => typeof v === "string" && (v as string).length <= 24),
-    fur: pick<string>("fur", hex),
-    furDk: pick<string>("furDk", hex),
-    belly: pick<string>("belly", hex),
-    eyes: pick<string>("eyes", hex),
-    tabby: pick<boolean>("tabby", (v) => typeof v === "boolean"),
-  });
+  if (body.decor !== undefined && !isRoomDecor(body.decor)) return c.json({ error: "bad room decor" }, 400);
+  const ok = await room(c.env, id).dress(
+    me,
+    {
+      name: pick<string>("name", (v) => typeof v === "string" && (v as string).length <= 24),
+      fur: pick<string>("fur", hex),
+      furDk: pick<string>("furDk", hex),
+      belly: pick<string>("belly", hex),
+      eyes: pick<string>("eyes", hex),
+      tabby: pick<boolean>("tabby", (v) => typeof v === "boolean"),
+    },
+    body.decor as import("./types.js").RoomDecor | undefined,
+  );
   return ok ? c.json({ ok: true }) : c.json({ error: "not yours to set" }, 403);
 });
 
