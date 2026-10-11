@@ -2249,7 +2249,7 @@ function FaviconSync({ cat }: { cat: CatLook }) {
     const drawn = faviconFor({ fur, furDk, belly, eyes, tabby });
     if (!drawn) return;
     const shipped = { href: link.href, type: link.type };
-    link.type = "image/png";
+    link.type = "image/svg+xml";
     link.href = drawn;
     return () => {
       link.type = shipped.type;

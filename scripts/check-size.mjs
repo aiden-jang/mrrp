@@ -26,7 +26,7 @@ const ALREADY_OVER = {
   "packages/web/src/Cat.tsx": { lines: 3104 },
   "packages/web/src/App.tsx": { lines: 2541, state: 33 },
   "packages/worker/src/room.ts": { lines: 1466 },
-  "packages/web/src/sprites.ts": { lines: 705 },
+  "packages/web/src/sprites.ts": { lines: 674 },
   "packages/worker/src/index.ts": { lines: 518 },
 };
 
