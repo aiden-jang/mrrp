@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { companionCushion, facialMoment } from "./roomPolish.js";
 import type { Cat as CatLook, Clock, Gift, Mood } from "./types.js";
 import { DOOR_X, mixHex, sceneFor } from "./hours.js";
 import { fireflyAt, mothAt, MOTH_CYCLE_MS } from "./critters.js";
@@ -524,6 +525,7 @@ export function Cat({
   const lookAt = useRef<{ x: number; until: number } | null>(null);
 
   const near = useRef(0);
+  const companionDepth = useRef(0);
   const catX = useRef<number | null>(null);
   const bounce = useRef(0);
   const lastNudge = useRef(nudge);
@@ -664,13 +666,11 @@ export function Cat({
     let refit = 0;
     const fit = () => {
       cancelAnimationFrame(refit);
-      // One logical pixel has to be a whole number of device pixels, or the floorboards come out at two
-      // different widths.
+      // Whole device pixels keep every floorboard the same width.
       const d = Math.min(2, devicePixelRatio || 1);
       const wide = box ? box.clientWidth : cv.getBoundingClientRect().width;
       const h = innerHeight;
-      // A ceiling, not a floor. `max()` here means "take 62% whatever is below you", which puts the front
-      // door's own button under the fold.
+      // Cap the height to keep the door button above the fold.
       const cap = h > 0 ? Math.min(h * ROOM_MAX_SHARE, h - reserveRef.current) : Infinity;
       const avail = Math.min(wide > 0 ? wide : Infinity, cap);
       if (!Number.isFinite(avail) || avail < VW) {
@@ -878,8 +878,7 @@ export function Cat({
         }
         return;
       }
-      // Must match `boxHere` in the draw loop. Without `boxOut` a box he put out is drawn and cannot be
-      // tapped.
+      // Match `boxHere`: boxes he leaves out must also be tappable.
       const boxIsHere = boxOutRef.current || boxRef.current || performance.now() < secretBoxUntil.current;
       const hit = PROPS.find(
         (q) => (q.key !== "box" || boxIsHere) && x >= q.x && x < q.x + q.sp.w && y >= q.y && y < q.y + q.sp.h,
@@ -1317,8 +1316,7 @@ export function Cat({
         togetherRef.current,
         spotRef.current,
       );
-      // Waiting beats the hour, the mood, and him being here. This component builds its own scene, so
-      // overriding `catX` anywhere else moves the caption and not the cat.
+      // Waiting must override the scene itself; moving only the caption leaves her elsewhere.
       const sc = waitingRef.current ? { ...hourly, catX: DOOR_X, atDoor: true, sleepy: 0.1 } : hourly;
       const beamX = Math.round(sc.beam * GW);
 
@@ -1355,8 +1353,6 @@ export function Cat({
       const rugShadow = mixHex(sc.floorNear, INK, 0.25);
       const rugEdge = mixHex(sc.floorNear, "#765367", 0.58);
       const rugBody = mixHex(sc.floorNear, "#a8737e", 0.48);
-      // What the tuft and the dent are actually lying on. Both sit inside the rug, so measuring their
-      // contrast against the bare floor gives the wrong answer.
       const under = rugBody;
       const rugThread = mixHex(rugBody, sc.beamWarm, 0.16);
       rect(35, FLOOR + 12, 40, 1, rugShadow);
@@ -1391,10 +1387,10 @@ export function Cat({
           const cx = Math.round(WIN_CX + (beamX - WIN_CX) * k);
           const half = beamCore >> 1;
           rect(cx - half, y, beamCore, 1, litWall);
-          dither(cx - half - 3, y, 3, 1, litWall);
-          dither(cx + half, y, 3, 1, litWall);
+          dither(cx - half - 3, y, 3, 1, mixHex(sc.wallTop, litWall, 0.45));
+          dither(cx + half, y, 3, 1, mixHex(sc.wallTop, litWall, 0.45));
           for (const ox of [-half - 5, -half - 4, half + 2, half + 3]) {
-            if ((ox + y) % 4 === 0) px(cx + ox, y, litWall);
+            if ((ox + y) % 4 === 0) px(cx + ox, y, mixHex(sc.wallTop, litWall, 0.25));
           }
         }
       }
@@ -1411,7 +1407,7 @@ export function Cat({
       }
       if (sc.lightPhase !== "night") {
         const edgeWidth = Math.round(30 * poolScale);
-        dither(beamX - (edgeWidth >> 1), FLOOR + 5, edgeWidth, 9, sc.patch);
+        dither(beamX - (edgeWidth >> 1), FLOOR + 5, edgeWidth, 9, mixHex(sc.floorNear, litPatch, 0.4));
       } else {
         const nightGlow = mixHex(sc.wallBottom, "#d79a62", 0.3);
         // prettier-ignore
@@ -1422,6 +1418,12 @@ export function Cat({
         rect(39, FLOOR - 4, 3, 3, INK);
         px(40, FLOOR - 3, "#ffd598");
       }
+
+      const occupied = togetherRef.current && sittingRef.current ? 1 : 0;
+      companionDepth.current = reduce
+        ? occupied
+        : companionDepth.current + (occupied - companionDepth.current) * 0.04;
+      companionCushion(rect, sc, togetherRef.current, companionDepth.current);
 
       const wy = (row: number) => 4 + 1 + row;
 
@@ -1460,8 +1462,7 @@ export function Cat({
       const curtainHem = reduce ? 0 : Math.round(Math.sin(t / 2400));
       px(wx - 2 + curtainHem, 24, curtainLight);
       px(wx + WINDOW.w + 1 - curtainHem, 24, curtainLight);
-      // Night first, then mix the weather into it. The other order makes a rainy 2am glow like an overcast
-      // noon.
+      // Mix weather after night or rainy nights glow like noon.
       const nightGlass = raining
         ? mixHex("#2b3450", "#718aa1", 0.34)
         : snowing
@@ -1549,8 +1550,7 @@ export function Cat({
       if (cold) {
         const swell = reduce ? 0.3 : 0.3 + Math.sin(t / 4200) * 0.07;
         const fog = mixHex(glass, "#ffffff", swell);
-        // Only the last two glass rows of each pane. wy(4) and wy(9) are frame bars, and fogging those paints
-        // over the window frame.
+        // Fog glass only; wy(4) and wy(9) are frame bars.
         for (const paneY of [wy(2), wy(7)]) {
           rect(wx + 1, paneY, 7, 2, fog);
           rect(wx + 9, paneY, 7, 2, fog);
@@ -1788,7 +1788,6 @@ export function Cat({
         px(89, FLOOR - 29, "#ffd79a");
         px(90, FLOOR - 29, "#ffd79a");
       }
-      // The mug on the floor is drawn much further down, with the other things that land on the floor.
       if (!downRef.current || trip.mugStillUp) {
         blit(MUG, 84 + shake("shelf"), FLOOR - 29, { w: INK, c: "#cfe0e4", d: "#a9c2c8" });
         const steamAge = t - mugSteamedAt.current;
@@ -2060,8 +2059,7 @@ export function Cat({
       const nesting = t < bedNestUntil.current && !sc.atDoor && !zooming;
       const laserPlaying = !reduce && t < laser.current.until && !sc.atDoor;
       const summoning = !reduce && t < summonUntil.current && !sc.atDoor;
-      // Don't let the door pose suppress this the way it does easter eggs. It holds for 90 minutes around
-      // his expected hour, which would swallow most of an evening.
+      // The door pose lasts 90 minutes, so it must not suppress this.
       const showingLeftOut = t < leftOutUntil.current;
       const doorBlocks = sc.atDoor && !showingLeftOut;
       const yarnPlaying = !reduce && t < yarnUntil.current && !doorBlocks;
@@ -2141,8 +2139,6 @@ export function Cat({
       const bounded = (x: number) => Math.max(CAT_REACH_LEFT, Math.min(GW - CAT_REACH_RIGHT, x));
       wantX = bounded(wantX);
       if (catX.current === null) catX.current = firstEverRef.current ? 19 : wantX;
-      // She eases toward where she wants to be a frame at a time, so a single screenshot never shows her
-      // final position.
       catX.current += (wantX - catX.current) * (catnipping || zooming || mouseChasing ? 0.4 : 0.05);
       const kx = Math.round(catX.current);
 
@@ -2175,8 +2171,6 @@ export function Cat({
       const want = ptr.in ? Math.max(0, 1 - Math.hypot(ptr.x - kx, ptr.y - (ky - 8)) / 44) : 0;
       near.current += (want - near.current) * 0.07;
       const n = near.current;
-      // His hand, whichever side of it you are on. `petting` is his own press; `heldRef` is the same press
-      // arriving on her screen.
       const pet = petting.current || heldRef.current || t < petShownUntil.current;
       bounce.current = Math.max(0, bounce.current - 0.02);
 
@@ -2226,8 +2220,8 @@ export function Cat({
 
       const slowBlinking = t < slowBlink.current.until;
 
-      const cyc = t % 5200;
-      const blink = !reduce && ((cyc > 3400 && cyc < 3520) || (cyc > 4100 && cyc < 4200));
+      const expression = facialMoment(t, moodRef.current);
+      const blink = !reduce && expression.blink;
       const la = lookAt.current;
       const looking = !!la && t < la.until;
       const forced =
@@ -2449,8 +2443,7 @@ export function Cat({
       if (raining && atTheGlass && awake) wetPaws.current = t + WET_PAWS_MS;
       if (walking && t < wetPaws.current && t > nextPrint.current) {
         nextPrint.current = t + 380;
-        // `ky`, not `y`. `y` bobs with her breathing, and a breathing paw print is a mark on the cat rather
-        // than on the floor.
+        // Use `ky`: floor prints must not bob with her breathing.
         prints.current.push({ x: kx, y: ky, at: t, side: prints.current.length % 2 });
         if (prints.current.length > 10) prints.current.shift();
       }
@@ -2546,6 +2539,14 @@ export function Cat({
         rect(faceX + YAWN.x, jawY, YAWN.w, 1, INK);
         rect(faceX + YAWN.x + 1, jawY + 1, YAWN.w - 2, 1, INK);
         px(faceX + YAWN.x + 2, jawY + 1, PINK);
+      }
+
+      if (!reduce && awake && expression.wink && !forced && !walking && !grooming) {
+        const eye = CLOSED_EYES[pose];
+        const ex = kx + sp.ox + eye.right;
+        const ey = y + sp.oy + eye.y;
+        rect(ex, ey, eye.width, 2, pal.b);
+        rect(ex, ey, eye.width, 1, INK);
       }
 
       if (!awake) {
@@ -2749,8 +2750,7 @@ export function Cat({
         px(25, FLOOR + 17, "#946270");
       }
 
-      // Everything on the floor goes below BOX_FRONT. Only the cat goes behind it, or a box he put out
-      // hides the treats.
+      // Only the cat goes behind BOX_FRONT; otherwise the box hides floor treats.
       if (downRef.current && !trip.mugStillUp) {
         blit(MUG_DOWN, MUG_FLOOR_X, MUG_FLOOR_Y, { w: INK, c: "#cfe0e4", d: "#a9c2c8" });
       }
