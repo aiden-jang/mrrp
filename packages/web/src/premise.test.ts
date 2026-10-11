@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import app from "./App.tsx?raw";
+import welcome from "./Welcome.tsx?raw";
 import screens from "./screens.tsx?raw";
 import moods from "./moods.ts?raw";
 import dreams from "./dreams.ts?raw";
@@ -16,7 +17,7 @@ import { NOTES } from "../../worker/src/notes.js";
 const strip = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
 /* Every file holding a sentence she can read. This watched App.tsx while the copy moved out of it. */
-const copy = [app, screens, moods, dreams].map(strip).join("\n");
+const copy = [app, welcome, screens, moods, dreams].map(strip).join("\n");
 
 describe("she is the cat", () => {
   it("never tells her somebody gave her one", () => {

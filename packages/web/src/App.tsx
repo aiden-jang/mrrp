@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type {
   Action,
   CatAct,
@@ -50,6 +50,7 @@ import {
   type SignedInAs,
 } from "./api.js";
 import { Cat } from "./Cat.js";
+import { Welcome } from "./Welcome.js";
 import { useLive } from "./live.js";
 import { heard } from "./heard.js";
 import { coveredBy, liveOnly } from "./recent.js";
@@ -75,7 +76,7 @@ import {
   withCell,
 } from "./doodle.js";
 import { faviconFor } from "./favicon.js";
-import { loginUrl, logoutUrl, siteFooterLinks } from "@aidenjang/auth-client";
+import { loginUrl, logoutUrl } from "@aidenjang/auth-client";
 import { useCatSetup } from "./useCatSetup.js";
 import { useRoomEnding } from "./useRoomEnding.js";
 import { useOurDay } from "./useOurDay.js";
@@ -479,74 +480,16 @@ function Landing() {
   return (
     <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
       <ChromeSync night={isNightChrome(door.sun)} />
-      <div className={s.card} style={{ textAlign: "center" }}>
-        <div className={s.stage} style={{ marginBottom: 14 }}>
-          <Cat
-            label="A pixel cat asleep in a sunlit room."
-            look={DOOR_CAT}
-            clock={DOOR_CLOCK}
-            mood={null}
-            nudge={0}
-            reserveBelow={340}
-          />
-        </div>
-        <h1 className={s.h1}>mrrp</h1>
-        <p className={s.lede} style={{ margin: "0 auto 14px" }}>
-          One of you is the cat. You make the room; whoever you send the link to becomes her. They tap how
-          their day is going and she becomes that, so you know without having to ask.
-        </p>
-        <p className={s.lede} style={{ margin: "0 auto 18px", fontSize: FS.body }}>
-          Then you turn up and sit with her. No account needed, no notifications, nothing to keep up with.
-        </p>
-        {back && (
-          <button
-            className={`${s.btn} ${s.btnGo}`}
-            style={{ width: "100%", marginBottom: 14 }}
-            onClick={() => location.assign(`/r/${back}`)}
-          >
-            Back to the room
-          </button>
-        )}
-        {back && (
-          <p className={s.small} style={{ marginBottom: 14 }}>
-            Or start another one for somebody else.
-          </p>
-        )}
-        <input
-          className={s.input}
-          value={name}
-          maxLength={24}
-          placeholder="your name"
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && make()}
+      <Welcome name={name} onName={setName} onMake={make} back={back}>
+        <Cat
+          label="A pixel cat in a quiet room."
+          look={DOOR_CAT}
+          clock={DOOR_CLOCK}
+          mood={null}
+          nudge={0}
+          reserveBelow={240}
         />
-        <button
-          className={`${s.btn} ${back ? "" : s.btnGo}`}
-          style={{ width: "100%", marginTop: 10 }}
-          onClick={make}
-          disabled={!name.trim()}
-        >
-          Make a room
-        </button>
-        <p className={s.small} style={{ marginTop: 14 }}>
-          You'll get a link. Send it to one person. That's the whole thing.
-        </p>
-        <p className={s.credit}>
-          <PawMark />
-          {siteFooterLinks(AUTH_URL).map((item, i) => (
-            <Fragment key={item.href}>
-              {i > 0 && " · "}
-              <a
-                href={item.href}
-                className={s.creditLink}
-                {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-              >
-                {item.label}
-              </a>
-            </Fragment>
-          ))}
-        </p>
-      </div>
+      </Welcome>
     </main>
   );
 }
@@ -1472,7 +1415,7 @@ function RoomPage({ id }: { id: string }) {
             </div>
 
             <p className={s.fieldLabel}>eyes</p>
-            <div className={s.eyeRow} style={{ gridTemplateColumns: `repeat(${EYES.length}, 26px)` }}>
+            <div className={s.eyeRow}>
               {EYES.map((e) => (
                 <button
                   key={e.id}
@@ -1482,8 +1425,6 @@ function RoomPage({ id }: { id: string }) {
                   onClick={() => setDraft((d) => ({ ...d!, eyes: e.id }))}
                   className={s.swatch}
                   style={{
-                    width: 26,
-                    height: 26,
                     background: e.hex,
                     boxShadow: draft.eyes === e.id ? "0 0 0 2.5px var(--honey)" : "none",
                   }}
