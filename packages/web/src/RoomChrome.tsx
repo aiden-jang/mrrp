@@ -49,7 +49,7 @@ const replies: Record<Mood, string> = {
   bored: "An extremely ambitious nap awaits.",
   feral: "The shelf has been warned.",
   done: "That’ll do for today.",
-  horny: "Noted. With absolutely no follow-up questions.",
+  horny: "Subtle. Almost.",
 };
 export function MoodResponse({ mood }: { mood: Mood | null }) {
   return (

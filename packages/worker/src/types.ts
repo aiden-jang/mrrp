@@ -47,15 +47,15 @@ export const TREATS = [
 export type Mood = "good" | "tired" | "stressed" | "sad" | "lonely" | "bored" | "feral" | "done" | "horny";
 
 export const MOODS = [
-  { id: "good", label: "good", said: "having a good one" },
+  { id: "good", label: "happy", said: "happy" },
   { id: "tired", label: "tired", said: "tired" },
   { id: "stressed", label: "stressed", said: "stressed" },
   { id: "sad", label: "sad", said: "sad" },
   { id: "lonely", label: "lonely", said: "a bit lonely" },
   { id: "bored", label: "bored", said: "bored" },
   { id: "feral", label: "feral", said: "feeling feral" },
-  { id: "done", label: "done", said: "completely done with today" },
-  { id: "horny", label: "horny", said: "in a mood, and not one of the sad ones" },
+  { id: "done", label: "over it", said: "completely done with today" },
+  { id: "horny", label: "flirty", said: "feeling flirty" },
 ] as const satisfies readonly { id: Mood; label: string; said: string }[];
 
 export interface Cat {

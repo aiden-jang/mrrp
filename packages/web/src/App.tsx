@@ -1780,11 +1780,7 @@ function RoomPage({ id }: { id: string }) {
               ))}
             </div>
 
-            <p className={s.tellLabel}>
-              {view.catMood
-                ? `still ${MOODS.find((m) => m.id === view.catMood)?.label}?`
-                : "How are you today?"}
-            </p>
+            <p className={s.tellLabel}>What’s the mood?</p>
             <div className={s.moodRow}>
               {MOODS.map((m) => (
                 <button
