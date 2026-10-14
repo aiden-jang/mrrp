@@ -1,0 +1,79 @@
+# Architecture
+
+## Runtime
+
+The React client renders a room snapshot from a Cloudflare Worker. Each room has one Durable
+Object, which owns its state, seat permissions, alarms and live connections. The web app and API
+ship together. Account linking uses the separate shared accounts service; visiting a room does
+not require an account.
+
+## Client ownership
+
+`App.tsx` composes the room. It does not own every editor and network operation.
+
+| Area                                                        | Owner                                                       |
+| ----------------------------------------------------------- | ----------------------------------------------------------- |
+| Initial load, live updates, visibility and polling fallback | `useRoomSession.ts`                                         |
+| Room actions, optimistic updates and interaction timers     | `useRoomActions.ts`                                         |
+| Arrival and contextual feedback                             | `useRoomFeedback.ts`, `RoomArrival.tsx`                     |
+| Notes, appearance and clock draft                           | `useCatSetup.ts`, `CatSetupPanel.tsx`                       |
+| Saved conversations                                         | `useRoomHistory.tsx`                                        |
+| Invitations and image sharing                               | `useRoomSharing.ts`                                         |
+| Cat-side controls                                           | `CatRoom.tsx`                                               |
+| Companion-side controls                                     | `CompanionRoom.tsx`                                         |
+| Recovery, settings and room lifecycle                       | `useSeatAccount.ts`, `RoomSettings.tsx`, `SeatRecovery.tsx` |
+| Landing and unavailable-room states                         | `RoomLanding.tsx`, `RoomFallback.tsx`                       |
+| Time-dependent UI palette and document effects              | `roomTheme.ts`, `RoomEffects.tsx`                           |
+
+Hooks own side effects and writes. Role components render the authoritative snapshot and call
+those operations. Draft state stays with its editor. A failed notes request must not become an
+empty editable list, and a failed drawing save must keep the draft open.
+
+`api.ts` owns browser requests and seat credentials. A room link alone is not a credential for
+another person's seat. The client may preview a change immediately, but the server's response
+settles permission and persisted state.
+
+## Canvas
+
+`Cat.tsx` is a single canvas engine with a stable draw loop. Refs deliver current props without
+resubscribing the animation. Drawing and hit geometry share the same room coordinates; moving
+furniture must move its hit area too. Keep this engine together. Extract pure calculations when
+they have an independent responsibility, not pieces of the loop merely to shorten the file.
+
+Art is hand-authored code and whole-pixel sprites. The approved image references guide warmth
+and composition, not runtime assets. Reduced motion, touch targets and the accessible canvas
+controls are part of the renderer's contract.
+
+## Worker
+
+`packages/worker/src/index.ts` routes requests. `room.ts` owns the Durable Object and stays one
+class. Role checks and guards belong here even when the client hides the corresponding button.
+Writes use authenticated POST requests. Live connections receive seat-filtered snapshots.
+
+Checking whether an invitation exists does not claim its second seat. Joining is an explicit
+choice. Missing rooms, deleted rooms and network failures have different meanings and must not
+collapse into the same message.
+
+Recovery codes restore a seat on another browser. Account links are optional. Deletion and
+seat release use server-side rules and alarms rather than relying on an open client.
+
+## Storage and failure handling
+
+The Durable Object is the source of truth. Browser state holds seat credentials and local UI
+preferences; it is not a second room database. A stale snapshot may be useful during reconnect,
+but must not be presented as evidence that the connection is live.
+
+The service worker caches the shell and static assets. It never caches API responses.
+Navigation tries the network first; versioned assets can use the cache. Cache activation removes
+only old mrrp caches.
+
+## Verification and release
+
+`pnpm run verify` and CI share the gate inventory. Static checks cover source budgets, comments,
+CSS references, docs and unused code. Tests exercise pure helpers, a recording canvas, real
+Durable Object storage and two-seat browser journeys. Browser review supplements assertions
+with desktop, narrow-screen and keyboard inspection.
+
+CI deploys only after checks pass on `main`. Secrets belong in GitHub or Cloudflare configuration,
+never in the browser build. See [UI review](docs/ui-review/README.md) for what was actually reviewed;
+a passing automated suite is not a claim about every physical device or assistive technology.

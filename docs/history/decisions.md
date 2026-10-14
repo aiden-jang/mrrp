@@ -1,0 +1,2236 @@
+# Why mrrp is built this way
+
+The README says what the app does. This says why it is built the way it is, in the places where the
+obvious choice was the wrong one. If you are about to "fix" something in here, check whether it is
+already on this list.
+
+Written plainly on purpose. Every entry is a decision somebody could reasonably disagree with, so each
+one says what was tried and what went wrong.
+
+## She is the cat, she does not have one
+
+The app held two names for one person. He made the room and named the cat; then it told her "someone
+made you a cat" and asked her to type her own name on the next screen. So the mood she picked was
+hers, but the cat that answered it was a third thing in the room with a name he had chosen, and
+nothing in the app could say which of the two she was.
+
+She is the cat. He names her when he makes the room, and that name is what she is called everywhere,
+to both of them. She is never asked for a name of her own.
+
+The change is one sentence and it reaches most of the app, because a sentence about a pet is rarely
+the same sentence about a person:
+
+- "Hold on Sofia to pet her" told her to hold herself, and promised he would see it. He would not:
+  his touch on her is a recorded action, hers is a local sound that reaches nobody.
+- Deleting the room asked for the cat's name typed. That is a good confirmation while the cat is a
+  pet and reads as "type her name to erase her" the moment she is not. It asks for his own name now.
+- "She has no idea what that means" is fond about a cat and unkind about a person, so her side of
+  that milestone points at him remembering instead.
+- `awayLine` is his alone, like `homingLine` already was: to her it is the room reporting her own
+  arrival back to her, in her own name. The full moon is the only ambient line both seats read, and
+  on her side it is her window.
+
+The seat-awareness tests cover milestones for this reason, and they caught a draft that read "you
+have not once thanked". The room never implies anything owed.
+
+## The button that ends her week was the brightest thing on the screen
+
+After she leaves, his side says it plainly: her side is kept until a date, she can put it back, and
+sending this link to somebody else gives the seat away and ends that. Directly underneath sat the
+honey button, labelled "Send the link to somebody else".
+
+The copy and the emphasis were arguing with each other. Both send buttons call the same thing, so
+this is only about which one looks like the next step, and during her week the room's own position is
+that waiting is fine. It is a plain button while `theyLeft` holds and goes back to primary once her
+week is up, when handing the seat on really is the thing to do.
+
+No test for this one. It is a class name on a condition, and a test asserting that is the brittle
+kind that fails when the design improves rather than when it breaks.
+
+## A dead link is not answered with an invitation
+
+The door screen renders before anything is read, so following a link to a deleted room got you
+"somebody made you a room, and you are the cat in it", a button, and only then, once you had tapped
+it, "this room is gone". The client was handing out the welcome the server works hard never to give.
+
+The awkward part is why it could not simply read the room first. The door is consent before seating:
+reading a live room seats whoever is reading, so asking "is this still here" by calling `view` would
+take the seat the door exists to ask about. `alive` guards and does nothing else, and there is a test
+that it never seats, alongside one that it says gone.
+
+The gone screen is also answered before the door now, rather than after it. That ordering was the
+other half: even with the answer in hand, the door was reached first.
+
+## The first screen she ever sees said the old thing
+
+She opens his link and the very first thing in front of her was an almost empty screen reading
+"Someone made you a cat", with a button. That is the sentence the entire app moved away from: it
+means somebody gave her a pet. She is the cat. It survived every pass because nobody working on the
+app ever opens that screen; it only shows once, to the one person who is not the one building it.
+
+It shows the room now, which is the other half of it. That was the one screen in the app without a
+room on it, so the first impression of a thing whose whole point is a room was a card with two lines
+of text.
+
+There is a test for the sentence, and for the caption saying "You are" rather than her own name back
+at her, because this is twice now that the premise has been re-established and something has been
+left behind saying the opposite.
+
+## Dreams have no subject
+
+Both of them watch the same sleeping cat and one of them is her, so ten of the nineteen dream lines
+were the room narrating her own sleep back to her: "she is dreaming about food", "her paws are
+moving".
+
+No second phrasing for these, unlike the moods. A dream does not need a subject. "food. this is not
+a surprise." is the inside of a head, and naming whose head it is adds nothing, so one line now
+works from either seat. Where a mood has to say who is doing what to whom, a dream never does.
+
+That was the last file. Every surface both seats read has been swept, and the four tests that guard
+it, on the notes, the announcements, the captions and the dreams, are the reason it is worth saying
+so rather than just believing it.
+
+## The caption change broke six sentences, and only a sweep found them
+
+Giving her side "You are ___" instead of her own name was right, and it quietly wrecked six of the
+scene descriptions it renders, because nobody re-reads the copy after changing the sentence around
+it. Two kinds of wreckage:
+
+Three carried a third person: "You are in her own spot", "You are up on her back legs". Those were
+rewritten to work in either frame, which is better than two versions of the same line.
+
+Three could not be rewritten, because they address the reader as the other person. "sitting on you",
+"loafing right next to you" and "sitting with you" are written from the seat that is watching, so on
+her side they became "you are sitting on you". They get a `doingHers`, and it deliberately describes
+her rather than her effect on him: he is not necessarily even in the room.
+
+The test that found them is the thing to keep. It reads both source files, pulls every phrase that
+can land in a caption, and checks it in her frame, for a third person and for the word "you". The
+first version I wrote flagged three; running it turned up three more I had read past twice.
+
+A note on the test that broke while this landed. `premise.test.ts` asserted the caption's exact
+template, so it failed the day the caption got better rather than the day it got worse. It asserts
+the rule now.
+
+## The discoveries and the postcard were holding it too
+
+Both seats find the secrets, and most of the copy described the cat, so on her screen the room told
+her what she had just done as though it were somebody else: "she is purring", "she knows her own
+name", "she has rolled all the way over". Five of the sixteen announcements and four of the fifteen
+names on the arrival card.
+
+They take the shape `ACTIONS` already uses for `past` and `mine`: one act, two sentences, because the
+two seats are not the same reader. Only the lines that name her need a second version; the bubbles
+are the bubbles to everybody. The a11y test now fails on any announcement that says "she" without a
+version she can read about herself.
+
+The postcard had it as well, captioned `${catName} was ${doing}`, so her own keepsake said "Bean was
+asleep in the sun" about her. That one matters more than its size suggests: it is the only thing in
+the app designed to leave the app, which makes it the most likely to be seen by somebody who has no
+idea she is the cat.
+
+## The notes were the last place still holding the old idea
+
+Twenty of the thirty default notes talked about a cat in the third person: "she is asleep in the
+sun", "she knocked something off the shelf earlier", "somebody made you a cat, she lives here now".
+They are read by her and nobody else, one a day, and she is the cat. Every other surface had been
+turned over months before and these had not, because they read fine to whoever wrote them and only
+read wrong to the one person who sees them.
+
+They are rewritten to her. A test fails on any note containing "she" or "her", which is the cheapest
+possible guard against the same drift arriving with the next batch somebody adds.
+
+Three smaller ones in the same family, found by reading her screen rather than the code. The caption
+under the room said "Bean is up, in the middle of the room", which is the room describing her to
+herself; it says "You are" on her side now. The blanket row, which only she sees, was labelled "her
+blanket". And the list of things in the room called the bed "her bed" to both seats, so that one went
+neutral rather than per-seat.
+
+## She acts as the cat, the room does not roll for her
+
+Everything the cat did was the room's dice. The shelf came down on an 18% roll when she looked in,
+the box appeared once a day on its own, and the gift she left him was picked at random from three.
+The shelf roll outlived the rest of that change by a good while, and it was the worst of the three:
+it put the mug on the floor with no line anywhere saying who did it, which reads as a glitch rather
+than as her. A test now opens the room fifty times as her and fails if the mug ever moves.
+
+If she is the cat, those are hers. She knocks the shelf off because she means to, gets into the box
+he put out, and chooses which of the three things he finds. He is told the same way she is told about
+him: the room is different when he opens it, and a line says what she did.
+
+The one roll left is the gift, and only when he has been away a while and she has not chosen one
+herself. That one is the room covering for a silence, not acting as her.
+
+Her acts are deliberately kept out of two places. They do not count toward the tally, because her
+personality is derived from that tally and she would be learning traits from herself. They are not
+dream material either, for the same reason: she is the one who did them. TypeScript caught both the
+moment the log started carrying two vocabularies.
+
+## Every button says what it left behind
+
+The marks his actions leave are two to four pixels on a hundred-by-eighty grid: a tuft on the rug, a
+dent by the bed, a mug moved to the floor. On a phone that is not feedback. Four separate reports of
+"I press it and nothing happens" were all this: the write landed, the log recorded it, and the room
+changed in a way nobody could see.
+
+So both action rows now light the button whose mark is in the room, the way the gift and treat
+buttons already did, and print one line under them: "She'll find a tuft of her on the rug and the
+picture on the wall." It names what is in the room rather than who did it, which is what keeps it
+clear of the rule that you never see your own actions echoed back.
+
+Petting is the exception and stays unlit, because it genuinely leaves nothing: the purr is the whole
+of it.
+
+## Finding a thing is being handed it
+
+He can leave the yarn, a treat or the catnip out for her. All three were typed easter eggs: animations
+the room already knew how to draw, with no state behind them and no way to mean anything. Left out on
+purpose they become an object with a life.
+
+There is no button for her to press when she finds one, because a surprise you have to press for is a
+chore. The view that carries it is the view that spends it. That spend has to happen after the view is
+built, not before, which is the bug the first version had: it spent the thing on the way past and she
+was never handed what she had just found.
+
+Three things follow, each of which was wrong in the first version:
+
+**He is shown it too.** It was hers alone at first, reasoning that he knows what he left. He does not:
+with nothing on his side, leaving something out is a button that appears to do nothing, and there is
+no way to tell "still waiting" from "she has been in and found it". He can look as often as he likes
+without spending it, because only handing it to her counts.
+
+**She is told in words as well as shown.** The animation runs once for about six seconds, and reduced
+motion removes most of it, so a one-shot surprise can be spent and never seen. The moment is the nice
+part; the card is the part that cannot be missed.
+
+**It does not lose to the door pose.** That guard exists so typed easter eggs do not fight the
+waiting-by-the-door animation, and it is not the arrival greeting it looks like: it holds for the
+90 minutes around the hour he is expected home, which is exactly when she is most likely to look in.
+A thing he left out on purpose is not an easter egg, so it plays through the pose.
+
+**And "what the other one has been doing" is gated on holding a seat.** It was keyed on "am I her",
+which shut strangers out by accident rather than on purpose. Making it symmetric so both seats could
+read it removed the accident along with the asymmetry, and opened her doings to anybody holding the
+link. An existing test caught it.
+
+## "Bring her something" was cut rather than fixed
+
+It rolled a die between putting a box out and leaving a bow, so it could never say what he brought,
+because he never chose. Two of its three outcomes are now things he does on purpose: he puts the box
+out, or he leaves one of three things out for her. The `fed` trait is counted off `leaveout` instead.
+
+`leaveout` is in the tally and not in `Action` for that reason: it is something he does from his own
+panel, not a button on the room.
+
+## The cat cannot be neglected
+
+There is no hunger, no sadness, no streak, no decay. Nothing in the room gets worse if nobody visits.
+
+A pet that can be neglected is a chore. The moment the cat can be let down, opening the app becomes
+something you owe rather than something you want, and the whole gift collapses into homework. So the
+room only ever accumulates nice things, and the nice things expire on their own rather than piling up.
+
+## The cat answers a mood, it does not copy it
+
+Tell her you are sad and she comes over and stays. Tell her you are stressed and she sits on you.
+
+If the cat got sad when you were sad, the cat would be a thing you protect by lying to. On the days it
+mattered most you would tap "good", and the one feature the app exists for would be dead. Low moods
+make the room warmer and closer, never darker.
+
+And a mood belongs to the day it was said. It used to last until she changed it, which meant a
+"stressed" tapped three weeks ago was still drawing a stressed cat three weeks later, under a line
+offering "hasn't said how she is yet today" as the alternative. Everything else in the room that means
+today is keyed to her local day; this is too now.
+
+## Everything is drawn by hand, one pixel at a time
+
+No sprite sheets, no generated art, no images fetched at runtime. The cat and the room are grids of
+characters in the source, and one logical pixel is drawn as one aligned rectangle.
+
+The pipeline for generated art was actually built (six room states, nine poses, a DOM interaction
+layer) and then reverted. A generated room is a picture of a room, and this app is two people
+watching a cat notice things. Every interaction had to be re-aligned to artwork that no longer knew
+where the furniture was, and the result was richer and deader. See `ART.md`.
+
+One consequence worth knowing: a logical pixel must be a whole number of device pixels. Get that wrong
+and the floorboards come out at two different widths, which reads as a bug rather than as a style.
+
+## The light is keyframed, not simulated
+
+Her day is a handful of hand-picked hours with straight interpolation between them. There is no solar
+model.
+
+A room lit by physics looks correct and feels like nothing. A room where somebody decided that 3pm is
+the warmest hour feels decided. Same reasoning for where she lies: she follows the sunbeam because
+that is what a cat does, and in summer she lies just beside it, which is the same instinct pointed the
+other way.
+
+## Night is two palettes, not a crossfade
+
+The interface follows the room's light, and it switches between a light and a dark palette rather than
+blending between them.
+
+Blending was tried. Interpolating a light panel toward a dark one drags every colour through mid-grey,
+and text failed contrast at ten of the twenty-four hours, worst case 1.5:1. Two palettes with a
+polarity switch put the worst case at 4.5:1.
+
+## The rules are enforced in the Durable Object, never in the UI
+
+The buttons on her side are not rendered on his, and that is not the reason he cannot press them. Every
+seat rule is checked again in the room itself.
+
+A rule enforced in the browser is a rule anyone can turn off. The link is the only credential this app
+has, so anyone holding it can send any request. Two real bugs came from getting this wrong: `/dress`
+once had no seat check at all, and notes were indexed by calendar date, so a day she did not visit was
+a note she never saw.
+
+## Anything one of them leaves for the other is gated on holding a seat
+
+Her line, her note, her mood, the drawing in the frame, what the two of them have noticed, the
+recovery codes: a third person with the link gets none of it.
+
+The mood was the last holdout. It went to whoever was looking, on the reasoning that the cat _is_ her
+and hiding it would show a spectator a different cat. But a forwarded link then let a stranger read how
+she was that day, directly above a paragraph telling them the room was not theirs. A tapped mood is a
+shorter sentence than a written one, not a different kind of thing.
+
+Physical objects in the room are deliberately not gated. A mug on a floor is a mug on a floor.
+
+## The second seat is permanent, and losing it is recoverable rather than preventable
+
+Seats go to the first two tokens that ever open the link, and they are never reassigned. A token in one
+browser is what makes the app frictionless: no account, no email, nothing asked for at the door.
+
+Automatic reclaim of an abandoned seat was built and reverted. The rule was "a seat used for under a
+day and cold for a day goes to the next person who opens the link". It broke a rule the test suite
+already encoded, and a stranger stays a stranger, because a real second person who looked once and got
+busy for a week would lose her seat to anyone with the link. It also did not fix the case that
+prompted it: opening the link in a private window and sending it on the same day leaves the seat warm,
+so she would still be locked out. Recovery is the answer, not expiry.
+
+## Accounts are optional, and they never touch the front door
+
+You can tie a seat to an account, and signing in on a new phone then hands that seat back. Nothing
+asks you to.
+
+The most valuable moment in this app is somebody tapping a link and being in a room with a cat. A
+sign-in page in front of that taxes exactly that moment. So the account does one job: it delivers the
+seat token you already had. The view returns the seat it resolved, the client adopts it, and every code
+path after that is identical to somebody who never signed in, which is why accounts touch one method
+in the Durable Object rather than all of them. An auth outage looks the same as never having signed
+in everywhere except the one route that needs an account; see below.
+
+## Sound is on by default
+
+Which is only defensible because of how browsers work: an audio context will not start until you
+touch the page. So the first noise she can make is always an answer to something you did, never a
+sound that arrives at you unasked.
+
+## This Worker never sees the session secret
+
+The `platform_session` cookie is forwarded to the auth service rather than read here. So the thing
+holding your login is one service, and mrrp is not a second place it could leak from. If that service
+is down the room still works: a room has never needed an account, so an unreachable auth service reads
+as "not signed in" and everything except linking a seat carries on.
+
+Linking is the exception, and it answers 503 rather than 401. A 401 makes the client say "Sign in
+first." to somebody who is signed in and cannot fix it by signing in again, so the one route that
+genuinely needs an account says the sign-in service is having a moment instead. `accountOf` returns
+three states rather than two, which is what makes the distinction possible at all.
+
+That promise went untested for a long time, which is the worst shape for a promise: the account tests
+all handed the room an account id directly, so every one of them started a step after the question
+"who is this". The seam now has its own tests, and they check the outage by pointing AUTH_URL at a
+port that refuses instantly. They were verified by collapsing "unavailable" back into "signed out"
+and confirming the link test goes red, because a test for a swallowed error passes just as happily
+when nothing is thrown.
+
+What is still untested is a real session: that needs a cookie, which needs a login, which needs a
+person.
+
+## The room is pushed, not polled
+
+The client used to re-read the room every 15 seconds, and `bothHereNow` meant "the other one made a
+request in the last three minutes". Both numbers were invisible until you noticed what they were
+feeding: the cat already had a whole greeting built for co-presence. She flops when you are both
+there, shows her belly, and slow-blinks at you. That content was running on a signal up to three
+minutes stale, delivered up to fifteen seconds late, which is why the app felt like a mailbox.
+
+There is one Durable Object per room already, which is the thing a socket wants to attach to. Each
+open tab now holds one, and the room pushes on every change.
+
+Four things that had to be right:
+
+**Hibernatable, via `ctx.acceptWebSocket`, never `server.accept()`.** Almost every room is idle
+almost all of the time. A plain accept pins the object in memory for as long as a tab is open, which
+for this app means all day.
+
+**The seat token lives on the socket, not in a Map.** Hibernation throws away everything in memory,
+so a `Map<WebSocket, token>` does not survive an idle room waking up. `serializeAttachment` is stored
+with the connection and comes back with it.
+
+**One view per socket, never one shared payload.** `build` answers differently for each seat: her
+note, his copy of it, what the other one has been doing, the recovery code. One object broadcast to
+both would hand each of them the other's.
+
+**The broadcast calls `build`, not `view`.** `view` seats people, counts a visit, rolls the gift and
+spends whatever he left out. Running that on a push would mark a treat found because her phone was in
+her pocket with the tab open, which is the exact bug that took three goes to fix the first time.
+
+Two things fall out of it. Presence is now literally true, so `HERE_NOW_MS` is a fallback for a
+client whose upgrade a proxy refused rather than the definition of being here. And the poll drops to
+120 seconds while the socket is up, because it is a backstop rather than the transport.
+
+The broadcast is triggered in one place, a Hono middleware over the room routes, rather than at the
+end of each of the twenty-odd methods that write. That kind of list is complete on the day it is
+written. The plain GET is in there too and has to be: reading the room is not read-only, and the
+spend it performs is the moment he most wants to see.
+
+A deleted room is the interesting edge. Its storage is wiped, so `build` would answer with a
+perfectly good view of an empty room and push it to whatever tabs were still open, which is the
+dead-link-becomes-a-fresh-room bug with a socket in place of a page load. Those tabs are told the
+room is gone and closed instead.
+
+## A pet has to be felt, because there is nothing to draw
+
+Every other thing he does leaves a mark: a tuft, a dent, a picture, a box, something on the floor.
+The socket carries those to her in the same second and the room simply looks different. Petting
+leaves nothing on purpose, so once the room was live it was the one action that still arrived as
+silence.
+
+Two things were in the way. Nothing on her side listened for "they just did something": every
+`setNudge` in the app fires on the local person's own tap. And the line that would have said so was
+switched off while both seats were present, which was right when the room was fifteen seconds stale
+and that line could only offer "looked in a while ago", and wrong the moment it became the live one.
+
+A rising `theirRecent[0].at` on a pushed view is the signal, and it costs nothing because the room
+already sends it. It fires the same bounce and the same cue their own tap makes, so a pet sounds the
+same from either side of it.
+
+The trap is the first view. It carries whatever they last did, which could be from an hour ago, so
+firing on it would greet you with a purr for something you already knew about. `heard()` in
+`heard.ts` returns false until it has a previous timestamp to compare against, and that rule is what
+its tests are mostly about.
+
+## The arrival card is for being away, the list is for being there
+
+Making the room live quietly broke the log, and the mechanism is worth writing down because it was
+invisible in the diff.
+
+`build` fills `arrivals` only when it is given a `since`, and the broadcast deliberately passes none:
+`since` is your previous visit, and a push is not a visit. So every pushed view carries no arrivals,
+which is correct. What that missed is that the old 15 second poll had been doing two jobs. It was the
+transport, and it was also what popped the arrival card, because each poll's `since` was only fifteen
+seconds back so anything the other one had just done landed in it. Replacing the transport took the
+second job away with it, and the card stopped appearing while you had the room open.
+
+Restoring that would have been wrong. It means pushing with `since` set to the last visit, which can
+be hours ago, so every push would re-pop the whole backlog. And the card's own copy is "the room kept
+this for you, it waited here until you looked in": it is about absence, and popping it for something
+happening in front of you contradicts it.
+
+So the card keeps its job, and what happens while you are watching gets its own list. `theirRecent`
+already carries the last four and was already being pushed, so this was mostly rendering. One line
+was enough while the room was polled, because whatever arrived replaced it and you never saw two
+things at once. Live, they can do three things in a minute, and a self-replacing line loses the first
+two.
+
+They still overlapped on the first open after being away, because a thing you missed is also a thing
+that just happened, so both claimed it. The split is a high-water mark: the card owns everything up
+to the moment you opened the room, the list owns everything after. It has to be a mark and not a flag
+tied to whether the card is on screen, or dismissing the card would put everything it showed straight
+back into the list, which is the duplication again with an extra step. Only `action` arrivals move
+the mark, because a mood or a line she left is not in `theirRecent` and letting one of those move it
+would hide a real action from just before.
+
+Collapsing the old branch turned up dead code. It read "both here, else they are here, else what they
+last did", and once presence counted an open socket, `bothHereNow` and `themHereNow` became the same
+question for anyone holding a seat, so the middle branch could never be reached.
+
+## The room says when things go, and whose midnight it means
+
+Three lifetimes share one room and nothing said which was which. Most marks clear at the end of the
+day, the photo never goes, and what he leaves out waits until she picks it up. The room named what
+was in it and then let you find out the rest by it not being there.
+
+The part worth getting right is whose clock. The room runs on her day, so a mark cleared "at
+midnight" means hers, and his can be nowhere near it. Checked with her on Kiritimati and him on the
+US east coast: his own midnight was six hours off and the room correctly said twelve. A line that
+just said "at midnight" would have been wrong by half a day for the person reading it, which is why
+his side says "where she is" and hers does not.
+
+The countdown is in hours, so the room only needs a coarse clock of its own, five minutes. Without
+one, "in about 5 hours" sits there saying five for as long as nobody touches the room, because
+everything else that re-renders it is somebody doing something.
+
+## Being held is a duration, so it is not in the log
+
+Everything else in the room is an event: he did a thing, the room kept the mark. Holding on to her is
+not that. It has a beginning and an end, and the whole of it is the middle, which is why she used to
+get "Aiden petted you" only once his hand was already gone.
+
+The cat already knew how to be petted. Her eyes close, the purr deepens the longer it goes on, and a
+heart rises off her. All of that hung off one local flag set by his own press. Live touch is that
+same flag, set by his press arriving on her screen, so there is no new drawing anywhere in this.
+
+It stays off the log and out of the tally on purpose. A hold is not a thing he did, it is a thing he
+is doing, and counting every press would make the `fed` trait a measure of how twitchy his thumb is.
+
+Two ways a hand can be left on her, and both are covered. His tab closing mid-hold is caught by the
+socket's own close handler, which knows whose seat it was. Anything that gets past that lapses after
+thirty seconds, because a real hold is a few seconds and a minute-old one is a tab that died without
+saying so.
+
+The posts are fire and forget. They fire on every press and release of the cat, and a failed one is
+worth nothing: the cost is a hand she does not see, or one that lapses half a minute late, and
+neither is worth a red bar across a room where somebody is trying to pet a cat.
+
+## Touching something in the room is watched, not recorded
+
+The room is full of things you can poke that only you ever saw move: the mug, the plant, the bird on
+the sill, the door. Once both seats were live in the same second, there was no reason for that to stay
+private, and it costs no new drawing at all: the wobble and her head turning already existed as the
+local tap's own reaction.
+
+Only those two things are replayed, never the tap handler. That handler opens the curtains, starts the
+rain, collects a glint and counts towards easter eggs, and none of that is theirs to do to your room
+from a distance. What crosses is "something over there moved, and she looked at it".
+
+It is not in the log and not in the tally, and it lapses after four seconds. Touching the plant is not
+a thing you did for her, it is a thing she saw you do, and a log full of them would bury the things
+that were meant for her. Four seconds is also what stops a reload replaying the last one.
+
+An unknown prop key is a 400, the same way an unknown discovery key is. The client does not get to
+invent room furniture.
+
+## The moment one of you walks in
+
+The room already did the whole thing: the door swings, she gets up, crosses to the middle and purrs.
+Nobody had ever seen it. Everything worth watching is up in the room and every control is below it,
+so the arrival reliably happened while the person already sitting there was looking at buttons.
+
+Nothing was added to the room. It is pointed at for two seconds, and scrolled back on screen if it
+had been scrolled off. The sound and the bounce were already there.
+
+## Her mood, arriving rather than appearing
+
+`tell` writes to the moods record and not to the log, so none of the machinery that notices the other
+one doing something ever saw it: the room simply became a different room between two frames. It is
+the one thing in here that is actually about her, so it should be the loudest arrival, and it was the
+quietest. It fires the same cue and bounce her own tap does.
+
+Its guard is the same as `heard`: the first view carries whatever she last said, which could be
+hours old, so a rising timestamp is the signal rather than the value.
+
+## The first time he reaches her
+
+There is already a system for things that happen to a room once, and it held nothing but weather.
+The first time he holds on to her while she is there to feel it is the app's whole thesis happening,
+so the room remembers it and tells her.
+
+Only when she was there. A hand in an empty room is not the moment, and a first that can happen twice
+is not a first.
+
+## The room says you are both here; the app used to say it as well
+
+Rule four is that the room does things and the app does not announce them. When both seats are live,
+the door swings and the cat gets up, crosses to the middle and purrs. Above that sat a honey banner
+reading "You're both in here right now", which is the app narrating something you were watching happen.
+
+The headline is gone. What stayed is the line under it, because that one is not an announcement: "He
+is right there. He can reach you" is the single thing the scene cannot tell you, which is what to do
+about it. It is set smaller now that it is not living under a headline.
+
+## His notes are fetched, not pushed
+
+Making the room push was right and I did not check what it was pushing. His view was 4KB and 72% of
+it was `yourNotes`, the notes he wrote himself, capped at 120 notes of 280 characters. That is up to
+33KB of his own writing going back to him on every pet, poke, hold and release, to prefill a panel
+that was not open. Cheap at one pull every fifteen seconds; not cheap once every write is a push.
+
+One reader, one fetch, when the panel opens. His view is 1.1KB now. If the fetch fails the panel
+still opens with an empty notes box, and saving an empty box is what restores the defaults anyway.
+
+## Broadcasts are not coalesced, and that was measured rather than assumed
+
+One press of the cat is two writes, `hold` and `act`, so it is two pushes. Merging writes inside a
+short window looked obviously worth it and was built, and then backed out.
+
+It needs a timer and two fields of in-memory state on an object that hibernates, and every way it
+fails is the room going quiet rather than noisy. The test run showed the shape of it: the flag
+survived a storage wipe between tests and a clock that moved backwards made the window negative.
+
+The number settled it. After the notes came out of the view, coalescing would have saved another
+1.1KB on a double write, against the 6.9KB that taking the notes out had already saved. That is not
+worth stateful timing in a Durable Object.
+
+## The one thing neither of you can do alone
+
+Everything in the room is one of you doing something to the other, and it is always addressed: what
+he did, what she did, what she will find. Both of you reaching for the same thing in the same moment
+is not addressed to anybody, which is why it is the only thing in here sent to both seats.
+
+It costs almost nothing to notice, because the last poke is already sitting in storage waiting to be
+replaced. Three conditions and each has its own test: the other seat, the same thing, within three
+seconds. A stranger cannot be half of it, and drumming on the plant on your own is not a moment.
+
+## Everything on the floor goes in front of the box, and only the cat goes behind
+
+The box's near wall is drawn after the cat, which is what puts her inside it rather than behind it.
+It is 28 wide at `BOX_X = 44`, so it covers x 44-71 at floor level, and four things land in there:
+the treat (68), the catnip (54), the mug she knocks off the shelf (66) and her mood props, which
+ride at `kx +- 13` and so sit inside the box whenever she does.
+
+Each one was found separately and each looked like a different bug. The widest, the mat for
+"stressed", was 81 of its 84 cells behind the wall, and the room's whole point is that you can read
+her mood. Knocking the mug off moved it from the shelf to underneath the box, which looks exactly
+like nothing happening, and that one was reported three times.
+
+The rule is one line now, and the layering test pins all five: floor-level things are drawn after the
+near wall, and only the cat goes behind it.
+
+Two more of the same shape, worth knowing because they are not about drawing order:
+
+**She was sent to the box's left edge.** `BOX_X + 2` would have been right for a box a few pixels
+wide. She stood with her front half out of it and the wall cutting her in two, which reads as a cat
+beside a box. It is measured off the sprite now, so a box that changes size takes her with it.
+
+**The tap target disagreed with the drawing.** The draw gate read `boxOutRef || boxRef || secretBoxUntil`
+and the hit test read `boxRef || secretBoxUntil`, so a box he put out was drawn and could not be tapped. A test
+checks the two gates name the same three things.
+
+## What the camera cuts off
+
+The room is 100 columns, the viewport is 80, and the camera follows the cat
+between 0 and 20. Every prop's reachable camera range, from the sprite widths:
+
+| prop   | x     | visible when the camera is |
+| ------ | ----- | -------------------------- |
+| window | 60-76 | anywhere                   |
+| box    | 44-71 | anywhere                   |
+| frame  | 16-36 | 0-16                       |
+| bed    | 13-32 | 0-13                       |
+| door   | 6-17  | 0-6                        |
+| shelf  | 80-95 | 16-20                      |
+| plant  | 87-96 | 17-20                      |
+
+The door and the shelf can never be on screen together, which is inherent to a room that pans and is
+not a bug. What it does mean is that knocking the mug off the shelf happens off screen unless the cat
+is already on the right, so the mug appearing on the floor at x 66, which is visible at every camera
+position, is the whole of what that event shows you. That is why it mattered so much that the box was
+covering it.
+
+## She goes and knocks it off
+
+"Knock something off the shelf" was the least realised thing in the room. `shelfDown` flipped, the
+mug appeared on the floor, and she never moved. Worse, the shelf is at x 80-95 and the camera only
+reaches it when she is right of 56, so her one deliberate act usually happened entirely off screen and
+landed as a mug quietly appearing somewhere else.
+
+She walks over and does it now. The camera follows her, which is what brings the shelf into view, and
+the mug stays on the shelf until she is under it rather than going over the instant the room says so.
+There is precedent: the door already pulls the camera to itself when somebody arrives.
+
+The trigger is a moment, never the state. Her own tap sets it; his comes off the action arriving in a
+pushed view, from the same signal that already tells him she did it. It is deliberately not derived
+from `shelfDown`, which is true all day and would send her walking to the shelf every time he opened
+the room.
+
+The timing is a pure function in `shelftrip.ts` rather than arithmetic inside the draw loop, because
+this is the one thing in the room that cannot be checked by looking at it. `tips` takes the previous
+frame's age as well as this one's, so the thump fires exactly once even if the frame rate is bad
+enough to step clean over the moment.
+
+## The draw loop has a test harness now
+
+The room's one untestable surface was anything that moved. `canvasHarness.tsx` mounts the cat in
+jsdom, replaces the 2D context with one that records, and hands the frame loop a clock a test drives
+by hand. Five things had to be right, and each was found by the harness being wrong first:
+
+**One clock.** In a browser the timestamp a frame callback receives and `performance.now` share an
+origin, and the room depends on it: a moment is stamped outside the loop and compared against the
+frame's `t` inside it. Two clocks make every such comparison come out hugely negative, which reads as
+"not happening".
+
+**Fake only `Date`.** `vi.useFakeTimers()` replaces `requestAnimationFrame` as well, which silently
+takes the frame queue away from the harness, and nothing is painted at all.
+
+**Record cells, not device pixels.** Every fill comes from `px`, which paints exactly one cell, so
+the cell is the whole of the information. Storing device pixels is a hundred and sixty thousand
+writes a frame and turns a hundred-frame test into a timeout.
+
+**Run frames, not moments.** She eases five per cent of the way toward where she wants to be each
+frame, so crossing the room takes sixty-odd of them. A test that jumps from 0ms to 2000ms in one
+frame moves her five per cent and proves nothing.
+
+**Change props mid-run.** Her position initialises to wherever she wants to be on the first frame, so
+a moment already running at mount puts her at the far end of it instead of walking there. That cannot
+happen in the app, where the trigger starts null, and it quietly made the first version of the shelf
+test meaningless.
+
+No camera reading. The obvious one, find a fixed prop and subtract, locks onto the outline colour,
+which everything in the room shares. Assert on what a person would notice instead: how much of a
+thing is on screen.
+
+Every test in `room.draw.test.tsx` was checked by reintroducing the bug it describes. That is how the
+mood one was caught being useless: the mat runs to x 72 and the box's wall stops at 71, so three cells
+always show and "greater than zero" passed with her mood entirely hidden. It is 72 cells against 3
+now, and the threshold sits between them.
+
+## Why none of that was caught by looking
+
+Every one of these was reported more than once and checked more than once, because the canvas had
+never rendered anywhere it could be looked at. A hidden tab never fires `requestAnimationFrame`, and
+an automated browser keeps its tabs hidden, so the canvas sat at its unsized default and every
+screenshot came back black. Each change was verified by reading the state that feeds the drawing
+rather than the drawing.
+
+Forcing it to draw is possible, and worth knowing for a quick look: patch `requestAnimationFrame` to
+a timer and stub `innerHeight`, both before the app boots. It renders a handful of frames and then
+freezes, so it settles a question about layout and cannot answer one about motion. That is what the
+harness above is for.
+
+## The box is the one thing either of them can undo
+
+His button puts a box out and takes it away again on a second press, except while she is sitting in
+it, where it says so and does nothing. Rule one is that nothing in this room goes wrong for the cat,
+and pulling the box out from under her is the smallest possible version of that.
+
+Her button is the same shape: she gets in, and she gets back out. It was not, for a while, and that
+made getting in the only act in the room with no undo. `boxDay` is a day number, so she was in the
+box until her midnight however long ago she chose it, and his button stayed blocked all that time
+saying "she's in it", which reads as right now and meant today.
+
+Neither direction of undo is logged. The room shows her leaving the box, and "took the box away
+again" and "got out of the box again" are not things the other one needs told.
+
+## The pet button was not connected to the drawing
+
+Holding on to her sets a flag in the canvas and everything hangs off it: her eyes shut, a heart rises
+off her, the purr deepens. The "Pet her" button never touched that flag. It played a sound, bumped a
+counter and posted the action, so tapping it changed nothing you could see, on either screen.
+
+That is worse for petting than it would be for anything else, because petting is the one action with
+no mark. There is nothing left over afterwards to notice, so if the moment itself does not draw, the
+whole action is silent.
+
+The button is a short hold now, which is what it always was. `petAt` draws it on his own cat, and the
+two `doHold` calls send it to her down the same path a real hold already uses.
+
+## Everything the room keeps lasts one of her days
+
+`brushedDay`, `satWithDay`, `boxDay` and `boxOutDay` are day numbers in her timezone, not timers, so
+everything clears at her midnight rather than a day after whenever it happened.
+
+The two marks he leaves, the tuft and the dent, get one addition: they also stay until she has been
+in and seen them. The day on its own has a hole at the end of it. These are day numbers rather than
+timers, so a brush at eleven at night is gone by midnight, an hour later, while a morning one lasts
+fifteen hours, and the marks exist to be found by somebody who was not there. The one left last thing
+at night is exactly the one she is most likely to miss.
+
+Whose last look counts is the fiddly half. On her own read her `lastSeen` is already now by the time
+the view is built, so it has to come from the value `view` captured beforehand. Anywhere else,
+including a push to his tab, her stored one is the honest answer.
+
+A duration would have been the obvious choice and is worse. It puts the room on a different schedule
+every day, so a tuft left at nine in the morning goes at nine and one left at eleven at night goes at
+eleven, and she can never tell what she is looking at without knowing when it was left. A day is the
+unit the room already runs on: the light crosses the floor over her day, the note turns over on her
+day, and he is expected home at an hour of her day. Marks clearing with it means she opens the room to
+a clean one, once, and knows what "still there" means.
+
+Her midnight, never his and never the server's, for the same reason as everything else: the room runs
+on her clock.
+
+## The edge of something you press is not a separator
+
+`--line` is the room's faint divider and every control borrowed it, which measured 1.38:1 on the
+panel. That is not a button, it is text floating with a ghost around it. A separator can be faint; the
+edge of a thing you press cannot.
+
+`--control` is a second token derived from the panel at the hour it is being drawn, because the chrome
+is tinted per hour and a fixed hex holds for part of the day and fails for the rest. `standOff` walks
+up until it clears 3:1 and stops, rather than jumping to the strength the floor marks use: an outline
+wants exactly enough, or every pill in the room turns into a hard box. Measured 3.07:1 after.
+
+## The sound toggle was sitting on the notes box
+
+It was `position: fixed`, so it floated over whatever scrolled underneath it. On a phone the content
+column is the full width, which put it on the top-right corner of the notes textarea: the one field
+in the app where he writes the thing the room is for. A tap there muted the app instead of placing a
+cursor. On a wide screen it sits outside the column and none of this happens, which is why it lasted.
+
+It is absolute now, so it scrolls away with the room it belongs to. Measured across every scroll
+position on both seats and the setup panel: no overlap anywhere, and it is still the first thing at
+the top.
+
+## Everything you press is 44 across
+
+Nothing was. The mood row, which is the thing she uses every day, was 38 tall; the blanket swatches
+were 30 square; the sound toggle 36; the arrival card's close button 28. The one `min-height: 44px`
+in the stylesheet was on a date input, to work around Safari.
+
+The swatches are the interesting case: a 44px slab of colour is a paint chart, so the box grows and
+the paint does not. The extra is transparent border with `background-clip: padding-box`, which gives
+a thumb something to hit around a swatch that stays the size it looked best at.
+
+Left alone: links sitting inside a sentence, which the target-size rule exempts and which would
+break the line if they were boxed out, and anything inside a screen-reader-only container, which has
+no touch target at all.
+
+## The mood tint says which mood, the border says it is a button
+
+The mood buttons overrode their border to transparent and leaned on a tint that measured 1.25:1 on
+the panel. That is right for a hint and nowhere near enough to be the only thing giving a control its
+shape.
+
+It also exposed the hole in the change that introduced `--control`: any control setting its own
+`borderColor` skipped it silently. The inputs, the selects and the arrival card's close button were
+all still on `--line`, the faint divider. A token only helps where nothing overrides it.
+
+## The banner was louder than the room
+
+"You're both in here right now" came off first, and what was left under it, an invitation to hold on
+to her, was still a full honey block at 9.2:1 against the page. The loudest object on the screen, for
+a suggestion. It is a tinted panel with a honey edge now.
+
+The room also got a chunk of the screen back. It was about 40% of a phone with four stacked cards
+under it, which is the wrong way round for the thing the app is about.
+
+And things that arrive now arrive. Everything in the live list comes over a socket rather than a
+poll, and it was appearing without moving, which reads as a repaint rather than as something
+happening. It eases in, staggered down from the newest.
+
+## A mark nobody can see is not a mark
+
+Every fix this year made his actions reach her: a line saying what is in the room, a button that
+lights up, a box that stopped covering things. None of it helped, because there was nothing legible
+at the end of it. Measured against the rug they lie on:
+
+| mark                        | before            | after                        |
+| --------------------------- | ----------------- | ---------------------------- |
+| tuft, from brushing her     | 5 cells at 1.43:1 | 22 cells, outlined, over 3:1 |
+| dent, from sitting with her | 1.18:1            | over 3:1                     |
+
+Three to one is the bar for a graphical object being perceptible at all. The dent was mixed 13% away
+from the surface it sits on, which is another way of saying it was the surface it sits on.
+
+The colour cannot be a constant, and neither can the direction. The floor changes all day, so a fixed
+mix toward ink is legible at noon and gone at night. Worse, at dusk the floor is mid-toned and ink
+cannot reach 3:1 from it at all. `legible()` tries both ends of the room's palette and takes whichever
+is further from what is underneath, which clears 3:1 at every hour, worst case 3.01 in the afternoon.
+
+The tuft also needed to be bigger. Five pixels is not a tuft at any contrast, and an outline is what
+makes a small sprite read, which is why everything else in the room has one.
+
+Sweeping every mark the same way found a third: what he leaves out for her was 1.75:1, dusty pink on
+a dusty pink floor, with not one legible cell out of six. That is the feature whose buttons were
+reported as doing nothing, and it turns out the last inch of it was invisible too. It takes a legible
+colour now and keeps its pink highlight, so it is still obviously his and not something the cat
+dragged home. The photo and her gift were already fine, at 9.02:1 and 5.59:1.
+
+Two things the draw harness caught while this was being written, both the same mistake in different
+clothes. `legible` was being handed the floor, and both marks lie on the rug, which is a different
+colour: right idea, wrong surface. And the test took the highest contrast in the region, which the
+dent's lit lip clears whatever the dent is doing, so it passed with the mark invisible. It counts how
+many cells are legible now. The old dent scores 2 and the old tuft scores 0.
+
+## Nothing accumulates into an inbox
+
+The arrival card is capped and clears itself. The visit log is bounded. There is no unread count, no
+history to scroll, no "3 of 14" anywhere.
+
+Discoveries are counted but never totalled: the total is the spoiler, and it turns a room you poke at
+into a list you complete. The note never sends tomorrow's text, because a gift you can skim in devtools
+is not a gift.
+
+## The room mentions at most two quiet things at once
+
+Under the cat there can be a milestone, a welcome-back line, the full moon, her personality, or the
+fact that it is already tomorrow where she is. Only two are ever shown, rarest first.
+
+Each was written to be a rare aside. Together they are not: the date line fires every day for a
+long-distance couple and the personality line is permanent once earned, so a full-moon anniversary put
+eight lines of grey text under the room and pushed the rest below the fold. Same reasoning the
+milestones already used: a room that celebrates every fortnight is not celebrating.
+
+## Sounds are synthesised, not sampled
+
+Every cue is built from oscillators and filtered noise at runtime. There are no audio files.
+
+A 200KB sample is silent on the first visit, which is the visit where somebody decides whether they
+care. A purr is not a note either: it is a roughly 25Hz amplitude modulation of a broad rumble, and it
+slows when she is heavy-eyed.
+
+## What only exists in development
+
+`POST /api/room/:id/age` fast-forwards a room, so states that take months can be looked at in a minute.
+It is gated on a `DEV_TOOLS` variable in `.dev.vars`, which `wrangler dev` reads and `wrangler deploy`
+never uploads.
+
+The first gate checked the hostname, on the reasoning that this Worker has one custom-domain route and
+no workers.dev address. That does not work: `wrangler dev` rewrites the request URL to the configured
+route, so the local Worker sees the production hostname exactly as production does.
+
+Everything the route writes is a state an ordinary room reaches on its own eventually. It cannot put a
+room somewhere a real one could not be.
+
+## Two seats read different sentences about the same act
+
+Every action carries two phrasings, not one. `past` finishes "Ada brushed the cat", which she reads.
+`mine` finishes "She'll see that you brushed the cat", which he reads. Sharing one string is cheaper
+and produces "you brushed you". Moods have the same problem in miniature: their text has to read
+after a plural pronoun, because the sentence is "told the cat they're ___".
+
+The general rule: the two sides of this app are never looking at the same sentence, and a string that
+serves both is usually serving neither.
+
+## Notes belong to the room, not to the app
+
+The set of notes she gets is written by whoever made the room. Defaults exist as a floor so a new
+room is never empty, but they are a floor. Shipping one hardcoded list means everybody who is not its
+author hands over a gift full of somebody else's specifics.
+
+Editing them must not cost her progress either. She is on note 14; he fixes a typo in note 2. Losing
+three weeks of her year to a typo fix would be indefensible, so how far along she is and what the
+notes say are stored apart.
+
+## She never dreams about a secret you have not found
+
+The dreams she has are drawn from what this person has actually discovered. Naming the piano tells
+somebody there is a piano, and a sleeping cat is the last surface anybody would think to audit for a
+leak. That is the only reason dreams are gathered and filtered rather than looked up.
+
+The same rule is why the day's note is fetched with a server-side day index: tomorrow's words never
+reach the browser at all. A gift you can skim ahead in devtools is not a gift.
+
+## Timing that cannot be watched is written as a function of the clock
+
+The moth visits for 18 seconds out of every 100. There is no way to confirm that by looking at the
+room, and I screenshotted the wrong 18 seconds twice before admitting it. So where the moth is at
+time `t` is a pure function of `t`, and a test pins it.
+
+Anything else in the room with a cadence measured in minutes follows the same rule. If the only way
+to check a behaviour is to catch it happening, it will ship broken.
+
+## Symbols are drawn, never typed
+
+The arrival marks are little SVG paths, not ✦ ✧ ❧. A dingbat is whatever the device's font decides it
+is, and ❧ is missing from plenty of them, so a typed symbol makes the same list a different shape on
+her phone than on his.
+
+## One logical pixel is always a whole number of device pixels
+
+This holds everywhere anything is drawn: the room canvas, the favicon, the keepsake. Half a device
+pixel means two floorboards come out at different widths, and the eye catches it immediately even
+though nothing looks obviously broken. It is the single most common way pixel art gets ruined, so the
+scale is floored rather than fitted.
+
+The favicon is redrawn from the room's own colours for the same reason the room is: index.html ships a
+ginger cat, so without this a room with a black cat in it sits on the home screen as somebody else's
+pet. And it is painted opaque, because a dark browser theme behind her dark outline eats the whole
+silhouette.
+
+## Tests never depend on when they run
+
+Two timezones are used throughout the worker suite: `Etc/GMT+12` and `Pacific/Kiritimati`, 26 hours
+apart, so their local dates always differ. The first version used New York and Tokyo, 13 hours apart,
+which share a date part of the day: those tests passed in the evening and failed in the morning.
+
+Nothing in the suite reads `.dev.vars` either. That file is gitignored, so the tests that fast-forward
+a room passed here and failed on a fresh clone. A suite that depends on an untracked file lies about
+whether the code works.
+
+## Both of them can get out, through different doors
+
+He can delete the room. She can leave it. The asymmetry is the decision, and the two symmetric
+alternatives are both worse.
+
+If only he could delete, she would have to ask another person to remove her own data, which is not a
+delete path at all. If either of them could delete everything, one bad evening could erase the other's
+year, and a shared gift that one person can unilaterally destroy is a worse thing to hand somebody
+than one they cannot.
+
+So: his door ends the room for both, because he made it and most of what is in it is his. Her door
+takes her side out and leaves his standing. Each of them can remove everything that is theirs, and
+neither can destroy what is not.
+
+His confirmation is his own name, typed. A dialog with a red button is one mis-tap from both of their
+years; a name is something a person who means it can produce and a thumb cannot. It asks for his and
+not the cat's because she is the cat, and "type her name to erase her" is a different sentence. Hers
+is two taps, because it costs her the same and the name to type would be her own.
+
+## Deleting is instant, erasing waits a week
+
+The two are separate on purpose. The room is unreachable the moment he confirms, because a delete the
+other person can still see working is not a delete. But the bytes stay for a week, because the mistake
+this protects against is not a typo, it is the decision itself: the deletes people regret are the ones
+made at eleven at night, and they regret them in the morning, not in the following second.
+
+Only he sees the way back, and only until the week is up. She is not told there is one. Being shown a
+countdown on somebody else's decision about a room you shared is worse than being told it is gone,
+and it would make the undo his to dangle.
+
+Leaving gets the same week, with one condition his does not have. The seat is genuinely free the whole
+time, because freeing it is the point of leaving, so if he hands it to somebody else her way back
+closes at that moment. The screen tells her that before she decides rather than after.
+
+He is told too: that she left, and that her side is kept until a date. Not for symmetry, and not
+because her deliberation is his business, but because he is the one holding the thing that ends it.
+The sentence sits directly above the button that would send the link on, since a warning after the
+fact is not a warning.
+
+And she is told he was told. The argument for keeping that from her was that it spares her the
+feeling of being watched while she decides, but it does not: he can see it either way, so all the
+silence buys is her not knowing what he can see. That is the version where finding out later feels
+like the app took a side.
+
+The two are one thing built twice, deliberately. Both are computed from the same conditions and both
+stop at the same instant, when somebody takes the seat or the week runs out, so there is no state
+where one of them is looking at something the other is not. A test asserts that pairing rather than
+each half on its own, because the pairing is the promise.
+
+I argued for leaving being immediate and was overruled, and the overrule was right: the argument was
+that "leaving removes your side now" is a cleaner promise, but it is only cleaner to write. The person
+it is made to gets one irreversible tap on a bad evening either way, and she is the one with less of a
+claim on the room and more reason to act in a hurry.
+
+The erasing runs off a Durable Object alarm, which is the only thing in this app that happens without
+somebody visiting, and the wrangler config used to say so. It has to be an alarm: if the erasing only
+happened on the next request, a room nobody ever opened again would keep everything in it forever, so
+the delete would be a promise instead of a fact. The same check runs on the next request too, in case
+the alarm never fired.
+
+## A deleted room keeps one bit, and a test hunts for the method that forgets
+
+Wiping storage is not enough. A room with fewer than two people in it seats whoever turns up, so the
+next person to open a dead link would quietly become the maker of a brand new room at the same
+address, and she would find a stranger sitting in it. So a deleted room keeps exactly one key, the
+date it went, and every method refuses on it.
+
+"Every method" is the hard part, and it is enforced by a test that walks the Durable Object's own
+prototype rather than by remembering. Adding any method fails that test until its name is classified
+as internal or as a route can reach it, which is the moment to decide whether a dead room may be
+reached through it.
+
+Leaving needed the same kind of thinking one level down. The first version freed her seat and was
+undone by her own next page load, because the free seat she had just vacated was hers for the taking
+again. Leaving now bars that browser's token. Him freeing her seat does not, because that button
+exists precisely so the right person can take a seat back.
+
+## The worker tests are split across files on purpose
+
+Cost per request grows with how many requests the worker process has already served. Measured inside
+a single room, with no new Durable Objects at all: sixty reads cost 76ms at the start of a file and
+3402ms once four hundred requests had gone before them. A suite in one file is quadratic in its own
+length, and this one had reached two minutes.
+
+Each test file gets its own worker and its own counter, and files run at the same time. Splitting the
+same 213 tests across six files took the suite from 123 seconds to about four. Nothing else changed:
+same tests, same assertions.
+
+I got this wrong first. The original diagnosis was that the cost came from the number of Durable
+Objects left alive, because reads slowed down as rooms accumulated. That experiment created fifty
+rooms with fifty requests between each measurement, so it could not tell rooms and requests apart.
+The fix that followed from it, reusing one room id for the whole suite, made no difference at all:
+123.5 seconds before, 123.5 after. Holding the room fixed and varying only the request count is what
+showed which one it was.
+
+The one-room-per-file part survived anyway, because it is the right shape once files are split, but
+it was not the thing that mattered. Do not merge these files back together.
+
+Speeding it up did surface a flake it had been hiding. "What arrived since your last visit" is
+`at > since`, both sides from `Date.now()`, and a test that reads the room, acts, and reads again
+inside one millisecond correctly gets nothing. Two people cannot do that over a network. This suite
+could, once round trips went from about 200ms to about 5, and it started failing about one run in
+eight. Two other tests already carried a bare 2ms sleep with no explanation of what it was waiting
+for, which is what an undiagnosed version of this looks like. All three now call `tick()`, which says
+why in one place.
+
+## The ending screens are pure components, so they can be tested
+
+There is no jsdom in the web package and no testing library, so React tests here render to static
+markup, the same way the auth app's do. That only works on a component that is a function of its
+props, which the delete and leave screens were not: they read three pieces of App state and called
+handlers closed over more.
+
+Pulling them into `screens.tsx` was the price of testing them, and it is worth paying for these in
+particular. Each one has two versions and picking the wrong one is the whole failure mode: telling
+her a room is gone while he can still put it back, or offering her a seat somebody else is sitting
+in. Those are one falsy prop apart, and neither is visible in a screenshot of the version that
+happens to be right.
+
+The tests were checked by breaking the component on purpose (dropping the seat gate, always claiming
+he was told, forcing the undo branch, cutting the warning about giving the seat away, swapping the
+two handlers on her card) and confirming each one turned a test red. A test that cannot fail is worse
+than no test, because it reads like coverage.
+
+Clicks need a DOM, so `screens.click.test.tsx` asks for jsdom in a comment at the top of the file
+rather than in the config. It is the only file in the package that needs one, and putting it in the
+config would make every other test in the package pay for it. What clicks buy over static markup is
+the wiring: "Put my side back" and "start fresh instead" sit next to each other, take the same shape
+of callback, and one restores her year while the other throws it away. Swapping them changes no
+markup and no screenshot.
+
+## A label has to name the question, not one of the answers
+
+This app has now hidden three features inside things labelled as something else, twice in the same
+block of code:
+
+- the recovery code lived inside "change how she looks", so the one string that recovers a seat sat
+  behind a button labelled as a cosmetic editor
+- signing in lived inside "show my recovery code", where nobody looking for an account would open it
+- the notes, which are the whole point of the room, lived inside "change how she looks, or her hours"
+
+Every one of them was in the DOM the whole time, so no test would have caught any of it, and my own
+browser checks found them by querying for them by name rather than by looking at the screen. The one
+that surfaced it was a person opening the app and asking where accounts had gone.
+
+The rule that would have prevented all three: a disclosure is named after the question somebody
+arrives with, never after the first thing that happens to be inside it. "Change how she looks" covers
+exactly one of the four things behind it.
+
+The test is not whether the label is accurate. All three were accurate. It is whether somebody who
+does not already know the feature exists would open that label to look for it.
+
+Relabelling was not enough for the account, though, and that is the second lesson. "Getting back in
+on a new phone" is an honest name for a panel holding both a code and a sign-in, and signing in was
+still two scrolls and a disclosure away from anybody who had not decided to go looking. So it came
+out of the panel altogether: the sentence and the button sit in the room, and the disclosure below
+them is now just "or keep a code instead". A code is a long string you fetch when you need it, which
+is what a disclosure is for. A decision somebody has to know they can make is not.
+
+Still nowhere near the front door. That part of the original reasoning holds: she taps a link and she
+is in, and signing in is something you decide afterwards, or never.
+
+## She gets one thing in the room that is hers
+
+He sets the cat, the hours, the notes, and the day the room remembers, and he has all five actions.
+She taps a mood from six and leaves one line. That asymmetry is right for a gift, and it still left
+the person the gift is for with nothing of her own in the room. A room you cannot put anything into
+is somebody else's room.
+
+So: the blanket on her bed. Five colours and a stripe, hers alone, enforced in the Durable Object
+like every other rule about who may write what. Deliberately one small object rather than a second
+editor beside his, and deliberately the bed: she is the cat, so the thing she decides is where the
+cat sleeps and what it sleeps under.
+
+It used to stay when she leaves, on the argument that a colour on a bed is not a record of her the
+way her moods are. That argument was about her and never about the person who sits down next, which
+is the case that actually happens: he sends the link on, and somebody opens a room where the cat is
+already wearing the last person's blanket and there is already something on the floor she left. Both
+go now, and the undo week puts them back with everything else she took.
+
+The stripe columns are written down by hand rather than stepped by a loop. The cushion runs from
+column 3 to 16, so an even step leaves a half-width gap at one end, and on a bed that is symmetrical
+the eye reads that as a mistake rather than a pattern.
+
+## The window shows her actual weather
+
+The room already knows her timezone, because the light in it follows her day. That is enough to know
+whether it is raining on her, so the window shows it: streaks on the glass, flakes drifting past, or
+the panes going flat under cloud. He looks at the room and knows what her afternoon is like without
+asking, which is the job the mood buttons do and the reason the room does it rather than saying it.
+
+Nothing new is stored about her and nothing about her is sent anywhere. The request carries a
+latitude and longitude for the middle of a timezone, identical for every room that picked it, to a
+keyless public forecast. Zones the table does not name fall back to the longitude their own offset
+implies, right to about a timezone's width; the latitude is a guess, so at worst the window shows a
+plausible sky rather than hers.
+
+Three things this needed that were not obvious:
+
+**It goes out behind the response.** A room load must never wait on a forecast, so the lookup runs in
+`waitUntil` and the read serves whatever the window last knew. The stamp is written before the
+request, not after, so a service that is down is asked every half hour instead of on every read. And
+the late write checks the tombstone again, because it lands in a later turn than the read that
+started it, and a room deleted in between would have had a key put back into storage that erasing had
+just taken out.
+
+**Changing her timezone clears it.** He opens the room before he picks her timezone, so the first
+lookup is always for the default. Without clearing, the window shows another city's sky for half an
+hour, on the one path every room takes. Found by watching a room set to London report New York's
+cloud.
+
+**A closed sky reaches the beam.** Rain running down the glass with a full shaft of sun across the
+floor reads as a bug even to somebody who could not say why. The beam is softened, never removed:
+cloud still lets light through, and taking it away would cost the room its warmth for a week of bad
+weather.
+
+The endpoint is a binding rather than a constant so the tests can point it at a port that refuses.
+Left as a constant, the suite called a stranger's public API a few hundred times a run, and one
+assertion quietly depended on whether it happened to be cloudy in New York.
+
+## The weather reaches the cat, not just the glass
+
+Putting the sky in the window created a room that contradicted itself. She spends the daylight hours
+following the sunbeam across the floor, which is lovely and a nonsense on a wet Tuesday: the beam had
+been drawn faint precisely because the sky is closed, and she was lying in a patch of light that was
+not there. The copy under the room said it out loud, too, over an empty floor: "moving with the
+sunbeam, one patch at a time".
+
+So rain and snow are worth going to look at, and she does. Cloud is not, so she gives up on the sun
+and goes to her own spot. Three of the hourly lines have sunless versions now, written per hour
+rather than replaced by one generic sentence, because the hours are hand-authored and a catch-all
+would flatten them.
+
+The weather loses to everything else with an opinion: being asleep, waiting at the door, and doing
+what you told her all outrank it. It is the least important thing in the room, and the ordering says
+so.
+
+## One secret that cannot be found alone
+
+There were fourteen discoveries and every one was solo, while the only mechanic in the app that needs
+two people, both of you being in the room at once, was spent entirely on the cat crossing to the
+middle to purr.
+
+Sitting with her long enough already earns a purr. Doing it while the other one is also here gets her
+all the way over on her side, paws up, which is the thing a cat does when it has decided nothing in
+the room is a problem. Set deeper than the purr so it is not the first thing that happens.
+
+Gated in the Durable Object, not the browser, because the browser is exactly where somebody who
+wanted to tick it off alone would go. `bothHereNow` in the view and the check on the discovery run
+through one helper, so what she is told is happening and what the room will accept cannot drift.
+
+The pose is a new hand-authored grid, and the art tests caught two things about it that a screenshot
+would not have: the eyes and highlights have to sit in the same columns in every pose, so the head is
+the loaf's head unchanged, and the pose list is asserted by name so a new one has to be acknowledged
+rather than appearing. The first attempt was belly-up with the head flat and it read as a dead cat;
+the second was a long loaf, because without paws in the air nothing says rolled over.
+
+## The cat learns when he actually gets in
+
+He tells the room "usually home around six" once, when he makes it, and then never again. Life moves;
+the hour he typed does not. So the room watches the first time he looks in each day, works out the
+real hour, and after a fortnight of disagreeing with him by more than half an hour the cat starts
+waiting at the door then instead.
+
+The thresholds are the decision. One sample a day, so an evening spent opening the room twenty times
+counts once. A fortnight before it says anything, because a cat that starts waiting at the wrong time
+on three data points is worse than a cat that waits when she was told to. Half an hour of drift before
+it counts, because twenty past six is the same time of day and not worth a sentence. And the mean is
+capped at a fortnight of memory rather than being cumulative, so a change of job moves her instead of
+being outvoted by the first month forever.
+
+It watches him and not her. She is the cat, and the cat does not wait at the door for herself.
+
+The line telling him goes to him alone and sits low in the quiet lines, under the moon and the
+anniversary. To her it would read as the room reporting on somebody.
+
+The dev ageing tool grew a `homingHour` for this, because otherwise nobody could see the feature for
+two weeks, and it stamps today's date on what it writes so the read that comes back with the answer
+does not immediately count itself as another day and drag the average toward whatever o'clock it is.
+
+## Either of them can take the room away with them
+
+The room was the only copy of any of this, and the privacy policy's answer to "can I have it" was an
+email address. That is a fine promise and a bad feature, so `GET /export` now hands back everything
+the room holds as one file.
+
+It is gated exactly like the view, and one rule carries over that mattered more than the rest: her
+copy stops at the note she has actually read. Tomorrow's words never reach her browser, and an export
+is a browser with a filename on it. It would also have been the easiest leak in the app to miss,
+because nobody looks at a download twice.
+
+Offered out in the room rather than inside the delete panel. Putting it there would have been neat,
+since taking a copy matters most just before you end something, but somebody who simply wants their
+own words back should not have to open a disclosure labelled "delete this room" to find them.
+
+## The room's admin is one block with three weights
+
+Eight quiet links accumulated at the bottom of the room, one commit at a time, each reasonable on its
+own. Measured together they were all 12px transparent text in a single column, so "draw something for
+the frame" carried exactly the weight of "she can't get in" and of "delete this room", and the account
+button sat seven thousand pixels down the page looking like everything around it.
+
+The fix is a rule and a heading. Above it: the things you do. Below it, under "this room": everything
+about the room rather than about her. Inside that block, three weights rather than one.
+
+- **The way back in is a button**, and it comes first. It is what most people open this block for, and
+  it was the thing nobody could find twice over: first buried in a disclosure named after the recovery
+  code, then visible but indistinguishable.
+- **Resending the link and freeing her seat stay quiet.** Each matters on one day.
+- **Ending the room is set apart**, dashed and at the bottom. Not red: this is a quiet app and a red
+  button in it would be shouting. But it is not a peer of resending a link and must not read as one.
+
+The export moved in here too, into the delete panel, phrased as "take a copy first". A file of JSON is
+no use to anybody on an ordinary evening and every use in the ten seconds before you end something.
+
+Rubbing out a drawing was one of the five inks, so clearing a full sheet meant thirty-five taps with
+the eraser selected. Nobody does that; they give up and hang up the mess. There is a "start over" now.
+No stamps, though: the sheet is thirty-five pixels, so any pre-made shape fills most of it and the
+frame stops being a note somebody drew badly, which is the whole of its charm.
+
+## The drawing sheet grew, and the frame grew with it
+
+It was seven by five, which was the size of the hole in the picture frame that had hung on that wall
+since before anybody could draw in it. Thirty-five pixels is enough for a face and nothing else, and
+in use that turned out to be past charming and into fiddly. So the sheet is eleven by seven now, and
+the frame was redrawn around it rather than the other way round: the sheet is painted into the hole
+one pixel to one room pixel, so the frame is the constraint and the only way to a bigger drawing is a
+bigger frame.
+
+All three frames had to be redrawn, not one: the empty one, the fish, and the photo of the cat.
+
+The part that mattered is that drawings are hanging in real rooms right now. Growing the grid without
+widening them would have blanked somebody's frame, which is the sort of thing that is nobody's fault
+and unforgivable anyway. Old drawings are centred in the bigger sheet on the way out, and the room
+refuses a seven-by-five as a new one.
+
+It grew again straight afterwards, to fifteen by nine, because eleven by seven was still smaller than
+it looked on paper. That second jump is why the widening is written against a list of every past size
+rather than against one previous one: a room nobody has opened in a year holds whatever it held, and
+a size never leaves that list.
+
+The tripwire in `doodle.test.ts` did its job both times: it asserts the exact cell count specifically
+so that changing the grid fails and reminds somebody to change the worker's regex too. It also caught
+a second thing on the first pass, a test using row 5 as off-grid, which stopped being off-grid.
+
+## An error belongs beside the thing that failed
+
+Clicking "keep this seat on my account" when that account already holds the other seat is refused by
+the room, correctly, with a 409. The message then appeared in the shared error line near the top of
+the page, while the button that failed sits near the bottom of a very long room. You tapped, nothing
+appeared to happen, and the reason was scrolled out of sight above you.
+
+The same mistake had already been fixed once, in the recovery panel, with the same reasoning written
+next to it. A shared error banner is fine in a short page and a trap in a long one.
+
+Looking for more of it turned up that the account button was not the only one. One `err` is shared by
+hanging up a drawing, freeing her seat, resending the link, leaving and deleting, and the room is more
+than twice a phone screen tall. Measured: a failed drawing save put its reason at 1185px with a 720px
+viewport at the top of the page, so you tapped "hang it up", nothing happened, and the explanation was
+off screen the entire time.
+
+So the shared line is pinned to the bottom of the screen now. The app otherwise refuses to speak over
+the room, and this is the one exception worth making: a failure is the thing you need to see wherever
+you happen to be standing.
+
+## A dead connection speaks in the app's voice
+
+Eighteen actions called `fetch` directly, so a train tunnel gave the room "Failed to fetch" or "Load
+failed" in a panel that otherwise talks like a person. Only `fetchRoom` had ever handled it. They all
+go through one `send` now, which turns a refused connection into "That didn't reach the room. Try it
+again." It took ninety lines out of the file as a side effect.
+
+## Numbers written down are numbers that go wrong
+
+Most of the damage in this codebase has been one bug wearing different clothes: an offset that was
+right for the sprite as it was, left behind after the sprite changed.
+
+It put the eye highlight that follows your pointer on her muzzle in a loaf, on her blush standing, and
+on the dark of her eye sitting and playing. It opened `perk`'s nose instead of her mouth every time she
+yawned, because that one pose has its face a row lower and the yawn used one row for everybody. It
+aimed her glance four pixels off the picture she was looking at, once the frame grew. Every one of
+these was live for a long time, and every one is invisible unless you already know to look.
+
+So the painted-on details live in `overlays.ts` and `overlays.test.ts` holds each of them against the
+grid it lands on, for every pose. Where the sprite already knows the answer, the code reads it: the
+face's row comes from where the nose is, and the eye highlights come from the `h` cells that are
+already in the drawing. A pose added tomorrow gets both for free.
+
+What is still written by hand is what cannot be measured: timings, colours, and whether her eyes track
+at all. Those are judgement, not geometry.
+
+## A comment that was not a comment
+
+Two blocks of prose were rendering on the page as text, under the room and inside the account block.
+They were written as `//` lines, which is a comment almost everywhere in a `.tsx` file except the one
+place they sat: between JSX children, where `//` is just characters. React printed them.
+
+They had also been cut in half. An earlier comment pass rewrapped the lines and left `//` markers
+stranded mid-sentence, so the page showed "hanging a drawing // to freeing her seat". Nothing failed:
+not the type checker, not the linter, not four hundred tests. Only reading the page catches this.
+
+JSX comments are `{/* */}` and nothing else. The check that finds these is to look at the rendered
+text for `//`, which is now the last step after any pass that touches comments in a component.
+
+## Who mrrp thinks you are
+
+Opening a room link on a phone that had ever used mrrp went straight in under the name that phone
+remembered. No prompt. It reads like a cookie or a stale sign-in and it is neither: the name lives in
+`localStorage` under one key for the whole app, and the room seats whoever asks, with `"Someone"` as
+the fallback when no name is sent.
+
+For real use that is right. If she has used mrrp before, her phone should not interrogate her again.
+It only goes wrong when one person drives both seats, which is testing. But there was no way to say
+"not me", and the fix for that was worse than the bug: forgetting the device token orphans the seat,
+leaving a person in the room who can never come back, and there is no rename because a name is
+written once when you sit down and never again.
+
+So the ask comes back whenever this browser has not been in this particular room before, with the
+remembered name filled in, so the ordinary case is one tap rather than typing. The signal is
+`mrrp:cat:<id>`, written on every successful load, plus a mark set when you make a room, because
+making one navigates before anything has loaded. `lastRoom` looks like the obvious signal and is not:
+`App` writes it for whatever id is in the path, including a link you have never opened.
+
+Because `mrrp:cat:<id>` was already being written long before this, nobody currently in a room is
+asked their name again when this ships.
+
+## The sign-in row asks this Worker, not the auth service
+
+The account block could say whether the seat was linked, but not whether you were signed in, so
+signed-in-and-unlinked looked the same as signed out. The obvious place for the answer was `RoomView`,
+which already carries `linked`. It is the wrong place: `build` is called from about a dozen action
+paths that never receive the account, so the flag would have been right on load and wrong after every
+pet, note and mood change.
+
+It is one endpoint on mrrp's own Worker instead, with one caller and one meaning. Same-origin, because
+the session cookie is scoped to the parent domain and only a Worker may forward it. It answers "signed
+out" rather than failing when auth cannot be reached, which is a state the whole app already works in.
+
+## He could leave her a hundred and twenty things, and she could leave him one
+
+He writes the notes at setup and the room hands her one a day for months. She had a single line,
+stored under one key, replaced every time she wrote a new one. Everything else she leaves is the
+same shape: a mood, a gift, a blanket, a drawing, each one a current value rather than a thing that
+accumulates.
+
+So the person the room was made for was the only one who could not leave anything that lasted. For
+an app whose whole subject is two people leaving things for each other, that was the wrong way
+round, and it is the sort of asymmetry nobody reports as a bug because each half looks reasonable on
+its own.
+
+Her lines are a list now, newest first, capped at twelve. He sees the newest on the card he already
+had, and his arrival card carries every one since he last looked, so a fortnight away is a fortnight
+of them rather than whichever she happened to write last.
+
+Three things fell out of that, and they are the reason this is one change and not three:
+
+- **Her words can ride along with the thing she leaves on the floor.** They are stored as a line
+  with the gift attached, so his card says which thing she meant instead of "she left you
+  something". A gift with no words behaves exactly as it did.
+- **She can answer a note.** The line carries the note it answers, and his card shows the two
+  together. He wrote the note, so quoting it back to him gives away nothing, and the pair is the
+  whole reason to allow an answer at all. Which note she may answer is checked in the Durable
+  Object against the one the room has actually handed her, not by which button exists.
+- **Her side stopped pretending it was an edit.** The box used to open prefilled with her last line
+  because saving replaced it. Saving adds now, so it opens empty. Emptying it still clears all of
+  them, because taking a line back was the only way she ever had to take one back.
+
+Rooms written before this have their line under the old key. It is read on the way out rather than
+migrated on the way in: a room nobody opens is a room nobody writes to, and her line vanishing from
+an untouched room is not a fair price for one tidy key.
+
+The dedupe is why the gift's log entry and its line share one timestamp. His card drops the generic
+gift arrival when a line carries the same gift at the same moment, and two `Date.now()` calls with
+an `await` between them can land a millisecond apart, which would have put the moth on the card
+twice.
+
+## The reader could not re-read
+
+He can look at every note he ever wrote her whenever he likes: `GET /notes` serves the panel he
+edits them in. Her view carries exactly one, today's. So over a long room she is handed a hundred
+and twenty things he wrote for her and each one is out of reach an hour later. The author could
+review his own writing and the reader could not, which is the wrong way round.
+
+Her lines made it worse rather than better. Once they stacked twelve deep, the only places they
+surfaced were a card that closes and a "last thing you said" label.
+
+`GET /said` is one screen for both of them. Two rules hold it together:
+
+- **It stops at the note the room has actually handed her, for him too.** He has the editing panel
+  for the rest, and a screen that showed her notes she has not been given would be the room
+  spoiling its own pacing. One rule, enforced in the Durable Object, for both seats.
+- **Her answers sit under the notes they answer, and her other lines sit beside them.** Notes carry
+  no timestamp at all, only a day number the room counts out, so notes and lines cannot be
+  interleaved into one list ordered by time without inventing an order. The `aboutDay` link is the
+  only true relation between the two, so the screen is built on that and nothing else.
+
+Her side of it never prints his name. His is a placeholder until he picks one, and "what Someone has
+written you" is a worse sentence than the button that opened the screen already used.
+
+This does not make the room something to keep up with. The line the app holds to is that nothing
+goes wrong if you stay away: no streaks, nothing unread, no obligation. Somewhere to look back is
+not an obligation.
+
+## Her words stayed behind when she left
+
+Leaving is justified in one sentence: if only he could delete, she would have to ask somebody else
+to remove her own data. `wipeHerSide` took her moods, her visits, her window light and her recovery
+code, and left her line sitting in the room for him to read.
+
+That was survivable while it was one line. It stopped being survivable the day her lines started
+stacking twelve deep and a screen appeared whose whole job is reading them back.
+
+The catch is that `wipeHerSide` runs down two different paths. She leaving is one. Him freeing her
+seat, because she cannot get in on a new phone, is the other, and the existing tests said her line
+must survive that one while her mood must not. They are right: she has not left there, she has lost
+her way in, and taking her words would be doing it to her rather than for her. So the deletion sits
+inside the `bar` branch, which is the flag that already means "she is the one going".
+
+Her lines ride in the same `LEFT_SIDE` record as everything else she takes, so the undo week puts
+them back exactly as it puts back her mood.
+
+Her discoveries were the last of it, and the subtlest. `wipeHerSide` runs down two paths and set
+`handover` on both, which is the flag that hands the seat's found-secrets to the next token to sit
+in it. That is exactly right when he frees her seat so she can get back in on a new phone. It is
+wrong when she has left for good, because the next token is somebody else, and they arrive credited
+with everything she found. It is set on the release path only now, which also makes it consistent:
+leaving takes everything else of hers, so it should not have been carrying that across either.
+
+The drawing was the same oversight one step further out. The room already removes her window light
+by asking whether she is the one who lit it, and a doodle carries exactly the same `by` field and
+was skipped. So she could draw something, leave, and a stranger taking her seat would find her
+picture still in the frame. It goes now, under the same test, which also means his picture stays
+where it is: the frame belongs to both of them and only one of them is going.
+
+## Her answer pointed at a slot, and he can move what is in it
+
+An answer stored the index of the note it answered. He can rewrite his notes whenever he likes, from
+the same panel he wrote them in, and `setNotes` replaces the whole array. So: she answers "the good
+mug is yours now" with "it made me laugh", he rewrites that note to "I am selling the car", and the
+room shows her laughing at him selling the car. It put words in her mouth.
+
+An answer now stores both where the note sat and what it said. It goes under that note only when the
+note still says the same thing. When it does not, her words move in beside her other lines carrying
+the sentence she was actually answering, so nothing is lost and nothing is misattributed.
+
+Both are needed. The text alone would attach one answer to every note that happens to repeat a line;
+the index alone is the bug. Index picks the note, text vouches for it.
+
+## The save button became a delete-everything button
+
+Emptying the box and saving has always cleared her line. That was safe while there was one line and
+the box opened prefilled with it: saving without typing put back exactly what was there.
+
+Making the lines stack broke both halves of that at once. The box now opens empty, because saving
+adds rather than replaces, and an empty save now clears every line she has ever left him. So the
+button she taps to say something else was one tap from wiping twelve messages, silently, with no
+undo. Nothing warned her, because from the code's point of view nothing unusual happened.
+
+"Leave it" refuses a blank box now, so the accident is unreachable. Clearing became its own button,
+shown only when there is something to clear, and it arms on the first tap and goes on the second.
+
+The box moved out of `App.tsx` to make that testable. It is the only control in the app that can
+destroy something of hers, and it had no test that could click it.
+
+## A number in prose has no way of being wrong out loud
+
+The README says the chrome was checked across all 24 keyframe hours and the worst text ratio
+anywhere is 4.53. That sentence was written once, by hand, from a check run once, by hand. Nothing
+re-ran it. It had already drifted: it said 4.54 while the palette measured 4.53.
+
+`chrome.test.ts` walks every hour through `sceneFor`, builds the chrome the app actually renders,
+and measures every place text meets a surface. Two assertions: nothing anywhere drops below 4.5:1,
+and the figure written in the README equals the one the code produces.
+
+The second one is the point. Asserting against a constant in the test would just move the same
+stale number somewhere else. Asserting the doc against the code means retinting the chrome fails
+here, and the only way to make it pass is to write the new number down.
+
+The existing `legible.test.ts` covers marks on the floor and control outlines on the panel, both at
+3:1, because those are graphical objects. Text is the 4.5:1 case and had nothing.
+
+## Two hand-written descriptions of one wire format
+
+The worker and the browser each keep a `types.ts` describing what a room view is. They are not
+copies and cannot be: the worker's imports its weather and memory types, the browser's inlines them,
+and the comments differ because each side reads them for different reasons.
+
+Nothing checked that they still agreed. Add a field to one and forget the other and both packages
+typecheck happily on their own; the browser just reads `undefined` off every view, at runtime, in
+production. That is the failure this kind of duplication actually produces, and it is silent.
+
+`wire.check.ts` asserts the shared shapes are identical. Nothing imports it, so it is absent from
+the bundle; it exists for `tsc`, which CI runs. One assertion per shape, so the error names the one
+that drifted rather than pointing at a tuple.
+
+The same duplication had spread past the types. The three things she can leave on the floor were
+written out four times: twice in the worker, as the list it rolls a random one from and as the list
+its route validates against, and twice in the browser, as names and as labels. They are one list in
+`types.ts` now, on each side, which the value test above holds identical. The worker's other
+validation lists are derived from it too, except the cat acts, which are deliberately a subset:
+`gift` has its own endpoint because it carries her words, and accepting it on the act endpoint would
+be a second, wordless way to leave one.
+
+That consolidation is also what let the look-back screen say which thing her words came with. It had
+the field and no way to name it, so the archive quietly forgot the moth.
+
+It compares identity rather than mutual assignability. `[A] extends [B] && [B] extends [A]` calls
+two shapes the same when one carries an extra optional field, and an optional field is precisely
+what gets added to one side and forgotten on the other. The conditional-type identity trick
+distinguishes them; the assignability version was written first and let all three test drifts
+through.
+
+## A hundred days of floor
+
+The shipped notes went from thirty to a hundred, and the last dozen or so lean on time having
+passed. The room hands them out in order, one a day, so a note read three months in can say things
+the first one cannot: that the dent in the bed is not new any more, that this is still here and so
+is she. Thirty could never do that, because thirty is a month and a month is not long enough for
+duration to be the subject.
+
+They stay generic on purpose. A note written by somebody else is not a gift from you, and that
+difference is the whole app, so these are a floor to stand on rather than the thing itself.
+
+`notes.spec.ts` holds four lines on them: nothing in the third person, because she is the one
+reading and this is the bug the app keeps growing back; nothing longer than the 280 characters
+`setNotes` silently trims to; nothing said twice across a run this long; and no more than the
+hundred and twenty the room will keep.
+
+## The browser could send a field the worker never reads
+
+`send` took `body: unknown`. Every POST body was written out twice, once as an object literal in
+`api.ts` and once as a cast in the route that receives it, and nothing tied the two together. Send
+`aboutday` to a worker reading `aboutDay` and there is no error anywhere: the field is dropped, the
+request returns 200, and the feature quietly does nothing. That is the same silent shape as the two
+`types.ts` drifting apart, one layer up.
+
+Every body is named once now, in `Bodies`, on both sides. `send` is generic over it and takes the
+endpoint from the path, so the browser cannot send a `tell` body to `/say`. Each handler casts to
+`Untrusted<"x">`, which is that body with every field optional, because none of it is guaranteed to
+arrive.
+
+`Untrusted` deliberately keeps the declared types rather than widening everything to `unknown`. The
+hand-written casts it replaced already declared concrete types, and widening them would have forced
+a rewrite of the narrowing in twenty-three handlers. This change is about where the names come from,
+not about what gets validated, and mixing the two would have put a validation bug in code that was
+correct.
+
+Three things fail to compile now that used to fail silently: the browser misspelling a field it
+sends, a handler reading a field nobody sends, and the two sides describing the same body
+differently. The dev-only `age` route keeps its own shape, having no client to disagree with.
+
+## Three places the room went quiet
+
+The bounce is the app's way of saying something just happened here. It fires on the local person's
+own tap and, since the room went live, on the other seat's too. It did not fire when she wrote him a
+line, which by then was the most significant thing she could do in here. Her mood bounced, his four
+actions bounced, and the one that took her actual words landed in silence.
+
+The screen that reads the notes back went quiet in the other direction. The line saying how many he
+wrote is gated on there being more to come, which is right, and it meant that the moment she reached
+the end of a hundred days of them the panel said nothing at all. It marks the end now, and does not
+count to one when one is all he wrote.
+
+The panel itself had none of the app's own vocabulary in it. It carries the paw the arrival card
+uses, once beside the title and once at the end, rather than anything new: the notes are the warm
+thing on that screen and decorating around them would compete with them. `PawMark` moved into
+`screens.tsx` to get there, since a component in `App.tsx` cannot be reached from a file `App.tsx`
+imports.
+
+## Everything that lasted started with him
+
+Hold, sit, and now brushing are all his. Settling is hers but it is an answer: it only exists once he
+has sat down. So every lasting moment in the room began on his side, and hers was to reply to it or
+to send something that happens once.
+
+The obvious fix is the one this app cannot have. Letting her ask for something puts a request in a
+room whose whole position is that nothing in here needs anything from you, and a request he does not
+answer is a way of failing that the room has spent every other decision avoiding.
+
+Waiting by the door is the version that cannot fail. She goes and waits; he is usually not even
+there to see it; nothing is owed and nothing has gone wrong if he never comes. The room already puts
+her there for the hour before he is normally home, so this is her choosing the same spot rather than
+arriving at it, and `DOOR_X` is now named rather than being `0.19` in three places.
+
+It ends when he looks in, cleared on his own read, because the thing she was waiting for happened.
+That is the only ending it should have.
+
+The trap, and it cost a screenshot to find: `Cat` does not take the scene. It builds its own from
+the clock and the mood, so overriding `catX` in `App.tsx` moved the caption and not the cat, and the
+room cheerfully said she was by the door while she sat in the middle of it. Anything that changes
+where she is has to go in as a prop and be applied inside the draw loop.
+
+## She had nothing that lasted either
+
+Fixing his side made hers the thin one. Everything she does is a tap or a piece of typing: a mood, a
+line, three cat acts, a blanket, a drawing. Not one of them has a duration, and the two interactions
+in the room worth having are both durational.
+
+So: he sits down, and she can settle against it. It appears only while he is actually sat there,
+because settling against nobody is sitting still, which she does anyway. It ends when he gets up,
+without her having to do anything, which is the right way round: she is answering something he did.
+
+Two guards on it, and only one of them is visible. The view reports `settled` only while somebody is
+sitting, so both the check that he is sat there and the clearing when he stands up look redundant
+from the outside. They are not: without them a settle written at the wrong moment lies in storage and
+she is instantly settled the next time he sits down, having chosen nothing. Both needed a test that
+looks past the view to catch, and neither had one until the mutation run said so.
+
+She loafs while it lasts, and breathes slower and deeper, which is one pixel either way and the only
+thing still moving on screen while the two of them sit there. The caption had to be told as well:
+it is drawn from the hour and the mood, knows nothing about anybody sitting down, and cheerfully
+said she was up in the middle of the room while she lay on the bed.
+
+## Brushing takes brushing
+
+It was a tap that set a boolean. The button picks the brush up now, and the strokes are the action:
+dragging back and forth across her, five of them, and the day's mark is what putting the brush down
+leaves behind rather than what the tap did.
+
+Strokes are measured in distance travelled over her, not in move events. A mouse fires several times
+more of those than a finger does for the same gesture, so counting events would have made it about
+four times quicker on a laptop than on the phone this is mostly used on.
+
+While the brush is up, a press on her starts a stroke instead of a pet. Petting is a press and hold
+on the same pixels, and the two cannot both own a press.
+
+Worth writing down, because it was not in the original list: nothing here ever greyed out. `btnOn` is
+a lit honey border, not a disabled state, and none of the four buttons has ever been disabled. The
+chore feeling came from three of them completing and having nothing further to offer, not from the
+styling. Sitting and brushing having somewhere to go is the whole of the fix; there was no grey to
+retire.
+
+## Three of his four actions were checkboxes
+
+Pet, brush, sit with her, take her photo. Petting is a press and hold with duration that she watches
+live. The other three set a boolean, dimmed their own button, and were done for the day. Four
+buttons, four sounds, one bounce, and three of them greying out. The room felt thin not because
+there was little to do but because most of what there was completed and stopped.
+
+Sitting was the worst of them, because sitting with somebody is entirely about staying. It is a
+state now, on the same shape as `hold`: a `{who, at}` record, cleared when his socket closes, with a
+lapse in case it does not. Her side says so while he is there, and she settles into the pose that
+breathes, so the room keeps moving very slightly while nothing is happening.
+
+Two things it deliberately keeps. It still writes the day's `sit` mark, by calling `act` rather than
+repeating what `act` knows, so what he did survives him standing up and she still finds it later.
+And his button never shows that mark: it shows where he is, never where he has been, because dimming
+it once he stands up would say he had used it up.
+
+The lapse is ten minutes rather than the thirty seconds a hold gets. A hold is a moment of contact
+and a stale one is a hand she can see that is not there. Sitting is meant to outlast not touching a
+key.
+
+## The socket was the same leak through another door
+
+The presence fix above took her name and her last-seen out of what a link-holder receives. The
+socket handed it straight back. `fetch` on the Durable Object checked the token length and that the
+room still existed, and nothing else, so anybody with the link got one.
+
+The test that covered it had already thought about this and reached the wrong answer, for a reason
+worth keeping: "a stranger gets a socket, because the room seats nobody new here; what matters is
+that the view it pushes is the stranger's, which carries no note, no mood and no recovery code."
+Every word of that is true and it is not the point. A push arrives after everything either of them
+does. The timing is the signal. Scrubbing the payload does not help when the arrival itself says
+somebody is in the room this second.
+
+So a socket needs a seat now, and the browser only opens one when it has one, or a spectator would
+sit in a reconnect loop against a 403 for as long as the tab stayed open. Watching the cat over the
+HTTP view still works and is still meant to.
+
+Delete and undelete came out clean on the same sweep. Deleting writes a tombstone and erases nothing;
+the alarm does the erasing a week later with `deleteAll()` and then puts the tombstone back, so an
+erased room can never be seated again. The room ids and the recovery codes are both real random from
+`getRandomValues` over a 32-character alphabet, 2^40 and 2^60, and 256 divides 32 exactly so neither
+has modulo bias.
+
+## A link was a presence feed
+
+`otherId` is how the room works out who the other one is, and it read `youAreHer ? him : her`. That
+is correct for the two of them and quietly wrong for everybody else: anybody holding the link is not
+her, so the room treated them as him and handed them her. Her name, whether she was in the room this
+second, and the moment she was last in it, to anyone the link ever reached, refreshed on every poll.
+
+The room does mean to let a link-holder watch. The screen says so: "This room belongs to two people,
+and both seats are taken. You can watch the cat." So the blanket, the marks on the rug and the mug
+on the floor are all deliberately visible, and they stay that way. The line the copy draws is
+between what the room looks like and what a person is doing, and `otherId` was on the wrong side of
+it.
+
+`otherId` is null unless you have a seat now. The sweep that found it is worth keeping: split every
+field of the view into gated and ungated, then ask of each ungated one whether it is about the room
+or about a person.
+
+## Two more silent losses, one of them mine from an hour earlier
+
+**A copy of the room was a way round the surprise.** Giving them a day each was the right shape, and
+then `exportFor` emitted both slots side by side. It already knows which seat is asking, and already
+uses that to stop her downloading notes she has not been handed, so the field went in one line below
+a guard that existed for exactly this. Either of them could have downloaded the room and read the
+other's date. Found by grepping my own change for the pattern I had spent the session hunting.
+
+**His notes were the one field with no limit on his side.** The worker cuts a note at 280 characters
+and drops everything past the hundred and twentieth. Every other field in the app agrees with the
+worker: the name is 24 both sides, the day's label 32, her line is one shared constant. Notes had
+nothing, and the panel counted every line he typed, so pasting a hundred and fifty said "150 notes"
+and the room kept 120 without a word. He would find out months later, from a room that ran out
+early.
+
+The limits are shared constants now, held identical by the same test that holds the moods and the
+line length, and the panel counts what will survive rather than what he typed.
+
+## Four things the room did to her without saying so
+
+Found by reading the app from her seat rather than from the code. Four of them turned out to be the
+same shape as most of the bugs in this file: the room knows something and does not say it.
+
+**His photo took her drawing down.** The frame holds one thing and a drawing beats a photo, so
+`act("photo")` deleted the doodle. No warning, no record, and nothing told either of them. She made
+the only thing in the room she made, and a button with her name on it binned it. His button asks
+first now, and if it was her drawing she is told it came down.
+
+Only whoever drew it is told, which is not the redundant guard it looks like: he can draw in that
+frame too, and the card says "what you drew came down", so telling the wrong person is a sentence
+that is simply untrue. That case had no test until the mutation run went looking.
+
+**The look-back screen forgot.** Her lines capped at twelve, and the thirteenth silently dropped the
+oldest. Answers to his notes are stored as lines, so they went the same way: the screen built to read
+back what they have said quietly lost the beginning of it. Twelve was chosen for the note card,
+which only ever shows the newest one. It is a hundred and twenty now, the same as the notes.
+
+**The notes could run dry unnoticed.** `note.final` says she has reached the last one, but `note` is
+her-seat-only, so it never reached the one person who could write more. His side says so now, and
+goes quiet again the moment he adds any.
+
+**She could not unsay one thing.** Emptying the box cleared every line she had ever left him, so the
+sentence she regretted cost her all the others. Meanwhile he can delete the whole room and has a
+week to change his mind. She can take back one line now, from the screen she reads them back on.
+
+Two of the six did not survive being checked, and both are worth writing down so nobody re-finds
+them:
+
+- **A second treat replacing the first is not silent.** The button that is out is highlighted and
+  the line above it names the treat waiting for her.
+- **"Our day" being his was not an oversight, it was the surprise.** She never saw `ourDay` at all;
+  the cat mentions it on the day and that is how she finds out. So opening the one shared slot to her
+  would have let her write a date she cannot read, blindly overwriting his and killing the thing it
+  exists for. The answer was a second slot rather than a wider guard, and that is what it has now:
+  one each, neither of them ever shown the other's, and the cat says whichever of them falls today to
+  both of them. It moved out of his setup panel and into the block they both reach, because it was
+  the one thing in a panel about naming and dressing her that was not about her.
+
+## The flaky test was a sleep
+
+`live.spec.ts` waited a flat 140ms after each socket write and then asserted on what had arrived. It
+passed on its own every time and went red about one full-suite run in four, because under load the
+push had not landed yet. The sleep had already been raised once, from 60ms, which is the tell: a
+number that has to keep going up is not a fix.
+
+It waits for the thing itself now. Counting turns rather than watching the clock, because the same
+file fakes the clock to move the room an hour forward.
+
+## What the comments are for
+
+Every explanation of a decision belongs in this file. The comments left in the code are for three
+things only:
+
+- a trap that has actually bitten somebody, like a paw print drawn at `y` instead of `ky`, which
+  breathes with her
+- a rule that fails silently, like the seat checks in the Durable Object, or her copy of the notes
+  stopping at the one she has read
+- why not the obvious thing, where somebody would reasonably try the obvious thing and quietly break
+  something
+
+Everything else is deleted. The load has been cut six times now: 3124 lines to 564, then 1381 back
+to 462, then to 391, then 630 back to 401, then 879 back to 689, and most recently 1248 back to 567.
+Every time the growth arrives the same way: a feature lands with a paragraph explaining why, which
+is a good paragraph in the wrong file. This one is that file.
+
+Three repeat offenders. A comment that narrates what the code used to do costs the reader attention
+and returns nothing, because they have no access to the old version, and it rots on the next edit. A
+docstring that restates the name below it: `/** Held on, or let go. */` above `hold()`. And design
+rationale, which is most of what the last pass removed: the stylesheet alone was carrying two
+hundred lines on why a footer is one block and why the mood chips do not wrap, none of which stops
+anybody breaking anything.
+
+What survives is written as a warning rather than a description, and mostly as `//` rather than a
+block. Two lines of prose in a four-line box reads as documentation; the same two lines as `//`
+read as somebody leaning over and saying "don't".
+
+Two things in the last pass were nearly deleted and are load-bearing:
+
+- **`// eslint-disable-next-line`, and comments inside empty `catch {}` blocks.** Both are the only
+  thing standing between the file and a lint error. Removing a comment cannot break a build, right
+  up until the comment was doing a job.
+- **`// prettier-ignore`**, eighteen of them in `Cat.tsx` alone, holding the sprite grids readable.
+
+And a warning about the method. Regex over a file is the wrong tool for this. An unanchored `/*`
+matched one sitting after code on the same line, paired with a `*/` four hundred lines away, and
+quietly ate the middle of `App.tsx`. Anchor to the start of a line, handle `{/* ... */}` as one
+piece, and afterwards diff the file with all comments stripped from both sides to prove that only
+comments moved.
+
+# How it works, moved out of the README
+
+_Moved out of the README, which is the front door and was carrying the whole house._
+
+## Leaving things for each other
+
+She leaves him a gift. He leaves her the yarn, a treat, or the catnip, and she finds it the next time
+she opens the room.
+
+**Finding it is being handed it.** There is no button for her to press, because a surprise you have
+to press for is a chore. The view that carries it is the view that spends it, and the spend happens
+after that view is built: doing it before means she is never handed the thing she just found.
+
+**He is shown it too.** Without that, leaving something out is a button that appears to do nothing,
+and he cannot tell "still waiting" from "she has been in and found it". He can look as often as he
+likes without spending it; only handing it to her counts.
+
+**She is told in words as well as shown.** The animation runs once for about six seconds and reduced
+motion removes most of it, so a one-shot surprise can be spent and never seen. The moment is the nice
+part; the card is the part that cannot be missed.
+
+**A thing he left out does not lose to the door pose.** That guard exists so typed easter eggs do not
+fight the waiting-by-the-door animation, and the door pose holds for 90 minutes around the hour he is
+expected home, which is exactly when she is most likely to look in. So this plays through it.
+
+**"What the other one has been doing" is gated on holding a seat.** It used to be keyed on "am I
+her", which shut strangers out by accident rather than on purpose. Making it symmetric removed the
+accident and opened her doings to anybody holding the link.
+
+## The room is live
+
+Each open tab holds a WebSocket to the room's Durable Object, so anything either of you does lands on
+the other's screen in the same second. "You're both in here right now" means an open tab, not a
+request in the last three minutes, and the cat's whole co-presence routine finally runs on a signal
+worth the name.
+
+When one of you walks in, the room is pointed at for two seconds, because the door swinging and the
+cat crossing to purr had always happened while you were both looking at the buttons underneath it.
+Her mood lands the same way. And the first time he reaches her while she is there to feel it, the room
+keeps it.
+
+When they do something while you are watching, the cat bounces and makes the same sound their own tap
+makes, and it joins a short list of what they have been doing. That list is for while you are both
+there; the card that says "the room kept this for you" is still for what happened while you were
+away. Petting is why that exists: it is the one action that leaves no
+mark in the room, so without it a pet arrived as silence.
+
+If you both reach for the same thing within a few seconds, she comes to look and both of you are
+told. It is the only thing in the room sent to both seats, because it is the only one neither of you
+did to the other.
+
+Touching something in the room reaches the other one too, so she watches the plant shiver because he
+touched it, and the cat turns to look at it.
+
+When he holds on to her, she sees it while it is happening rather than afterwards: the cat's eyes
+close, the purr builds, and it stops when he lets go.
+
+The socket only ever receives. Everything that changes the room still goes through the ordinary
+routes where the seat checks are, so it cannot become a second way to write. Sockets are hibernatable,
+so a room with two phones asleep on it costs nothing. There is still a poll behind it, at 120 seconds
+while the socket is up and 15 when it is not, for a browser or proxy that refuses the upgrade.
+
+In dev this needs `ws: true` on the Vite proxy, which is already set. Production has no proxy: the
+Worker serves the app itself.
+
+## The four rules
+
+These are design constraints, not preferences. Each one is load-bearing.
+
+**1. Nothing can go wrong for the cat.** No hunger, no sadness, no streak, no decay. The moment
+a shared pet can be neglected it becomes a chore, and a chore is the opposite of a gift.
+
+**2. The cat never mirrors a low mood, it answers it.** Sad brings her over and she stays.
+Stressed and she sits on you and won't move. A cat that gets sad when you're sad is a cat you
+protect by lying to, so on the days it matters you'd tap "good" and the feature would be dead.
+Low moods make the room _warmer and closer_, never darker. See `packages/web/src/moods.ts`.
+
+**3. You only ever see what the other person did.** Your own actions are never echoed back at
+you, because that's just a log. And the room only says somebody _came in_ after you spoke,
+never that they saw it, because "they saw it and did nothing" is worse to know than nothing.
+
+**4. The room does things; the app doesn't announce them.** A banner reading "you're both here"
+is the app telling you something. The door swinging as someone arrives, and the cat getting up and
+crossing to the middle to purr when both seats are live, is the room doing it. Presence you watch
+her notice beats presence you're informed of, so anything worth saying gets built into the scene
+first and written in text only if it still needs saying.
+
+Design decisions, and the ones that were tried and reverted, are in
+[`DECISIONS.md`](DECISIONS.md). The art direction is in [`ART.md`](ART.md).
+
+## Before you send it
+
+**Write the notes.** In the app, not in the source. Open the setup panel and there is a box for them,
+one per line. The hundred it ships with are generic on purpose so a new room is never a blank page, but
+they are a floor: a note written by someone else is not a gift from you, and that difference is the
+whole app. Editing them no longer needs a deploy.
+
+**Dress the cat.** Same panel. She defaults to a ginger tabby called Bean; point her at a cat somebody
+actually knows and set whose day the room runs on. Her eyes are held open while the panel is up, because
+shut eyes are drawn as a line in the outline colour and you cannot pick a colour you cannot see.
+
+**Optionally, name a day.** Not in that panel: under **"this room"**, where both of you can reach it.
+A date and a few words for what it is, and the room says those words back on that day every year, to
+both of you. You each get your own slot and neither of you is ever shown the other's, so the day is
+how you find out. Only the month and day are kept, because storing the year would let the room say
+"three years since", and that is a counter rather than a greeting.
+
+Then open the link yourself first, and send it. **Whoever opens it second is the one the cat is.**
+
+The same thing over HTTP, if you'd rather. `me` must be the seat that made the room, because only he
+may dress the cat, set her hours or write the notes. Without it you get a 403:
+
+```bash
+curl -X POST localhost:8787/api/room/<id>/dress \
+  -H 'content-type: application/json' \
+  -d '{"me":"<his-token>","name":"...","fur":"#e8963f","furDk":"#c9752a","belly":"#fbf0dd","eyes":"#7cb342","tabby":true}'
+
+curl -X POST localhost:8787/api/room/<id>/notes \
+  -H 'content-type: application/json' \
+  -d '{"me":"<his-token>","notes":["day one","day two"]}'
+```
+
+`tz` on `/clock` is validated at the edge on purpose: an unchecked zone string reaches
+`Intl.DateTimeFormat` inside the Durable Object and takes the whole room down with it.
+
+## Notes on the art
+
+Everything renders on a fixed 100x80 grid, one logical pixel per aligned rectangle. There is no
+offscreen buffer and no upscaling, because resampling a small canvas leaves you with pixels of two
+different sizes and it reads as a mistake rather than a style.
+
+Light is **extra palette entries** (`litWall`, `litFloor`, `patch`), not translucent layers.
+Glazing alpha over dithered bands is what produced vertical streaks the first time.
+
+**One logical pixel is a whole number of device pixels.** The draw helpers snap each cell to the
+device grid, so nothing blurs, but a fractional cell size makes consecutive cells round to different
+widths: at 8.425 the floorboards come out 8 and 9 device pixels wide alternating, which is the exact
+thing the rule above forbids. The canvas takes the largest whole-pixel size that fits and hands the
+remainder back as margin, so it is usually a little narrower than its column. It is also bounded by
+the height of the window, because the room is square and a short wide screen would otherwise push
+everything else below the fold.
+
+**The cat is lit by the room.** Her fur carries toward the beam by how much of her stands in the
+floor pool, with one pixel of the window's light down the edge the shaft arrives from, and her
+shadow takes the floor's colour and leans with the light. Keep the fur mix low: she has to stay the
+highest-contrast object in the room, and mixing a ginger cat far toward a near-white beam turns her
+into part of the wall.
+
+**Every pose is bounded by its own reach.** `kx` is her anchor, not her left edge: each pose carries
+a negative `ox`, and `STRETCH` is not centred at all, so she reaches 17 columns right of kx and only
+10 left. The bounds come from the sprites, so a new pose cannot walk her through a wall.
+
+`dither()` takes an optional `phase`. Do not pass `y` to it: the parity becomes `x + 2y`, which
+depends on `x` alone, and your checkerboard silently becomes vertical stripes.
+
+**Anything you press stands off its panel by at least 3:1.** Controls used to borrow `--line`, the
+faint divider, which measured 1.38:1. `--control` is derived from the panel at the hour it is drawn,
+because the chrome is tinted per hour, and it takes the least of the palette that still clears the
+bar.
+
+**The interface goes dark when the room does**, rather than crossfading. Blending a light panel into
+a dark one drags it through mid grey, where neither dark nor light text clears 4.5:1 against it, so
+the chrome is two palettes and the text polarity flips with the surfaces at a single point. Checked
+across all 24 keyframe hours: the worst ratio anywhere is 4.53.
+
+The typeface is **self-hosted Quicksand**, first in the stack ahead of the Apple rounded faces. The
+stack named it for a long time and never loaded it, so it only ever resolved in Safari and everywhere
+else a cat app rendered in Roboto. This app is two people looking at the same thing, so it is worth
+28KB for them to see the same one.
+
+The coordinate tables carry `// prettier-ignore`: the star fields, the light pool, the moon rows, the
+palette keyframes in `hours.ts`, the mood faces in `faces.tsx`. Those are grids you read by column,
+and one entry per line destroys the thing they exist to show. Everything else is Prettier's, checked
+in CI, at 110 columns to match how the code was already written.
+
+## Seats
+
+A room has exactly two seats, assigned by arrival order and never reassigned. He makes the room,
+so he is first. **Whoever opens the link second is the one the cat is.** Everyone after that can
+look, but holds no seat.
+
+That last part is enforced, not assumed. A third person with the link gets no note, no "you're
+both in here", and a 403 on anything that writes. All of it lives in the Durable Object rather
+than the UI, because a rule enforced in the browser is a rule anyone can turn off.
+
+Every POST body is named once, in `Bodies`, which both sides import. `send` is generic over it, so a
+field the browser misspells is a build error rather than a value the worker drops in silence.
+
+| endpoint                      | who         | notes                                                                           |
+| ----------------------------- | ----------- | ------------------------------------------------------------------------------- |
+| `GET /api/room/:id`           | anyone      | seats the first two callers. Only her read advances the note                    |
+| `POST .../tell`               | her only    | her mood, one of six                                                            |
+| `POST .../say`                | her only    | a line back, 140 chars. `aboutDay` answers a note she has                       |
+|                               |             | read. Empty text clears all of them                                             |
+| `POST .../unsay`              | her only    | takes back the one line left at that moment, and nothing else                   |
+| `POST .../act`                | him only    | pet, brush, sit, photo. Each one leaves a mark                                  |
+| `POST .../heract`             | her only    | what she does as the cat: shelf, box, gift. `box` toggles, so she can get out   |
+| `POST .../boxout`             | him only    | puts a box in the room. She decides whether to get in                           |
+| `POST .../hold`               | him only    | took hold of her, or let go. The one thing that is a duration                   |
+| `POST .../sit`                | him only    | sat down with her, or got up. A place he stays; still marks the day             |
+| `POST .../settle`             | her only    | settled against him. Only while he is sat there, and ends when he gets up       |
+| `POST .../wait`               | her only    | gone to the door to wait for him. Ends when he looks in, which is the point     |
+| `POST .../poke`               | either seat | touched something in the room. Ephemeral, unlogged, 400 on unknown furniture    |
+| `GET .../notes`               | him only    | his notes, for the panel that edits them. Too big to ride in every view         |
+| `GET .../said`                | either seat | what has passed between them. Stops at the note the room has handed her         |
+| `GET .../alive`               | anyone      | is the room still there. Guards, never seats: the door asks before inviting     |
+| `GET .../live`                | either seat | the socket. A seat, not just the link: a push is presence whatever it carries   |
+| `POST .../leaveout`           | him only    | leaves the yarn, a treat or the catnip for her to find                          |
+| `POST .../gift`               | her only    | picks which of the three he finds. Optional `text` rides along as a line        |
+| `POST .../shelf`              | either seat | puts the mug back. The one write both of them may make                          |
+| `POST .../dress`, `.../clock` | him only    | 403 otherwise                                                                   |
+| `POST .../notes`              | him only    | this room's notes, one per entry; empty restores the defaults                   |
+| `POST .../window-light`       | either seat | leave one glint in the window, or collect the other person's                    |
+| `POST .../release`            | him only    | frees her seat so a new device can be her                                       |
+| `POST .../recover`            | his code    | takes the first seat back on a new device                                       |
+| `POST .../delete`             | him only    | ends the room for both. Needs his own name typed, not a flag                    |
+| `POST .../undelete`           | him only    | puts it back, for a week. 403 after that                                        |
+| `POST .../leave`              | her only    | takes her side out and frees her seat. His room stands                          |
+| `POST .../unleave`            | her only    | puts her side back, while the week holds and the seat is free                   |
+| `POST .../draw`               | either seat | the seven-by-five sheet in the frame. 35 chars of 0-4, or 400                   |
+| `POST .../blanket`            | her only    | the one thing in the room she picks. Five colours and a stripe                  |
+| `GET .../export`              | either seat | the whole room as a file. Her copy stops at the note she has read               |
+| `POST .../ourday`             | either seat | the date the room says something about. One slot each, never shown to the other |
+| `POST .../link`               | either seat | ties the seat you hold to the account you are signed into                       |
+| `POST .../found`              | either seat | records a discovery. Unknown keys are a 400, not a new secret                   |
+| `POST .../age`                | either seat | dev only, gated on DEV_TOOLS. Fast-forwards months                              |
+| `GET .../live`                | either seat | the WebSocket. Receives only; every write still goes through the routes above   |
+
+### What his actions leave behind
+
+Everything he does puts something in the room, and all of it lasts **her** local day, like the notes.
+The tuft and the dent also wait until she has been in and seen them, so a brush at eleven at night is
+still there when she wakes. Nothing in here may pile up on her.
+
+| action   | what she finds                                                                                                           |
+| -------- | ------------------------------------------------------------------------------------------------------------------------ |
+| photo    | the picture on the wall, which is the one permanent one                                                                  |
+| brush    | a tuft of her on the rug                                                                                                 |
+| sit      | the dent he left beside her bed                                                                                          |
+| pet      | nothing to find, but the purr deepens the longer he holds on                                                             |
+| leaveout | the yarn, a treat or the catnip on the floor, waiting to be found                                                        |
+| boxout   | a box in the room. She decides whether to get in, and can get back out. Press again to take it away, unless she is in it |
+
+Every one of these is also reported back in words, under the buttons that made it: "She'll find a
+tuft of her on the rug and the picture on the wall." Her two cat acts get the same, and both rows
+light the buttons whose mark is currently in the room. The marks themselves are a few pixels on a
+canvas the size of a postcard, so a button whose only effect was on the drawing read as a button that
+did nothing. The line says what is in the room now rather than who did it, which keeps it clear of
+rule 3.
+
+It also says when they go, which it never used to: "the tuft, the dent and the box go at midnight
+where she is, in about 12 hours. The picture stays up." Whose midnight matters. The room runs on her
+day, so his own can be most of a day away from the one that clears it.
+
+An action that leaves nothing is a button he presses, a line she is told, and a room exactly as it
+was. A present that does not exist is a worse gesture than no present, which is why `brush` and `sit`
+each got a mark and why `bring her something` was cut: it rolled a die between a box and a bow, so it
+could never say what he brought, because he never chose. `leaveout` replaced it and the `fed` trait
+is now counted off that.
+
+A third thing time does, which can go backwards: the cat learns when he actually turns up. He tells
+the room "usually home around six" once and then never again, so it watches the first time he looks
+in each day and quietly works out the real hour. After a fortnight of disagreeing with him by more
+than half an hour she starts waiting at the door then instead, and the room says so once. The average
+is capped at a fortnight of memory, so a change of job moves her rather than being outvoted by the
+first month forever.
+
+Two more things only time can do, and neither can go backwards: the boards where the midday sun
+rests go pale over a year, and the plant puts out new fronds at three months and again at eight.
+
+### Ending it
+
+Both of them can get out, and the two doors are deliberately different sizes.
+
+**He can delete the room**, because he made it and most of what is in it is his: the notes, the cat,
+the day he asked it to remember. It goes for both of them immediately. The confirmation is his own
+name, typed. A dialog with a red button in it is one mis-tap away from both of their years, and a
+typed name is the one thing a person who means it can produce and a stray thumb cannot. It asks for
+his and not hers because she is the cat, and "type her name to erase her" is a different sentence.
+
+Deleted and erased are two different things, a week apart. The room is unreachable from the moment he
+confirms, to both of them; the week only decides how long it is still possible to change his mind. He
+gets a screen with the date on it and a button that puts everything back exactly as it was. She is not
+offered a way back, because she does not have one, and dangling one in front of her would be worse
+than the plain fact.
+
+The erasing is the one thing in this app that happens without somebody visiting. It runs off a Durable
+Object alarm, with the same check repeated on the next request in case the alarm never fired. A delete
+that only completes if one of them comes back is a promise rather than a fact, and so is a week of her
+data in a room nobody opens again. One alarm serves both deadlines: whichever is sooner wins, and it
+reschedules itself for the other.
+
+**She can leave**, which takes her side with her and leaves his room standing: her moods, her visits,
+the days she has been in here, every line she wrote him, the picture in the frame if she is the one
+who drew it, her blanket, and whatever she left on the floor. Whoever takes the empty seat starts
+with none of it, including the things she found. Her seat goes back to empty, so he can send the link on. She gets a
+door of her own rather than a share of his because the alternatives are both worse. If only he could
+delete, she would have to ask someone else to remove her own data. If she could delete the whole room,
+one bad evening could erase his year.
+
+She gets the same week he does, with one condition his does not have: the seat is genuinely free the
+whole time, because that is the point of leaving. If he hands it to somebody else, her way back closes
+that moment, and the screen says so before she decides. His side is told the same thing, right above
+the button that would do it, because he is the one who can close it and he cannot weigh that if he
+thinks the seat was never filled. Her side is told that he was told. The two flags open and close
+under identical conditions, so neither of them is ever looking at something the other one is not. What she left is kept in one record and put
+back exactly as it was, including the `firstSeen` that decides she is the second seat and therefore
+the cat.
+
+Leaving bars that browser's token from being seated again. Without that, her own next page load walks
+back through the free seat and undoes the thing she just did, which was the first bug this feature had.
+She can also start over on a fresh token instead of restoring, from the same screen. Him freeing her
+seat does **not** bar the token and keeps nothing back, because that button exists so the right person
+can take a seat back, and whoever held it is not returning to that browser.
+
+Once erased, a room keeps exactly one thing: the date it went. Wiping the storage outright is not enough,
+because a room with fewer than two people in it seats whoever turns up, so the next person to open a
+dead link would quietly become the maker of a brand new room at the same address. Every route answers
+410 afterwards, and a test walks the Durable Object's own method list to make sure a new one cannot be
+added that forgets.
+
+### When she loses her phone
+
+A seat is a random token in `localStorage`. That is what makes this frictionless (no account, no
+password, no email) and it is also the one thing that can go permanently wrong: clearing Safari's
+data or moving to a new phone loses the seat, and with exactly two seats, a lost one would leave the
+room stuck with nobody able to be the cat.
+
+A seat can be lost, so there are three ways back. None of them is at the front door, and none ever
+will be: she taps a link and she is in a room with a cat, and that is the whole gesture.
+
+**A recovery code, one per seat.** The room mints one on first use and shows it to that seat and
+nobody else. Paste it into any browser and the seat is yours again, and so is what was stored against
+it: her mood, the log of what he did for her, and her half of the collar. One box takes either code
+and the room works out which seat is being claimed, because the codes are distinct random strings and
+asking somebody which seat they hold is asking a question they should not have to think about.
+
+The code is stored in plaintext deliberately. Its entire power is "become this seat of this room", and
+anyone who can read that storage already has the room, the notes and both names, so hashing would buy
+nothing and cost the ability to look it up again from a device you still have. Ambiguous characters are
+left out so it survives being read aloud.
+
+**Optional sign-in.** Tie a seat to an account on `accounts.aidenjang.com` and signing in on a new
+phone hands the seat's token back, with no code to keep. The account block says whether you are signed
+in and offers the way in or out; it asks `GET /api/me` on mrrp's own Worker, because the session cookie
+is scoped to the parent domain and only a Worker may forward it. One account holds at most one seat per room,
+and as many rooms as it likes. Untying leaves the seat exactly where it is. Signing in never replaces
+the token; it only delivers the one that already holds your seat, which is why accounts touch a single
+method in the Durable Object instead of all of them.
+
+**Your name is remembered, but never assumed.** It lives under one `localStorage` key for the whole
+app, so a second room does not ask again. Arriving at a room this browser has not been in does ask,
+with the remembered name filled in, so the usual case is one tap. Without that, a link opened on a
+phone that had ever used mrrp seated you silently under the name it happened to remember.
+
+**He can free her seat,** under **"{her} can't get in"**, for the case neither code nor account
+covers: a browser that is not hers is holding it, which a private window opened to look at the room
+will do. Whoever opens the link next becomes the cat. What deliberately survives a handover: how far
+into the notes she has read, the line she left him, and what she had noticed, so the collar stays on
+the cat. Her mood resets, which is correct, because a mood is how you are now and the new device will
+be asked.
+
+Two things the note deliberately does not do: it never sends tomorrow's text (she could read
+ahead in devtools, and a gift you can skim is not a gift), and it advances at most once per her
+local day, so a day she doesn't visit is not a note she never sees.
+
+## What she does on her own
+
+Most of the room is things nobody asked for. She blinks, and slow-blinks at you when you sit still,
+which is what a cat does to say it trusts you. She yawns. She washes her face, a paw held up and a
+tongue coming out to meet it. Her ears flick. She kneads while you hold her, once she has settled right
+down. She chatters at the bird on the sill, which she had watched in silence since the app was written.
+If both of you are in the room and one of you holds her long enough, she rolls all the way over, which
+is the one secret here that cannot be found alone.
+
+The weather is real, from her timezone. Rain and snow are worth watching, so she goes to the window and
+watches them; cloud is not, so she gives up on the sun and sits in her own spot. On a cold day her
+breath is on the glass and she leaves a nose print in it. At night the dark pane gives her eyes back.
+Wet paws walk a trail across the boards that dries in nine seconds. Hang something in the frame and she
+goes and sits under it.
+
+When she knocks something off the shelf she walks over and does it, and the camera goes with her,
+which is the only way the shelf is ever on screen. The mug stays up until she is under it.
+
+She also does things because she means to, and only because she means to: the room rolls nothing on
+her behalf any more. She knocks something off the shelf, gets into the box he put out, and picks
+which of three things he finds. He is told the way she is told about him: the room
+is different when he opens it.
+
+None of it is announced. The room does these things and the app says nothing about them.

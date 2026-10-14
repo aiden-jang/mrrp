@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { plain } from "./rendered.js";
-import { ArrivalCard } from "./App.js";
+import { ArrivalCard } from "./RoomArrival.js";
 import type { Arrival } from "./types.js";
 
 const text = (items: Arrival[]) =>

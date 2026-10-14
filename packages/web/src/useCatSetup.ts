@@ -5,7 +5,7 @@ import { EYES, LOOKS } from "./looks.js";
 import { play } from "./sound.js";
 import type { RoomDecor, RoomView } from "./types.js";
 
-type Draft = {
+export type CatSetupDraft = {
   decor: RoomDecor;
   name: string;
   look: string;
@@ -15,34 +15,38 @@ type Draft = {
   notes: string;
 };
 
-/*
- * The panel edits a draft so the cat on screen can show a change while it is still being chosen.
- *
- * Open it with `start` and nothing else. The room view does not carry her notes, so a draft built
- * without fetching them first saves an empty list over whatever was there.
- */
+// The room view omits notes. Only a successful fetch may create an editable draft.
 export function useCatSetup(id: string, view: RoomView | null, reload: () => Promise<void>) {
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<Draft | null>(null);
+  const [draft, setDraft] = useState<CatSetupDraft | null>(null);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const start = async () => {
     if (!view) return;
-    const notes = await fetchNotes(id).catch(() => [] as string[]);
-    const look =
-      LOOKS.find((l) => l.cat.fur.toLowerCase() === view.cat.fur.toLowerCase())?.id ?? LOOKS[0]!.id;
-    const eyes = EYES.find((e) => e.hex.toLowerCase() === view.cat.eyes.toLowerCase())?.id ?? EYES[0]!.id;
-    setDraft({
-      decor: view.decor ?? DEFAULT_DECOR,
-      name: view.cat.name,
-      look,
-      eyes,
-      tz: view.clock.tz,
-      homeHour: view.clock.homeHour,
-      notes: notes.join("\n"),
-    });
-    setOpen(true);
+    setLoading(true);
+    setError(null);
+    try {
+      const notes = await fetchNotes(id);
+      const look =
+        LOOKS.find((l) => l.cat.fur.toLowerCase() === view.cat.fur.toLowerCase())?.id ?? LOOKS[0]!.id;
+      const eyes = EYES.find((e) => e.hex.toLowerCase() === view.cat.eyes.toLowerCase())?.id ?? EYES[0]!.id;
+      setDraft({
+        decor: view.decor ?? DEFAULT_DECOR,
+        name: view.cat.name,
+        look,
+        eyes,
+        tz: view.clock.tz,
+        homeHour: view.clock.homeHour,
+        notes: notes.join("\n"),
+      });
+      setOpen(true);
+    } catch {
+      setError("Couldn’t load your notes. Try again; your saved notes haven’t changed.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const save = async () => {
@@ -67,5 +71,14 @@ export function useCatSetup(id: string, view: RoomView | null, reload: () => Pro
     return false;
   };
 
-  return { open, draft, setDraft, saving, error, start, save, close: () => setOpen(false) };
+  const preview =
+    view && open && draft
+      ? {
+          ...view.cat,
+          name: draft.name.trim() || "Bean",
+          ...LOOKS.find((look) => look.id === draft.look)!.cat,
+          eyes: EYES.find((eyes) => eyes.id === draft.eyes)!.hex,
+        }
+      : (view?.cat ?? null);
+  return { open, draft, preview, setDraft, loading, saving, error, start, save, close: () => setOpen(false) };
 }

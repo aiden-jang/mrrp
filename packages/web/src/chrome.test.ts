@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chromeFor } from "./App.js";
+import { chromeFor } from "./roomTheme.js";
 import { sceneFor } from "./hours.js";
 import { contrast } from "./legible.js";
 import decisions from "../../../DECISIONS.md?raw";

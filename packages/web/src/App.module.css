@@ -13,6 +13,25 @@
   transition: background 0.9s ease;
 }
 
+.roomGuide {
+  border-block: 1px solid var(--line);
+  margin: 0 0 18px;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--soft);
+}
+.roomGuide > summary {
+  min-height: 44px;
+  padding-block: 12px;
+  cursor: pointer;
+  color: var(--ink);
+  font-weight: 600;
+}
+.roomGuide > p {
+  margin: 0 0 14px;
+}
+
 @media (max-width: 640px) {
   .page {
     padding-top: 56px;

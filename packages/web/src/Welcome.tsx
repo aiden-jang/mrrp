@@ -48,10 +48,21 @@ export function Welcome({
           <div className={w.scene}>{children}</div>
           <p className={w.caption}>A place to do very little. Together.</p>
         </section>
-        <section className={w.start} aria-label="Make your room">
+        <form
+          className={w.start}
+          aria-label="Make your room"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onMake();
+          }}
+        >
           {back && (
             <>
-              <button className={`${s.btn} ${s.btnGo}`} onClick={() => location.assign(`/r/${back}`)}>
+              <button
+                type="button"
+                className={`${s.btn} ${s.btnGo}`}
+                onClick={() => location.assign(`/r/${back}`)}
+              >
                 Back to the room
               </button>
               <p className={s.small}>Or make another room for somebody else.</p>
@@ -68,13 +79,12 @@ export function Welcome({
             placeholder="your name"
             autoComplete="given-name"
             onChange={(event) => onName(event.target.value)}
-            onKeyDown={(event) => event.key === "Enter" && onMake()}
           />
-          <button className={`${s.btn} ${back ? "" : s.btnGo}`} onClick={onMake} disabled={!name.trim()}>
+          <button type="submit" className={`${s.btn} ${back ? "" : s.btnGo}`} disabled={!name.trim()}>
             Make a room <span aria-hidden>↗</span>
           </button>
           <p className={w.fine}>No account needed. Send the link to one person.</p>
-        </section>
+        </form>
       </div>
       <ol className={w.steps} aria-label="How Mrrp works">
         <li>

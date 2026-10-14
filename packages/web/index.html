@@ -4,33 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>mrrp</title>
-    <meta name="description" content="Someone made you a cat." />
-
-    <!--
-      The link preview is the first thing she ever sees, before she taps anything, and this app's only
-      distribution is one link sent in one message.
-
-      og:image and og:url are ABSOLUTE on purpose. A relative "/og.png" is resolved by some scrapers and
-      quietly dropped by others, iMessage among them, and the failure mode is a bare grey link with no
-      picture: the single worst version of "somebody made you something". Absolute URLs cost nothing and
-      cannot be misread. It hardcodes the domain, which is correct here because there is exactly one.
-    -->
+    <meta name="description" content="A tiny room for two. One of you is the cat." />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="mrrp" />
     <meta property="og:url" content="https://mrrp.aidenjang.com/" />
-    <meta property="og:title" content="Someone made you a cat" />
+    <meta property="og:title" content="One of you is the cat." />
     <meta property="og:description" content="One link, two people, and a cat that is one of them." />
     <meta property="og:image" content="https://mrrp.aidenjang.com/og.png" />
     <meta property="og:image:secure_url" content="https://mrrp.aidenjang.com/og.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="A pixel cat asleep in a sunlit room." />
+    <meta property="og:image:alt" content="A sleepy cat face beside mrrp: One of you is the cat." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="https://mrrp.aidenjang.com/og.png" />
-
-    <!-- She'll open this a lot, so it should be able to live on her home screen. -->
-    <!-- The one font the first paint needs. Everything else it pulls is already same-origin. -->
     <link rel="preload" href="/fonts/quicksand-latin.woff2" as="font" type="font/woff2" crossorigin />
 
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -39,8 +26,6 @@
     <meta name="apple-mobile-web-app-title" content="mrrp" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#f7ecdc" />
-
-    <!-- A private room sent by link. Nothing in here should ever be crawled. -->
     <meta name="robots" content="noindex, nofollow" />
   </head>
   <body>
@@ -59,8 +44,6 @@
         color: #3f2f1f;
       "
     >
-      <!-- The room is drawn on a canvas, so there is no version of this that works without
-           JavaScript. Say so plainly rather than showing an empty cream page. -->
       <p><strong>mrrp needs JavaScript.</strong></p>
       <p>The cat is drawn a pixel at a time in the browser, so there is nothing to show without it.</p>
     </noscript>

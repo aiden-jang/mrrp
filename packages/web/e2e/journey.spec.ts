@@ -1,15 +1,7 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-/*
- * The two of them, one room, in a real browser against the real Worker and Durable Object.
- *
- * The room's rules have their own specs and the web's helpers have theirs. Neither knows whether
- * two people can actually reach the same room and see each other's half of it, which is the whole
- * app. The halves are not symmetric: he looks after her, she is the cat.
- */
-
 test("he makes a room, she goes in, and each gets their own half", async ({ page, browser }) => {
-  // --- his side ---------------------------------------------------------------------------
   await page.goto("/");
   await page.getByPlaceholder("your name").fill("Aiden");
   await page.getByRole("button", { name: "Make a room" }).click();
@@ -48,7 +40,6 @@ test("he makes a room, she goes in, and each gets their own half", async ({ page
   );
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
 
-  // --- her side, a different browser entirely -----------------------------------------------
   const hers = await browser.newContext();
   const her = await hers.newPage();
   await her.goto(link);
@@ -60,7 +51,6 @@ test("he makes a room, she goes in, and each gets their own half", async ({ page
   await expect(her.getByRole("button", { name: /Draw something for the frame/ })).toBeVisible();
   await expect(her.getByRole("button", { name: /Write her notes/ })).toHaveCount(0);
 
-  // --- she leaves him a line, and it comes back as hers --------------------------------------
   await her.getByRole("button", { name: /Say something back/ }).click();
   await her.getByLabel("Your answer").fill("i fed her already");
   await her.getByRole("button", { name: "Leave it" }).click();
@@ -75,7 +65,6 @@ test("he makes a room, she goes in, and each gets their own half", async ({ page
   await expect(her.getByLabel(/Your answer|Something to leave him/)).toHaveValue("");
   await her.getByRole("button", { name: "Never mind" }).click();
 
-  // --- and she can do the thing that is only hers to do --------------------------------------
   // A toggle, so the control itself is the state: pressed, and offering the way back out.
   const door = her.getByRole("button", { name: /(Go and wait|Come away) / });
   await expect(door).toHaveAttribute("aria-pressed", "false");
@@ -83,5 +72,20 @@ test("he makes a room, she goes in, and each gets their own half", async ({ page
   await expect(door).toHaveAttribute("aria-pressed", "true");
   await expect(door).toHaveText(/Come away from the door/);
 
+  await her.setViewportSize({ width: 390, height: 844 });
+  await expect.poll(() => her.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(
+    (await new AxeBuilder({ page: her }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations,
+  ).toEqual([]);
+  await her.getByRole("button", { name: "Draw something for the frame" }).click();
+  const firstCell = her.getByRole("button", { name: /^Row 1, column 1:/ });
+  await expect(firstCell).toBeFocused();
+  await firstCell.press("ArrowRight");
+  const secondCell = her.getByRole("button", { name: /^Row 1, column 2:/ });
+  await expect(secondCell).toBeFocused();
+  await secondCell.press("Space");
+  await expect(secondCell).toHaveAttribute("aria-label", "Row 1, column 2: ink");
+  await secondCell.press("Escape");
+  await expect(her.getByRole("button", { name: "Draw something for the frame" })).toBeFocused();
   await hers.close();
 });

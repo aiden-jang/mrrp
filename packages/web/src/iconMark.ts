@@ -1,4 +1,4 @@
-const INK = "#332b39";
+const INK = "#332a23";
 const PAPER = "#fff2df";
 
 export function iconMark(fur = "#e6ab72", maskable = false): string {

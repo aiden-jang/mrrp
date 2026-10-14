@@ -1,5 +1,5 @@
 import { defineConfig } from "vitest/config";
-import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
+import { cloudflareTest } from "@cloudflare/vitest-plugin";
 
 // Tests run inside workerd against the real Durable Object, not a mock. Nearly every rule worth
 // having here is a storage rule or a seat rule, and a mock would be asserting the mock.

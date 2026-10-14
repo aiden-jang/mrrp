@@ -1,15 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-/**
- * The browser layer, against the real Worker and a real Durable Object.
- *
- * Everything else here tests a piece: the room's rules have 381 specs, the web's helpers have their
- * own. Neither knows whether two people can open the same room and see each other's half of it,
- * which is the only thing this app is.
- *
- * No stand-in for anything. A room needs no account, so the whole journey is the real code — the
- * Worker, the Durable Object, the socket.
- */
+// Real two-seat journeys against isolated local Worker storage.
 const WORKER_PORT = 8787;
 const WEB_PORT = 30005;
 
@@ -17,7 +8,7 @@ export default defineConfig({
   testDir: "./e2e",
   timeout: 60_000,
   expect: { timeout: 10_000 },
-  // Serial: both specs share one Worker and one room store, and the point is one pair's journey.
+  // Keep storage-backed journeys serial.
   workers: 1,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,

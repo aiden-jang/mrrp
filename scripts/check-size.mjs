@@ -1,14 +1,4 @@
-/*
- * Ceilings on file length and component state, run by `pnpm run verify`.
- *
- * Nothing else here notices a file growing, and a god-file is never added. It accretes twenty lines
- * at a time and no single diff looks wrong, which is how one component came to hold fifty-five
- * pieces of state and how the file next to it passed three thousand lines.
- *
- * 400 is not arbitrary: three files in four are under 153 lines, so the ceiling sits well above the
- * shape of this codebase rather than cutting through the middle of it. Lines are the proxy; the
- * state count is the signal. Splitting the file is almost always the right answer to a failure.
- */
+// Source budgets ratchet down after extraction; gates include their own source.
 import { globSync, readFileSync } from "node:fs";
 
 const MAX_LINES = 400;
@@ -24,7 +14,6 @@ const MAX_STATE = 12;
  */
 const ALREADY_OVER = {
   "packages/web/src/Cat.tsx": { lines: 3104 },
-  "packages/web/src/App.tsx": { lines: 2537, state: 33 },
   "packages/worker/src/room.ts": { lines: 1466 },
   "packages/web/src/sprites.ts": { lines: 674 },
   "packages/worker/src/index.ts": { lines: 518 },
@@ -78,5 +67,5 @@ if (problems.length > 0) {
 const decomposing = Object.keys(ALREADY_OVER).length;
 console.log(
   `size ok: ceiling ${MAX_LINES} lines / ${MAX_STATE} state` +
-    (decomposing > 0 ? `, with ${decomposing} file(s) still being decomposed` : ""),
+    (decomposing > 0 ? `, with ${decomposing} file(s) with explicit budgets` : ""),
 );

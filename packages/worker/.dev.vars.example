@@ -4,7 +4,7 @@
 # app runs fine: the ageing route 404s and signing in is simply unavailable.
 
 # Opens /api/room/:id/age, which fast-forwards a room so the states that take months can be looked
-# at. See "Looking at an old room" in the README.
+# at. See docs/development.md.
 DEV_TOOLS=on
 
 # The auth UI's own dev server, which proxies /auth to the auth Worker beside it. Production uses the

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FOUND_ANNOUNCEMENTS, FOUND_AS_HER } from "./App.js";
+import { FOUND_ANNOUNCEMENTS, FOUND_AS_HER } from "./RoomArrival.js";
 import type { DiscoveryKey } from "./discoveries.js";
 
 const DISCOVERY_KEYS: DiscoveryKey[] = [

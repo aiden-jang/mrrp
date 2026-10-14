@@ -9,25 +9,11 @@ The first approved reference is
 [`docs/art/golden-hour-room-concept-v1.png`](docs/art/golden-hour-room-concept-v1.png). It is a target
 for warmth, depth, material detail, and environmental storytelling. It is not a drop-in game asset.
 
-This was a seven-phase rollout plan. Six of the phases either shipped or were tried and reverted, so
-what is left is the direction itself and the reason the pipeline half of it was abandoned. That reason
-is the most useful thing in this file.
+## The scene owns its pixels
 
-## Why there is no asset pipeline
-
-**It was built, and reverted.** The migration went all the way: six generated room states, nine cat
-poses with recolorable eye overlays, a DOM interaction surface replacing the canvas, and postcard
-capture compositing the image layers. It was reverted in two steps, `dc479fc` and `cad4481`, back to
-the authored renderer.
-
-What went wrong was not the pipeline, which worked. It was that a generated room is a picture of a
-room, and this app is two people watching a cat notice things. Every interaction had to be re-aligned
-to artwork that no longer knew where the furniture was, the poses drifted between frames, and the
-result was richer and deader.
-
-**The cute has to be authored, because authored is what makes it specific to her.** If anything like
-this is attempted again, the constraint the revert added is that nothing may own visible pixels unless
-it also knows its own hit geometry.
+The room is an authored canvas, not a background illustration with controls laid over it.
+Visible objects must own their interaction geometry. Generated poses can drift between frames;
+hand-authored sprites keep animation, custom colors and hit areas consistent.
 
 ## What is in the room
 
@@ -39,10 +25,8 @@ pixels, or the floorboards come out at two different widths); the cat lit by the
 the window and a shadow that leans with the light; the chrome going dark when the room does, as two
 palettes rather than a crossfade; wall texture, floorboard depth, the rug and the window architecture;
 the living-room states, the mood and secret responses; her voice pitched per coat, her purr following
-her mood and deepening while she is held, and settling a few percent over her first year; a head sprite
-that becomes the tab icon in her actual coat; a collar she wears once both of them have called her by
-name; an empty frame and a seven-by-five sheet either of them can draw on, which is the size of the
-hole that was already in the frame; a worn patch on the rug where she has taken to sitting; one swipe
+her mood and deepening while she is held, and settling a few percent over her first year; a small cat-face tab icon in her actual coat; a collar she wears once both of them have called her by
+name; an empty frame and a pixel sheet either of them can draw on; a worn patch on the rug where she has taken to sitting; one swipe
 at the moth per visit, which she always misses; and the pointer becoming the same paw as the credit
 line.
 
@@ -63,7 +47,7 @@ Deliberately not done: anything that could make the room worse over time, which 
 
 ## Visual rules
 
-- Use a limited warm palette: cream, ginger, chocolate, faded sage, dusty rose, muted lavender, and
+- Use a limited warm palette: cream, ginger, chocolate, faded sage, dusty rose, warm charcoal, and
   honey light.
 - Prefer deliberate pixel clusters and readable silhouettes over smooth gradients or noisy detail.
 - Let one strong light source organize each scene. At golden hour, the window beam should lead the

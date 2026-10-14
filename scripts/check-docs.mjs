@@ -8,7 +8,11 @@
 import { globSync, readFileSync } from "node:fs";
 
 // CLAUDE.md and AGENTS.md are symlinks to CONVENTIONS.md; listing them would report twice.
-const DOCS = ["README.md", "DECISIONS.md", "ART.md", "docs/art/README.md", "CONVENTIONS.md"];
+const DOCS = [
+  ...globSync("*.md").filter((file) => !["AGENTS.md", "CLAUDE.md"].includes(file)),
+  ...globSync("docs/**/*.md").filter((file) => !file.startsWith("docs/history/")),
+  ...globSync(".github/**/*.md"),
+];
 
 /* Named in the docs because they are absent, or because they belong to somebody else's API.
    Never add a name the code actually lost. */

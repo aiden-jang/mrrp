@@ -1,81 +1,45 @@
-// Node 24+ strips the shared TypeScript mark; Chrome renders the home-screen and preview PNGs.
-import { iconMark } from "../src/iconMark.ts";
-import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync, rmSync } from "node:fs";
+// Node 24+ strips the shared TypeScript mark. SVG rendering needs no browser installation.
+import { Resvg } from "@resvg/resvg-js";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { iconMark } from "../src/iconMark.ts";
 
-const HERE = dirname(fileURLToPath(import.meta.url));
-const PUBLIC = resolve(HERE, "../public");
-const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-
-const svg = iconMark();
+const PUBLIC = resolve(dirname(fileURLToPath(import.meta.url)), "../public");
 mkdirSync(PUBLIC, { recursive: true });
+const svg = iconMark();
 writeFileSync(resolve(PUBLIC, "icon.svg"), svg);
-
-/** Render one HTML file to a PNG of the given size. */
-function shoot(name, w, h, body) {
-  const html = resolve(PUBLIC, `.${name}.html`);
-  writeFileSync(
-    html,
-    `<!doctype html><meta charset="utf-8"><style>
-    html,body{margin:0;padding:0;width:${w}px;height:${h}px;overflow:hidden}
-  </style>${body}`,
-  );
-  try {
-    execFileSync(
-      CHROME,
-      [
-        "--headless",
-        "--disable-gpu",
-        "--hide-scrollbars",
-        `--window-size=${w},${h}`,
-        `--screenshot=${resolve(PUBLIC, name)}`,
-        `file://${html}`,
-      ],
-      { stdio: "ignore" },
-    );
-  } finally {
-    rmSync(html, { force: true });
-  }
-  console.log(`public/${name}  ${w}x${h}`);
+const square = svg.replace('rx="120"', 'rx="0"');
+function render(name, source, width) {
+  const png = new Resvg(source, { fitTo: { mode: "width", value: width } }).render().asPng();
+  writeFileSync(resolve(PUBLIC, name), png);
+  console.log(`public/${name}`);
 }
-
-const square = (size) =>
-  svg.replace('rx="120"', 'rx="0"').replace("<svg ", `<svg width="${size}" height="${size}" `);
-const maskable = (size) =>
-  iconMark(undefined, true).replace("<svg ", `<svg width="${size}" height="${size}" `);
-
-shoot("icon-512.png", 512, 512, square(512));
-shoot("icon-192.png", 192, 192, square(192));
-shoot("icon-maskable-512.png", 512, 512, maskable(512));
-// iOS applies its own mask, so home-screen icons use an opaque background.
-shoot("apple-touch-icon.png", 180, 180, square(180));
-
-// The link preview. This is the first thing she sees, before she has opened anything.
-shoot(
+render("icon-512.png", square, 512);
+render("icon-192.png", square, 192);
+render("icon-maskable-512.png", iconMark(undefined, true), 512);
+// iOS applies its own mask, so the source background must be opaque.
+render("apple-touch-icon.png", square, 180);
+render(
   "og.png",
+  `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f7ecdc"/>
+  <svg x="176" y="155" width="320" height="320" viewBox="0 0 512 512">${square.replace(/<svg[^>]*>|<\/svg>/g, "")}</svg>
+  <g font-family="Arial, sans-serif" fill="#4a3520">
+    <text x="560" y="285" font-size="96" font-weight="700" letter-spacing="-2">mrrp</text>
+    <text x="564" y="355" font-size="34" fill="#7a6a54">One of you</text>
+    <text x="564" y="401" font-size="34" fill="#7a6a54">is the cat.</text>
+  </g>
+</svg>`,
   1200,
-  630,
-  `<div style="width:1200px;height:630px;background:#f7ecdc;display:flex;align-items:center;
-     justify-content:center;gap:64px;font-family:ui-sans-serif,system-ui,sans-serif">
-     ${square(320)}
-     <div>
-       <div style="font-size:96px;font-weight:700;color:#4a3520;letter-spacing:-.02em">mrrp</div>
-       <div style="font-size:34px;color:#7a6a54;margin-top:12px;max-width:15ch;line-height:1.35">
-         Someone made you a cat.
-       </div>
-     </div>
-   </div>`,
 );
-
 writeFileSync(
   resolve(PUBLIC, "manifest.webmanifest"),
   JSON.stringify(
     {
       name: "mrrp",
       short_name: "mrrp",
-      description: "Someone made you a cat.",
+      description: "A tiny room for two. One of you is the cat.",
       start_url: ".",
       scope: "/",
       display: "standalone",
@@ -93,4 +57,3 @@ writeFileSync(
     2,
   ) + "\n",
 );
-console.log("public/manifest.webmanifest");
