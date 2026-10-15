@@ -30,5 +30,21 @@
       "sizes": "any",
       "type": "image/svg+xml"
     }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/app-desktop.png",
+      "sizes": "1425x900",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "A shared cat room. Local demonstration."
+    },
+    {
+      "src": "/screenshots/app-mobile.png",
+      "sizes": "375x806",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "A shared cat room. Local demonstration."
+    }
   ]
 }
