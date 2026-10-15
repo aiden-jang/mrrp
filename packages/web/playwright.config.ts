@@ -1,8 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
 // Real two-seat journeys against isolated local Worker storage.
-const WORKER_PORT = 8787;
-const WEB_PORT = 30005;
+const WORKER_PORT = Number(process.env.MRRP_E2E_WORKER_PORT ?? 8787);
+const WEB_PORT = Number(process.env.MRRP_E2E_WEB_PORT ?? 30005);
 
 export default defineConfig({
   testDir: "./e2e",
@@ -23,14 +23,15 @@ export default defineConfig({
       command: `pnpm exec wrangler dev --persist-to .wrangler/e2e-state --port ${WORKER_PORT}`,
       cwd: "../worker",
       port: WORKER_PORT,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false,
       timeout: 120_000,
       stdout: "ignore",
     },
     {
-      command: "pnpm run dev",
+      command: `pnpm exec vite --port ${WEB_PORT}`,
+      env: { MRRP_E2E_WORKER_PORT: String(WORKER_PORT) },
       port: WEB_PORT,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false,
       timeout: 120_000,
       stdout: "ignore",
     },

@@ -1,3 +1,4 @@
+import { AppUpdate } from "./AppUpdate.js";
 import { useEffect, useState } from "react";
 import { lastRoom, markMine, myName, newRoomId } from "./api.js";
 import s from "./App.module.css";
@@ -47,6 +48,7 @@ export function Landing() {
   return (
     <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
       <ChromeSync night={isNightChrome(door.sun)} />
+      <AppUpdate />
       <Welcome name={name} onName={setName} onMake={make} back={back}>
         <Cat
           label="A pixel cat in a quiet room."

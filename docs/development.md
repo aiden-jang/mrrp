@@ -29,3 +29,10 @@ The example local bindings also describe `AUTH_URL` for a locally running accoun
 `WEATHER_URL` for the weather endpoint. A refused weather endpoint exercises the room's ordinary
 weather-unavailable behavior. Local sign-in requires the shared accounts service; anonymous
 room use does not.
+
+## Isolated browser ports
+
+Browser journeys refuse an existing server. If a manual room is already open, set
+`MRRP_E2E_WORKER_PORT` and `MRRP_E2E_WEB_PORT` to unused ports before running
+`pnpm run verify`. The browser server receives the matching proxy destination;
+journeys retain their own storage and never reuse the manual room.

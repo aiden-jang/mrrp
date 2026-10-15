@@ -32,6 +32,7 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   const { request } = e;
+  if (request.cache === "no-store") return;
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);

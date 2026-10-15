@@ -31,6 +31,7 @@ import { useRoomEnding } from "./useRoomEnding.js";
 import { useRoomFeedback } from "./useRoomFeedback.js";
 import { useRoomHistory } from "./useRoomHistory.js";
 import { useRoomSession } from "./useRoomSession.js";
+import { ConnectionNotice } from "./ConnectionNotice.js";
 import { useRoomSharing } from "./useRoomSharing.js";
 import { useSayBox } from "./useSayBox.js";
 import { FINISH_LINK, useSeatAccount } from "./useSeatAccount.js";
@@ -57,6 +58,7 @@ function RoomPage({ id }: { id: string }) {
     covered,
     now,
     load,
+    live,
   } = useRoomSession(id);
   const { captureRoom, imageStatus, handleCaptureReady, saveRoomImage, shareRoom, shareResult } =
     useRoomSharing(view, setErr);
@@ -367,6 +369,7 @@ function RoomPage({ id }: { id: string }) {
           <SeatRecovery account={account} />
         )}
         {/* Keep errors visible while the room or settings scroll beneath them. */}
+        {!asking && view.seat != null && <ConnectionNotice live={live} />}
         {err && (
           <p className={s.errorBar} role="status">
             {err}
