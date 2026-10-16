@@ -85,6 +85,7 @@ export function RoomSettings({
             <a
               href={`${AUTH_URL}/privacy`}
               target="_blank"
+              aria-describedby="external-link-hint"
               rel="noopener noreferrer"
               className={s.creditLink}
             >

@@ -108,7 +108,10 @@ export function useRoomSession(id: string) {
       if (!document.hidden) void load();
     }, every);
     const onShow = () => {
-      if (!document.hidden) void load();
+      if (!document.hidden) {
+        setNow(Date.now());
+        void load();
+      }
     };
     document.addEventListener("visibilitychange", onShow);
     return () => {

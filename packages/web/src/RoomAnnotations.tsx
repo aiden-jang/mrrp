@@ -60,7 +60,7 @@ export function RoomAnnotations({
             : imageStatus === "shared"
               ? "Postcard shared"
               : imageStatus === "saved"
-                ? "Postcard saved"
+                ? "Download started"
                 : "Make a postcard"}
         </button>
       )}
