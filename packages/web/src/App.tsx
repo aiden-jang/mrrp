@@ -170,7 +170,7 @@ function RoomPage({ id }: { id: string }) {
     <main className={s.page} style={{ ...roomTheme }}>
       <ChromeSync night={nightChrome} />
       <VoiceSync fur={view.cat.fur} monthsOld={view.monthsOld} />
-      <DocTitle name={view.cat.name} />
+      <DocTitle name={view.cat.name} replyAt={view.youAreHer ? null : (view.herLine?.at ?? null)} />
       <FaviconSync cat={view.cat} />
       <div className={s.card}>
         <RoomHeader

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { faviconFor } from "./favicon.js";
 import { LOOKS } from "./looks.js";
 import { setVoice } from "./sound.js";
@@ -22,13 +22,25 @@ export function FaviconSync({ cat }: { cat: CatLook }) {
   return null;
 }
 
-export function DocTitle({ name }: { name: string }) {
+export function DocTitle({ name, replyAt = null }: { name: string; replyAt?: number | null }) {
+  const latest = useRef<number | undefined>(undefined);
+  const unread = useRef(false);
   useEffect(() => {
-    document.title = `${name} \u00b7 mrrp`;
+    if (latest.current !== undefined && replyAt !== null && replyAt > latest.current && document.hidden) {
+      unread.current = true;
+    }
+    latest.current = Math.max(latest.current ?? 0, replyAt ?? 0);
+    const sync = () => {
+      if (!document.hidden) unread.current = false;
+      document.title = `${unread.current ? "• " : ""}${name} \u00b7 mrrp`;
+    };
+    sync();
+    document.addEventListener("visibilitychange", sync);
     return () => {
+      document.removeEventListener("visibilitychange", sync);
       document.title = "mrrp";
     };
-  }, [name]);
+  }, [name, replyAt]);
   return null;
 }
 

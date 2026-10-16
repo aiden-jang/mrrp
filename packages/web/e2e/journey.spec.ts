@@ -53,7 +53,15 @@ test("he makes a room, she goes in, and each gets their own half", async ({ page
 
   await her.getByRole("button", { name: /Say something back/ }).click();
   await her.getByLabel("Your answer").fill("i fed her already");
+  await page.evaluate(() => Object.defineProperty(document, "hidden", { configurable: true, value: true }));
   await her.getByRole("button", { name: "Leave it" }).click();
+  await expect(page).toHaveTitle(/^• /);
+  await expect(her).not.toHaveTitle(/^• /);
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", { configurable: true, value: false });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page).not.toHaveTitle(/^• /);
 
   // The box closes and the line comes back labelled as the last thing she said, which is the
   // round trip: typed here, stored in the room, read back out of a fresh view.
