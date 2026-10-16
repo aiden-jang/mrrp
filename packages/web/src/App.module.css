@@ -9,6 +9,7 @@
   display: grid;
   place-items: center;
   padding: clamp(14px, 3vmin, 28px) 18px clamp(24px, 5vmin, 48px);
+  padding-bottom: max(clamp(24px, 5vmin, 48px), env(safe-area-inset-bottom));
   background: radial-gradient(120% 90% at 78% 6%, var(--air-warm) 0%, var(--air) 62%);
   transition: background 0.9s ease;
 }
@@ -348,6 +349,9 @@
 .sayInput {
   font: inherit;
   min-height: 72px;
+  max-height: min(240px, 35dvh);
+  overflow-y: auto;
+  scroll-margin-block: 16px;
   /* Keep this at 16 or more. iOS zooms the whole page in when you tap into anything smaller. */
   font-size: 16px;
   line-height: 1.5;
