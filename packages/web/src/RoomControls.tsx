@@ -1,20 +1,36 @@
 import { useEffect, useState } from "react";
 import s from "./App.module.css";
 import { copyText } from "./clipboard.js";
-import { isMuted, toggleMuted } from "./sound.js";
+import { isMuted, toggleMuted, soundLevel, setSoundLevel } from "./sound.js";
 
 export function SoundToggle() {
   const [off, setOff] = useState(isMuted);
+  const [level, setLevel] = useState(soundLevel);
   return (
-    <button
-      type="button"
-      onClick={() => setOff(toggleMuted())}
-      aria-pressed={off}
-      aria-label={off ? "Turn sound on" : "Turn sound off"}
-      className={s.soundToggle}
-    >
-      <SpeakerMark off={off} />
-    </button>
+    <div className={s.soundSettings}>
+      <button
+        type="button"
+        onClick={() => setOff(toggleMuted())}
+        aria-pressed={off}
+        aria-label={off ? "Turn sound on" : "Turn sound off"}
+        className={s.soundToggle}
+      >
+        <SpeakerMark off={off} />
+      </button>
+      <button
+        type="button"
+        className={s.soundLevel}
+        aria-pressed={level === "quiet"}
+        aria-label="Soft sound"
+        onClick={() => {
+          const next = level === "quiet" ? "normal" : "quiet";
+          setSoundLevel(next);
+          setLevel(next);
+        }}
+      >
+        {level === "quiet" ? "Soft" : "Normal"}
+      </button>
+    </div>
   );
 }
 

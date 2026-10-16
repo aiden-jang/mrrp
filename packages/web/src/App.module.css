@@ -1211,3 +1211,25 @@ details[open] > .recoverySummary::before {
     grid-template-columns: 1fr;
   }
 }
+
+.soundSettings {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.soundLevel {
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 22px;
+  border: 1px solid var(--soft);
+  color: var(--ink);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.soundLevel[aria-pressed="true"] {
+  background: var(--panel);
+}

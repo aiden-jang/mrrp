@@ -297,3 +297,15 @@ button:disabled {
     outline: 2px solid Highlight;
   }
 }
+
+input:is(:autofill, :-webkit-autofill),
+textarea:is(:autofill, :-webkit-autofill) {
+  -webkit-text-fill-color: var(--ink);
+  caret-color: var(--ink);
+  box-shadow: 0 0 0 1000px var(--panel) inset;
+}
+
+input::selection,
+textarea::selection {
+  -webkit-text-fill-color: var(--on-honey);
+}

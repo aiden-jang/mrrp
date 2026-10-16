@@ -6,6 +6,33 @@ let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let noise: AudioBuffer | null = null;
 let muted = readMuted();
+let level: "quiet" | "normal" = (() => {
+  try {
+    return localStorage.getItem("mrrp.sound-level.v1") === "normal" ? "normal" : "quiet";
+  } catch {
+    return "quiet";
+  }
+})();
+
+export function soundLevel() {
+  return level;
+}
+
+function applyLevel() {
+  if (!ctx || !master) return;
+  master.gain.cancelScheduledValues(ctx.currentTime);
+  master.gain.setTargetAtTime(muted ? 0 : level === "quiet" ? 0.22 : 0.6, ctx.currentTime, 0.04);
+}
+
+export function setSoundLevel(next: "quiet" | "normal") {
+  level = next;
+  try {
+    localStorage.setItem("mrrp.sound-level.v1", next);
+  } catch {
+    /* Keep the current level when preference storage is unavailable. */
+  }
+  applyLevel();
+}
 
 function readMuted(): boolean {
   try {
@@ -26,6 +53,7 @@ export function toggleMuted(): boolean {
   } catch {
     // Private mode. The setting just does not survive a reload.
   }
+  applyLevel();
   if (!muted) play("mrrp");
   return muted;
 }
@@ -43,7 +71,7 @@ function graph(): { ctx: AudioContext; master: GainNode } | null {
       return null;
     }
     master = ctx.createGain();
-    master.gain.value = 0.6;
+    master.gain.value = level === "quiet" ? 0.22 : 0.6;
     master.connect(ctx.destination);
   }
   if (ctx.state === "suspended") void ctx.resume();
