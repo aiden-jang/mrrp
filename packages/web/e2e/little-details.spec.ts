@@ -6,12 +6,10 @@ test("connection feedback distinguishes offline work from live updates", async (
   await page.getByPlaceholder("your name").fill("Review companion");
   await page.getByRole("button", { name: "Make a room", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1 })).toContainText("room");
-  const soft = page.getByRole("button", { name: "Soft sound", exact: true });
-  await expect(soft).toHaveAttribute("aria-pressed", "true");
-  await soft.click();
+  const mute = page.getByRole("button", { name: "Turn sound off", exact: true });
+  await mute.click();
   await page.reload();
-  await expect(soft).toHaveAttribute("aria-pressed", "false");
-  await soft.click();
+  await expect(page.getByRole("button", { name: "Turn sound on", exact: true })).toBeVisible();
   await context.setOffline(true);
   const notice = page.getByRole("status").filter({ hasText: "You’re offline" });
   await expect(notice).toBeVisible();

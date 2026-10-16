@@ -5,9 +5,10 @@ afterEach(() => {
   vi.unstubAllGlobals();
   localStorage.clear();
 });
-test("sound levels reach the master gain, remain muted when changed, and persist only after choosing", async () => {
+test("sound starts quietly and keeps the existing mute preference", async () => {
   vi.resetModules();
   localStorage.clear();
+  localStorage.setItem("mrrp.sound-level.v1", "normal");
   const target = vi.fn();
   const gain = {
     gain: { value: 0, cancelScheduledValues: vi.fn(), setTargetAtTime: target },
@@ -25,16 +26,10 @@ test("sound levels reach the master gain, remain muted when changed, and persist
     },
   );
   const sound = await import("./sound");
-  expect(localStorage.getItem("mrrp.sound-level.v1")).toBeNull();
   sound.primeOnFirstGesture();
   window.dispatchEvent(new Event("pointerdown"));
   expect(gain.gain.value).toBe(0.22);
-  sound.setSoundLevel("normal");
-  expect(target).toHaveBeenLastCalledWith(0.6, 4, 0.04);
-  expect(localStorage.getItem("mrrp.sound-level.v1")).toBe("normal");
   expect(sound.toggleMuted()).toBe(true);
   expect(target).toHaveBeenLastCalledWith(0, 4, 0.04);
-  sound.setSoundLevel("quiet");
-  expect(target).toHaveBeenLastCalledWith(0, 4, 0.04);
-  expect(localStorage.getItem("mrrp.sound-level.v1")).toBe("quiet");
+  expect(localStorage.getItem("mrrp.muted.v1")).toBe("1");
 });
