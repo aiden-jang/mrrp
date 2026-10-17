@@ -1,14 +1,5 @@
-/**
- * The cat, drawn by hand, one pixel at a time. Not a pixelation filter. See DECISIONS.md.
- *
- * Each letter is a ROLE, not a colour, which is how one grid draws every cat: `f` and `d` come from
- * whichever fur she has, `e` from her eyes.
- *
- *  . transparent      f fur            d fur, shaded      b belly / muzzle
- *  w outline          e eye, open      n nose              m mouth
- *  p inner ear        h highlight (one pixel, always white)
- *  c blush (two pixels per cheek, and worth more than any other pair)
- */
+/** Sprite cells encode palette roles; see DECISIONS.md.
+ * . transparent; f/d fur/shade; b belly; w outline; e eyes; n nose; m mouth; p inner ear; h highlight; c blush. */
 
 export type Pose =
   "loaf" | "sit" | "stand" | "play" | "perk" | "walk" | "stretch" | "pounce" | "peek" | "flop";
@@ -32,13 +23,7 @@ function sprite(rows: string[], ox: number, oy: number): Sprite {
   return { w, h: rows.length, rows, ox, oy };
 }
 
-/**
- * Bread. The default, and the one she's in most of the time.
- *
- * Head, shoulders and body must not share one box, however carefully shaded: that reads as a toaster.
- * The head tapers, the shoulders widen below the chin, and the loaf rounds back in at the paws. Keep
- * fur at both sides of the pale front or it turns into a panel.
- */
+/** Loaf silhouette: tapered head, wider shoulders, rounded paws, and fur beside the pale belly. */
 export const LOAF = sprite(
   [
     "...ww........ww.....",
@@ -267,13 +252,7 @@ export const PEEK = sprite(
   -12,
 );
 
-/**
- * On her side, belly out, all four paws loose. What a cat does when it has decided the room is safe.
- *
- * The head keeps the loaf's construction and faces the viewer, because a head in profile at this size
- * loses the eyes and the blush, which are the only things carrying the expression. Belly-up with the
- * head flat was the first attempt and it read as a dead cat.
- */
+/** Belly-up pose keeps the face toward the viewer so the eyes remain readable at sprite scale. */
 export const FLOP = sprite(
   [
     "...ww........ww...............",
@@ -418,13 +397,7 @@ export const FRAME = sprite(
   0,
 );
 
-/**
- * The same frame with nothing in it, for when one of you has put a drawing there.
- *
- * A separate grid rather than blitting FRAME with the fish mapped away: the fish is not only `g`
- * cells, it has two outline pixels inside the mount, and those would sit in the middle of somebody's
- * drawing as specks nobody put there.
- */
+/** Empty frame uses its own grid so the fish outline cannot leave pixels inside user drawings. */
 // prettier-ignore
 export const FRAME_EMPTY = sprite(
   [
@@ -451,14 +424,7 @@ export const FRAME_EMPTY = sprite(
 /** Top-left of the hole in every frame grid above, and how big it is. A drawing is exactly this. */
 export const FRAME_HOLE = { x: 3, y: 3, w: 15, h: 9 };
 
-/**
- * The word, hand-set. Real letters rather than canvas fillText: at this scale antialiased text beside
- * hand-placed pixels looks like a screenshot of two different programs.
- *
- * The m is five columns and the rest are three. A three-column m has room for only two stems, so it
- * comes out as a capital pi and the word reads "nrrp". One column of air between glyphs, 17 total,
- * and the fourth row exists only for the descender on the p.
- */
+/** Hand-set glyphs: five columns for m, three for other letters, with the final row for p's descender. */
 export const MRRP = sprite(
   ["wwwww.ww..ww..ww.", "w.w.w.w...w...w.w", "w.w.w.w...w...ww.", "..............w.."],
   0,
@@ -492,14 +458,7 @@ export const FRAME_CAT = sprite(
   0,
 );
 
-/**
- * The door, opening. Hinged left, handle right. The leaf foreshortens as it swings toward you, so it
- * narrows from the right while staying attached at the left. The handle travels with the outer edge:
- * that one pixel moving inward is what sells the rotation, and without it this reads as a shutter.
- *
- * Four frames rather than a computed transform. Resampling a rotated rectangle onto this grid gives
- * pixels of two different sizes, which is the one thing the look forbids. `o` is what lies beyond.
- */
+/** Four left-hinged door frames preserve whole-pixel rendering; the handle follows the outer edge. */
 const DOOR_AJAR = sprite(
   [
     "wwwwwwwwwwww",
@@ -610,15 +569,7 @@ export const BOX_FRONT = sprite(
  */
 export const CAKE = sprite(["...r...", "...d...", ".ggggg.", "ddddddd", "ddddddd"], 0, 0);
 
-/**
- * What he left out for her, waiting on the floor.
- *
- * Deliberately not one of her gifts below. Hers are found objects: a leaf, a bottle cap, a moth she
- * carried in. His is chosen, and should not be mistakable for something the cat dragged home.
- *
- * Don't hardcode `r` here: against the floor it sits on it measured 1.75:1, invisible. The call site
- * passes a legible colour; `h` keeps the pink so it is still obviously his.
- */
+/** Companion gifts stay distinct from found objects. The caller supplies legible floor contrast. */
 export const LEFT_OUT = sprite([".r.r.", ".rhr.", ".r.r."], 0, 0);
 
 /**
@@ -652,13 +603,7 @@ export const MUG = sprite([".wwww.", "wccccw", "wcccdw", "wcccdw", ".wwww."], 0,
 /** On its side, where it landed. Same object, so it has to read as the same object. */
 export const MUG_DOWN = sprite(["..wwww..", ".wccccw.", "wdccccdw", ".wwwwww."], 0, 0);
 
-/**
- * "ek ek", in the bubble, when there is a bird on the sill. Written out rather than drawn as a mouth
- * animation: at this size a moving jaw is two pixels flickering, which reads as a rendering fault.
- *
- * Two, not three. Three needs about 32 columns and the bubble is 17, so they render as blocks of
- * noise, which reads as a broken font rather than as a cat.
- */
+/** Two ek glyphs fit the bubble; a third exceeds its pixel width. */
 export const EK = sprite(
   ["www.w.w..www.w.w.", "ww..ww...ww..ww..", "www.w.w..www.w.w.", "................."],
   0,

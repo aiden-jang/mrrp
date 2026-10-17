@@ -1,23 +1,5 @@
-export const DISCOVERY_KEYS = [
-  "constellation",
-  "roomTour",
-  "piano",
-  "bubbles",
-  "aurora",
-  "mrrp",
-  "summon",
-  "herName",
-  "box",
-  "yarn",
-  "treat",
-  "catnip",
-  "music",
-  "mouse",
-  "belly",
-  "reached",
-] as const;
-
-export type DiscoveryKey = (typeof DISCOVERY_KEYS)[number];
+import { DISCOVERY_KEYS, type DiscoveryKey } from "@mrrp/shared";
+export { DISCOVERY_KEYS, type DiscoveryKey } from "@mrrp/shared";
 
 export type FoundLedger = Record<string, Record<string, number>>;
 

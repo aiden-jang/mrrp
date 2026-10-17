@@ -1,10 +1,4 @@
-/*
- * Mechanical checks on the docs, run by `pnpm run verify`. Only claims a machine can settle: paths,
- * script names, routes and symbols. Whether the prose is any good is a reading job.
- *
- * Prose rots with nothing to fail it. Nothing else in this repo reads the docs, so a symbol renamed
- * in the code leaves a sentence behind that still parses and is simply untrue.
- */
+// Validate documented paths, scripts, routes, symbols, and local links.
 import { globSync, readFileSync } from "node:fs";
 
 // CLAUDE.md and AGENTS.md are symlinks to CONVENTIONS.md; listing them would report twice.

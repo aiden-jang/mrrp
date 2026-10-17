@@ -1,12 +1,4 @@
-/*
- * The floor under a room nobody has written notes for yet, one a day, read by her and nobody else.
- *
- * She is the cat, so none of these may talk about a cat in the third person: twenty of the original
- * thirty did, and `notes.spec.ts` holds that line now. The last dozen lean on time having passed,
- * because the room hands these out in order.
- *
- * A note written by somebody else is not a gift from you. Overwrite them in the setup panel.
- */
+// Default notes address the cat directly; companion-written notes replace them.
 export const NOTES: string[] = [
   "Somebody made this room and put you in it. You are not going anywhere.",
   "There is nothing to keep up with in here. No streak to break, nothing that dies if you forget.",

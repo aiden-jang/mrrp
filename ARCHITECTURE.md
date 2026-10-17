@@ -7,6 +7,11 @@ Object, which owns its state, seat permissions, alarms and live connections. The
 ship together. Account linking uses the separate shared accounts service; visiting a room does
 not require an account.
 
+`packages/shared/src/index.ts` is the dependency-free browser/server contract: room views,
+request bodies, action labels, input limits, and discovery/blanket keys. The web and Worker
+type modules re-export it; Worker-only untrusted bodies and stored records stay in the Worker.
+Neither runtime imports the other to validate its contract.
+
 ## Client ownership
 
 `App.tsx` composes the room. It does not own every editor and network operation.

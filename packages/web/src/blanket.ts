@@ -1,3 +1,6 @@
+import type { BlanketKey } from "@mrrp/shared";
+export { BLANKET_KEYS, type BlanketKey } from "@mrrp/shared";
+
 // The one thing in the room she chooses. Colours from the room's own palette, so her bed never
 // arrives in a shade the rest of the place has never heard of.
 export const BLANKETS = {
@@ -6,11 +9,7 @@ export const BLANKETS = {
   honey: { d: "#c08a43", f: "#e8c07a", b: "#d3a55d" },
   dusk: { d: "#6d6480", f: "#9a90ad", b: "#837a99" },
   cream: { d: "#c2ad8c", f: "#f0e3c9", b: "#dccdaf" },
-} as const;
-
-export type BlanketKey = keyof typeof BLANKETS;
-
-export const BLANKET_KEYS = Object.keys(BLANKETS) as BlanketKey[];
+} as const satisfies Record<BlanketKey, { d: string; f: string; b: string }>;
 
 export const DEFAULT_BLANKET: BlanketKey = "rose";
 

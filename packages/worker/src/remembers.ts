@@ -1,4 +1,5 @@
-import type { Action, Visit } from "./types.js";
+import type { Action, Visit, Milestone, Personality } from "./types.js";
+export type { Milestone, Personality } from "./types.js";
 
 export const DAY_MS = 86_400_000;
 
@@ -18,12 +19,6 @@ function localParts(at: number, tz: string): { y: number; m: number; d: number }
 export function roomStartedAt(arrivals: number[], now: number): number {
   const known = arrivals.filter((at) => Number.isFinite(at));
   return known.length > 0 ? Math.min(...known) : now;
-}
-
-export interface Milestone {
-  kind: "anniversary" | "first-week" | "first-month" | "ours";
-  years: number;
-  label?: string;
 }
 
 export interface OurDay {
@@ -68,7 +63,7 @@ export const TRAIT_SHARE = 0.34;
 
 export const TRAIT_MIN_DAYS = 14;
 
-export type Trait = "petted" | "brushed" | "fed" | "accompanied" | "photographed";
+export type Trait = Personality["trait"];
 
 // "leaveout" is counted but is not an Action: he does it from his own panel. It is what "fed" is made of.
 export type TallyKey = Action | "leaveout";
@@ -96,11 +91,6 @@ const TRAIT_OF: Record<TallyKey, Trait> = {
   photo: "photographed",
   leaveout: "fed",
 };
-
-export interface Personality {
-  trait: Trait;
-  count: number;
-}
 
 export function personalityFrom(tally: Tally, daysKnown: number): Personality | null {
   if (!(daysKnown >= TRAIT_MIN_DAYS)) return null;

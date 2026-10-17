@@ -59,6 +59,9 @@ browser; linking an account is optional. Room settings include recovery and dele
 [Help or feedback](mailto:me@aidenjang.com). Please keep personal room links and recovery codes
 out of public issues.
 
+`packages/shared` owns the common browser/Worker types, choices, and limits. It has no
+runtime dependencies; both apps consume the same source contract.
+
 ## Repository guide
 
 - [Architecture](ARCHITECTURE.md): runtime boundaries and module ownership.

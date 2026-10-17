@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@aidenjang/auth-client": "^0.2.0",
-    "hono": "^4.13.13"
+    "hono": "^4.13.13",
+    "@mrrp/shared": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.4.2",

@@ -30,11 +30,16 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/shared: {}
+
   packages/web:
     dependencies:
       '@aidenjang/auth-client':
         specifier: ^0.2.0
         version: 0.2.0
+      '@mrrp/shared':
+        specifier: workspace:*
+        version: link:../shared
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -81,6 +86,9 @@ importers:
       '@aidenjang/auth-client':
         specifier: ^0.2.0
         version: 0.2.0
+      '@mrrp/shared':
+        specifier: workspace:*
+        version: link:../shared
       hono:
         specifier: ^4.13.13
         version: 4.13.13

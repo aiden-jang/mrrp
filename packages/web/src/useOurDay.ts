@@ -6,13 +6,7 @@ const pad = (n: number) => String(n).padStart(2, "0");
 
 const KEPT_MS = 2400;
 
-/*
- * Keep 2000 as the carrier year the stored month and day are shown in. It is a leap year, so the
- * 29th of February survives; any other year silently blanks it.
- *
- * `loaded` stops the effect re-running. The room polls a new view every few seconds, and each one
- * would overwrite the date being typed.
- */
+// Carrier year 2000 preserves February 29. Load once so polling cannot overwrite the date draft.
 export function useOurDay(
   id: string,
   view: RoomView | null,

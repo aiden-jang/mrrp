@@ -1,19 +1,4 @@
-/*
- * Find `s.foo` where the CSS module has no `.foo`.
- *
- * The gap no other check covers: TypeScript does not read CSS modules (they are typed as a loose
- * record), eslint does not read CSS, and `s.typo` is `undefined`, which React puts in the DOM as no
- * class at all. The element renders, unstyled, and nothing anywhere errors. Two were live when this
- * was added: `s.disclosure` and `s.disclosureHead` on the room's date disclosure, which had been
- * carrying the browser's default triangle while every other disclosure in the app drew a chevron.
- *
- * It is the same silent-failure shape as `var(--undeclared)`, which is why check-css-vars.mjs
- * exists.
- *
- * Only the referenced-but-undefined direction is checked. Reporting classes the stylesheet defines
- * but nothing uses would need to understand every class built by hand from a template string, and a
- * scan that does not is a pile of false positives, which is worse than no check.
- */
+// Check CSS module references against declared classes; computed class names are handled separately.
 import { readFileSync, globSync } from "node:fs";
 import { basename } from "node:path";
 

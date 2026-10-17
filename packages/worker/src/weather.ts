@@ -1,4 +1,5 @@
-export type Sky = "clear" | "cloud" | "rain" | "snow";
+import type { Sky } from "@mrrp/shared";
+export type { Sky } from "@mrrp/shared";
 
 export interface Weather {
   sky: Sky;

@@ -3,8 +3,7 @@ main = "src/index.ts"
 compatibility_date = "2024-12-30"
 compatibility_flags = ["nodejs_compat"]
 
-# Served only on the custom domain. The whole thing is one private link sent to one person, so there is
-# no reason for a second guessable *.workers.dev address to exist for it.
+# Serve only on the custom domain.
 workers_dev = false
 
 # The built web app is served by this same Worker, so the room link is one clean URL.
@@ -12,10 +11,7 @@ workers_dev = false
 directory = "../web/dist"
 binding = "ASSETS"
 
-# One instance per room. It holds one hibernatable WebSocket per open tab, so an idle room with two
-# phones asleep on it costs nothing and still wakes to push. One alarm, which does the two things
-# that must happen a week later whether or not anybody comes back: erasing a deleted room, and
-# dropping the side of it somebody left.
+# One hibernatable Durable Object per room. Its alarm erases deleted rooms and expires departed seats.
 [[durable_objects.bindings]]
 name = "ROOM"
 class_name = "Room"
@@ -24,13 +20,11 @@ class_name = "Room"
 tag = "v1"
 new_sqlite_classes = ["Room"]
 
-# Optional sign-in only. A room is a link and two seats; an account just remembers which seat is
-# yours, so the auth service being unreachable is indistinguishable from never having signed in.
+# Sign-in remembers seats; existing private-link access also works when Accounts is unavailable.
 [vars]
 AUTH_URL = "https://accounts.aidenjang.com"
 
-# Keyless and free, which is why the window can show her real weather at all. A binding rather than a
-# constant so the tests can point it at a port that refuses and never call a stranger's API.
+# WEATHER_URL is configurable so tests can disable external weather requests.
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 
 [observability]

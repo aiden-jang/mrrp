@@ -787,14 +787,7 @@ export class Room extends DurableObject<Env> {
       return new Response("gone", { status: 410 });
     }
 
-    /*
-     * A seat, not just the link.
-     *
-     * The room is happy to let somebody with the link watch the cat, and the HTTP view lets them.
-     * A socket is different: it pushes after every single thing either of them does, so the arrival
-     * of a message is itself presence. Keeping their names out of the payload does not help when the
-     * timing says somebody is here right now.
-     */
+    // Require seat credentials for sockets: message timing reveals presence even without names.
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (!people[me]) return new Response("not your seat", { status: 403 });
 
@@ -1214,13 +1207,7 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  /*
-   * A day worth remembering. One slot each, and neither ever sees the other's.
-   *
-   * His was the only one, and it is not shown to her on purpose: the cat mentions it on the day and
-   * that is how she finds out. One shared slot could not be opened to her without her blindly
-   * overwriting a date she cannot read, so she gets her own and he gets the same surprise.
-   */
+  // Each seat owns a private date; the other seat learns of it through the room on that day.
   async setOurDay(me: string, day: OurDay | null): Promise<boolean> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};

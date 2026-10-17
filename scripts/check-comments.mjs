@@ -1,14 +1,4 @@
-/*
- * A ceiling on comments, run by `pnpm run verify`, because a cleanup pass is a moment and drift is
- * permanent. Two passes over this repo cut the comments back; nothing stopped them growing again.
- *
- * A share of the code rather than a line count. A count charges a new module for its own header, so
- * it blocks a genuine explanation exactly as hard as it blocks padding.
- *
- * The gates get their own, higher share. They are small files where one header is a fifth of the
- * file, and holding them to the same number would mean explaining less about the things that decide
- * whether a build passes.
- */
+// Check comment budgets, repeated explanations, and comments stranded by moves.
 import { globSync, readFileSync } from "node:fs";
 
 const SRC_CEILING = 0.07;
@@ -16,18 +6,8 @@ const SCRIPTS_CEILING = 0.25;
 /* Long enough that two files saying `// eslint-disable-next-line` are not called duplication. */
 const DUP_MIN_CHARS = 45;
 
-/*
- * Repeated on purpose. Everything else that appears twice is a comment that was copied along with
- * the code under it, and stopped describing one of the two the moment either changed.
- *
- * The wire contract is kept by hand in both packages, so its notes are duplicated with it. The
- * storage note sits on the same three-line idiom in four places, and a reader in one of them should
- * not have to find another file to learn why the failure is swallowed.
- */
-const REPEATED_ON_PURPOSE = [
-  (where) => where.every((w) => w.endsWith("/types.ts:" + w.split(":").pop())),
-  (_, text) => text.startsWith("// Private mode."),
-];
+// Allow repeated storage-failure explanations; flag other copied prose.
+const REPEATED_ON_PURPOSE = [(_, text) => text.startsWith("// Private mode.")];
 
 /** Comment spans in one file, with string literals blanked first. */
 function comments(source, isCss) {
@@ -75,11 +55,7 @@ for (const file of [...src, ...own]) {
   let afterDeclaration = false;
   for (let i = 1; i < lines.length - 2; i++) {
     if (/^\}\)?;?$/.test(lines[i])) afterDeclaration = true;
-    /*
-     * A doc block with nothing under it but a closing brace. `/**` exists to describe the next
-     * declaration, so one describing a brace documents a prop or a field that has been removed.
-     * Ungated: the first interface in a file is where this happens.
-     */
+    // A doc block followed only by a closing delimiter has lost its subject.
     if (/\*\/\s*$/.test(lines[i])) {
       let open = i;
       while (open >= 0 && !lines[open].includes("/*")) open--;

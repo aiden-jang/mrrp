@@ -3,13 +3,7 @@ import { doSay } from "./api.js";
 import { play } from "./sound.js";
 import type { RoomView } from "./types.js";
 
-/*
- * `replyTo` is the day being answered, not a line to edit: answering still adds a new line. That is
- * why every way in opens the box empty.
- *
- * `clearing` is which of the two taps you are on. The server reads empty text as "clear every line"
- * and there is no undo behind it.
- */
+// Replies append to the named day. Clearing all replies requires a separate confirmation.
 export function useSayBox(
   id: string,
   applyView: (view: RoomView) => void,

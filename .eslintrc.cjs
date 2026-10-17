@@ -1,13 +1,4 @@
-/*
- * Matches the config in the other repos, and exists for one specific reason.
- *
- * owewell shipped a useEffect below a component's early returns. The first render bailed out before
- * reaching it and the next render ran one hook more, which is React error #310, and it took out every
- * group page the instant its data arrived. Typecheck, build and the whole test suite were green the
- * entire time. Nothing but a static rule sees that class of bug.
- *
- * mrrp had no lint at all, so it was exposed to exactly the same thing. CI runs this before it deploys.
- */
+// Enforce hook order; typechecking cannot detect conditional-hook failures.
 module.exports = {
   root: true,
   parser: "@typescript-eslint/parser",
