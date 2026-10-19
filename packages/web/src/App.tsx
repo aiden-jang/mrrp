@@ -1,3 +1,5 @@
+import { usePageAnalytics } from "./usePageAnalytics.js";
+import { pageForPath } from "../../../analytics/schema.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { doHold, lastRoom, markMine, myToken, roomFromPath } from "./api.js";
 import s from "./App.module.css";
@@ -37,6 +39,7 @@ import { useSayBox } from "./useSayBox.js";
 import { FINISH_LINK, useSeatAccount } from "./useSeatAccount.js";
 
 export function App() {
+  usePageAnalytics(pageForPath(window.location.pathname));
   const id = roomFromPath();
   if (id) lastRoom.set(id);
   return id ? <RoomPage id={id} /> : <Landing />;

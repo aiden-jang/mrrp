@@ -1,3 +1,4 @@
+import { reportAnalytics } from "../../../analytics/browser.js";
 import { AppUpdate } from "./AppUpdate.js";
 import { useEffect, useState } from "react";
 import { lastRoom, markMine, myName, newRoomId } from "./api.js";
@@ -43,6 +44,7 @@ export function Landing() {
     myName.set(name.trim());
     const id = newRoomId();
     markMine(id);
+    reportAnalytics({ name: "room_started" });
     location.href = `/r/${id}`;
   };
   return (

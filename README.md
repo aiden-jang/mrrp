@@ -78,3 +78,5 @@ The install preview uses the current demonstration-room captures from
 [the UI review](docs/ui-review/). Its images live in `packages/web/public/screenshots/`
 and are declared with their actual desktop and phone sizes in the web manifest.
 Only disposable local room data belongs in these public assets.
+
+Aggregate traffic and feature-event coverage, privacy boundaries and queries: [Analytics](docs/ANALYTICS.md).

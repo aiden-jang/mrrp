@@ -1,3 +1,5 @@
+import { accountOf } from "./accountOf.js";
+import { handleAnalytics } from "../../../analytics/worker.js";
 import { isRoomDecor } from "./decor.js";
 import { Hono, type Context, type Next } from "hono";
 import { resolveSession } from "@aidenjang/auth-client";
@@ -25,20 +27,13 @@ const VALID_MOODS: Mood[] = ["good", "tired", "stressed", "sad", "lonely", "bore
 
 const room = (env: Env, id: string) => env.ROOM.get(env.ROOM.idFromName(id));
 
-// Forward sessions without their secret; distinguish outages when linking a seat.
-type Caller = { state: "signed-in"; id: string } | { state: "signed-out" } | { state: "unavailable" };
-
-async function accountOf(request: Request, env: Env): Promise<Caller> {
-  const session = await resolveSession(request, env.AUTH_URL);
-  if (session.state === "signed-in") return { state: "signed-in", id: session.user.id };
-  return { state: session.state };
-}
-
 // One place, so a deleted room answers the same way on every route rather than each one remembering.
 app.onError((err, c) => {
   if (err.message === ROOM_GONE) return c.json({ error: "gone" }, 410);
   throw err;
 });
+
+app.all("/api/analytics", (c) => handleAnalytics(c.req.raw, c.env));
 
 app.get("/api/health", (c) => c.json({ ok: true }));
 

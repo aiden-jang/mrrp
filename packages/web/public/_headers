@@ -3,3 +3,8 @@
 # chunk on every repeat visit. Everything that keeps its name across deploys is left alone.
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Private routes report fixed categories through the first-party aggregate endpoint.
+/*
+  Content-Security-Policy: script-src 'self'; object-src 'none'; base-uri 'self'
+  Referrer-Policy: no-referrer

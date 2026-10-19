@@ -1,3 +1,4 @@
+import { reportAnalytics } from "../../../analytics/browser.js";
 import { DEFAULT_DECOR } from "./roomDecor.js";
 import { useState } from "react";
 import { doClock, doDress, doNotes, fetchNotes } from "./api.js";
@@ -60,6 +61,7 @@ export function useCatSetup(id: string, view: RoomView | null, reload: () => Pro
       await doDress(id, { name: draft.name.trim() || "Bean", ...look.cat, eyes: eyes.hex }, draft.decor);
       await doClock(id, { tz: draft.tz, homeHour: draft.homeHour });
       await doNotes(id, draft.notes.split("\n"));
+      reportAnalytics({ name: "cat_configured" });
       setOpen(false);
       await reload();
       return true;

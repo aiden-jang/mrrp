@@ -1,3 +1,4 @@
+import { reportAnalytics } from "../../../analytics/browser.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { copyText } from "./clipboard.js";
 import { HER_SPOT, sceneFor } from "./hours.js";
@@ -70,6 +71,7 @@ export function useRoomSharing(view: RoomView | null, onError: (message: string)
       if (navigator.share && share.canShare?.({ files: [file] })) {
         try {
           await navigator.share({ title: `${view?.cat.name ?? "mrrp"}'s room`, files: [file] });
+          reportAnalytics({ name: "room_image_saved" });
           setImageStatus("shared");
           return;
         } catch (err) {
@@ -87,6 +89,7 @@ export function useRoomSharing(view: RoomView | null, onError: (message: string)
       link.click();
       link.remove();
       objectUrls.current.add(href);
+      reportAnalytics({ name: "room_image_saved" });
       setImageStatus("saved");
     } catch {
       setImageStatus(null);
@@ -96,6 +99,7 @@ export function useRoomSharing(view: RoomView | null, onError: (message: string)
 
   const shareRoom = async () => {
     const resetResult = (result: "copied" | "shared") => {
+      reportAnalytics({ name: "room_link_shared" });
       setShareResult(result);
     };
     if (typeof navigator.share === "function") {
