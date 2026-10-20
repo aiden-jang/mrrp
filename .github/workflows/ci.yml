@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -21,22 +25,18 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run security:check
-      - run: pnpm run gates
-      - run: pnpm run size
-      - run: pnpm run comments
-      - run: pnpm run css-vars
-      - run: pnpm run css-classes
-      - run: pnpm run docs
-      - run: pnpm run knip
-      - run: pnpm run typecheck
-      - run: pnpm run lint
-      - run: pnpm run format:check
-      - run: pnpm run build
-      - run: pnpm run test
+      - run: pnpm run verify:core
       - name: Install Playwright browser
         run: pnpm --filter @mrrp/web exec playwright install --with-deps chromium
       - run: pnpm run e2e
+      - uses: actions/upload-artifact@v7
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          name: production-assets
+          path: packages/web/dist/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
 
   deploy:
     needs: check
@@ -55,8 +55,12 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v8
+        with:
+          name: production-assets
+          path: packages/web/dist/
       - name: Deploy to Cloudflare
-        run: pnpm run deploy
         working-directory: packages/worker
+        run: pnpm run deploy:assets
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

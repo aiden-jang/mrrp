@@ -50,6 +50,9 @@ pnpm run deploy
 One Worker serves both the app and API. Its deploy command builds the web app first; Durable
 Object migrations live in `packages/worker/wrangler.toml`.
 
+CI uploads the verified client build for deployment. The release job downloads that same
+workflow artifact and publishes it without rebuilding the client; local deployment still builds first.
+
 ## Room links and recovery
 
 A room link can be forwarded, so share it with the person you mean to invite. The Worker enforces

@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "pnpm --filter @mrrp/web build && wrangler deploy",
+    "deploy": "pnpm --filter @mrrp/web build && pnpm run deploy:assets",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "deploy:assets": "wrangler deploy"
   },
   "dependencies": {
     "@aidenjang/auth-client": "^0.2.0",

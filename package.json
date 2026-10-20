@@ -18,11 +18,12 @@
     "lint": "eslint . --ext .ts,.tsx",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
-    "verify": "pnpm run security:check && pnpm run gates && pnpm run size && pnpm run comments && pnpm run css-vars && pnpm run css-classes && pnpm run docs && pnpm run knip && pnpm run typecheck && pnpm run lint && pnpm run format:check && pnpm run build && pnpm run test && pnpm run e2e",
+    "verify": "pnpm run verify:core && pnpm run e2e",
     "css-vars": "node scripts/check-css-vars.mjs",
     "css-classes": "node scripts/check-css-classes.mjs",
     "knip": "knip",
-    "security:check": "pnpm audit --audit-level=low"
+    "security:check": "pnpm audit --audit-level=low",
+    "verify:core": "pnpm run security:check && pnpm run gates && pnpm run size && pnpm run comments && pnpm run css-vars && pnpm run css-classes && pnpm run docs && pnpm run knip && pnpm run typecheck && pnpm run lint && pnpm run format:check && pnpm run build && pnpm run test"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.71.2",
