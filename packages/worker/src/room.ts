@@ -566,7 +566,7 @@ export class Room extends DurableObject<Env> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     const { him, her } = this.roles(people);
-    if (me !== him && me !== her) return false;
+    if (!Object.hasOwn(people, me) || (me !== him && me !== her)) return false;
 
     if (on) {
       const taken = Object.entries(people).find(([token, p]) => p.account === account && token !== me);
