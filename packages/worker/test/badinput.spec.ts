@@ -53,14 +53,9 @@ describe("what the routes will not pass on", () => {
     expect((await post("unsay", { me: HER, at: Infinity })).status).toBe(400);
   });
 
-  /*
-   * Only the routes that hand a token to something expensive check its length: a socket to hold open,
-   * an account to tie. Everywhere else a short token is just a token nobody is sitting on, and the
-   * room turns it away for the same reason it turns away any stranger.
-   */
-  it("does nothing for a seat token too short to be one", async () => {
+  it("rejects a short seat token without changing the room", async () => {
     await seat();
-    expect((await post("act", { me: "xx", action: "brush" })).status).toBe(200);
+    expect((await post("act", { me: "xx", action: "brush" })).status).toBe(400);
     expect((await view(HIM)).brushed, "the room is untouched").toBe(false);
   });
 });

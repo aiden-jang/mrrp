@@ -1,6 +1,7 @@
 # Security
 
-Please report vulnerabilities privately to [me@aidenjang.com](mailto:me@aidenjang.com).
+Please use [GitHub’s private reporting form](https://github.com/aiden-jang/mrrp/security/advisories/new)
+or email [me@aidenjang.com](mailto:me@aidenjang.com).
 Include the affected behavior, browser or API route, a minimal reproduction using a disposable
 room, and the impact you observed. Do not post personal room links, seat credentials, recovery
 codes or someone else's room content in a public issue.

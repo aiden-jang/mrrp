@@ -1,11 +1,11 @@
+import { isSeatToken } from "./seatToken.js";
 import { accountOf } from "./accountOf.js";
 import { handleAnalytics } from "../../../analytics/worker.js";
 import { isRoomDecor } from "./decor.js";
 import { Hono, type Context, type Next } from "hono";
 import { resolveSession } from "@aidenjang/auth-client";
-import type { Action, CatAct, Gift, Mood, Treat } from "./types.js";
+import type { Action, CatAct, Gift, Mood, Treat, Untrusted } from "./types.js";
 import { ACTIONS, GIFTS, TREATS } from "./types.js";
-import type { Untrusted } from "./types.js";
 import type { Tally, TallyKey } from "./remembers.js";
 import type { Env } from "./env.js";
 import { ROOM_GONE } from "./room.js";
@@ -51,7 +51,7 @@ app.get("/api/me", async (c) => {
 app.get("/api/room/:id/live", async (c) => {
   const id = c.req.param("id");
   const me = c.req.query("me") ?? "";
-  if (!ROOM_RE.test(id) || me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!ROOM_RE.test(id) || !isSeatToken(me)) return c.json({ error: "bad request" }, 400);
   if (c.req.header("upgrade")?.toLowerCase() !== "websocket") {
     return c.json({ error: "expected websocket" }, 426);
   }
@@ -84,7 +84,7 @@ app.get("/api/room/:id/alive", async (c) => {
 app.get("/api/room/:id/notes", async (c) => {
   const id = c.req.param("id");
   const me = c.req.query("me") ?? "";
-  if (!ROOM_RE.test(id) || me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!ROOM_RE.test(id) || !isSeatToken(me)) return c.json({ error: "bad request" }, 400);
   const notes = await room(c.env, id).notesFor(me);
   if (!notes) return c.json({ error: "not yours" }, 403);
   return c.json({ notes });
@@ -93,7 +93,7 @@ app.get("/api/room/:id/notes", async (c) => {
 app.get("/api/room/:id/said", async (c) => {
   const id = c.req.param("id");
   const me = c.req.query("me") ?? "";
-  if (!ROOM_RE.test(id) || me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!ROOM_RE.test(id) || !isSeatToken(me)) return c.json({ error: "bad request" }, 400);
   const said = await room(c.env, id).saidSoFar(me);
   if (!said) return c.json({ error: "not yours" }, 403);
   return c.json(said);
@@ -102,7 +102,7 @@ app.get("/api/room/:id/said", async (c) => {
 app.get("/api/room/:id", async (c) => {
   const id = c.req.param("id");
   const me = c.req.query("me") ?? "";
-  if (!ROOM_RE.test(id) || me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!ROOM_RE.test(id) || !isSeatToken(me)) return c.json({ error: "bad request" }, 400);
   const account = await accountOf(c.req.raw, c.env);
   try {
     const who = account.state === "signed-in" ? account.id : null;
@@ -118,7 +118,7 @@ app.get("/api/room/:id", async (c) => {
 app.post("/api/room/:id/act", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as Untrusted<"act"> | null;
-  if (!ROOM_RE.test(id) || !body?.me || !VALID.includes(body.action as Action)) {
+  if (!ROOM_RE.test(id) || !isSeatToken(body?.me) || !VALID.includes(body.action as Action)) {
     return c.json({ error: "bad request" }, 400);
   }
   return c.json(await room(c.env, id).act(body.me, body.action as Action));
@@ -127,7 +127,7 @@ app.post("/api/room/:id/act", async (c) => {
 app.post("/api/room/:id/heract", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as Untrusted<"heract"> | null;
-  if (!ROOM_RE.test(id) || !body?.me || !VALID_CAT_ACTS.includes(body.act as CatAct)) {
+  if (!ROOM_RE.test(id) || !isSeatToken(body?.me) || !VALID_CAT_ACTS.includes(body.act as CatAct)) {
     return c.json({ error: "bad request" }, 400);
   }
   return c.json(await room(c.env, id).herAct(body.me, body.act as CatAct));
@@ -136,7 +136,7 @@ app.post("/api/room/:id/heract", async (c) => {
 app.post("/api/room/:id/poke", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as Untrusted<"poke"> | null;
-  if (!ROOM_RE.test(id) || !body?.me || !VALID_POKES.includes(body.what ?? "")) {
+  if (!ROOM_RE.test(id) || !isSeatToken(body?.me) || !VALID_POKES.includes(body.what ?? "")) {
     return c.json({ error: "bad request" }, 400);
   }
   return c.json(await room(c.env, id).poke(body.me, body.what!));
@@ -145,7 +145,7 @@ app.post("/api/room/:id/poke", async (c) => {
 app.post("/api/room/:id/wait", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as Untrusted<"wait"> | null;
-  if (!ROOM_RE.test(id) || !body?.me || typeof body.on !== "boolean") {
+  if (!ROOM_RE.test(id) || !isSeatToken(body?.me) || typeof body.on !== "boolean") {
     return c.json({ error: "bad request" }, 400);
   }
   return c.json(await room(c.env, id).waitAtDoor(body.me, body.on));
@@ -154,16 +154,16 @@ app.post("/api/room/:id/wait", async (c) => {
 app.post("/api/room/:id/unsay", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as Untrusted<"unsay"> | null;
-  if (!ROOM_RE.test(id) || !body?.me || typeof body.at !== "number" || !Number.isFinite(body.at)) {
+  if (!ROOM_RE.test(id) || !isSeatToken(body?.me) || !Number.isFinite(body.at)) {
     return c.json({ error: "bad request" }, 400);
   }
-  return c.json(await room(c.env, id).unsay(body.me, body.at));
+  return c.json(await room(c.env, id).unsay(body.me, body.at!));
 });
 
 app.post("/api/room/:id/settle", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as Untrusted<"settle"> | null;
-  if (!ROOM_RE.test(id) || !body?.me || typeof body.on !== "boolean") {
+  if (!ROOM_RE.test(id) || !isSeatToken(body?.me) || typeof body.on !== "boolean") {
     return c.json({ error: "bad request" }, 400);
   }
   return c.json(await room(c.env, id).settle(body.me, body.on));
@@ -172,7 +172,7 @@ app.post("/api/room/:id/settle", async (c) => {
 app.post("/api/room/:id/sit", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as Untrusted<"sit"> | null;
-  if (!ROOM_RE.test(id) || !body?.me || typeof body.on !== "boolean") {
+  if (!ROOM_RE.test(id) || !isSeatToken(body?.me) || typeof body.on !== "boolean") {
     return c.json({ error: "bad request" }, 400);
   }
   return c.json(await room(c.env, id).sitWith(body.me, body.on));
@@ -181,7 +181,7 @@ app.post("/api/room/:id/sit", async (c) => {
 app.post("/api/room/:id/hold", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as Untrusted<"hold"> | null;
-  if (!ROOM_RE.test(id) || !body?.me || typeof body.on !== "boolean") {
+  if (!ROOM_RE.test(id) || !isSeatToken(body?.me) || typeof body.on !== "boolean") {
     return c.json({ error: "bad request" }, 400);
   }
   return c.json(await room(c.env, id).hold(body.me, body.on));
@@ -190,7 +190,7 @@ app.post("/api/room/:id/hold", async (c) => {
 app.post("/api/room/:id/boxout", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as Untrusted<"boxout"> | null;
-  if (!ROOM_RE.test(id) || !body?.me) return c.json({ error: "bad request" }, 400);
+  if (!ROOM_RE.test(id) || !isSeatToken(body?.me)) return c.json({ error: "bad request" }, 400);
   // Defaults to putting one out, so an older client that sends no `on` still works.
   return c.json(await room(c.env, id).putBoxOut(body.me, body.on ?? true));
 });
@@ -198,7 +198,7 @@ app.post("/api/room/:id/boxout", async (c) => {
 app.post("/api/room/:id/leaveout", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as Untrusted<"leaveout"> | null;
-  if (!ROOM_RE.test(id) || !body?.me || !VALID_TREATS.includes(body.treat as Treat)) {
+  if (!ROOM_RE.test(id) || !isSeatToken(body?.me) || !VALID_TREATS.includes(body.treat as Treat)) {
     return c.json({ error: "bad request" }, 400);
   }
   return c.json(await room(c.env, id).leaveOut(body.me, body.treat as Treat));
@@ -207,7 +207,7 @@ app.post("/api/room/:id/leaveout", async (c) => {
 app.post("/api/room/:id/gift", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as Untrusted<"gift"> | null;
-  if (!ROOM_RE.test(id) || !body?.me || !VALID_GIFTS.includes(body.gift as Gift)) {
+  if (!ROOM_RE.test(id) || !isSeatToken(body?.me) || !VALID_GIFTS.includes(body.gift as Gift)) {
     return c.json({ error: "bad request" }, 400);
   }
   const words = typeof body.text === "string" ? body.text : "";
@@ -217,7 +217,7 @@ app.post("/api/room/:id/gift", async (c) => {
 app.post("/api/room/:id/tell", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as Untrusted<"tell"> | null;
-  if (!ROOM_RE.test(id) || !body?.me || !VALID_MOODS.includes(body.mood as Mood)) {
+  if (!ROOM_RE.test(id) || !isSeatToken(body?.me) || !VALID_MOODS.includes(body.mood as Mood)) {
     return c.json({ error: "bad request" }, 400);
   }
   return c.json(await room(c.env, id).tell(body.me, body.mood as Mood));
@@ -226,7 +226,7 @@ app.post("/api/room/:id/tell", async (c) => {
 app.post("/api/room/:id/say", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as Untrusted<"say"> | null;
-  if (!ROOM_RE.test(id) || !body?.me || typeof body.text !== "string") {
+  if (!ROOM_RE.test(id) || !isSeatToken(body?.me) || typeof body.text !== "string") {
     return c.json({ error: "bad request" }, 400);
   }
   const day =
@@ -238,9 +238,9 @@ app.post("/api/room/:id/say", async (c) => {
 
 app.post("/api/room/:id/link", async (c) => {
   const id = c.req.param("id");
-  const body = (await c.req.json().catch(() => ({}))) as Untrusted<"link">;
+  const body = ((await c.req.json().catch(() => null)) ?? {}) as Untrusted<"link">;
   const me = typeof body.me === "string" ? body.me : "";
-  if (!ROOM_RE.test(id) || me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!ROOM_RE.test(id) || !isSeatToken(me)) return c.json({ error: "bad request" }, 400);
 
   const account = await accountOf(c.req.raw, c.env);
   if (account.state === "unavailable") {
@@ -261,9 +261,9 @@ app.post("/api/room/:id/age", async (c) => {
 
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
-  const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  const body = ((await c.req.json().catch(() => null)) ?? {}) as Record<string, unknown>;
   const me = typeof body.me === "string" ? body.me : "";
-  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!isSeatToken(me)) return c.json({ error: "bad request" }, 400);
 
   const count = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : undefined);
   const rawTally = (body.tally ?? null) as Record<string, unknown> | null;
@@ -299,7 +299,7 @@ app.post("/api/room/:id/draw", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as Untrusted<"draw"> | null;
   const cells = body?.cells;
-  if (!ROOM_RE.test(id) || !body?.me || typeof cells !== "string" || !DOODLE_RE.test(cells)) {
+  if (!ROOM_RE.test(id) || !isSeatToken(body?.me) || typeof cells !== "string" || !DOODLE_RE.test(cells)) {
     return c.json({ error: "bad request" }, 400);
   }
   return c.json(await room(c.env, id).draw(body.me, cells));
@@ -308,9 +308,9 @@ app.post("/api/room/:id/draw", async (c) => {
 app.post("/api/room/:id/ourday", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
-  const body = (await c.req.json().catch(() => ({}))) as Untrusted<"ourday">;
+  const body = ((await c.req.json().catch(() => null)) ?? {}) as Untrusted<"ourday">;
   const me = typeof body.me === "string" ? body.me : "";
-  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!isSeatToken(me)) return c.json({ error: "bad request" }, 400);
 
   const label = typeof body.label === "string" ? body.label.trim().slice(0, 32) : "";
   const month = typeof body.month === "number" ? Math.trunc(body.month) : 0;
@@ -326,9 +326,9 @@ app.post("/api/room/:id/ourday", async (c) => {
 app.post("/api/room/:id/dress", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
-  const body = (await c.req.json().catch(() => ({}))) as Untrusted<"dress">;
+  const body = ((await c.req.json().catch(() => null)) ?? {}) as Untrusted<"dress">;
   const me = typeof body.me === "string" ? body.me : "";
-  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!isSeatToken(me)) return c.json({ error: "bad request" }, 400);
   // Keyed off the body's own field names, so a typo here is a build error and not a silent skip.
   const pick = <T>(k: keyof Untrusted<"dress">, ok: (v: unknown) => boolean): T | undefined =>
     ok(body[k]) ? (body[k] as T) : undefined;
@@ -352,9 +352,9 @@ app.post("/api/room/:id/dress", async (c) => {
 app.post("/api/room/:id/notes", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
-  const body = (await c.req.json().catch(() => ({}))) as Untrusted<"notes">;
+  const body = ((await c.req.json().catch(() => null)) ?? {}) as Untrusted<"notes">;
   const me = typeof body.me === "string" ? body.me : "";
-  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!isSeatToken(me)) return c.json({ error: "bad request" }, 400);
   if (!Array.isArray(body.notes) || body.notes.some((n) => typeof n !== "string")) {
     return c.json({ error: "bad request" }, 400);
   }
@@ -365,10 +365,10 @@ app.post("/api/room/:id/notes", async (c) => {
 app.post("/api/room/:id/recover", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
-  const body = (await c.req.json().catch(() => ({}))) as Untrusted<"recover">;
+  const body = ((await c.req.json().catch(() => null)) ?? {}) as Untrusted<"recover">;
   const me = typeof body.me === "string" ? body.me : "";
   const code = typeof body.code === "string" ? body.code : "";
-  if (me.length < 8 || code.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!isSeatToken(me) || code.length < 8) return c.json({ error: "bad request" }, 400);
   const ok = await room(c.env, id).recoverSeat(me, code);
   return ok ? c.json({ ok: true }) : c.json({ error: "that code does not match" }, 403);
 });
@@ -376,7 +376,7 @@ app.post("/api/room/:id/recover", async (c) => {
 app.post("/api/room/:id/found", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as Untrusted<"found"> | null;
-  if (!ROOM_RE.test(id) || !body?.me) return c.json({ error: "bad request" }, 400);
+  if (!ROOM_RE.test(id) || !isSeatToken(body?.me)) return c.json({ error: "bad request" }, 400);
   const ok = await room(c.env, id).noticed(body.me, body.key);
   return ok ? c.json({ ok: true }) : c.json({ error: "bad request" }, 400);
 });
@@ -384,9 +384,9 @@ app.post("/api/room/:id/found", async (c) => {
 app.post("/api/room/:id/shelf", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
-  const body = (await c.req.json().catch(() => ({}))) as Untrusted<"shelf">;
+  const body = ((await c.req.json().catch(() => null)) ?? {}) as Untrusted<"shelf">;
   const me = typeof body.me === "string" ? body.me : "";
-  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!isSeatToken(me)) return c.json({ error: "bad request" }, 400);
   const done = await room(c.env, id).putBack(me);
   return done ? c.json({ ok: true, again: done === "again" }) : c.json({ error: "not yours to tidy" }, 403);
 });
@@ -394,9 +394,9 @@ app.post("/api/room/:id/shelf", async (c) => {
 app.post("/api/room/:id/window-light", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
-  const body = (await c.req.json().catch(() => ({}))) as Untrusted<"window-light">;
+  const body = ((await c.req.json().catch(() => null)) ?? {}) as Untrusted<"window-light">;
   const me = typeof body.me === "string" ? body.me : "";
-  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!isSeatToken(me)) return c.json({ error: "bad request" }, 400);
   const next = await room(c.env, id).touchWindowLight(me);
   return next ? c.json(next) : c.json({ error: "not your room" }, 403);
 });
@@ -404,9 +404,9 @@ app.post("/api/room/:id/window-light", async (c) => {
 app.post("/api/room/:id/release", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
-  const body = (await c.req.json().catch(() => ({}))) as Untrusted<"release">;
+  const body = ((await c.req.json().catch(() => null)) ?? {}) as Untrusted<"release">;
   const me = typeof body.me === "string" ? body.me : "";
-  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!isSeatToken(me)) return c.json({ error: "bad request" }, 400);
   const ok = await room(c.env, id).releaseHerSeat(me);
   return ok ? c.json({ ok: true }) : c.json({ error: "not yours to release" }, 403);
 });
@@ -414,10 +414,10 @@ app.post("/api/room/:id/release", async (c) => {
 app.post("/api/room/:id/delete", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
-  const body = (await c.req.json().catch(() => ({}))) as Untrusted<"delete">;
+  const body = ((await c.req.json().catch(() => null)) ?? {}) as Untrusted<"delete">;
   const me = typeof body.me === "string" ? body.me : "";
   const name = typeof body.name === "string" ? body.name : "";
-  if (me.length < 8 || !name) return c.json({ error: "bad request" }, 400);
+  if (!isSeatToken(me) || !name) return c.json({ error: "bad request" }, 400);
   const erasesAt = await room(c.env, id).deleteRoom(me, name);
   return erasesAt ? c.json({ ok: true, undoUntil: erasesAt }) : c.json({ error: "not yours to delete" }, 403);
 });
@@ -425,7 +425,7 @@ app.post("/api/room/:id/delete", async (c) => {
 app.get("/api/room/:id/export", async (c) => {
   const id = c.req.param("id");
   const me = c.req.query("me") ?? "";
-  if (!ROOM_RE.test(id) || me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!ROOM_RE.test(id) || !isSeatToken(me)) return c.json({ error: "bad request" }, 400);
 
   const copy = await room(c.env, id).exportFor(me);
   if (!copy) return c.json({ error: "not your room to copy" }, 403);
@@ -442,9 +442,9 @@ app.get("/api/room/:id/export", async (c) => {
 app.post("/api/room/:id/blanket", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
-  const body = (await c.req.json().catch(() => ({}))) as Untrusted<"blanket">;
+  const body = ((await c.req.json().catch(() => null)) ?? {}) as Untrusted<"blanket">;
   const me = typeof body.me === "string" ? body.me : "";
-  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!isSeatToken(me)) return c.json({ error: "bad request" }, 400);
   const ok = await room(c.env, id).setBlanket(me, body.key, body.stripe);
   return ok ? c.json({ ok: true }) : c.json({ error: "not hers to change, or not a blanket" }, 403);
 });
@@ -452,9 +452,9 @@ app.post("/api/room/:id/blanket", async (c) => {
 app.post("/api/room/:id/unleave", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
-  const body = (await c.req.json().catch(() => ({}))) as Untrusted<"unleave">;
+  const body = ((await c.req.json().catch(() => null)) ?? {}) as Untrusted<"unleave">;
   const me = typeof body.me === "string" ? body.me : "";
-  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!isSeatToken(me)) return c.json({ error: "bad request" }, 400);
   const ok = await room(c.env, id).unleave(me);
   return ok ? c.json({ ok: true }) : c.json({ error: "too late, or the seat is taken" }, 403);
 });
@@ -462,9 +462,9 @@ app.post("/api/room/:id/unleave", async (c) => {
 app.post("/api/room/:id/undelete", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
-  const body = (await c.req.json().catch(() => ({}))) as Untrusted<"undelete">;
+  const body = ((await c.req.json().catch(() => null)) ?? {}) as Untrusted<"undelete">;
   const me = typeof body.me === "string" ? body.me : "";
-  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!isSeatToken(me)) return c.json({ error: "bad request" }, 400);
   const ok = await room(c.env, id).undelete(me);
   return ok ? c.json({ ok: true }) : c.json({ error: "too late, or not yours" }, 403);
 });
@@ -472,9 +472,9 @@ app.post("/api/room/:id/undelete", async (c) => {
 app.post("/api/room/:id/leave", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
-  const body = (await c.req.json().catch(() => ({}))) as Untrusted<"leave">;
+  const body = ((await c.req.json().catch(() => null)) ?? {}) as Untrusted<"leave">;
   const me = typeof body.me === "string" ? body.me : "";
-  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!isSeatToken(me)) return c.json({ error: "bad request" }, 400);
   const ok = await room(c.env, id).leaveRoom(me);
   return ok ? c.json({ ok: true }) : c.json({ error: "not your seat to leave" }, 403);
 });
@@ -482,9 +482,9 @@ app.post("/api/room/:id/leave", async (c) => {
 app.post("/api/room/:id/clock", async (c) => {
   const id = c.req.param("id");
   if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
-  const body = (await c.req.json().catch(() => ({}))) as Untrusted<"clock">;
+  const body = ((await c.req.json().catch(() => null)) ?? {}) as Untrusted<"clock">;
   const me = typeof body.me === "string" ? body.me : "";
-  if (me.length < 8) return c.json({ error: "bad request" }, 400);
+  if (!isSeatToken(me)) return c.json({ error: "bad request" }, 400);
 
   let tz: string | undefined;
   if (typeof body.tz === "string") {

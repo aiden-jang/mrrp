@@ -54,7 +54,7 @@ Do not split a shared mechanism merely to relocate its coupling.
 
 ## Verification
 
-Run `pnpm run verify`: repository gates, unused-code checks, types, lint, formatting, build,
+Run `pnpm run verify`: dependency audit, repository gates, unused-code checks, types, lint, formatting, build,
 package tests and browser journeys. CI runs the same gate inventory. The Worker suite uses real
 workerd through `@cloudflare/vitest-plugin`; do not mock its storage or permissions.
 

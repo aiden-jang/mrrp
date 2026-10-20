@@ -17,6 +17,8 @@ export default defineConfig(({ mode }) => ({
     },
   },
   test: {
+    // Bound memory-heavy DOM workers without relaxing individual test deadlines.
+    maxWorkers: 2,
     // e2e/ belongs to Playwright. Vitest picking those up gets as far as `test()` and then reports
     // "Playwright Test did not expect test() to be called here", which is a confusing way to say
     // "wrong runner".

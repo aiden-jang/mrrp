@@ -1,3 +1,4 @@
+import { isSeatToken } from "./seatToken.js";
 import { DurableObject } from "cloudflare:workers";
 import type {
   Action,
@@ -22,8 +23,7 @@ import { markLives, type Mark } from "./marks.js";
 import { NOTES } from "./notes.js";
 import { isBlanketKey, type BlanketKey } from "./blanket.js";
 import { lookOutside, WEATHER_STALE_MS, type Sky, type Weather } from "./weather.js";
-import type { FirstKey } from "./types.js";
-import { GIFTS, LINE_MAX, NOTE_MAX, NOTES_KEPT } from "./types.js";
+import { GIFTS, LINE_MAX, NOTE_MAX, NOTES_KEPT, type FirstKey } from "./types.js";
 import {
   arrivalsFor,
   bothFound,
@@ -515,7 +515,7 @@ export class Room extends DurableObject<Env> {
   private async adoptFound(from: string, to: string): Promise<void> {
     const found = await this.found();
     let moved = false;
-    const next: FoundLedger = {};
+    const next: FoundLedger = Object.create(null);
     for (const [key, seats] of Object.entries(found)) {
       const copy = { ...seats };
       if (copy[from] !== undefined) {
@@ -549,7 +549,7 @@ export class Room extends DurableObject<Env> {
 
     const found = await this.found();
     let moved = false;
-    const next: FoundLedger = {};
+    const next: FoundLedger = Object.create(null);
     for (const [key, seats] of Object.entries(found)) {
       const copy = { ...seats };
       if (copy[from] !== undefined) {
@@ -780,7 +780,7 @@ export class Room extends DurableObject<Env> {
       return new Response("expected websocket", { status: 426 });
     }
     const me = new URL(request.url).searchParams.get("me") ?? "";
-    if (me.length < 8) return new Response("bad seat", { status: 400 });
+    if (!isSeatToken(me)) return new Response("bad seat", { status: 400 });
     try {
       await this.guard();
     } catch {

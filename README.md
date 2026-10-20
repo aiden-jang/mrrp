@@ -33,8 +33,9 @@ in its own development storage; it does not use production rooms.
 pnpm run verify
 ```
 
-This runs the repository gates, types, lint, formatting, build, unit tests and browser journeys.
-Worker tests use real Durable Objects. Canvas tests use a recording context and a controlled
+This runs the dependency audit, repository gates, types, lint, formatting, build, unit tests and browser journeys.
+Worker tests use real Durable Objects and pin auth to an unavailable loopback endpoint.
+Canvas tests use a recording context and a controlled
 frame clock. See [contributing](CONTRIBUTING.md) for browser setup and review expectations.
 
 ## Deploy

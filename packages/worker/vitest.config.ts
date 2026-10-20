@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [
     cloudflareTest({
       wrangler: { configPath: "./wrangler.toml" },
+      miniflare: { bindings: { AUTH_URL: "http://127.0.0.1:1" } },
     }),
   ],
   test: {
