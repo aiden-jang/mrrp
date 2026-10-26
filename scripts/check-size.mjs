@@ -5,8 +5,8 @@ const MAX_LINES = 400;
 const MAX_STATE = 12;
 
 /*
- * Already over, and being decomposed. Listed at their size on the day the gate went in rather than
- * the ceiling being raised for everyone, so nothing else can grow past 400 meanwhile.
+ * Existing large modules have explicit budgets. Cat.tsx and room.ts keep their intentional shared
+ * mechanisms; independent helpers may still be extracted without raising anyone's ceiling.
  *
  * An entry that sits above its file is a failure too, so shrinking one is not something anybody has
  * to remember. Left to drift, the headroom a decomposition just won is silently available to grow
@@ -54,7 +54,7 @@ for (const file of files) {
 }
 
 for (const file of Object.keys(ALREADY_OVER)) {
-  if (!files.includes(file)) problems.push(`${file} is listed as being decomposed but does not exist`);
+  if (!files.includes(file)) problems.push(`${file} has an explicit budget but does not exist`);
 }
 
 if (problems.length > 0) {
@@ -64,8 +64,8 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-const decomposing = Object.keys(ALREADY_OVER).length;
+const budgeted = Object.keys(ALREADY_OVER).length;
 console.log(
   `size ok: ceiling ${MAX_LINES} lines / ${MAX_STATE} state` +
-    (decomposing > 0 ? `, with ${decomposing} file(s) with explicit budgets` : ""),
+    (budgeted > 0 ? `, with ${budgeted} file(s) with explicit budgets` : ""),
 );

@@ -33,16 +33,19 @@ import { useRoomEnding } from "./useRoomEnding.js";
 import { useRoomFeedback } from "./useRoomFeedback.js";
 import { useRoomHistory } from "./useRoomHistory.js";
 import { useRoomSession } from "./useRoomSession.js";
-import { ConnectionNotice } from "./ConnectionNotice.js";
+import { RoomStatus } from "./RoomStatus.js";
 import { useRoomSharing } from "./useRoomSharing.js";
 import { useSayBox } from "./useSayBox.js";
-import { FINISH_LINK, useSeatAccount } from "./useSeatAccount.js";
+import { useSeatAccount } from "./useSeatAccount.js";
+import { seatStorageAvailable, StorageUnavailable } from "./StorageUnavailable.js";
 
 export function App() {
   usePageAnalytics(pageForPath(window.location.pathname));
+  const [storageReady, setStorageReady] = useState(seatStorageAvailable);
+  if (!storageReady) return <StorageUnavailable onRetry={() => setStorageReady(seatStorageAvailable())} />;
   const id = roomFromPath();
   if (id) lastRoom.set(id);
-  return id ? <RoomPage id={id} /> : <Landing />;
+  return id ? <RoomPage key={id} id={id} /> : <Landing />;
 }
 
 function RoomPage({ id }: { id: string }) {
@@ -63,8 +66,8 @@ function RoomPage({ id }: { id: string }) {
     load,
     live,
   } = useRoomSession(id);
-  const { captureRoom, imageStatus, handleCaptureReady, saveRoomImage, shareRoom, shareResult } =
-    useRoomSharing(view, setErr);
+  const sharing = useRoomSharing(view, setErr);
+  const { handleCaptureReady, shareRoom, shareResult } = sharing;
   const [roomProps, setRoomProps] = useState<{
     props: { key: string; label: string }[];
     poke: (key: string) => void;
@@ -89,16 +92,9 @@ function RoomPage({ id }: { id: string }) {
   const actions = useRoomActions({ id, setView, onError: setErr, onDid: setDid, load, setNudge, setShelfAt });
   const { tidy, touchWindowLight, mugFell, petAt, strokes, sharePoke, stroke, act } = actions;
   const wantsLink = view?.you !== undefined && view?.you !== null && !view?.linked;
-  useEffect(() => {
-    if (!wantsLink || sessionStorage.getItem(FINISH_LINK) !== id) return;
-    sessionStorage.removeItem(FINISH_LINK);
-    void link(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wantsLink, id]);
 
   const history = useRoomHistory(id, view, setView, setErr);
-  const account = useSeatAccount(id, load);
-  const { link } = account;
+  const account = useSeatAccount(id, load, wantsLink);
 
   const exit = useRoomEnding(
     id,
@@ -295,9 +291,7 @@ function RoomPage({ id }: { id: string }) {
           scene={scene}
           name={previewLook.name}
           setup={setup}
-          captureAvailable={!!captureRoom}
-          imageStatus={imageStatus}
-          onSave={() => void saveRoomImage()}
+          postcard={sharing}
           nudge={nudge}
           awayNote={awayNote}
           nightChrome={nightChrome}
@@ -311,11 +305,6 @@ function RoomPage({ id }: { id: string }) {
               setDid("saved");
             }}
           />
-        )}
-        {iAmHim && !setup && cat.error && (
-          <p className={s.errorBar} role="status">
-            {cat.error}
-          </p>
         )}
         {view.bothHereNow && (
           <div className={s.together}>
@@ -371,13 +360,10 @@ function RoomPage({ id }: { id: string }) {
         ) : (
           <SeatRecovery account={account} />
         )}
-        {/* Keep errors visible while the room or settings scroll beneath them. */}
-        {!asking && view.seat != null && <ConnectionNotice live={live} />}
-        {err && (
-          <p className={s.errorBar} role="status">
-            {err}
-          </p>
-        )}
+        <RoomStatus
+          live={view.seat != null ? live : null}
+          message={err ?? (iAmHim && !setup ? cat.error : null)}
+        />
         {!setup && (iAmHim || view.youAreHer) && (
           <RoomSettings
             id={id}

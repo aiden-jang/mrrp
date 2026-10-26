@@ -27,6 +27,11 @@ test("a long reply keeps its actions reachable on a short phone", async ({ page,
     await her.setViewportSize({ width: 1440, height: 900 });
     await save.scrollIntoViewIfNeeded();
     await her.screenshot({ path: test.info().outputPath("reply-desktop.png"), animations: "disabled" });
+    await her.route("**/api/room/*/say", (route) => route.fulfill({ status: 503, body: "unavailable" }));
+    await save.click();
+    await expect(her.getByRole("alert")).toContainText("Couldn't leave that.");
+    await expect(input).toHaveValue(message);
+    await her.unroute("**/api/room/*/say");
     await save.click();
     await expect(input).toHaveCount(0);
     await expect(her.getByText(message, { exact: true })).toBeVisible();

@@ -183,6 +183,7 @@ export function CatRoom({
         {GIFTS.map((g) => (
           <button
             key={g.id}
+            disabled={actions.gifting}
             aria-pressed={view.gift === g.id}
             className={`${s.mood} ${view.gift === g.id ? s.moodOn : ""}`}
             style={{ justifyContent: "center", padding: "9px 8px" }}

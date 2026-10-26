@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import {
   adoptSeat,
   beenHere,
@@ -16,9 +24,28 @@ import { awayLine } from "./remembers.js";
 import type { Arrival, RoomView } from "./types.js";
 
 export function useRoomSession(id: string) {
-  const [view, setView] = useState<RoomView | null>(null);
+  const [view, updateView] = useState<RoomView | null>(null);
+  const generation = useRef(0);
+  const alive = useRef(false);
+  useLayoutEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+      generation.current += 1;
+    };
+  }, [id]);
+  const setView: Dispatch<SetStateAction<RoomView | null>> = useCallback((next) => {
+    if (!alive.current) return;
+    generation.current += 1;
+    updateView(next);
+  }, []);
   const [err, setErr] = useState<string | null>(null);
-  const [gone, setGone] = useState<{ undoUntil: number | null } | null>(null);
+  const [gone, updateGone] = useState<{ undoUntil: number | null } | null>(null);
+  const setGone: Dispatch<SetStateAction<typeof gone>> = useCallback((next) => {
+    if (!alive.current) return;
+    generation.current += 1;
+    updateGone(next);
+  }, []);
   const [asking, setAsking] = useState(() => !beenHere(id));
   const [awayNote, setAwayNote] = useState<string | null>(null);
   const [arrivalCard, setArrivalCard] = useState<Arrival[] | null>(null);
@@ -38,8 +65,12 @@ export function useRoomSession(id: string) {
   }, []);
   const load = useCallback(
     async (n?: string | null) => {
+      if (!alive.current) return;
+      const request = ++generation.current;
+      const current = () => alive.current && request === generation.current;
       try {
         const next = await fetchRoom(id, n ?? myName.get());
+        if (!current()) return;
         adoptSeat(next.seat);
         setView(next);
         lastCat.set(id, next.cat);
@@ -49,6 +80,7 @@ export function useRoomSession(id: string) {
         showArrivals(next.arrivals);
         setErr(null);
       } catch (e) {
+        if (!current()) return;
         // A deleted room must not enter the reconnect loop.
         if (e instanceof Error && e.message === GONE) {
           forgetRoom(id);
@@ -58,22 +90,24 @@ export function useRoomSession(id: string) {
         setErr(`${e instanceof Error ? e.message : "Something went wrong."} Trying again in a moment.`);
       }
     },
-    [id, showArrivals],
+    [id, showArrivals, setView, setGone],
   );
 
   const takeView = useCallback(
     (next: RoomView) => {
+      if (!alive.current) return;
       setView(next);
       lastCat.set(id, next.cat);
       showArrivals(next.arrivals);
       setErr(null);
     },
-    [id, showArrivals],
+    [id, showArrivals, setView],
   );
   const liveGone = useCallback(() => {
+    if (!alive.current) return;
     forgetRoom(id);
     setGone({ undoUntil: null });
-  }, [id]);
+  }, [id, setGone]);
   // Only with a seat. The worker refuses a socket to anybody else, and without this a spectator
   // watching the cat would sit in a reconnect loop against a 403 for as long as the tab is open.
   const live = useLive(id, !asking && !gone && view?.seat != null, takeView, liveGone);
@@ -89,7 +123,7 @@ export function useRoomSession(id: string) {
     return () => {
       stale = true;
     };
-  }, [asking, id]);
+  }, [asking, id, setGone]);
 
   useEffect(() => {
     if (!asking) void load();

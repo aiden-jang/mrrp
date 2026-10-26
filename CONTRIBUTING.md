@@ -1,6 +1,6 @@
 # Contributing
 
-Use Node 22 or newer and pnpm 9.15. Follow the setup in [README](README.md), and read
+Use a supported Node runtime and the pinned pnpm version from [README](README.md). Read
 [CONVENTIONS](CONVENTIONS.md), [ARCHITECTURE](ARCHITECTURE.md) and [ART](ART.md) before changing a room.
 
 ## Local rooms
@@ -36,7 +36,9 @@ pnpm run verify
 ```
 
 Worker tests use `@cloudflare/vitest-plugin` and real workerd storage. Do not replace them with
-mocks to make an upgrade pass. Browser tests create disposable rooms and use both seats.
+mocks to make an upgrade pass. Browser tests serve the production build through one isolated
+local Worker, create disposable rooms, and use both seats. Auth and weather calls are disabled.
+See [quality checks](docs/quality.md) for focused commands and visual review.
 
 For UI changes, inspect desktop and narrow layouts, keyboard operation, focus after closing
 editors, long content, zoom and reduced motion. Check the light and dark room palettes. Record
@@ -51,6 +53,10 @@ to fit a change. Avoid live test or file counts in prose documentation.
 
 Use Conventional Commits without a scope, for example `fix: keep an unsaved drawing open` or
 `docs: explain room recovery`. State the problem, resulting behavior and relevant validation.
+
+The owner commits verified changes directly to main; contributions may use pull requests.
+Main's ruleset keeps history linear and blocks force pushes and deletion. Automatic delivery
+waits for CI, which verifies the pushed revision and reuses its tested assets.
 
 Report security issues privately using [SECURITY](SECURITY.md). For ordinary bugs, include a
 reproduction using a disposable room, browser and viewport, expected behavior and actual behavior.

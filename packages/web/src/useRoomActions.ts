@@ -80,7 +80,9 @@ export function useRoomActions({
       later(() => {
         play("thump");
         setMugFell(Date.now());
-        void fetchRoom(r).then(setView);
+        void fetchRoom(r)
+          .then(setView)
+          .catch(() => {});
       }, MUG_AGAIN_MS);
     } catch {
       // The mug can fall again tomorrow.
@@ -130,6 +132,8 @@ export function useRoomActions({
   };
 
   const [giftWords, setGiftWords] = useState("");
+  const giftPending = useRef(false);
+  const [gifting, setGifting] = useState(false);
   const [strokes, setStrokes] = useState<number | null>(null);
   // Armed once he has been told the photo takes her drawing down.
   const [photoOver, setPhotoOver] = useState(false);
@@ -190,6 +194,7 @@ export function useRoomActions({
   };
 
   const act = async (a: Action) => {
+    onError(null);
     setNudge((v) => v + 1);
     play(ACTION_SOUND[a]);
     if (a === "pet" || a === "brush") buzz(a);
@@ -209,7 +214,6 @@ export function useRoomActions({
       }
     } catch {
       onError("That didn't reach her. Try it again.");
-      later(() => onError(null), 4000);
     }
   };
 
@@ -242,15 +246,19 @@ export function useRoomActions({
   };
 
   const leaveGift = async (gift: Gift) => {
+    if (giftPending.current) return;
+    giftPending.current = true;
+    setGifting(true);
     play("settle");
-    // Clear the words first. Tapping a second gift while they sat in the box sent them twice.
     const words = giftWords;
-    setGiftWords("");
     try {
       setView(await doLeaveGift(id, gift, words));
+      setGiftWords((current) => (current === words ? "" : current));
     } catch (e) {
-      setGiftWords(words);
       onError(e instanceof Error ? e.message : "Couldn't leave that.");
+    } finally {
+      giftPending.current = false;
+      setGifting(false);
     }
   };
 
@@ -275,6 +283,7 @@ export function useRoomActions({
     drawing,
     hangUp,
     giftWords,
+    gifting,
     setGiftWords,
     strokes,
     setStrokes,

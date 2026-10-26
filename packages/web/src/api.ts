@@ -320,7 +320,6 @@ export function doPoke(id: string, what: string): void {
   void send(`/api/room/${id}/poke`, { me: myToken(), what }).catch(() => {});
 }
 
-/* Keep these out of RoomView: up to 33KB, pushed on every write. */
 // Whether the room is still there, without taking a seat in it. The door screen has to know before it
 // invites anybody in, and it cannot ask by reading the room: that would take the seat.
 export async function roomIsGone(id: string): Promise<boolean> {

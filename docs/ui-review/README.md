@@ -22,3 +22,7 @@ limits, not silently passing checks.
 
 See the committed captures alongside this document for the reviewed layout. Regenerate and
 inspect them when changing the corresponding screen; screenshots alone do not prove behavior.
+
+The [October 26 review](october-26/README.md) covers storage access, sharing recovery,
+stacked feedback, both seats, editors, and both palettes. [Quality checks](../quality.md)
+explains how to reproduce the local visual pass.

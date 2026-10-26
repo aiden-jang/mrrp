@@ -9,10 +9,12 @@ import { ACTIONS, GIFTS, TREATS } from "./types.js";
 import type { Tally, TallyKey } from "./remembers.js";
 import type { Env } from "./env.js";
 import { ROOM_GONE } from "./room.js";
+import { privateResponses } from "./privateResponses.js";
 
 export { Room } from "./room.js";
 
 const app = new Hono<{ Bindings: Env }>();
+app.use("/api/*", privateResponses);
 const ROOM_RE = /^[a-z0-9]{6,24}$/;
 const DOODLE_RE = /^[0-4]{135}$/;
 const VALID: Action[] = ACTIONS.map((a) => a.id);
@@ -46,8 +48,7 @@ app.get("/api/me", async (c) => {
   return c.json({ signedIn: !!user, name: user?.displayName ?? null });
 });
 
-// The live channel, one socket per open tab. The only route that hands the raw request to the Durable
-// Object: a 101 cannot be built out here.
+// Pass socket upgrades through to the Durable Object without rebuilding the 101 response.
 app.get("/api/room/:id/live", async (c) => {
   const id = c.req.param("id");
   const me = c.req.query("me") ?? "";
@@ -254,8 +255,7 @@ app.post("/api/room/:id/link", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "that account already has a seat here" }, 409);
 });
 
-// Dev only, gated on DEV_TOOLS in `.dev.vars`, which `wrangler deploy` never uploads. Don't gate on
-// hostname: `wrangler dev` rewrites the URL to the configured route, so local looks like production.
+// Gate on the local binding, not the hostname: Wrangler rewrites local request URLs.
 app.post("/api/room/:id/age", async (c) => {
   if (c.env.DEV_TOOLS !== "on") return c.json({ error: "not found" }, 404);
 

@@ -304,6 +304,7 @@ export function SayBox({
         autoFocus
         ref={boxRef}
         value={value}
+        readOnly={saving}
         maxLength={max}
         placeholder={answering !== null ? "Say it back to him" : `Something for ${him} to find`}
         onChange={(e) => onChange(e.target.value)}
@@ -316,7 +317,7 @@ export function SayBox({
         </p>
       )}
       <div className={s.row} style={{ marginTop: 8 }}>
-        <button className={s.btn} onClick={onNeverMind}>
+        <button className={s.btn} onClick={onNeverMind} disabled={saving}>
           Never mind
         </button>
         <button className={`${s.btn} ${s.btnGo}`} disabled={saving || value.trim() === ""} onClick={onSave}>
@@ -324,7 +325,7 @@ export function SayBox({
         </button>
       </div>
       {canClear && (
-        <button className={s.quiet} onClick={onClearTap}>
+        <button className={s.quiet} onClick={onClearTap} disabled={saving}>
           {clearing ? "Sure? All of it goes." : "Take back everything you've said"}
         </button>
       )}

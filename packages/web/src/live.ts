@@ -26,6 +26,7 @@ export function useLive(
   gone.current = onGone;
 
   useEffect(() => {
+    setState("connecting");
     if (!enabled) return;
     let ws: WebSocket | null = null;
     let beat: ReturnType<typeof setInterval> | null = null;
@@ -44,7 +45,9 @@ export function useLive(
         return schedule();
       }
       ws = socket;
+      const current = () => !stopped && ws === socket;
       socket.onopen = () => {
+        if (!current()) return;
         attempt = 0;
         setState("open");
         if (beat) clearInterval(beat);
@@ -59,8 +62,14 @@ export function useLive(
         }, PING_MS);
       };
       socket.onmessage = (e) => {
-        if (typeof e.data !== "string" || e.data === "pong") return;
-        const msg = JSON.parse(e.data) as { type: string; view?: RoomView };
+        if (!current() || typeof e.data !== "string" || e.data === "pong") return;
+        let msg: { type?: string; view?: RoomView } | null;
+        try {
+          msg = JSON.parse(e.data) as typeof msg;
+        } catch {
+          return;
+        }
+        if (!msg || typeof msg !== "object") return;
         if (msg.type === "gone") {
           stopped = true;
           gone.current();
@@ -69,6 +78,7 @@ export function useLive(
         if (msg.type === "view" && msg.view) view.current(msg.view);
       };
       socket.onclose = () => {
+        if (!current()) return;
         if (beat) {
           clearInterval(beat);
           beat = null;
@@ -76,7 +86,9 @@ export function useLive(
         setState("closed");
         schedule();
       };
-      socket.onerror = () => socket.close();
+      socket.onerror = () => {
+        if (current()) socket.close();
+      };
     };
 
     const schedule = () => {
@@ -92,7 +104,9 @@ export function useLive(
     open();
     // A tab that was asleep comes back holding a socket the server closed hours ago.
     const wake = () => {
-      if (document.hidden || ws?.readyState === WebSocket.OPEN) return;
+      if (document.hidden || ws?.readyState === WebSocket.OPEN || ws?.readyState === WebSocket.CONNECTING)
+        return;
+      ws?.close();
       attempt = 0;
       if (retry) {
         clearTimeout(retry);

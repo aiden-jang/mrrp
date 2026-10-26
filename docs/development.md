@@ -33,6 +33,7 @@ room use does not.
 ## Isolated browser ports
 
 Browser journeys refuse an existing server. If a manual room is already open, set
-`MRRP_E2E_WORKER_PORT` and `MRRP_E2E_WEB_PORT` to unused ports before running
-`pnpm run verify`. The browser server receives the matching proxy destination;
-journeys retain their own storage and never reuse the manual room.
+`MRRP_E2E_WEB_PORT` and `MRRP_E2E_INSPECTOR_PORT` to unused ports before running
+`pnpm run verify`. Defaults are 34601 and 34602. One Worker serves the already-built app,
+API, and sockets. Journeys retain their own storage and never reuse the manual room.
+They disable external auth/weather calls and do not need local `.dev.vars` settings.

@@ -1,6 +1,6 @@
 // Static shell only. API requests always use the network.
 
-const CACHE = "mrrp-v2";
+const CACHE = "mrrp-v3";
 // The font is here rather than left to the cache-first rule below so a home-screen open on no signal
 // still gets the right typeface. Not content-hashed, so replacing the file needs a CACHE bump.
 const SHELL = [
@@ -44,8 +44,10 @@ self.addEventListener("fetch", (e) => {
     e.respondWith(
       fetch(request)
         .then((res) => {
-          const copy = res.clone();
-          void caches.open(CACHE).then((c) => c.put("/", copy));
+          if (url.pathname === "/" && !url.search && res.ok && res.headers.get("content-type")?.includes("text/html")) {
+            const copy = res.clone();
+            e.waitUntil(caches.open(CACHE).then((c) => c.put("/", copy)));
+          }
           return res;
         })
         // Any room URL falls back to the cached shell: routing is client-side, so index.html is the
@@ -62,7 +64,7 @@ self.addEventListener("fetch", (e) => {
         fetch(request).then((res) => {
           if (res.ok && res.type === "basic") {
             const copy = res.clone();
-            void caches.open(CACHE).then((c) => c.put(request, copy));
+            e.waitUntil(caches.open(CACHE).then((c) => c.put(request, copy)));
           }
           return res;
         }),

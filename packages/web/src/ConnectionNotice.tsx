@@ -15,7 +15,7 @@ export function ConnectionNotice({ live }: { live: LiveState }) {
   const online = useSyncExternalStore(subscribe, () => navigator.onLine);
   if (online && live === "open") return null;
   return (
-    <p className={s.errorBar} role="status" style={{ width: "calc(100vw - 24px)", boxSizing: "border-box" }}>
+    <p className={s.errorBar} role="status">
       {!online
         ? "You’re offline. Keep this tab open for unsaved drafts. Reconnect before sending."
         : live === "closed"

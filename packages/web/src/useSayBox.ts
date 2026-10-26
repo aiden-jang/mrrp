@@ -16,6 +16,7 @@ export function useSayBox(
   const [saving, setSaving] = useState(false);
   const [clearing, setClearing] = useState(false);
   const boxRef = useRef<HTMLTextAreaElement>(null);
+  const pending = useRef(false);
 
   useEffect(() => {
     const el = boxRef.current;
@@ -37,6 +38,8 @@ export function useSayBox(
   };
 
   const say = async () => {
+    if (pending.current) return;
+    pending.current = true;
     setSaving(true);
     try {
       applyView(await doSay(id, text, replyTo ?? undefined));
@@ -44,14 +47,18 @@ export function useSayBox(
       onSaid();
       setOpen(false);
       setReplyTo(null);
-    } catch {
-      // Nothing sent. The box is still open with her words in it.
+    } catch (error) {
+      onError(error instanceof Error ? error.message : "Couldn't send that. Your words are still here.");
+    } finally {
+      pending.current = false;
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const clearTap = async () => {
+    if (pending.current) return;
     if (!clearing) return setClearing(true);
+    pending.current = true;
     setClearing(false);
     setSaving(true);
     try {
@@ -60,8 +67,10 @@ export function useSayBox(
       setReplyTo(null);
     } catch (e) {
       onError(e instanceof Error ? e.message : "Couldn't do that.");
+    } finally {
+      pending.current = false;
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   return { text, setText, open, replyTo, saving, clearing, boxRef, start, neverMind, say, clearTap };

@@ -10,9 +10,7 @@ export function RoomAnnotations({
   scene,
   name,
   setup,
-  captureAvailable,
-  imageStatus,
-  onSave,
+  postcard,
   nudge,
   awayNote,
   nightChrome,
@@ -21,14 +19,14 @@ export function RoomAnnotations({
   scene: Scene;
   name: string;
   setup: boolean;
-  captureAvailable: boolean;
-  imageStatus: ReturnType<typeof useRoomSharing>["imageStatus"];
-  onSave: () => void;
+  postcard: ReturnType<typeof useRoomSharing>;
   nudge: number;
   awayNote: string | null;
   nightChrome: boolean;
 }) {
   const iAmHim = view.you !== null && !view.youAreHer;
+  const { imageStatus } = postcard;
+  const imagePending = imageStatus === "saving" || imageStatus === "sharing";
   const herDay = iAmHim ? dayApart(view.clock) : null;
   const moon = nightChrome ? moonLine(new Date(), view.cat.name, view.youAreHer) : null;
   return (
@@ -53,16 +51,23 @@ export function RoomAnnotations({
                   : `${name} is ${scene.doing}.`}
       </p>
       <span id="room-actions" tabIndex={-1} />
-      {captureAvailable && !setup && (
-        <button className={s.quiet} onClick={onSave} disabled={imageStatus !== null}>
-          {imageStatus === "saving"
-            ? "Making postcard…"
-            : imageStatus === "shared"
-              ? "Postcard shared"
-              : imageStatus === "saved"
-                ? "Download started"
-                : "Make a postcard"}
-        </button>
+      {postcard.captureRoom && !setup && (
+        <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 12 }}>
+          <button className={s.quiet} onClick={() => void postcard.saveRoomImage()} disabled={imagePending}>
+            {imageStatus === "saving"
+              ? "Making postcard…"
+              : imageStatus === "shared"
+                ? "Postcard shared"
+                : imageStatus === "saved"
+                  ? "Download started"
+                  : "Make a postcard"}
+          </button>
+          {postcard.canSharePostcard && (
+            <button className={s.quiet} disabled={imagePending} onClick={() => void postcard.sharePostcard()}>
+              {imageStatus === "sharing" ? "Opening sharing…" : "Share postcard"}
+            </button>
+          )}
+        </div>
       )}
       {!setup && view.noticed >= 2 && (iAmHim || view.youAreHer) && (
         <p className={s.noticed}>Between you, you have noticed {view.noticed} things in here.</p>

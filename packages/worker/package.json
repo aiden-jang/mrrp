@@ -13,14 +13,14 @@
   },
   "dependencies": {
     "@aidenjang/auth-client": "^0.2.0",
-    "hono": "^4.13.13",
-    "@mrrp/shared": "workspace:*"
+    "@mrrp/shared": "workspace:*",
+    "hono": "^4.13.14"
   },
   "devDependencies": {
-    "@cloudflare/vitest-plugin": "^1.4.2",
-    "@cloudflare/workers-types": "^5.20261014.1",
+    "@cloudflare/vitest-plugin": "^1.4.8",
+    "@cloudflare/workers-types": "^5.20261026.1",
     "typescript": "^5.9.3",
-    "vitest": "^4.1.11",
-    "wrangler": "^4.151.0"
+    "vitest": "^4.1.12",
+    "wrangler": "^4.153.0"
   }
 }

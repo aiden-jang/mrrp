@@ -3,6 +3,8 @@ import s from "./App.module.css";
 import { TheyLeftNotice } from "./screens.js";
 import type { RoomView } from "./types.js";
 import type { useCatSetup } from "./useCatSetup.js";
+import type { useRoomSharing } from "./useRoomSharing.js";
+import { InviteLinkFallback } from "./InviteLinkFallback.js";
 
 export function RoomWaiting({
   view,
@@ -14,7 +16,7 @@ export function RoomWaiting({
   view: RoomView;
   cat: ReturnType<typeof useCatSetup>;
   setupTrigger: RefObject<HTMLButtonElement>;
-  shareResult: "copied" | "shared" | null;
+  shareResult: ReturnType<typeof useRoomSharing>["shareResult"];
   onShare: () => void;
 }) {
   const setup = cat.open;
@@ -46,15 +48,21 @@ export function RoomWaiting({
         className={`${s.btn} ${view.theyLeft ? "" : s.btnGo}`}
         style={{ width: "100%", marginTop: 8 }}
         onClick={() => onShare()}
+        disabled={shareResult === "sharing"}
       >
-        {shareResult === "shared"
-          ? "Sent."
-          : shareResult === "copied"
-            ? "Copied. Go send it."
-            : view.theyLeft
-              ? "Send the link to somebody else"
-              : "Send her the link"}
+        {shareResult === "sharing"
+          ? "Opening sharing…"
+          : shareResult === "failed"
+            ? "Try sharing again"
+            : shareResult === "shared"
+              ? "Sent."
+              : shareResult === "copied"
+                ? "Copied. Go send it."
+                : view.theyLeft
+                  ? "Send the link to somebody else"
+                  : "Send her the link"}
       </button>
+      {shareResult === "failed" && <InviteLinkFallback />}
     </>
   );
 }

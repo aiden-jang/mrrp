@@ -15,7 +15,7 @@ There are no streaks, overdue visits or consequences for having a life.
 
 ## Run locally
 
-Use Node 22 or newer and pnpm 9.15. Install dependencies, then start the Worker and web app in
+Use Node 22.22.2 or another supported runtime from `package.json`, and pnpm 9.15.0. Install dependencies, then start the Worker and web app in
 separate terminals:
 
 ```sh
@@ -36,7 +36,8 @@ pnpm run verify
 This runs the dependency audit, repository gates, types, lint, formatting, build, unit tests and browser journeys.
 Worker tests use real Durable Objects and pin auth to an unavailable loopback endpoint.
 Canvas tests use a recording context and a controlled
-frame clock. See [contributing](CONTRIBUTING.md) for browser setup and review expectations.
+frame clock. Browser journeys exercise the production build through an isolated local Worker,
+with auth and weather services disabled. See [quality checks](docs/quality.md) for setup and limits.
 
 ## Deploy
 
@@ -53,11 +54,20 @@ Object migrations live in `packages/worker/wrangler.toml`.
 CI uploads the verified client build for deployment. The release job downloads that same
 workflow artifact and publishes it without rebuilding the client; local deployment still builds first.
 
+## Postcards and sharing
+
+**Make a postcard** downloads a picture of the room. Once it is ready, supported browsers also
+offer **Share postcard**. That separate click opens native sharing with the finished image;
+cancelling the sheet does not start another download. If an invitation cannot be copied or
+shared, a selectable room link stays available for manual copying and retry.
+
 ## Room links and recovery
 
 A room link can be forwarded, so share it with the person you mean to invite. The Worker enforces
 which seat may perform each action. Save the recovery code if you want to return from another
 browser; linking an account is optional. Room settings include recovery and deletion controls.
+Browser storage must be available to remember a seat. When it is blocked, mrrp explains how
+to recover before allowing a room to open, rather than creating a seat that a refresh would lose.
 
 [Privacy](https://accounts.aidenjang.com/privacy) · [Terms](https://accounts.aidenjang.com/terms) ·
 [Help or feedback](mailto:me@aidenjang.com). Please keep personal room links and recovery codes
@@ -74,13 +84,14 @@ runtime dependencies; both apps consume the same source contract.
 - [Decisions](DECISIONS.md): current product and engineering choices.
 - [Art direction](ART.md): pixel rules and approved references.
 - [UI review](docs/ui-review/README.md): reviewed states and remaining verification limits.
+- [Quality checks](docs/quality.md): production browser verification and local visual review.
+- [Visitor walkthrough](docs/visitor-review.md): tasks for an observed two-person usability session.
+- [Analytics](docs/ANALYTICS.md): aggregate coverage and privacy boundaries.
 - [Security](SECURITY.md): private vulnerability reports.
-
-MIT licensed. See [LICENSE](LICENSE).
 
 The install preview uses the current demonstration-room captures from
 [the UI review](docs/ui-review/). Its images live in `packages/web/public/screenshots/`
 and are declared with their actual desktop and phone sizes in the web manifest.
 Only disposable local room data belongs in these public assets.
 
-Aggregate traffic and feature-event coverage, privacy boundaries and queries: [Analytics](docs/ANALYTICS.md).
+MIT licensed. See [LICENSE](LICENSE).

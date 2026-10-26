@@ -8,6 +8,8 @@ import type { RoomView } from "./types.js";
 import type { useOurDay } from "./useOurDay.js";
 import type { useRoomEnding } from "./useRoomEnding.js";
 import type { SeatAccount } from "./useSeatAccount.js";
+import type { useRoomSharing } from "./useRoomSharing.js";
+import { InviteLinkFallback } from "./InviteLinkFallback.js";
 
 export function RoomSettings({
   id,
@@ -25,7 +27,7 @@ export function RoomSettings({
   account: SeatAccount;
   exit: ReturnType<typeof useRoomEnding>;
   ourDay: ReturnType<typeof useOurDay>;
-  shareResult: "copied" | "shared" | null;
+  shareResult: ReturnType<typeof useRoomSharing>["shareResult"];
   onShare: () => void;
   reload: () => Promise<void>;
   onError: (message: string) => void;
@@ -134,14 +136,19 @@ export function RoomSettings({
         </details>
       )}
       {iAmHim && (
-        <button className={s.quiet} onClick={() => onShare()}>
-          {shareResult === "shared"
-            ? "Sent."
-            : shareResult === "copied"
-              ? "Copied. Go send it."
-              : `Send ${view.them ?? "her"} the link again`}
+        <button className={s.quiet} disabled={shareResult === "sharing"} onClick={() => onShare()}>
+          {shareResult === "sharing"
+            ? "Opening sharing…"
+            : shareResult === "failed"
+              ? "Try sharing again"
+              : shareResult === "shared"
+                ? "Sent."
+                : shareResult === "copied"
+                  ? "Copied. Go send it."
+                  : `Send ${view.them ?? "her"} the link again`}
         </button>
       )}
+      {iAmHim && shareResult === "failed" && <InviteLinkFallback />}
       {iAmHim &&
         !view.waitingForThem &&
         (releasing ? (

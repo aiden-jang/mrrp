@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { loginUrl } from "@aidenjang/auth-client";
 import { doLink, doRecover } from "./api.js";
 
@@ -7,7 +7,7 @@ const SIGNED_OUT = "Sign in first.";
 import { AUTH_URL } from "./config.js";
 
 /** Survives the round trip to the auth service, which is a full page load away and back. */
-export const FINISH_LINK = "mrrp:finish-link";
+const FINISH_LINK = "mrrp:finish-link";
 
 /*
  * Tying a seat to an account, or taking it back with a recovery code.
@@ -27,17 +27,15 @@ export interface SeatAccount {
   claim: () => Promise<void>;
 }
 
-export function useSeatAccount(id: string, reload: () => Promise<void>): SeatAccount {
+export function useSeatAccount(id: string, reload: () => Promise<void>, wantsLink = false): SeatAccount {
   const [linking, setLinking] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
 
-  return {
-    linking,
-    linkError,
-    link: async (on) => {
+  const link = useCallback(
+    async (on: boolean) => {
       setLinking(true);
       setLinkError(null);
       try {
@@ -45,7 +43,12 @@ export function useSeatAccount(id: string, reload: () => Promise<void>): SeatAcc
         await reload();
       } catch (e) {
         if (on && e instanceof Error && e.message === SIGNED_OUT) {
-          sessionStorage.setItem(FINISH_LINK, id);
+          try {
+            sessionStorage.setItem(FINISH_LINK, id);
+          } catch {
+            setLinkError("Browser storage is unavailable. Allow site storage before linking your seat.");
+            return;
+          }
           window.location.href = loginUrl(AUTH_URL, window.location.href);
           return;
         }
@@ -54,6 +57,24 @@ export function useSeatAccount(id: string, reload: () => Promise<void>): SeatAcc
         setLinking(false);
       }
     },
+    [id, reload],
+  );
+
+  useEffect(() => {
+    if (!wantsLink) return;
+    try {
+      if (sessionStorage.getItem(FINISH_LINK) !== id) return;
+      sessionStorage.removeItem(FINISH_LINK);
+    } catch {
+      return;
+    }
+    void link(true);
+  }, [wantsLink, id, link]);
+
+  return {
+    linking,
+    linkError,
+    link,
 
     code,
     setCode,

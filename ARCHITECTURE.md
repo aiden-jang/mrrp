@@ -28,6 +28,7 @@ Neither runtime imports the other to validate its contract.
 | Notes, appearance and clock draft                           | `useCatSetup.ts`, `CatSetupPanel.tsx`                       |
 | Saved conversations                                         | `useRoomHistory.tsx`                                        |
 | Invitations and image sharing                               | `useRoomSharing.ts`                                         |
+| Connection and action feedback                              | `RoomStatus.tsx`, `ConnectionNotice.tsx`                    |
 | Cat-side controls                                           | `CatRoom.tsx`                                               |
 | Companion-side controls                                     | `CompanionRoom.tsx`                                         |
 | Recovery, settings and room lifecycle                       | `useSeatAccount.ts`, `RoomSettings.tsx`, `SeatRecovery.tsx` |
@@ -41,6 +42,20 @@ empty editable list, and a failed drawing save must keep the draft open.
 `api.ts` owns browser requests and seat credentials. A room link alone is not a credential for
 another person's seat. The client may preview a change immediately, but the server's response
 settles permission and persisted state.
+
+Before entering the app, `StorageUnavailable.tsx` checks that the browser can persist a seat.
+It offers retry when storage is blocked. The app does not substitute an ephemeral credential
+that would disappear on the next full-page navigation.
+
+Room pages are keyed by room ID. Delayed reads can apply only while their owner is mounted
+and no newer read, live snapshot, or action update has superseded them. Live sockets ignore
+disposed callbacks and malformed messages, and reuse a connection that is still opening.
+Account-link resumption belongs to `useSeatAccount.ts`, including blocked session-storage feedback.
+
+Sharing coalesces pending requests and ignores work that finishes after cleanup. Postcards
+are generated and downloaded first; a prepared file can then be shared from a fresh click.
+Failed link sharing keeps selectable text visible. Replies and gift messages preserve drafts
+on failure, and pending sends cannot be submitted repeatedly.
 
 ## Canvas
 
@@ -58,6 +73,8 @@ controls are part of the renderer's contract.
 `packages/worker/src/index.ts` routes requests. `room.ts` owns the Durable Object and stays one
 class. Role checks and guards belong here even when the client hides the corresponding button.
 Writes use authenticated POST requests. Live connections receive seat-filtered snapshots.
+HTTP API responses forbid caching and referrer disclosure, including denied reads. WebSocket
+upgrades pass through without reconstructing their response.
 
 Checking whether an invitation exists does not claim its second seat. Joining is an explicit
 choice. Missing rooms, deleted rooms and network failures have different meanings and must not
@@ -73,16 +90,18 @@ preferences; it is not a second room database. A stale snapshot may be useful du
 but must not be presented as evidence that the connection is live.
 
 The service worker caches the shell and static assets. It never caches API responses.
-Navigation tries the network first; versioned assets can use the cache. Cache activation removes
-only old mrrp caches.
+Navigation tries the network first. Only a successful public homepage refreshes the offline
+HTML; room URLs, contextual queries, and failed responses cannot replace it. Cache writes
+extend the fetch event's lifetime. Cache activation removes only old mrrp caches.
 
 ## Verification and release
 
 `pnpm run verify` and CI share the gate inventory. Static checks cover source budgets, comments,
 CSS references, docs and unused code. Tests exercise pure helpers, a recording canvas, real
-Durable Object storage and two-seat browser journeys. Browser review supplements assertions
+Durable Object storage and two-seat browser journeys against the production assets. Browser review supplements assertions
 with desktop, narrow-screen and keyboard inspection.
 
-CI deploys only after checks pass on `main`. Secrets belong in GitHub or Cloudflare configuration,
+CI deploys the verified build artifact only after checks pass on `main`. A failed browser run
+retains screenshots, traces, and Worker logs. Secrets belong in GitHub or Cloudflare configuration,
 never in the browser build. See [UI review](docs/ui-review/README.md) for what was actually reviewed;
 a passing automated suite is not a claim about every physical device or assistive technology.
