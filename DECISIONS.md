@@ -1,7 +1,6 @@
 # Decisions
 
-Current product and engineering choices. The [historical notebook](docs/history/decisions.md)
-records earlier experiments and implementation history; it is not the current module map.
+Current product and engineering choices. Module ownership is in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## One room, two different roles
 

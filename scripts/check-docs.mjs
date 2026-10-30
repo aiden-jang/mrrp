@@ -4,7 +4,7 @@ import { globSync, readFileSync } from "node:fs";
 // CLAUDE.md and AGENTS.md are symlinks to CONVENTIONS.md; listing them would report twice.
 const DOCS = [
   ...globSync("*.md").filter((file) => !["AGENTS.md", "CLAUDE.md"].includes(file)),
-  ...globSync("docs/**/*.md").filter((file) => !file.startsWith("docs/history/")),
+  ...globSync("docs/**/*.md"),
   ...globSync(".github/**/*.md"),
 ];
 
