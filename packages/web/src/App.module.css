@@ -666,6 +666,17 @@
   display: none;
 }
 
+@media (pointer: coarse) {
+  .keyboardHint {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
 .summary::before,
 .recoverySummary::before {
   content: "";

@@ -82,7 +82,8 @@ export function FrameSheet({
     >
       <p className={s.panelTitle}>for the frame</p>
       <p id="drawing-help" className={s.small} style={{ marginBottom: 10 }}>
-        Pick an ink and draw. Arrow keys move; Space paints. Escape closes.
+        Pick an ink and draw.{" "}
+        <span className={s.keyboardHint}>Arrow keys move; Space paints. Escape closes.</span>
       </p>
       <div
         className={s.sheetGrid}
