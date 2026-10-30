@@ -1932,7 +1932,7 @@ her notice beats presence you're informed of, so anything worth saying gets buil
 first and written in text only if it still needs saying.
 
 Design decisions, and the ones that were tried and reverted, are in
-[`DECISIONS.md`](DECISIONS.md). The art direction is in [`ART.md`](ART.md).
+[`DECISIONS.md`](../../DECISIONS.md). The art direction is in [`ART.md`](../../ART.md).
 
 ## Before you send it
 

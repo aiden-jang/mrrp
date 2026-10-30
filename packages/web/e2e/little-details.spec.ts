@@ -14,7 +14,7 @@ test("connection feedback distinguishes offline work from live updates", async (
   const notice = page.getByRole("status").filter({ hasText: "You’re offline" });
   await expect(notice).toBeVisible();
   if (process.env.CAPTURE_DETAILS) {
-    const folder = new URL("../../../docs/ui-review/details2-oct15/", import.meta.url).pathname;
+    const folder = new URL("../../../test-results/visual-review/details2-oct15/", import.meta.url).pathname;
     await mkdir(folder, { recursive: true });
     for (const [name, width, height] of [
       ["desktop", 1440, 900],

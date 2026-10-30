@@ -55,3 +55,11 @@ Chromium automation does not establish physical phone behavior on Apple or Andro
 native share-sheet delivery, manual screen-reader usability, or performance on a real phone.
 Local auth/weather failures do not verify live services. An observed usability session is
 also separate; use the [visitor walkthrough](visitor-review.md) and record its evidence.
+
+## Review artifacts
+
+Keep generated screenshot sets, videos, traces and run reports in ignored
+`test-results/` output or a temporary local directory. CI artifacts should expire.
+Commit authored design references and a small curated set of README images only;
+keep runtime and installation assets separate. Earlier audit records remain in Git
+history. Use synthetic data and remove private information from shared evidence.

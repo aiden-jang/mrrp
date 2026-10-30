@@ -65,3 +65,5 @@ reduced motion and both room palettes. State any verification limits.
 
 Use Conventional Commits without a scope. Keep personal room data and credentials out of public
 reports. See [CONTRIBUTING](CONTRIBUTING.md) and [SECURITY](SECURITY.md).
+
+Keep generated review output out of Git; follow the [artifact policy](docs/quality.md#review-artifacts).

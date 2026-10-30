@@ -14,7 +14,7 @@ if (
   base.hash
 )
   throw new Error("Visual review may only create disposable rooms on a local origin.");
-const output = resolve(process.env.MRRP_UI_OUTPUT ?? "../../docs/ui-review/captures");
+const output = resolve(process.env.MRRP_UI_OUTPUT ?? "../../test-results/visual-review/captures");
 const widths = [320, 390, 430, 768, 1440];
 const browser = await chromium.launch();
 await mkdir(output, { recursive: true });

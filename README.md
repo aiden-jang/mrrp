@@ -4,7 +4,7 @@ A tiny room for two. One of you is the cat.
 
 [Open mrrp](https://mrrp.aidenjang.com) · [Architecture](ARCHITECTURE.md) · [Contributing](CONTRIBUTING.md)
 
-![The mrrp landing page](docs/ui-review/landing-desktop.png)
+![The mrrp landing page](docs/screenshots/landing-desktop.png)
 
 Make a room, send someone the link, and look after their very small alter ego. You name her,
 choose her look and leave notes. They get to be the cat: answer back, draw something for the
@@ -83,14 +83,12 @@ runtime dependencies; both apps consume the same source contract.
 - [Engineering conventions](CONVENTIONS.md): constraints enforced during changes.
 - [Decisions](DECISIONS.md): current product and engineering choices.
 - [Art direction](ART.md): pixel rules and approved references.
-- [UI review](docs/ui-review/README.md): reviewed states and remaining verification limits.
 - [Quality checks](docs/quality.md): production browser verification and local visual review.
 - [Visitor walkthrough](docs/visitor-review.md): tasks for an observed two-person usability session.
 - [Analytics](docs/ANALYTICS.md): aggregate coverage and privacy boundaries.
 - [Security](SECURITY.md): private vulnerability reports.
 
-The install preview uses the current demonstration-room captures from
-[the UI review](docs/ui-review/). Its images live in `packages/web/public/screenshots/`
+The install preview’s curated demonstration-room images live in `packages/web/public/screenshots/`
 and are declared with their actual desktop and phone sizes in the web manifest.
 Only disposable local room data belongs in these public assets.
 

@@ -103,5 +103,5 @@ with desktop, narrow-screen and keyboard inspection.
 
 CI deploys the verified build artifact only after checks pass on `main`. A failed browser run
 retains screenshots, traces, and Worker logs. Secrets belong in GitHub or Cloudflare configuration,
-never in the browser build. See [UI review](docs/ui-review/README.md) for what was actually reviewed;
+never in the browser build. See [quality checks](docs/quality.md) for coverage and review limits;
 a passing automated suite is not a claim about every physical device or assistive technology.
