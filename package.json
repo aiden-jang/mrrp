@@ -29,6 +29,11 @@
     "security:check": "pnpm audit --audit-level=low",
     "verify:core": "pnpm run security:check && pnpm run gates && pnpm run size && pnpm run comments && pnpm run css-vars && pnpm run css-classes && pnpm run docs && pnpm run knip && pnpm run typecheck && pnpm run lint && pnpm run format:check && pnpm run build && pnpm run test"
   },
+  "pnpm": {
+    "overrides": {
+      "minimatch@<11.0.1": "^11.0.1"
+    }
+  },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.72.1",
     "@typescript-eslint/parser": "^8.72.1",
