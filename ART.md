@@ -93,3 +93,5 @@ The room renders in this order, and the Canvas renderer remains the source of in
 - No runtime image generation, paid service, or external asset request is required.
 - The app remains keyboard accessible, screen-reader understandable, reduced-motion safe, and usable
   on a small phone.
+
+Small prop details remain inside their existing pixel grids: an open ceramic mug handle, stitched cushion marks, shelf grain and a striped plant pot. Their dimensions, anchors, palette roles and interaction geometry stay shared with the room renderer.

@@ -334,12 +334,12 @@ export const WINDOW = sprite(
 export const BED = sprite(
   [
     "....dddddddddddd....",
-    "..ddffffffffffffdd..",
+    "..ddffbffffffbffdd..",
     ".dfffbbbbbbbbbbfffd.",
     "dffbbbbbbbbbbbbbbffd",
     "dffbbbbbbbbbbbbbbffd",
     ".dfffbbbbbbbbbbfffd.",
-    "..ddffffffffffffdd..",
+    "..ddffbffffffbffdd..",
     "....dddddddddddd....",
   ],
   -11,
@@ -348,7 +348,7 @@ export const BED = sprite(
 
 /** A shelf, so the thing she knocks off has somewhere to have been. */
 export const SHELF = sprite(
-  ["wwwwwwwwwwwwwwww", "wddddddddddddddw", "wwwwwwwwwwwwwwww", "...ww......ww..."],
+  ["wwwwwwwwwwwwwwww", "wddddwddddwddddw", "wwwwwwwwwwwwwwww", "...ww......ww..."],
   0,
   0,
 );
@@ -367,7 +367,7 @@ export const PLANT = sprite(
     "..wdddw...",
     "..wdddw...",
     ".wwdddww..",
-    ".wdddddw..",
+    ".wddwddw..",
     "..wwwww...",
   ],
   0,
@@ -598,7 +598,7 @@ export const GIFT_MOTH = sprite(["n.w.n", "nnwnn", ".n.n."], 0, 0);
  *
  * `c` the glaze, `d` its shadow side, `w` outline.
  */
-export const MUG = sprite([".wwww.", "wccccw", "wcccdw", "wcccdw", ".wwww."], 0, 0);
+export const MUG = sprite([".wwww.", "wcccww", "wccw.w", "wcccdw", ".wwww."], 0, 0);
 
 /** On its side, where it landed. Same object, so it has to read as the same object. */
 export const MUG_DOWN = sprite(["..wwww..", ".wccccw.", "wdccccdw", ".wwwwww."], 0, 0);
