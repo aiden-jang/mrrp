@@ -592,7 +592,7 @@ describe("a first that lands after the room is gone", () => {
 describe("asking whether a room is still there", () => {
   it("answers without taking the seat it is asking about", async () => {
     await view(HIM, "Aiden");
-    const r = await SELF.fetch(`https://x/api/room/${id}/alive`);
+    const r = await SELF.fetch(`https://x/api/room/${id}/alive?me=${STRANGER}`);
     expect(r.status).toBe(200);
     // The door screen asks this before it invites anybody in. If it seated them, it would be
     // taking the seat by asking, which is the one thing the door exists to prevent.
@@ -604,5 +604,18 @@ describe("asking whether a room is still there", () => {
     await post("delete", { me: HIM, name: "Aiden" });
     const r = await SELF.fetch(`https://x/api/room/${id}/alive`);
     expect(r.status).toBe(410);
+  });
+
+  it("keeps the deleting owner's recovery deadline available at the door", async () => {
+    await seat();
+    const deleted = await post("delete", { me: HIM, name: "Aiden" });
+    const { undoUntil } = (await deleted.json()) as { undoUntil: number };
+    for (const who of [HIM, HER, STRANGER, "bad", null]) {
+      const query = who ? `?me=${who}` : "";
+      const r = await SELF.fetch(`https://x/api/room/${id}/alive${query}`);
+      expect(r.status).toBe(410);
+      const body = (await r.json()) as { undoUntil?: number | null };
+      expect(body.undoUntil ?? null).toBe(who === HIM ? undoUntil : null);
+    }
   });
 });

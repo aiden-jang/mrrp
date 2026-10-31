@@ -16,7 +16,7 @@ const ALREADY_OVER = {
   "packages/web/src/Cat.tsx": { lines: 3104 },
   "packages/worker/src/room.ts": { lines: 1453 },
   "packages/web/src/sprites.ts": { lines: 619 },
-  "packages/worker/src/index.ts": { lines: 513 },
+  "packages/worker/src/index.ts": { lines: 511 },
 };
 
 // The gate scripts are in here too. A check that does not cover its own source stops being checked.

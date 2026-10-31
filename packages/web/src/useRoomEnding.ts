@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { doDelete, doLeave, doUndelete, doUnleave, forgetRoom } from "./api.js";
+import { doDelete, doLeave, doUndelete, doUnleave, forgetRoom, markMine } from "./api.js";
 
 /*
  * Don't add a `setEnding(false)` to the happy paths. Every one of them ends with the room gone or the
@@ -56,6 +56,7 @@ export function useRoomEnding(
     setUndoing(true);
     try {
       await doUndelete(id);
+      markMine(id);
       window.location.reload();
     } catch (e) {
       say(e, "Couldn't put it back.");

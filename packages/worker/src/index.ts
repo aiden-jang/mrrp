@@ -30,9 +30,14 @@ const VALID_MOODS: Mood[] = ["good", "tired", "stressed", "sad", "lonely", "bore
 const room = (env: Env, id: string) => env.ROOM.get(env.ROOM.idFromName(id));
 
 // One place, so a deleted room answers the same way on every route rather than each one remembering.
-app.onError((err, c) => {
-  if (err.message === ROOM_GONE) return c.json({ error: "gone" }, 410);
-  throw err;
+app.onError(async (err, c) => {
+  if (err.message !== ROOM_GONE) throw err;
+  const id = c.req.param("id"),
+    me = c.req.query("me");
+  if (id && ROOM_RE.test(id) && isSeatToken(me)) {
+    return c.json({ error: "gone", undoUntil: await room(c.env, id).undoUntil(me) }, 410);
+  }
+  return c.json({ error: "gone" }, 410);
 });
 
 app.all("/api/analytics", (c) => handleAnalytics(c.req.raw, c.env));
@@ -105,15 +110,8 @@ app.get("/api/room/:id", async (c) => {
   const me = c.req.query("me") ?? "";
   if (!ROOM_RE.test(id) || !isSeatToken(me)) return c.json({ error: "bad request" }, 400);
   const account = await accountOf(c.req.raw, c.env);
-  try {
-    const who = account.state === "signed-in" ? account.id : null;
-    return c.json(await room(c.env, id).view(me, c.req.query("name") ?? null, who));
-  } catch (e) {
-    // Not the shared gone-handler below: this is the one route that says more than "gone", because
-    // whoever deleted the room can still put it back.
-    if ((e as Error).message !== ROOM_GONE) throw e;
-    return c.json({ error: "gone", undoUntil: await room(c.env, id).undoUntil(me) }, 410);
-  }
+  const who = account.state === "signed-in" ? account.id : null;
+  return c.json(await room(c.env, id).view(me, c.req.query("name") ?? null, who));
 });
 
 app.post("/api/room/:id/act", async (c) => {

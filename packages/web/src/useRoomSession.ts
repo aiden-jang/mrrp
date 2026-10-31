@@ -16,7 +16,7 @@ import {
   GoneError,
   lastCat,
   myName,
-  roomIsGone,
+  roomDeletion,
 } from "./api.js";
 import { useLive } from "./live.js";
 import { coveredBy } from "./recent.js";
@@ -105,9 +105,10 @@ export function useRoomSession(id: string) {
   );
   const liveGone = useCallback(() => {
     if (!alive.current) return;
-    forgetRoom(id);
-    setGone({ undoUntil: null });
-  }, [id, setGone]);
+    // The socket's gone message carries no seat-specific recovery deadline.
+    setView(null);
+    void load();
+  }, [load, setView]);
   // Only with a seat. The worker refuses a socket to anybody else, and without this a spectator
   // watching the cat would sit in a reconnect loop against a 403 for as long as the tab is open.
   const live = useLive(id, !asking && !gone && view?.seat != null, takeView, liveGone);
@@ -117,8 +118,8 @@ export function useRoomSession(id: string) {
   useEffect(() => {
     if (!asking) return;
     let stale = false;
-    void roomIsGone(id).then((yes) => {
-      if (yes && !stale) setGone({ undoUntil: null });
+    void roomDeletion(id).then((deleted) => {
+      if (deleted && !stale) setGone(deleted);
     });
     return () => {
       stale = true;

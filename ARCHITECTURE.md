@@ -82,6 +82,8 @@ collapse into the same message.
 
 Recovery codes restore a seat on another browser. Account links are optional. Deletion and
 seat release use server-side rules and alarms rather than relying on an open client.
+The existence check can return the deleting seat's Undo deadline without joining the room,
+so that recovery remains available after a reload.
 
 ## Storage and failure handling
 
