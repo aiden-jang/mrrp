@@ -1,4 +1,5 @@
 import { isSeatToken } from "./seatToken.js";
+import { exportActivity, recentActivity } from "./activity.js";
 import { DurableObject } from "cloudflare:workers";
 import type {
   Action,
@@ -1039,7 +1040,6 @@ export class Room extends DurableObject<Env> {
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     const { him, her } = this.roles(people);
     if (me !== him && me !== her) return null;
-
     const youAreHer = me === her;
     const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
     const notes = await this.notes();
@@ -1072,7 +1072,7 @@ export class Room extends DurableObject<Env> {
       herLines: await this.lines(),
       moodNow: (await this.ctx.storage.get<Record<string, Told>>("moods"))?.[her ?? ""] ?? null,
       whatHeHasDone: (await this.ctx.storage.get<Tally>("tally")) ?? {},
-      lately: (await this.ctx.storage.get<Visit[]>("log")) ?? [],
+      lately: exportActivity((await this.ctx.storage.get<Visit[]>("log")) ?? [], me, youAreHer ? him : her),
       expectsHimAt: youAreHer
         ? null
         : learnedHour((await this.ctx.storage.get<Homing>("homing")) ?? null, clock.homeHour),
@@ -1429,7 +1429,7 @@ export class Room extends DurableObject<Env> {
           : null,
       reachedTogether: reach && Date.now() - reach.at < POKE_LIVE_MS ? reach : null,
       // Keep `seated` here. Without it anybody holding the link is told what she has been doing.
-      theirRecent: seated && otherId ? log.filter((v) => v.who === otherId).slice(0, 4) : [],
+      theirRecent: seated && otherId ? recentActivity(log, otherId) : [],
       theyCameAfter: !!catTold && !!them && youAreHer && them.lastSeen > catTold.at,
       arrivals,
       noticed: seated ? foundCount(await this.found()) : 0,

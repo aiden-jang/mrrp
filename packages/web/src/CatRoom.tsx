@@ -27,7 +27,7 @@ export function CatRoom({
   actions: ReturnType<typeof useRoomActions>;
   history: ReturnType<typeof useRoomHistory>;
   sayBox: ReturnType<typeof useSayBox>;
-  theirLive: Visit[];
+  theirLive: Pick<Visit, "at" | "action">[];
   now: number;
   nightChrome: boolean;
   panel: string;

@@ -24,7 +24,7 @@ export function CompanionRoom({
   history: ReturnType<typeof useRoomHistory>;
   cat: ReturnType<typeof useCatSetup>;
   setupTrigger: RefObject<HTMLButtonElement>;
-  theirLive: Visit[];
+  theirLive: Pick<Visit, "at" | "action">[];
   now: number;
   did: string | null;
 }) {

@@ -9,6 +9,6 @@ export function coveredBy(arrivals: Arrival[], mark = 0): number {
 }
 
 /* Never key this on whether the card is showing: dismissing it would put every item back. */
-export function liveOnly(recent: Visit[], covered: number): Visit[] {
+export function liveOnly<T extends Pick<Visit, "at">>(recent: T[], covered: number): T[] {
   return recent.filter((visit) => visit.at > covered);
 }

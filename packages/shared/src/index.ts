@@ -261,7 +261,7 @@ export interface RoomView {
   // He is never shown her note, so `final` never reaches him and the notes could run dry unnoticed.
   sheHasReadAll: boolean;
   notesInAll: number | null;
-  theirRecent: Visit[];
+  theirRecent: Pick<Visit, "at" | "action">[];
   theyCameAfter: boolean;
   arrivals: Arrival[];
   noticed: number;

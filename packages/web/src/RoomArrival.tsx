@@ -224,7 +224,13 @@ export function ArrivalCard({
   );
 }
 
-export function TheirRecent({ subject, items }: { subject: ReactNode; items: Visit[] }) {
+export function TheirRecent({
+  subject,
+  items,
+}: {
+  subject: ReactNode;
+  items: Pick<Visit, "at" | "action">[];
+}) {
   if (items.length === 0) return null;
   return (
     <ul className={s.recent}>

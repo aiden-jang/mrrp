@@ -73,6 +73,9 @@ controls are part of the renderer's contract.
 `packages/worker/src/index.ts` routes requests. `room.ts` owns the Durable Object and stays one
 class. Role checks and guards belong here even when the client hides the corresponding button.
 Writes use authenticated POST requests. Live connections receive seat-filtered snapshots.
+Activity snapshots include actions and timestamps, never the other seat's credential.
+JSON exports label activity actors as you, them, or a former participant rather than
+including stored seat tokens. An export is a readable keepsake, not a recovery credential.
 HTTP API responses forbid caching and referrer disclosure, including denied reads. WebSocket
 upgrades pass through without reconstructing their response.
 
