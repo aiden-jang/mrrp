@@ -111,7 +111,7 @@ export function RoomFallback({
           err={err}
           onPutBack={() => void exit.putBackMySide()}
           onStartFresh={() => {
-            forgetMe();
+            forgetMe(id);
             window.location.reload();
           }}
         />

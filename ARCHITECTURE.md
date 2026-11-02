@@ -88,6 +88,15 @@ seat release use server-side rules and alarms rather than relying on an open cli
 The existence check can return the deleting seat's Undo deadline without joining the room,
 so that recovery remains available after a reload.
 
+Each seat can replace its own browser key under Room & account. Replacements keep
+the recovery code, account link, role and room content. Other rooms keep their own
+credentials. A browser saves the replacement and a retry receipt before sending;
+reload finishes interrupted requests, and deleted-room Undo can still use the
+original key if the request never committed. Same-origin tabs serialize changes
+with Web Locks when available. The room moves seat-owned state in a transaction,
+closes old sockets, and retains only hashed revocation/receipt markers. Revoked
+keys cannot claim an empty seat. No live credentials are rotated during deployment.
+
 ## Storage and failure handling
 
 The Durable Object is the source of truth. Browser state holds seat credentials and local UI

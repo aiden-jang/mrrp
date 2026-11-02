@@ -241,7 +241,7 @@ function RoomPage({ id }: { id: string }) {
               setNudge((v) => v + 1);
             }}
             onFound={(key) => {
-              noticed(id, myToken(), key);
+              noticed(id, myToken(id), key);
               setFound(
                 (view.youAreHer ? FOUND_AS_HER[key] : undefined) ??
                   FOUND_ANNOUNCEMENTS[key] ??

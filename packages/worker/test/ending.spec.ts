@@ -89,7 +89,6 @@ describe("deleting the room", () => {
     "keepLine",
     "recoveryCode",
     "adoptFound",
-    "reseatBelongings",
     "found",
     "notes",
     "wipeHerSide",

@@ -1,4 +1,6 @@
 // Seat credentials become dictionary keys in room storage. Prototype names are never credentials.
+export const ROOM_RE = /^[a-z0-9]{6,24}$/;
+
 export function isSeatToken(value: unknown): value is string {
   return (
     typeof value === "string" &&

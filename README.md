@@ -66,6 +66,9 @@ shared, a selectable room link stays available for manual copying and retry.
 A room link can be forwarded, so share it with the person you mean to invite. The Worker enforces
 which seat may perform each action. Save the recovery code if you want to return from another
 browser; linking an account is optional. Room settings include recovery and deletion controls.
+Under **Room & account → refresh room access**, replace your own browser key if an older
+downloaded room copy was shared. Your recovery code stays valid, and the other person's seat
+and your other rooms keep their access. Interrupted changes resume safely after a reload.
 Browser storage must be available to remember a seat. When it is blocked, mrrp explains how
 to recover before allowing a room to open, rather than creating a seat that a refresh would lose.
 

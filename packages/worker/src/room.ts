@@ -1,3 +1,4 @@
+import { replaceSeat, touchSeat, seatRoles, type SeatPerson as Person } from "./seatAccess.js";
 import { isSeatToken } from "./seatToken.js";
 import { exportActivity, recentActivity } from "./activity.js";
 import { DurableObject } from "cloudflare:workers";
@@ -118,14 +119,6 @@ export class RoomGone extends Error {
 
 const GIFT_AFTER_MS = 8 * 60 * 60 * 1000;
 
-interface Person {
-  name: string;
-  firstSeen: number;
-  lastSeen: number;
-  visits: number;
-  account?: string;
-}
-
 interface Blanket {
   key: BlanketKey;
   stripe: boolean;
@@ -150,22 +143,10 @@ interface WindowLight {
 export class Room extends DurableObject<Env> {
   async view(me: string, name: string | null, account?: string | null): Promise<RoomView> {
     await this.guard();
-    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
+    const touched = await touchSeat(this.ctx.storage, me, name, account);
+    const { people, lastVisit } = touched;
+    me = touched.me;
     const now = Date.now();
-    const bound = account ? Object.keys(people).find((t) => people[t]?.account === account) : undefined;
-    if (bound && bound !== me) return this.view(bound, name);
-    const lastVisit = people[me]?.lastSeen;
-
-    const left = (await this.ctx.storage.get<string[]>("left")) ?? [];
-    const iLeft = !people[me] && left.includes(me);
-    if (!people[me] && !iLeft && Object.keys(people).length < 2) {
-      people[me] = { name: name?.trim().slice(0, 24) || "Someone", firstSeen: now, lastSeen: now, visits: 0 };
-    }
-    if (people[me]) {
-      people[me].lastSeen = now;
-      people[me].visits += 1;
-      await this.ctx.storage.put("people", people);
-    }
 
     if (this.roles(people).him === me) {
       await this.noteHomecoming();
@@ -200,8 +181,7 @@ export class Room extends DurableObject<Env> {
 
   // Preserve `firstSeen` when moving seats; arrival order decides who is the cat.
   private roles(people: Record<string, Person>): { him: string | null; her: string | null } {
-    const ids = Object.keys(people).sort((a, b) => people[a]!.firstSeen - people[b]!.firstSeen);
-    return { him: ids[0] ?? null, her: ids[1] ?? null };
+    return seatRoles(people);
   }
 
   async act(me: string, action: Action): Promise<RoomView> {
@@ -505,49 +485,15 @@ export class Room extends DurableObject<Env> {
     if (me === (seat === "him" ? her : him)) return false;
     if (me === taking) return true;
 
-    const old = people[taking]!;
-    delete people[taking];
-    people[me] = { ...old, lastSeen: Date.now() };
-    await this.ctx.storage.put("people", people);
-    await this.reseatBelongings(taking, me);
-    return true;
+    return replaceSeat(this.ctx, taking, me);
+  }
+
+  async rotateSeat(me: string, next: string): Promise<boolean> {
+    await this.guard();
+    return replaceSeat(this.ctx, me, next);
   }
 
   private async adoptFound(from: string, to: string): Promise<void> {
-    const found = await this.found();
-    let moved = false;
-    const next: FoundLedger = Object.create(null);
-    for (const [key, seats] of Object.entries(found)) {
-      const copy = { ...seats };
-      if (copy[from] !== undefined) {
-        copy[to] = copy[from]!;
-        delete copy[from];
-        moved = true;
-      }
-      next[key] = copy;
-    }
-    if (moved) await this.ctx.storage.put("found", next);
-  }
-
-  private async reseatBelongings(from: string, to: string): Promise<void> {
-    const light = await this.ctx.storage.get<WindowLight>("windowLight");
-    if (light?.from === from) await this.ctx.storage.put("windowLight", { ...light, from: to });
-
-    const moods = (await this.ctx.storage.get<Record<string, Told>>("moods")) ?? {};
-    if (moods[from]) {
-      moods[to] = moods[from]!;
-      delete moods[from];
-      await this.ctx.storage.put("moods", moods);
-    }
-
-    const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
-    if (log.some((v) => v.who === from)) {
-      await this.ctx.storage.put(
-        "log",
-        log.map((v) => (v.who === from ? { ...v, who: to } : v)),
-      );
-    }
-
     const found = await this.found();
     let moved = false;
     const next: FoundLedger = Object.create(null);

@@ -10,6 +10,7 @@ import type { useRoomEnding } from "./useRoomEnding.js";
 import type { SeatAccount } from "./useSeatAccount.js";
 import type { useRoomSharing } from "./useRoomSharing.js";
 import { InviteLinkFallback } from "./InviteLinkFallback.js";
+import { RoomAccess } from "./RoomAccess.js";
 
 export function RoomSettings({
   id,
@@ -135,6 +136,7 @@ export function RoomSettings({
           <RecoveryCode code={view.recoveryCode} />
         </details>
       )}
+      {view.recoveryCode && <RoomAccess id={id} reload={reload} />}
       {iAmHim && (
         <button className={s.quiet} disabled={shareResult === "sharing"} onClick={() => onShare()}>
           {shareResult === "sharing"
@@ -188,7 +190,7 @@ export function RoomSettings({
         <details className={`${s.recovery} ${s.ending}`} onToggle={() => setLeaveArmed(false)}>
           <summary className={s.recoverySummary}>{iAmHim ? "delete this room" : "leave this room"}</summary>
           <p className={s.small} style={{ marginTop: 8 }}>
-            <a className={s.creditLink} href={`/api/room/${id}/export?me=${encodeURIComponent(myToken())}`}>
+            <a className={s.creditLink} href={`/api/room/${id}/export?me=${encodeURIComponent(myToken(id))}`}>
               Take a copy first
             </a>
             , if you want to keep what is in here.

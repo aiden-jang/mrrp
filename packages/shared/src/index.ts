@@ -146,6 +146,7 @@ export interface Bodies {
   ourday: { me: string; month?: number; day?: number; label: string };
   poke: { me: string; what: string };
   recover: { me: string; code: string };
+  rotate: { me: string; next: string };
   release: { me: string };
   say: { me: string; text: string; aboutDay?: number };
   shelf: { me: string };

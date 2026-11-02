@@ -17,6 +17,7 @@ import {
   lastCat,
   myName,
   roomDeletion,
+  myToken,
 } from "./api.js";
 import { useLive } from "./live.js";
 import { coveredBy } from "./recent.js";
@@ -67,11 +68,14 @@ export function useRoomSession(id: string) {
     async (n?: string | null) => {
       if (!alive.current) return;
       const request = ++generation.current;
+      const requestedSeat = myToken(id);
       const current = () => alive.current && request === generation.current;
       try {
         const next = await fetchRoom(id, n ?? myName.get());
         if (!current()) return;
-        adoptSeat(next.seat);
+        const adopted = await adoptSeat(next.seat, id, requestedSeat);
+        if (!current()) return;
+        if (adopted === false) throw new Error("Room access changed while loading. Try again.");
         setView(next);
         lastCat.set(id, next.cat);
         // Him only. To her this would be the room reporting her own arrival back to her.

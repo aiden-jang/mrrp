@@ -12,7 +12,16 @@ import type {
   Treat,
 } from "./types.js";
 
-const TOKEN_KEY = "mrrp:me";
+import {
+  myToken,
+  adoptSeat,
+  forgetMe,
+  changeRoomAccess,
+  accessTokens,
+  AccessDenied,
+  deletionForRoomKeys,
+} from "./seatIdentity.js";
+export { myToken, adoptSeat, forgetMe };
 
 // App matches on this to show the room-is-gone screen. A deleted room answers 410 everywhere, and
 // must never look like an ordinary failure.
@@ -29,21 +38,6 @@ async function goneFrom(r: Response): Promise<GoneError> {
   return new GoneError(body?.undoUntil ?? null);
 }
 
-export function myToken(): string {
-  let t = localStorage.getItem(TOKEN_KEY);
-  if (!t) {
-    t = crypto.randomUUID().replace(/-/g, "");
-    localStorage.setItem(TOKEN_KEY, t);
-  }
-  return t;
-}
-
-// A brand new identity for this browser. The room bars her old token on purpose, so coming back has
-// to mint a new one; unbarring the old one would make the bar meaningless.
-export function forgetMe(): void {
-  localStorage.removeItem(TOKEN_KEY);
-}
-
 export interface SignedInAs {
   signedIn: boolean;
   name: string | null;
@@ -57,10 +51,6 @@ export async function whoAmI(): Promise<SignedInAs> {
   } catch {
     return { signedIn: false, name: null };
   }
-}
-
-export function adoptSeat(seat: string | null): void {
-  if (seat && seat !== localStorage.getItem(TOKEN_KEY)) localStorage.setItem(TOKEN_KEY, seat);
 }
 
 /* A hang settles nothing, so no catch runs and a stale room sits on screen looking live. Under the
@@ -83,6 +73,11 @@ async function send<K extends keyof Bodies>(
   body: Bodies[K],
 ): Promise<Response> {
   try {
+    const kind = path.slice(path.lastIndexOf("/") + 1);
+    if (!["rotate", "recover", "undelete"].includes(kind)) {
+      const id = path.split("/")[3]!;
+      await changeRoomAccess(id, null, (pending) => submitAccess(id, pending));
+    }
     return await timed(path, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -94,7 +89,7 @@ async function send<K extends keyof Bodies>(
 }
 
 export async function doLink(id: string, on: boolean): Promise<void> {
-  const r = await send(`/api/room/${id}/link`, { me: myToken(), on });
+  const r = await send(`/api/room/${id}/link`, { me: myToken(id), on });
   if (r.status === 401) throw new Error("Sign in first.");
   // Not "sign in first": she may well be signed in, and we could not reach the service to ask.
   if (r.status === 503) throw new Error("Sign-in is having a moment. Try again in a bit.");
@@ -174,7 +169,14 @@ export const newRoomId = () =>
     .join("");
 
 export async function fetchRoom(id: string, name?: string | null): Promise<RoomView> {
-  const q = new URLSearchParams({ me: myToken() });
+  try {
+    await changeRoomAccess(id, null, (p) => submitAccess(id, p));
+  } catch (error) {
+    if (error instanceof GoneError)
+      throw new GoneError((await roomDeletion(id))?.undoUntil ?? error.undoUntil);
+    if (!(error instanceof AccessDenied)) throw error;
+  }
+  const q = new URLSearchParams({ me: myToken(id) });
   if (name) q.set("name", name);
   let r: Response;
   try {
@@ -182,42 +184,43 @@ export async function fetchRoom(id: string, name?: string | null): Promise<RoomV
   } catch {
     throw new Error("Can't reach the room. Still trying.");
   }
-  if (r.status === 410) throw await goneFrom(r);
+  if (r.status === 410)
+    throw new GoneError((await roomDeletion(id))?.undoUntil ?? (await goneFrom(r)).undoUntil);
   if (!r.ok) throw new Error("Could not find her.");
   return r.json() as Promise<RoomView>;
 }
 
 export async function doAct(id: string, action: Action): Promise<RoomView> {
-  const r = await send(`/api/room/${id}/act`, { me: myToken(), action });
+  const r = await send(`/api/room/${id}/act`, { me: myToken(id), action });
   if (!r.ok) throw new Error("That didn't work.");
   return r.json() as Promise<RoomView>;
 }
 
 export async function doTell(id: string, mood: Mood): Promise<RoomView> {
-  const r = await send(`/api/room/${id}/tell`, { me: myToken(), mood });
+  const r = await send(`/api/room/${id}/tell`, { me: myToken(id), mood });
   if (!r.ok) throw new Error("Couldn't reach her just now.");
   return r.json() as Promise<RoomView>;
 }
 
 export async function doDress(id: string, cat: Partial<Cat>, decor?: RoomDecor): Promise<void> {
-  const r = await send(`/api/room/${id}/dress`, { me: myToken(), ...cat, decor });
+  const r = await send(`/api/room/${id}/dress`, { me: myToken(id), ...cat, decor });
   if (!r.ok) throw new Error("Couldn't save how she looks.");
 }
 
 export async function doClock(id: string, clock: Partial<Clock>): Promise<void> {
-  const r = await send(`/api/room/${id}/clock`, { me: myToken(), ...clock });
+  const r = await send(`/api/room/${id}/clock`, { me: myToken(id), ...clock });
   if (!r.ok) throw new Error("Couldn't save her hours.");
 }
 
 export async function doRelease(id: string): Promise<void> {
-  const r = await send(`/api/room/${id}/release`, { me: myToken() });
+  const r = await send(`/api/room/${id}/release`, { me: myToken(id) });
   if (!r.ok) throw new Error("Couldn't free her seat.");
 }
 
 // His. Typing the cat's name beats a confirm dialog: the room is both of their years, and a dialog is
 // one mis-tap from gone.
 export async function doDelete(id: string, name: string): Promise<number> {
-  const r = await send(`/api/room/${id}/delete`, { me: myToken(), name });
+  const r = await send(`/api/room/${id}/delete`, { me: myToken(id), name });
   if (r.status === 410) throw await goneFrom(r);
   if (r.status === 403) throw new Error("That is not her name.");
   if (!r.ok) throw new Error("Couldn't delete the room.");
@@ -225,39 +228,62 @@ export async function doDelete(id: string, name: string): Promise<number> {
 }
 
 export async function doUnleave(id: string): Promise<void> {
-  const r = await send(`/api/room/${id}/unleave`, { me: myToken() });
+  const r = await send(`/api/room/${id}/unleave`, { me: myToken(id) });
   if (!r.ok) throw new Error("The seat has been taken, so there is nothing to come back to.");
 }
 
 export async function doUndelete(id: string): Promise<void> {
-  const r = await send(`/api/room/${id}/undelete`, { me: myToken() });
-  if (!r.ok) throw new Error("The week is up, so there is nothing to put back.");
+  for (const me of accessTokens(id)) {
+    const r = await send(`/api/room/${id}/undelete`, { me });
+    if (r.ok) return;
+    if (r.status !== 403) break;
+  }
+  throw new Error("The week is up, so there is nothing to put back.");
 }
 
 export async function doLeave(id: string): Promise<void> {
-  const r = await send(`/api/room/${id}/leave`, { me: myToken() });
+  const r = await send(`/api/room/${id}/leave`, { me: myToken(id) });
   if (r.status === 410) throw await goneFrom(r);
   if (!r.ok) throw new Error("Couldn't leave the room.");
 }
 
 export async function doNotes(id: string, notes: string[]): Promise<void> {
-  const r = await send(`/api/room/${id}/notes`, { me: myToken(), notes });
+  const r = await send(`/api/room/${id}/notes`, { me: myToken(id), notes });
   if (!r.ok) throw new Error("Couldn't save the notes.");
 }
 
+async function submitAccess(
+  id: string,
+  pending: { kind: "rotate" | "recover"; from: string; to: string; code?: string },
+): Promise<void> {
+  const r =
+    pending.kind === "rotate"
+      ? await send(`/api/room/${id}/rotate`, { me: pending.from, next: pending.to })
+      : await send(`/api/room/${id}/recover`, { me: pending.to, code: pending.code! });
+  if (r.status === 410) throw await goneFrom(r);
+  if (r.status === 400 || r.status === 403)
+    throw new AccessDenied(
+      "That access change was not accepted. Your existing recovery code is still available.",
+    );
+  if (!r.ok) throw new Error("Couldn't reach the room. Try again to finish the access change.");
+}
+
 export async function doRecover(id: string, code: string): Promise<void> {
-  const r = await send(`/api/room/${id}/recover`, { me: myToken(), code });
-  if (!r.ok) throw new Error("That code doesn't match this room.");
+  await changeRoomAccess(id, { kind: "recover", code }, (p) => submitAccess(id, p));
+}
+
+export async function doRotate(id: string): Promise<void> {
+  await changeRoomAccess(id, { kind: "rotate" }, (p) => submitAccess(id, p));
 }
 
 export async function doTidy(id: string): Promise<{ again: boolean }> {
-  const r = await send(`/api/room/${id}/shelf`, { me: myToken() });
+  const r = await send(`/api/room/${id}/shelf`, { me: myToken(id) });
   if (!r.ok) throw new Error("Couldn't reach the shelf.");
   return (await r.json()) as { again: boolean };
 }
 
 export async function doWindowLight(id: string): Promise<RoomView> {
-  const r = await send(`/api/room/${id}/window-light`, { me: myToken() });
+  const r = await send(`/api/room/${id}/window-light`, { me: myToken(id) });
   if (!r.ok) throw new Error("Couldn't reach the window.");
   return r.json() as Promise<RoomView>;
 }
@@ -266,18 +292,18 @@ export async function doOurDay(
   id: string,
   day: { month: number; day: number; label: string } | null,
 ): Promise<void> {
-  const r = await send(`/api/room/${id}/ourday`, { me: myToken(), ...(day ?? { label: "" }) });
+  const r = await send(`/api/room/${id}/ourday`, { me: myToken(id), ...(day ?? { label: "" }) });
   if (!r.ok) throw new Error("Couldn't set that day.");
 }
 
 export async function doDraw(id: string, cells: string): Promise<RoomView> {
-  const r = await send(`/api/room/${id}/draw`, { me: myToken(), cells });
+  const r = await send(`/api/room/${id}/draw`, { me: myToken(id), cells });
   if (!r.ok) throw new Error("Couldn't hang that up.");
   return r.json() as Promise<RoomView>;
 }
 
 export async function doCatAct(id: string, act: CatAct): Promise<RoomView> {
-  const r = await send(`/api/room/${id}/heract`, { me: myToken(), act });
+  const r = await send(`/api/room/${id}/heract`, { me: myToken(id), act });
   if (!r.ok) throw new Error("Couldn't do that.");
   return r.json() as Promise<RoomView>;
 }
@@ -288,87 +314,81 @@ export async function doCatAct(id: string, act: CatAct): Promise<RoomView> {
  * cat in.
  */
 export function doHold(id: string, on: boolean): void {
-  void send(`/api/room/${id}/hold`, { me: myToken(), on }).catch(() => {});
+  void send(`/api/room/${id}/hold`, { me: myToken(id), on }).catch(() => {});
 }
 
 export async function doSit(id: string, on: boolean): Promise<RoomView> {
-  const r = await send(`/api/room/${id}/sit`, { me: myToken(), on });
+  const r = await send(`/api/room/${id}/sit`, { me: myToken(id), on });
   if (!r.ok) throw new Error("Couldn't do that.");
   return r.json() as Promise<RoomView>;
 }
 
 export async function doSettle(id: string, on: boolean): Promise<RoomView> {
-  const r = await send(`/api/room/${id}/settle`, { me: myToken(), on });
+  const r = await send(`/api/room/${id}/settle`, { me: myToken(id), on });
   if (!r.ok) throw new Error("Couldn't do that.");
   return r.json() as Promise<RoomView>;
 }
 
 // Takes back one thing she said, leaving everything else where it is.
 export async function doUnsay(id: string, at: number): Promise<RoomView> {
-  const r = await send(`/api/room/${id}/unsay`, { me: myToken(), at });
+  const r = await send(`/api/room/${id}/unsay`, { me: myToken(id), at });
   if (!r.ok) throw new Error("Couldn't take that back.");
   return r.json() as Promise<RoomView>;
 }
 
 export async function doWait(id: string, on: boolean): Promise<RoomView> {
-  const r = await send(`/api/room/${id}/wait`, { me: myToken(), on });
+  const r = await send(`/api/room/${id}/wait`, { me: myToken(id), on });
   if (!r.ok) throw new Error("Couldn't do that.");
   return r.json() as Promise<RoomView>;
 }
 
 export function doPoke(id: string, what: string): void {
-  void send(`/api/room/${id}/poke`, { me: myToken(), what }).catch(() => {});
+  void send(`/api/room/${id}/poke`, { me: myToken(id), what }).catch(() => {});
 }
 
 // Ask at the door without taking a seat. A known seat may receive its deletion Undo deadline.
 export async function roomDeletion(id: string): Promise<{ undoUntil: number | null } | null> {
-  try {
-    const r = await timed(`/api/room/${id}/alive?me=${encodeURIComponent(myToken())}`);
-    return r.status === 410 ? { undoUntil: (await goneFrom(r)).undoUntil } : null;
-  } catch {
-    // A dropped connection is not a deleted room. The door stays open and the read behind it says so properly.
-    return null;
-  }
+  return deletionForRoomKeys(id, (me) => timed(`/api/room/${id}/alive?me=${encodeURIComponent(me)}`));
 }
 
 export async function fetchNotes(id: string): Promise<string[]> {
-  const r = await timed(`/api/room/${id}/notes?me=${encodeURIComponent(myToken())}`);
+  const r = await timed(`/api/room/${id}/notes?me=${encodeURIComponent(myToken(id))}`);
   if (!r.ok) throw new Error("Couldn't get your notes.");
   return (await r.json()).notes as string[];
 }
 
 export async function fetchSaid(id: string): Promise<SaidSoFar> {
-  const r = await timed(`/api/room/${id}/said?me=${encodeURIComponent(myToken())}`);
+  const r = await timed(`/api/room/${id}/said?me=${encodeURIComponent(myToken(id))}`);
   if (!r.ok) throw new Error("Couldn't get that.");
   return (await r.json()) as SaidSoFar;
 }
 
 export async function doBoxOut(id: string, on = true): Promise<RoomView> {
-  const r = await send(`/api/room/${id}/boxout`, { me: myToken(), on });
+  const r = await send(`/api/room/${id}/boxout`, { me: myToken(id), on });
   if (!r.ok) throw new Error("Couldn't put the box out.");
   return r.json() as Promise<RoomView>;
 }
 
 export async function doLeaveOut(id: string, treat: Treat): Promise<RoomView> {
-  const r = await send(`/api/room/${id}/leaveout`, { me: myToken(), treat });
+  const r = await send(`/api/room/${id}/leaveout`, { me: myToken(id), treat });
   if (!r.ok) throw new Error("Couldn't leave that out.");
   return r.json() as Promise<RoomView>;
 }
 
 export async function doLeaveGift(id: string, gift: Gift, text = ""): Promise<RoomView> {
-  const r = await send(`/api/room/${id}/gift`, { me: myToken(), gift, text });
+  const r = await send(`/api/room/${id}/gift`, { me: myToken(id), gift, text });
   if (!r.ok) throw new Error("Couldn't leave that.");
   return r.json() as Promise<RoomView>;
 }
 
 export async function doSay(id: string, text: string, aboutDay?: number): Promise<RoomView> {
-  const r = await send(`/api/room/${id}/say`, { me: myToken(), text, aboutDay });
+  const r = await send(`/api/room/${id}/say`, { me: myToken(id), text, aboutDay });
   if (!r.ok) throw new Error("Couldn't leave that.");
   return r.json() as Promise<RoomView>;
 }
 
 export async function doBlanket(id: string, key: string, stripe: boolean): Promise<RoomView> {
-  const r = await send(`/api/room/${id}/blanket`, { me: myToken(), key, stripe });
+  const r = await send(`/api/room/${id}/blanket`, { me: myToken(id), key, stripe });
   if (r.status === 410) throw await goneFrom(r);
   if (!r.ok) throw new Error("Couldn't change your blanket.");
   return fetchRoom(id);

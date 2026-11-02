@@ -18,6 +18,7 @@ export function useLive(
   onView: (v: RoomView) => void,
   onGone: () => void,
 ): LiveState {
+  const seat = myToken(id);
   const [state, setState] = useState<LiveState>("connecting");
   // Kept in refs so a new view does not tear the socket down and build another one.
   const view = useRef(onView);
@@ -37,7 +38,7 @@ export function useLive(
     const open = () => {
       if (stopped) return;
       const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const url = `${proto}//${window.location.host}/api/room/${id}/live?me=${encodeURIComponent(myToken())}`;
+      const url = `${proto}//${window.location.host}/api/room/${id}/live?me=${encodeURIComponent(seat)}`;
       let socket: WebSocket;
       try {
         socket = new WebSocket(url);
@@ -123,7 +124,7 @@ export function useLive(
       if (retry) clearTimeout(retry);
       ws?.close();
     };
-  }, [id, enabled]);
+  }, [id, enabled, seat]);
 
   return state;
 }

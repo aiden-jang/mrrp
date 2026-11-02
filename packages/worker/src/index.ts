@@ -1,4 +1,5 @@
-import { isSeatToken } from "./seatToken.js";
+import { seatRoutes } from "./seatRoutes.js";
+import { isSeatToken, ROOM_RE } from "./seatToken.js";
 import { accountOf } from "./accountOf.js";
 import { handleAnalytics } from "../../../analytics/worker.js";
 import { isRoomDecor } from "./decor.js";
@@ -15,7 +16,6 @@ export { Room } from "./room.js";
 
 const app = new Hono<{ Bindings: Env }>();
 app.use("/api/*", privateResponses);
-const ROOM_RE = /^[a-z0-9]{6,24}$/;
 const DOODLE_RE = /^[0-4]{135}$/;
 const VALID: Action[] = ACTIONS.map((a) => a.id);
 // Gifts carry her words through their own endpoint, never the wordless act route.
@@ -360,16 +360,7 @@ app.post("/api/room/:id/notes", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "not yours to set" }, 403);
 });
 
-app.post("/api/room/:id/recover", async (c) => {
-  const id = c.req.param("id");
-  if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
-  const body = ((await c.req.json().catch(() => null)) ?? {}) as Untrusted<"recover">;
-  const me = typeof body.me === "string" ? body.me : "";
-  const code = typeof body.code === "string" ? body.code : "";
-  if (!isSeatToken(me) || code.length < 8) return c.json({ error: "bad request" }, 400);
-  const ok = await room(c.env, id).recoverSeat(me, code);
-  return ok ? c.json({ ok: true }) : c.json({ error: "that code does not match" }, 403);
-});
+app.route("/", seatRoutes);
 
 app.post("/api/room/:id/found", async (c) => {
   const id = c.req.param("id");
