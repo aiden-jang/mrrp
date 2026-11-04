@@ -3,18 +3,20 @@ export async function copyText(text: string): Promise<boolean> {
     await navigator.clipboard.writeText(text);
     return true;
   } catch {
+    const previous = document.activeElement as HTMLElement | null;
+    const input = document.createElement("textarea");
     try {
-      const input = document.createElement("textarea");
       input.value = text;
       input.style.position = "fixed";
       input.style.opacity = "0";
       document.body.appendChild(input);
       input.select();
-      const copied = document.execCommand("copy");
-      input.remove();
-      return copied;
+      return document.execCommand("copy");
     } catch {
       return false;
+    } finally {
+      input.remove();
+      if (previous?.isConnected) previous.focus({ preventScroll: true });
     }
   }
 }

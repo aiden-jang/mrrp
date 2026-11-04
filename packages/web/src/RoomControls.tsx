@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import s from "./App.module.css";
 import { copyText } from "./clipboard.js";
 import { isMuted, toggleMuted } from "./sound.js";
@@ -45,31 +45,52 @@ function SpeakerMark({ off }: { off: boolean }) {
 
 export function RecoveryCode({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const codeField = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (!copied) return;
     const timer = setTimeout(() => setCopied(false), 1800);
     return () => clearTimeout(timer);
   }, [copied]);
   const copy = async () => {
+    setFailed(false);
     if (await copyText(code)) {
       setCopied(true);
+    } else {
+      setFailed(true);
+      codeField.current?.focus();
+      codeField.current?.select();
     }
   };
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <p className={s.code} style={{ flex: 1 }}>
-        {code}
-      </p>
-      <button
-        type="button"
-        className={s.btn}
-        style={{ flexShrink: 0, padding: "9px 11px", fontSize: 12 }}
-        onClick={() => void copy()}
-        aria-label={copied ? "Recovery code copied" : "Copy the recovery code"}
-      >
-        {copied ? "Copied" : "Copy"}
-      </button>
-    </div>
+    <>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <input
+          ref={codeField}
+          className={s.code}
+          style={{ flex: 1, minWidth: 0, width: "100%", color: "inherit" }}
+          aria-label="Your recovery code"
+          readOnly
+          value={code}
+          onFocus={(event) => event.currentTarget.select()}
+        />
+        <button
+          type="button"
+          className={s.btn}
+          style={{ flexShrink: 0, padding: "9px 11px", fontSize: 12 }}
+          onClick={() => void copy()}
+          aria-label={copied ? "Recovery code copied" : "Copy the recovery code"}
+        >
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+      {failed && (
+        <p className={s.small} role="alert" style={{ marginTop: 8 }}>
+          Couldn’t copy automatically. Your code is selected above; use your browser’s Copy command, or try
+          again.
+        </p>
+      )}
+    </>
   );
 }
 
