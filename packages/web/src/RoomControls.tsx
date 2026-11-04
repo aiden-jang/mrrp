@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import s from "./App.module.css";
 import { copyText } from "./clipboard.js";
 import { isMuted, toggleMuted } from "./sound.js";
@@ -47,6 +47,8 @@ export function RecoveryCode({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
   const [failed, setFailed] = useState(false);
   const codeField = useRef<HTMLInputElement>(null);
+  const copyError = useRef<HTMLParagraphElement>(null);
+  const copyErrorId = useId();
   useEffect(() => {
     if (!copied) return;
     const timer = setTimeout(() => setCopied(false), 1800);
@@ -60,6 +62,7 @@ export function RecoveryCode({ code }: { code: string }) {
       setFailed(true);
       codeField.current?.focus();
       codeField.current?.select();
+      requestAnimationFrame(() => copyError.current?.scrollIntoView({ block: "nearest" }));
     }
   };
   return (
@@ -70,6 +73,7 @@ export function RecoveryCode({ code }: { code: string }) {
           className={s.code}
           style={{ flex: 1, minWidth: 0, width: "100%", color: "inherit" }}
           aria-label="Your recovery code"
+          aria-describedby={failed ? copyErrorId : undefined}
           readOnly
           value={code}
           onFocus={(event) => event.currentTarget.select()}
@@ -85,7 +89,13 @@ export function RecoveryCode({ code }: { code: string }) {
         </button>
       </div>
       {failed && (
-        <p className={s.small} role="alert" style={{ marginTop: 8 }}>
+        <p
+          ref={copyError}
+          id={copyErrorId}
+          className={s.small}
+          role="alert"
+          style={{ marginTop: 8, scrollMarginBlockEnd: "5rem" }}
+        >
           Couldn’t copy automatically. Your code is selected above; use your browser’s Copy command, or try
           again.
         </p>

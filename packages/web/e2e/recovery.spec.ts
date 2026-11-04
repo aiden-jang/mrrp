@@ -95,7 +95,10 @@ test("a recovery-code copy failure selects the real code and supports retry", as
   expect(await page.locator('textarea[style*="opacity: 0"]').count()).toBe(0);
   for (const width of [1440, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
-    await code.scrollIntoViewIfNeeded();
+    await page.getByRole("alert").scrollIntoViewIfNeeded();
+    const errorBounds = (await page.getByRole("alert").boundingBox())!;
+    const actionsBounds = (await page.getByRole("button", { name: "Save", exact: true }).boundingBox())!;
+    expect(errorBounds.y + errorBounds.height).toBeLessThanOrEqual(actionsBounds.y);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: test.info().outputPath(`recovery-code-${width}.png`) });
   }
