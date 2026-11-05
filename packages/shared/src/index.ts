@@ -28,9 +28,9 @@ export type Sky = "clear" | "cloud" | "rain" | "snow";
 export type Action = "pet" | "brush" | "sit" | "photo";
 
 export const ACTIONS = [
+  { id: "sit", label: "Sit with her", past: "sat with you a while", mine: "sat with her" },
   { id: "pet", label: "Pet her", past: "petted you", mine: "petted her" },
   { id: "brush", label: "Brush her", past: "brushed you", mine: "brushed her" },
-  { id: "sit", label: "Sit with her", past: "sat with you a while", mine: "sat with her" },
   { id: "photo", label: "Take her photo", past: "took a photo of you", mine: "took her photo" },
 ] as const satisfies readonly { id: Action; label: string; past: string; mine: string }[];
 

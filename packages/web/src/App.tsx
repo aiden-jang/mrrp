@@ -171,9 +171,10 @@ function RoomPage({ id }: { id: string }) {
       <VoiceSync fur={view.cat.fur} monthsOld={view.monthsOld} />
       <DocTitle name={view.cat.name} replyAt={view.youAreHer ? null : (view.herLine?.at ?? null)} />
       <FaviconSync cat={view.cat} />
-      <div className={s.card}>
+      <div className={`${s.card} ${s.roomCard}`}>
         <RoomHeader
           name={view.cat.name}
+          together={view.themHereNow}
           presence={
             view.themHereNow
               ? "Both here. Excellent use of time."
@@ -189,194 +190,204 @@ function RoomPage({ id }: { id: string }) {
             Saved. A very considered look.
           </p>
         )}
-        <div ref={stage} className={`${s.stage} ${arriving ? s.stageArrival : ""}`}>
-          <Cat
-            collectionKey={id}
-            label={`${previewLook.name} is ${scene.doing}.`}
-            look={previewLook}
-            decor={setup && draft ? draft.decor : view.decor}
-            clock={setup && draft ? { ...view.clock, tz: draft.tz, homeHour: draft.homeHour } : view.clock}
-            mood={view.catMood}
-            nudge={nudge}
-            eyesOpen={setup}
-            framed={view.framed}
-            doodle={view.doodle?.cells ?? null}
-            blanket={view.blanket}
-            sky={view.sky}
-            spot={herSpot}
-            doorOpenAt={doorway.openAt}
-            watchDoorAt={doorway.watchAt}
-            staying={staying && (iAmHim || view.youAreHer)}
-            box={view.box}
-            brought={view.brought}
-            brushed={view.brushed}
-            satWith={view.satWith}
-            firstEver={view.firstEver}
-            monthsOld={view.monthsOld}
-            gift={view.gift}
-            leftOut={view.forHer}
-            windowLight={view.windowLight}
-            onWindowLight={() => void touchWindowLight()}
-            shelfDown={view.shelfDown}
-            shelfAt={shelfAt}
-            petAt={petAt}
-            boxOut={view.boxOut}
-            onTidy={() => void tidy()}
-            mugFell={mugFell}
-            role={iAmHim ? "him" : view.youAreHer ? "her" : null}
-            together={view.bothHereNow}
-            onPet={() => void act("pet")}
-            onHold={(on) => doHold(id, on)}
-            onTouch={sharePoke}
-            heldByThem={view.heldByThem}
-            sitting={view.sittingWith || view.sittingWithYou}
-            settled={view.settled}
-            waiting={view.waitingAtDoor}
-            brushing={strokes !== null}
-            onStroke={stroke}
-            pokedByThem={view.pokedByThem}
-            reachedTogether={view.reachedTogether}
-            onPoke={() => {
-              play("mrrp");
-              setNudge((v) => v + 1);
-            }}
-            onFound={(key) => {
-              noticed(id, myToken(id), key);
-              setFound(
-                (view.youAreHer ? FOUND_AS_HER[key] : undefined) ??
-                  FOUND_ANNOUNCEMENTS[key] ??
-                  "something in the room answered.",
-              );
-            }}
-            onProps={handleRoomProps}
-            dreamContext={{
-              found: foundKeys(),
-              recent: view.theirRecent
-                .map((visit) => visit.action)
-                .filter((a): a is Action | "leaveout" => a === "leaveout" || ACTIONS.some((x) => x.id === a)),
-              trait: view.personality?.trait ?? null,
-              framed: view.framed,
-              hasBox: view.box,
-            }}
-            onDream={(dream) => setFound(dream.line)}
-            cake={!!view.milestone}
-            bothCalledHer={view.bothCalledHer}
-            onCapture={handleCaptureReady}
-          />
-        </div>
-        {roomProps && !setup && (
-          <a href="#room-actions" data-skip="">
-            Skip to what you can do
-          </a>
-        )}
-        {roomProps && !setup && (
-          <nav className={s.srOnly} aria-labelledby="room-things">
-            <h2 id="room-things">things in the room</h2>
-            <ul>
-              {roomProps.props.map((prop) => (
-                <li key={prop.key}>
-                  <button type="button" onClick={() => roomProps.poke(prop.key)}>
-                    {prop.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        )}
-        <p aria-live="polite" className={s.srOnly}>
-          {found}
-        </p>
-        <RoomAnnotations
-          view={view}
-          scene={scene}
-          name={previewLook.name}
-          setup={setup}
-          postcard={sharing}
-          nudge={nudge}
-          awayNote={awayNote}
-          nightChrome={nightChrome}
-        />
-        {iAmHim && setup && (
-          <CatSetupPanel
-            cat={cat}
-            view={view}
-            panelRef={setupPanel}
-            onSaved={() => {
-              setDid("saved");
-            }}
-          />
-        )}
-        {view.bothHereNow && (
-          <div className={s.together}>
-            <p className={s.togetherMain}>
-              {view.sittingWithYou
-                ? `${view.them ?? "He"} is sitting with you.`
-                : view.sittingWith
-                  ? `You are sitting with ${view.cat.name}.`
-                  : view.youAreHer
-                    ? `${view.them ?? "He"} is right there. He can reach you.`
-                    : `Hold on ${view.cat.name}. She's right there.`}
+        <div className={s.roomGrid}>
+          <div className={s.sceneColumn}>
+            <div ref={stage} className={`${s.stage} ${arriving ? s.stageArrival : ""}`}>
+              <Cat
+                collectionKey={id}
+                label={`${previewLook.name} is ${scene.doing}.`}
+                look={previewLook}
+                decor={setup && draft ? draft.decor : view.decor}
+                clock={
+                  setup && draft ? { ...view.clock, tz: draft.tz, homeHour: draft.homeHour } : view.clock
+                }
+                mood={view.catMood}
+                nudge={nudge}
+                eyesOpen={setup}
+                framed={view.framed}
+                doodle={view.doodle?.cells ?? null}
+                blanket={view.blanket}
+                sky={view.sky}
+                spot={herSpot}
+                doorOpenAt={doorway.openAt}
+                watchDoorAt={doorway.watchAt}
+                staying={staying && (iAmHim || view.youAreHer)}
+                box={view.box}
+                brought={view.brought}
+                brushed={view.brushed}
+                satWith={view.satWith}
+                firstEver={view.firstEver}
+                monthsOld={view.monthsOld}
+                gift={view.gift}
+                leftOut={view.forHer}
+                windowLight={view.windowLight}
+                onWindowLight={() => void touchWindowLight()}
+                shelfDown={view.shelfDown}
+                shelfAt={shelfAt}
+                petAt={petAt}
+                boxOut={view.boxOut}
+                onTidy={() => void tidy()}
+                mugFell={mugFell}
+                role={iAmHim ? "him" : view.youAreHer ? "her" : null}
+                together={view.bothHereNow}
+                onPet={() => void act("pet")}
+                onHold={(on) => doHold(id, on)}
+                onTouch={sharePoke}
+                heldByThem={view.heldByThem}
+                sitting={view.sittingWith || view.sittingWithYou}
+                settled={view.settled}
+                waiting={view.waitingAtDoor}
+                brushing={strokes !== null}
+                onStroke={stroke}
+                pokedByThem={view.pokedByThem}
+                reachedTogether={view.reachedTogether}
+                onPoke={() => {
+                  play("mrrp");
+                  setNudge((v) => v + 1);
+                }}
+                onFound={(key) => {
+                  noticed(id, myToken(id), key);
+                  setFound(
+                    (view.youAreHer ? FOUND_AS_HER[key] : undefined) ??
+                      FOUND_ANNOUNCEMENTS[key] ??
+                      "something in the room answered.",
+                  );
+                }}
+                onProps={handleRoomProps}
+                dreamContext={{
+                  found: foundKeys(),
+                  recent: view.theirRecent
+                    .map((visit) => visit.action)
+                    .filter(
+                      (a): a is Action | "leaveout" => a === "leaveout" || ACTIONS.some((x) => x.id === a),
+                    ),
+                  trait: view.personality?.trait ?? null,
+                  framed: view.framed,
+                  hasBox: view.box,
+                }}
+                onDream={(dream) => setFound(dream.line)}
+                cake={!!view.milestone}
+                bothCalledHer={view.bothCalledHer}
+                onCapture={handleCaptureReady}
+              />
+            </div>
+            {roomProps && !setup && (
+              <a href="#room-actions" data-skip="">
+                Skip to what you can do
+              </a>
+            )}
+            {roomProps && !setup && (
+              <nav className={s.srOnly} aria-labelledby="room-things">
+                <h2 id="room-things">things in the room</h2>
+                <ul>
+                  {roomProps.props.map((prop) => (
+                    <li key={prop.key}>
+                      <button type="button" onClick={() => roomProps.poke(prop.key)}>
+                        {prop.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )}
+            <p aria-live="polite" className={s.srOnly}>
+              {found}
             </p>
+            <RoomAnnotations
+              view={view}
+              scene={scene}
+              name={previewLook.name}
+              setup={setup}
+              postcard={sharing}
+              nudge={nudge}
+              awayNote={awayNote}
+              nightChrome={nightChrome}
+            />
           </div>
-        )}
-        {arrivalCard && arrivalCard.length > 0 && view.them && (
-          <ArrivalCard
-            name={view.them}
-            items={arrivalCard}
-            youAreHer={view.youAreHer}
-            onClose={() => setArrivalCard(null)}
-          />
-        )}
-        {view.waitingForThem ? (
-          <RoomWaiting
-            view={view}
-            cat={cat}
-            setupTrigger={setupTrigger}
-            shareResult={shareResult}
-            onShare={() => void shareRoom()}
-          />
-        ) : view.youAreHer ? (
-          <CatRoom
-            view={view}
-            actions={actions}
-            history={history}
-            sayBox={sayBox}
-            theirLive={theirLive}
-            now={now}
-            nightChrome={nightChrome}
-            panel={chrome["--panel"]!}
-          />
-        ) : iAmHim ? (
-          <CompanionRoom
-            view={view}
-            actions={actions}
-            history={history}
-            cat={cat}
-            setupTrigger={setupTrigger}
-            theirLive={theirLive}
-            now={now}
-            did={did}
-          />
-        ) : (
-          <SeatRecovery account={account} />
-        )}
+          <div className={s.actionColumn} id="room-actions" tabIndex={-1}>
+            {iAmHim && setup && (
+              <CatSetupPanel
+                cat={cat}
+                view={view}
+                panelRef={setupPanel}
+                onSaved={() => {
+                  setDid("saved");
+                }}
+              />
+            )}
+            {view.bothHereNow && (
+              <div className={s.together}>
+                <p className={s.togetherMain}>
+                  {view.sittingWithYou
+                    ? `${view.them ?? "He"} is sitting with you.`
+                    : view.sittingWith
+                      ? `You are sitting with ${view.cat.name}.`
+                      : view.youAreHer
+                        ? `${view.them ?? "He"} is right there. He can reach you.`
+                        : `Hold on ${view.cat.name}. She's right there.`}
+                </p>
+              </div>
+            )}
+            {arrivalCard && arrivalCard.length > 0 && view.them && (
+              <ArrivalCard
+                name={view.them}
+                items={arrivalCard}
+                youAreHer={view.youAreHer}
+                onClose={() => setArrivalCard(null)}
+              />
+            )}
+            {view.waitingForThem ? (
+              <RoomWaiting
+                view={view}
+                cat={cat}
+                setupTrigger={setupTrigger}
+                shareResult={shareResult}
+                onShare={() => void shareRoom()}
+              />
+            ) : view.youAreHer ? (
+              <CatRoom
+                view={view}
+                actions={actions}
+                history={history}
+                sayBox={sayBox}
+                theirLive={theirLive}
+                now={now}
+                nightChrome={nightChrome}
+                panel={chrome["--panel"]!}
+              />
+            ) : iAmHim ? (
+              <CompanionRoom
+                view={view}
+                actions={actions}
+                history={history}
+                cat={cat}
+                setupTrigger={setupTrigger}
+                theirLive={theirLive}
+                now={now}
+                did={did}
+              />
+            ) : (
+              <SeatRecovery account={account} />
+            )}
+            {!setup && (iAmHim || view.youAreHer) && (
+              <RoomSettings
+                id={id}
+                view={view}
+                account={account}
+                exit={exit}
+                ourDay={ourDay}
+                shareResult={shareResult}
+                onShare={() => void shareRoom()}
+                reload={load}
+                onError={setErr}
+              />
+            )}
+          </div>
+        </div>
         <RoomStatus
           live={view.seat != null ? live : null}
           message={err ?? (iAmHim && !setup ? cat.error : null)}
         />
-        {!setup && (iAmHim || view.youAreHer) && (
-          <RoomSettings
-            id={id}
-            view={view}
-            account={account}
-            exit={exit}
-            ourDay={ourDay}
-            shareResult={shareResult}
-            onShare={() => void shareRoom()}
-            reload={load}
-            onError={setErr}
-          />
-        )}
         <RoomFooter youAreHer={view.youAreHer} catName={view.cat.name} />
       </div>
     </main>

@@ -58,8 +58,7 @@ export function CatRoom({
           {!view.note.final && <p className={s.noteDay}>day {view.note.day}</p>}
           {!sayBox.open && (
             <button
-              className={s.quiet}
-              style={{ marginTop: 8 }}
+              className={`${s.btn} ${s.btnGo} ${s.noteReply}`}
               onClick={() => sayBox.start(view.note!.day - 1)}
             >
               Say something back
@@ -67,25 +66,6 @@ export function CatRoom({
           )}
         </div>
       )}
-
-      {view.note && (
-        <>
-          <button ref={history.trigger} className={s.quiet} onClick={() => void history.open()}>
-            Everything he's written you
-          </button>
-          {history.panel}
-        </>
-      )}
-
-      {theirLive.length > 0 ? (
-        <TheirRecent subject={<b>{view.them}</b>} items={theirLive} />
-      ) : view.themHereNow ? null : view.themLastAt ? (
-        <p className={s.came}>
-          <b>{view.them}</b> looked in {whenish(view.themLastAt)}.
-        </p>
-      ) : null}
-
-      {view.theyCameAfter && !view.themHereNow && <p className={s.came}>He came in after you said that.</p>}
 
       {sayBox.open ? (
         <SayBox
@@ -114,6 +94,52 @@ export function CatRoom({
         </button>
       )}
 
+      <h2 className={s.actionHeading}>How are you feeling?</h2>
+      <div className={s.moodRow}>
+        {MOODS.map((m) => (
+          <button
+            key={m.id}
+            aria-pressed={view.catMood === m.id}
+            className={`${s.mood} ${s.moodChoice} ${view.catMood === m.id ? s.moodOn : ""}`}
+            style={
+              view.catMood === m.id
+                ? { justifyContent: "center", padding: "9px 8px" }
+                : {
+                    justifyContent: "center",
+                    padding: "9px 8px",
+                    background: moodTint(m.id, nightChrome, panel),
+                  }
+            }
+            onClick={() => void tell(m.id)}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
+              <MoodFace mood={m.id} color="var(--ink)" />
+              {m.label}
+            </span>
+          </button>
+        ))}
+      </div>
+      <MoodResponse mood={view.catMood} />
+
+      {view.note && (
+        <>
+          <button ref={history.trigger} className={s.quiet} onClick={() => void history.open()}>
+            Everything he's written you
+          </button>
+          {history.panel}
+        </>
+      )}
+
+      {theirLive.length > 0 ? (
+        <TheirRecent subject={<b>{view.them}</b>} items={theirLive} />
+      ) : view.themHereNow ? null : view.themLastAt ? (
+        <p className={s.came}>
+          <b>{view.them}</b> looked in {whenish(view.themLastAt)}.
+        </p>
+      ) : null}
+
+      {view.theyCameAfter && !view.themHereNow && <p className={s.came}>He came in after you said that.</p>}
+
       <FrameSheet current={view.doodle} saving={drawing} onSave={(c) => hangUp(c)} />
 
       <BlanketRow current={view.blanket} busy={bedding} onPick={(k, st) => void pickBlanket(k, st)} />
@@ -141,7 +167,7 @@ export function CatRoom({
       )}
 
       <p className={s.tellLabel}>Be a cat about it</p>
-      <div className={s.moodRow}>
+      <div className={s.row}>
         {CAT_ACTS.filter((a) => a.id !== "gift").map((a) => {
           const noBox = a.id === "box" && !view.boxOut;
           const done = a.id === "shelf" ? view.shelfDown : view.box;
@@ -193,33 +219,6 @@ export function CatRoom({
           </button>
         ))}
       </div>
-
-      <p className={s.tellLabel}>What’s the mood?</p>
-      <div className={s.moodRow}>
-        {MOODS.map((m) => (
-          <button
-            key={m.id}
-            aria-pressed={view.catMood === m.id}
-            className={`${s.mood} ${s.moodChoice} ${view.catMood === m.id ? s.moodOn : ""}`}
-            style={
-              view.catMood === m.id
-                ? { justifyContent: "center", padding: "9px 8px" }
-                : {
-                    justifyContent: "center",
-                    padding: "9px 8px",
-                    background: moodTint(m.id, nightChrome, panel),
-                  }
-            }
-            onClick={() => void tell(m.id)}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
-              <MoodFace mood={m.id} color="var(--ink)" />
-              {m.label}
-            </span>
-          </button>
-        ))}
-      </div>
-      <MoodResponse mood={view.catMood} />
     </>
   );
 }

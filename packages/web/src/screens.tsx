@@ -35,7 +35,7 @@ export function GoneCard({
 }) {
   if (undoUntil) {
     return (
-      <div className={s.card} style={{ textAlign: "center" }}>
+      <div className={`${s.card} ${s.doorNotice}`}>
         <h1 className={s.h1}>you deleted this room</h1>
         <p className={s.small} style={{ marginTop: 12 }}>
           It is gone for both of you already. Nothing is erased until {dayOf(undoUntil)}, so if you did not
@@ -62,7 +62,7 @@ export function GoneCard({
   }
 
   return (
-    <div className={s.card} style={{ textAlign: "center" }}>
+    <div className={`${s.card} ${s.doorNotice}`}>
       <h1 className={s.h1}>this room is gone</h1>
       <p className={s.small} style={{ marginTop: 12 }}>
         It was deleted. The cat, the notes, the year of it, both sides. There is nothing left in here to get
@@ -95,7 +95,7 @@ export function LeftCard({
   onStartFresh: () => void;
 }) {
   return (
-    <div className={s.card} style={{ textAlign: "center" }}>
+    <div className={`${s.card} ${s.doorNotice}`}>
       <h1 className={s.h1}>you left this room</h1>
       {undoUntil ? (
         <>

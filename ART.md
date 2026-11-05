@@ -84,6 +84,17 @@ The room renders in this order, and the Canvas renderer remains the source of in
 5. Cat shadow, tail, and cat
 6. Foreground objects, weather, and secret effects
 
+## Window seat
+
+The landing and invitation put the first action beside the room on wide screens and before it
+on phones. Once inside, the room gets the wider column and the current seat’s notes and actions
+stay alongside it. Below 860px the room and its caption come first, followed by the controls.
+The breakpoint gives the notes, drawing grid and setup editor room to wrap without squeezing
+the cat’s whole-pixel canvas.
+
+Honey marks the main action. The existing day and night palettes carry through the same layout.
+Room & account stays with the controls and groups seat recovery, room access and the remembered day.
+
 ## The bar
 
 - The cat remains recognizable and customizable in every pose.

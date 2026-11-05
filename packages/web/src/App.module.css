@@ -7,8 +7,8 @@
   position: relative;
   min-height: 100%;
   display: grid;
-  place-items: center;
-  padding: clamp(14px, 3vmin, 28px) 18px clamp(24px, 5vmin, 48px);
+  place-items: start center;
+  padding: clamp(18px, 4vmin, 44px) clamp(16px, 4vw, 40px) clamp(24px, 5vmin, 48px);
   padding-bottom: max(clamp(24px, 5vmin, 48px), env(safe-area-inset-bottom));
   background: radial-gradient(120% 90% at 78% 6%, var(--air-warm) 0%, var(--air) 62%);
   transition: background 0.9s ease;
@@ -33,12 +33,6 @@
   margin: 0 0 14px;
 }
 
-@media (max-width: 640px) {
-  .page {
-    padding-top: 56px;
-  }
-}
-
 /*
  * A grid item will not shrink below its longest unbroken word unless you say so. One pasted link
  * she left him pushed this card past its own max width and scrolled the whole room sideways on a
@@ -52,10 +46,11 @@
 }
 
 .h1 {
-  font-size: clamp(30px, 8vw, 44px);
-  margin: 0 0 8px;
-  letter-spacing: -0.02em;
-  text-align: center;
+  font-size: clamp(28px, 6vw, 42px);
+  margin: 0 0 12px;
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
 }
 
 /*
@@ -197,10 +192,78 @@
   }
 }
 
+.roomCard {
+  max-width: 1080px;
+}
+
+.roomGrid,
+.invitation {
+  display: grid;
+  align-items: start;
+  gap: clamp(16px, 3vw, 32px);
+}
+
+.sceneColumn,
+.actionColumn {
+  min-width: 0;
+}
+
+.actionColumn {
+  background: var(--panel);
+  border-radius: 14px;
+  padding: clamp(14px, 2.2vw, 24px);
+  scroll-margin-block: 18px;
+}
+
+.actionColumn > :first-child {
+  margin-top: 0;
+}
+
+.actionColumn > .quiet,
+.note .quiet {
+  margin-inline: 0;
+  padding-inline: 0;
+  text-align: left;
+}
+
+.actionHeading {
+  font-size: 19px;
+  line-height: 1.3;
+  margin: 18px 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.sceneCaption {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 10px;
+  padding-block-start: 6px;
+}
+
+@media (max-width: 859px) {
+  .sceneCaption {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+.postcardActions {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 12px;
+}
+
 @media (min-width: 860px) {
-  .stage {
-    width: auto;
-    margin-inline: -80px;
+  .roomGrid {
+    grid-template-columns: minmax(0, 1.28fr) minmax(0, 1fr);
+  }
+
+  .invitation {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
   }
 }
 
@@ -208,7 +271,7 @@
   font-size: 13.5px;
   color: var(--soft);
   text-align: center;
-  margin: 14px 0 0;
+  margin: 5px 0 0;
   font-style: italic;
 }
 
@@ -229,19 +292,9 @@
   margin: 10px 0 0;
 }
 
-.theirs {
-  animation: rise 0.42s var(--ease-spring) both;
-  margin: 14px 0 2px;
-  padding: 13px 16px;
-  border-radius: 18px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  color: var(--ink);
-}
-
 .theirsMain {
-  font-size: 17.5px;
-  line-height: 1.5;
+  font-size: 18px;
+  line-height: 1.45;
   margin: 0;
 }
 
@@ -249,7 +302,7 @@
   font-size: 13.5px;
   text-align: center;
   color: var(--soft);
-  margin: 12px 0 4px;
+  margin: 7px 0 0;
   transition: opacity 0.25s ease;
   min-height: 1.2em;
 }
@@ -257,15 +310,13 @@
 .together {
   animation: arrive 0.42s var(--ease-bounce) both;
   margin: 14px 0 6px;
-  padding: 11px 15px;
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--honey) 22%, var(--panel));
-  border: 1px solid var(--honey);
-  color: var(--ink);
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--soft);
 }
 
 .togetherMain {
-  font-size: 15.5px;
+  font-size: 14px;
   font-weight: 600;
   margin: 0;
   line-height: 1.45;
@@ -479,11 +530,10 @@
 
 .panel {
   margin: 16px 0 4px;
-  padding: 22px;
-  border-radius: 24px;
+  padding: clamp(14px, 2vw, 22px);
+  border-radius: 14px;
   background: var(--panel);
   border: 1px solid var(--line);
-  box-shadow: 0 6px 18px -12px rgba(120, 84, 44, 0.35);
 }
 
 .panelTitle {
@@ -530,7 +580,8 @@
 
 .quiet {
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--soft);
   background: none;
   border: none;
@@ -546,11 +597,10 @@
   position: relative;
   animation: arrive 0.42s var(--ease-bounce) both;
   margin: 14px 0 2px;
-  padding: 22px;
-  border-radius: 20px;
-  background: var(--panel);
+  padding: 15px 16px;
+  border-radius: 12px;
+  background: var(--air-warm);
   border: 1px solid var(--line);
-  box-shadow: 0 8px 22px -14px rgba(120, 84, 44, 0.4);
   clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
 }
 
@@ -596,10 +646,12 @@
 }
 
 .newsMain {
-  font-size: 17.5px;
-  margin: 12px 0 5px;
-  line-height: 1.45;
-  text-align: center;
+  font-size: 21px;
+  font-weight: 700;
+  margin: 12px 0 8px;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
 .row {
@@ -693,12 +745,6 @@
 details[open] > .summary::before,
 details[open] > .recoverySummary::before {
   transform: rotate(45deg);
-}
-
-/* The room strip is centred, and a flex summary is a full-width row: without this the chevron and
-   its label sit against the left edge of a section where everything else is in the middle. */
-.roomBits .summary {
-  justify-content: center;
 }
 
 .selectWrap {
@@ -865,22 +911,30 @@ details[open] > .recoverySummary::before {
 }
 
 .roomBits {
-  margin-top: 32px;
-  padding-top: 20px;
+  margin-top: 18px;
   border-top: 1px solid var(--line);
-  text-align: center;
 }
 .roomBitsTitle {
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: lowercase;
-  color: var(--soft);
-  font-weight: 600;
-  margin: 0 0 8px;
+  color: var(--ink);
+  font-weight: 700;
 }
 .accountInBits {
-  text-align: center;
   margin-top: 6px;
+}
+.accountSection {
+  margin: 14px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.accountSection > h2 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.accountSection > .quiet {
+  margin-inline: 0;
+  padding-inline: 0;
+  text-align: left;
 }
 
 .accountBtn {
@@ -1072,47 +1126,108 @@ details[open] > .recoverySummary::before {
   text-decoration: underline;
 }
 
-.roomHeader {
+.roomWordmark {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 22px;
-}
-.roomKicker {
-  margin: 0 0 8px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
   color: var(--soft);
 }
+
+.brand {
+  color: var(--ink);
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+}
+
+.roomHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "title sound"
+    "presence presence";
+  align-items: center;
+  gap: 4px 12px;
+  padding-block: clamp(16px, 2.8vw, 28px) clamp(16px, 2.5vw, 24px);
+}
+
 .roomName {
   margin: 0;
-  font-size: 27px;
-  letter-spacing: -0.8px;
-  line-height: 1.2;
+  font-size: clamp(31px, 5vw, 48px);
+  letter-spacing: -0.037em;
+  line-height: 1.08;
   overflow-wrap: anywhere;
 }
+
+.roomHeader .roomName {
+  grid-area: title;
+}
+
 .roomPresence {
-  margin: 7px 0 0;
-  font-size: 12px;
+  grid-area: presence;
+  margin: 0;
+  font-size: 14px;
   color: var(--soft);
   line-height: 1.5;
 }
+
+.presenceDot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-inline-end: 6px;
+  border-radius: 50%;
+  background: var(--soft);
+  vertical-align: 2px;
+}
+
+.roomHeader .soundToggle {
+  grid-area: sound;
+  justify-self: end;
+}
+
 .invitation {
-  text-align: center;
+  align-items: center;
+  padding-top: clamp(24px, 4vw, 44px);
+}
+
+.invitationCopy {
   display: grid;
-  gap: 18px;
+  justify-items: start;
+  gap: 14px;
 }
-.invitation > p {
-  margin: 0 auto;
+
+.invitationCopy > p {
+  margin: 0;
 }
-.invitation > button {
-  display: flex;
-  justify-content: space-between;
-  min-height: 52px;
+
+.invitationCopy > button {
+  min-width: 112px;
 }
+
+.doorNotice {
+  max-width: 500px;
+  display: grid;
+  gap: 14px;
+  margin-block: clamp(12px, 7vmin, 64px);
+}
+
+.doorNotice > :is(h1, p, button) {
+  margin-block: 0;
+}
+
+.doorNotice > .quiet {
+  margin-inline: 0;
+  padding-inline: 0;
+  justify-self: start;
+}
+
 .moodChoice > span {
   flex-direction: column;
   gap: 10px !important;
@@ -1151,23 +1266,8 @@ details[open] > .recoverySummary::before {
 .roomBits > .roomBitsTitle::-webkit-details-marker {
   display: none;
 }
-.noteFrom {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.7px;
-}
-@media (max-width: 640px) {
-  .roomHeader {
-    margin-bottom: 18px;
-  }
-  .roomName {
-    font-size: 24px;
-  }
-}
-
-.invitation .stage {
-  width: 100%;
-  margin-inline: 0;
+.noteReply {
+  margin-top: 10px;
 }
 
 .saveFeedback {

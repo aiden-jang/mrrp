@@ -16,10 +16,9 @@ export function seatStorageAvailable(): boolean {
 export function StorageUnavailable({ onRetry }: { onRetry: () => void }) {
   return (
     <main className={s.page}>
-      <section className={s.card}>
-        <p className={s.roomKicker}>mrrp / a room for two</p>
+      <section className={`${s.card} ${s.doorNotice}`}>
         <h1 className={s.h1}>This browser can’t keep your seat yet.</h1>
-        <p className={s.lede} role="alert">
+        <p className={s.small} role="alert">
           Browser storage is unavailable. Allow site storage or try another browser, then try again. Your room
           needs it to remember which seat is yours.
         </p>

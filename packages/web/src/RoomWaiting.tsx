@@ -26,23 +26,11 @@ export function RoomWaiting({
         <TheyLeftNotice name={view.theyLeft.name} until={view.theyLeft.until} />
       ) : (
         <>
-          <p className={s.newsMain}>Nobody else is here yet.</p>
-          <p className={s.small} style={{ textAlign: "center" }}>
+          <h2 className={s.newsMain}>Nobody else is here yet.</h2>
+          <p className={s.small}>
             Send this link to the one person it's for. Whoever opens it second is the one the cat is.
           </p>
         </>
-      )}
-      {!setup && (
-        <button
-          ref={setupTrigger}
-          className={s.btn}
-          style={{ width: "100%", marginTop: 12 }}
-          disabled={cat.loading}
-          onClick={() => void cat.start()}
-          aria-expanded={setup}
-        >
-          Write her notes, name her, or decorate the room
-        </button>
       )}
       <button
         className={`${s.btn} ${view.theyLeft ? "" : s.btnGo}`}
@@ -63,6 +51,18 @@ export function RoomWaiting({
                   : "Send her the link"}
       </button>
       {shareResult === "failed" && <InviteLinkFallback />}
+      {!setup && (
+        <button
+          ref={setupTrigger}
+          className={s.btn}
+          style={{ width: "100%", marginTop: 12 }}
+          disabled={cat.loading}
+          onClick={() => void cat.start()}
+          aria-expanded={setup}
+        >
+          Write her notes, name her, or decorate the room
+        </button>
+      )}
     </>
   );
 }

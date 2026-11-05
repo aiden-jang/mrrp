@@ -51,3 +51,19 @@ test("a failed notes fetch leaves the room closed and offers a safe retry", asyn
   await page.getByRole("button", { name: /Write her notes/ }).click();
   await expect(page.getByLabel("Her notes, one per line", { exact: true })).toBeVisible();
 });
+
+test("an invitation keeps the consent button and the whole scene in a short landscape window", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 640, height: 360 });
+  await page.goto("/r/abc123");
+  await expect(page.getByRole("button", { name: "Go in", exact: true })).toBeInViewport();
+  await expect
+    .poll(() =>
+      page.locator("canvas").evaluate((canvas: HTMLCanvasElement) => {
+        const corner = canvas.getContext("2d")!.getImageData(canvas.width - 1, canvas.height - 1, 1, 1);
+        return canvas.width === canvas.height && corner.data[3] === 255;
+      }),
+    )
+    .toBe(true);
+});

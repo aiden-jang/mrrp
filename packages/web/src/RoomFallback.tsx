@@ -1,7 +1,7 @@
 import { forgetMe, lastCat } from "./api.js";
 import s from "./App.module.css";
 import { Cat } from "./Cat.js";
-import { Invitation } from "./RoomChrome.js";
+import { Invitation, RoomWordmark } from "./RoomChrome.js";
 import { ChromeSync, DocTitle, FaviconSync } from "./RoomEffects.js";
 import { DOOR_CAT, DOOR_CLOCK, useDoorScene } from "./RoomLanding.js";
 import { chromeFor, isNightChrome } from "./roomTheme.js";
@@ -63,7 +63,7 @@ export function RoomFallback({
             clock={DOOR_CLOCK}
             mood={null}
             nudge={0}
-            reserveBelow={300}
+            reserveBelow={0}
           />
         </Invitation>
       </main>
@@ -80,7 +80,11 @@ export function RoomFallback({
             <FaviconSync cat={remembered} />
           </>
         )}
-        <div className={s.card} style={{ textAlign: "center" }}>
+        <div className={`${s.card} ${s.doorNotice}`}>
+          <RoomWordmark />
+          <p className={s.small} role={err ? "alert" : "status"}>
+            {err ?? "opening the door quietly…"}
+          </p>
           <div className={s.stage}>
             <Cat
               label={`${knownCat.name} asleep in a sunlit room.`}
@@ -90,9 +94,6 @@ export function RoomFallback({
               nudge={0}
             />
           </div>
-          <p className={s.small} style={{ marginTop: 16 }}>
-            {err ?? "opening the door quietly…"}
-          </p>
         </div>
       </main>
     );

@@ -58,7 +58,7 @@ export function Landing() {
           clock={DOOR_CLOCK}
           mood={null}
           nudge={0}
-          reserveBelow={240}
+          reserveBelow={0}
         />
       </Welcome>
     </main>

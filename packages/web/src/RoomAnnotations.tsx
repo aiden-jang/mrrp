@@ -31,44 +31,49 @@ export function RoomAnnotations({
   const moon = nightChrome ? moonLine(new Date(), view.cat.name, view.youAreHer) : null;
   return (
     <>
-      <p className={s.doing}>
-        {setup
-          ? "A few small adjustments."
-          : view.waitingAtDoor
-            ? view.youAreHer
-              ? "You are by the door, waiting for him."
-              : `${name} is by the door, waiting for you.`
-            : view.settled
+      <div className={s.sceneCaption}>
+        <p className={s.doing}>
+          {setup
+            ? "A few small adjustments."
+            : view.waitingAtDoor
               ? view.youAreHer
-                ? "You are settled against him, not moving for anybody."
-                : `${name} has settled against you.`
-              : view.sittingWith || view.sittingWithYou
+                ? "You are by the door, waiting for him."
+                : `${name} is by the door, waiting for you.`
+              : view.settled
                 ? view.youAreHer
-                  ? "You are curled up while he sits with you."
-                  : `${name} is curled up beside you.`
-                : view.youAreHer
-                  ? `You are ${scene.doingHers ?? scene.doing}.`
-                  : `${name} is ${scene.doing}.`}
-      </p>
-      <span id="room-actions" tabIndex={-1} />
-      {postcard.captureRoom && !setup && (
-        <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 12 }}>
-          <button className={s.quiet} onClick={() => void postcard.saveRoomImage()} disabled={imagePending}>
-            {imageStatus === "saving"
-              ? "Making postcard…"
-              : imageStatus === "shared"
-                ? "Postcard shared"
-                : imageStatus === "saved"
-                  ? "Download started"
-                  : "Make a postcard"}
-          </button>
-          {postcard.canSharePostcard && (
-            <button className={s.quiet} disabled={imagePending} onClick={() => void postcard.sharePostcard()}>
-              {imageStatus === "sharing" ? "Opening sharing…" : "Share postcard"}
+                  ? "You are settled against him, not moving for anybody."
+                  : `${name} has settled against you.`
+                : view.sittingWith || view.sittingWithYou
+                  ? view.youAreHer
+                    ? "You are curled up while he sits with you."
+                    : `${name} is curled up beside you.`
+                  : view.youAreHer
+                    ? `You are ${scene.doingHers ?? scene.doing}.`
+                    : `${name} is ${scene.doing}.`}
+        </p>
+        {postcard.captureRoom && !setup && (
+          <div className={s.postcardActions}>
+            <button className={s.quiet} onClick={() => void postcard.saveRoomImage()} disabled={imagePending}>
+              {imageStatus === "saving"
+                ? "Making postcard…"
+                : imageStatus === "shared"
+                  ? "Postcard shared"
+                  : imageStatus === "saved"
+                    ? "Download started"
+                    : "Make a postcard"}
             </button>
-          )}
-        </div>
-      )}
+            {postcard.canSharePostcard && (
+              <button
+                className={s.quiet}
+                disabled={imagePending}
+                onClick={() => void postcard.sharePostcard()}
+              >
+                {imageStatus === "sharing" ? "Opening sharing…" : "Share postcard"}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
       {!setup && view.noticed >= 2 && (iAmHim || view.youAreHer) && (
         <p className={s.noticed}>Between you, you have noticed {view.noticed} things in here.</p>
       )}
