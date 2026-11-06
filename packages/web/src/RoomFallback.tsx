@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { forgetMe, lastCat } from "./api.js";
 import s from "./App.module.css";
 import { Cat } from "./Cat.js";
@@ -9,6 +10,23 @@ import { GoneCard, LeftCard } from "./screens.js";
 import type { RoomView } from "./types.js";
 import type { useRoomEnding } from "./useRoomEnding.js";
 
+export function InvalidRoomLink() {
+  const door = useDoorScene();
+  return (
+    <main className={s.page} style={chromeFor(door) as React.CSSProperties}>
+      <ChromeSync night={isNightChrome(door.sun)} />
+      <div className={`${s.card} ${s.doorNotice}`}>
+        <RoomWordmark />
+        <h1 className={s.h1}>This room link is incomplete.</h1>
+        <p className={s.small}>Ask the person who invited you to send the full link again.</p>
+        <a className={s.quiet} href="/">
+          Back to mrrp
+        </a>
+      </div>
+    </main>
+  );
+}
+
 export function RoomFallback({
   id,
   view,
@@ -17,6 +35,7 @@ export function RoomFallback({
   err,
   exit,
   onEnter,
+  onRetry,
 }: {
   id: string;
   view: RoomView | null;
@@ -25,7 +44,9 @@ export function RoomFallback({
   err: string | null;
   exit: ReturnType<typeof useRoomEnding>;
   onEnter: () => void;
+  onRetry: () => Promise<void>;
 }) {
+  const [retrying, setRetrying] = useState(false);
   const { undoing } = exit;
   const door = useDoorScene();
   const remembered = lastCat.get(id);
@@ -85,6 +106,29 @@ export function RoomFallback({
           <p className={s.small} role={err ? "alert" : "status"}>
             {err ?? "opening the door quietly…"}
           </p>
+          {err && (
+            <div className={s.doorActions}>
+              <button
+                type="button"
+                className={`${s.btn} ${s.btnGo}`}
+                aria-disabled={retrying}
+                onClick={async () => {
+                  if (retrying) return;
+                  setRetrying(true);
+                  try {
+                    await onRetry();
+                  } finally {
+                    setRetrying(false);
+                  }
+                }}
+              >
+                {retrying ? "Trying again…" : "Try again"}
+              </button>
+              <a className={s.quiet} href="/">
+                Back to mrrp
+              </a>
+            </div>
+          )}
           <div className={s.stage}>
             <Cat
               label={`${knownCat.name} asleep in a sunlit room.`}

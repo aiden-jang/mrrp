@@ -7,6 +7,27 @@ const { id, post, seat, view } = harness("decorroom");
 const decor: RoomDecor = { palette: "moss", rug: "stripe", art: "moon", mug: "rose" };
 
 describe("shared room decor", () => {
+  it("validates the entire setup before applying any of it", async () => {
+    await seat();
+    const before = await view(HIM);
+    const setup = {
+      me: HIM,
+      cat: { ...before.cat, name: "Miso" },
+      clock: { tz: "UTC", homeHour: 20 },
+      decor,
+      notes: ["  Leave the window open.  "],
+    };
+    expect((await post("setup", { ...setup, clock: { ...setup.clock, homeHour: 24 } })).status).toBe(400);
+    expect((await post("setup", { ...setup, me: HER })).status).toBe(403);
+    expect(await view(HIM)).toMatchObject({ cat: before.cat, clock: before.clock });
+    expect((await view(HIM)).decor).toBeUndefined();
+
+    expect((await post("setup", setup)).status).toBe(200);
+    expect(await view(HER)).toMatchObject({ cat: setup.cat, clock: setup.clock, decor });
+    const notes = await SELF.fetch(`https://x/api/room/${id}/notes?me=${HIM}`);
+    expect(await notes.json()).toEqual({ notes: ["Leave the window open."] });
+  });
+
   it("saves the creator's choices for both seats and the export", async () => {
     await seat();
     expect((await view(HIM)).decor).toBeUndefined();

@@ -1,16 +1,14 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { doClock, doDress, doNotes, fetchNotes } from "./api.js";
+import { fetchNotes, saveCatSetup } from "./api.js";
 import { LOOKS, EYES } from "./looks.js";
 import type { RoomView } from "./types.js";
 import { useCatSetup } from "./useCatSetup.js";
 
 vi.mock("./api.js", () => ({
   fetchNotes: vi.fn(),
-  doClock: vi.fn(),
-  doDress: vi.fn(),
-  doNotes: vi.fn(),
+  saveCatSetup: vi.fn(),
 }));
 vi.mock("./sound.js", () => ({ play: vi.fn() }));
 const view = {
@@ -30,9 +28,7 @@ describe("loading the room editor", () => {
     expect(result.current.draft).toBeNull();
     expect(result.current.error).toContain("saved notes haven’t changed");
     await act(() => result.current.save());
-    expect(doDress).not.toHaveBeenCalled();
-    expect(doClock).not.toHaveBeenCalled();
-    expect(doNotes).not.toHaveBeenCalled();
+    expect(saveCatSetup).not.toHaveBeenCalled();
   });
 
   it("can retry and edit the saved notes after the connection recovers", async () => {
@@ -47,7 +43,14 @@ describe("loading the room editor", () => {
     expect(result.current.error).toBeNull();
     expect(result.current.draft?.notes).toBe("the first note\nthe second note");
     await act(() => result.current.save());
-    expect(doNotes).toHaveBeenCalledWith("test-room", ["the first note", "the second note"]);
+    expect(saveCatSetup).toHaveBeenCalledWith(
+      "test-room",
+      expect.objectContaining({
+        cat: view.cat,
+        clock: view.clock,
+        notes: ["the first note", "the second note"],
+      }),
+    );
     expect(reload).toHaveBeenCalledOnce();
   });
 });

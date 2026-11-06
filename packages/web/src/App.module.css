@@ -1228,6 +1228,13 @@ details[open] > .recoverySummary::before {
   justify-self: start;
 }
 
+.doorActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+}
+
 .moodChoice > span {
   flex-direction: column;
   gap: 10px !important;

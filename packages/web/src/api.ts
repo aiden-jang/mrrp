@@ -1,16 +1,4 @@
-import type {
-  RoomDecor,
-  Action,
-  Bodies,
-  Cat,
-  CatAct,
-  Clock,
-  Gift,
-  Mood,
-  RoomView,
-  SaidSoFar,
-  Treat,
-} from "./types.js";
+import type { Action, Bodies, Cat, CatAct, Gift, Mood, RoomView, SaidSoFar, Treat } from "./types.js";
 
 import {
   myToken,
@@ -202,14 +190,9 @@ export async function doTell(id: string, mood: Mood): Promise<RoomView> {
   return r.json() as Promise<RoomView>;
 }
 
-export async function doDress(id: string, cat: Partial<Cat>, decor?: RoomDecor): Promise<void> {
-  const r = await send(`/api/room/${id}/dress`, { me: myToken(id), ...cat, decor });
-  if (!r.ok) throw new Error("Couldn't save how she looks.");
-}
-
-export async function doClock(id: string, clock: Partial<Clock>): Promise<void> {
-  const r = await send(`/api/room/${id}/clock`, { me: myToken(id), ...clock });
-  if (!r.ok) throw new Error("Couldn't save her hours.");
+export async function saveCatSetup(id: string, setup: Omit<Bodies["setup"], "me">): Promise<void> {
+  const r = await send(`/api/room/${id}/setup`, { ...setup, me: myToken(id) });
+  if (!r.ok) throw new Error("Couldn't save the room settings. Try again.");
 }
 
 export async function doRelease(id: string): Promise<void> {
@@ -245,11 +228,6 @@ export async function doLeave(id: string): Promise<void> {
   const r = await send(`/api/room/${id}/leave`, { me: myToken(id) });
   if (r.status === 410) throw await goneFrom(r);
   if (!r.ok) throw new Error("Couldn't leave the room.");
-}
-
-export async function doNotes(id: string, notes: string[]): Promise<void> {
-  const r = await send(`/api/room/${id}/notes`, { me: myToken(id), notes });
-  if (!r.ok) throw new Error("Couldn't save the notes.");
 }
 
 async function submitAccess(

@@ -1,7 +1,7 @@
 import { reportAnalytics } from "../../../analytics/browser.js";
 import { DEFAULT_DECOR } from "./roomDecor.js";
 import { useState } from "react";
-import { doClock, doDress, doNotes, fetchNotes } from "./api.js";
+import { fetchNotes, saveCatSetup } from "./api.js";
 import { EYES, LOOKS } from "./looks.js";
 import { play } from "./sound.js";
 import type { RoomDecor, RoomView } from "./types.js";
@@ -51,16 +51,19 @@ export function useCatSetup(id: string, view: RoomView | null, reload: () => Pro
   };
 
   const save = async () => {
-    if (!draft) return false;
+    if (!draft || saving) return false;
     play("settle");
     const look = LOOKS.find((l) => l.id === draft.look)!;
     const eyes = EYES.find((e) => e.id === draft.eyes)!;
     setSaving(true);
     setError(null);
     try {
-      await doDress(id, { name: draft.name.trim() || "Bean", ...look.cat, eyes: eyes.hex }, draft.decor);
-      await doClock(id, { tz: draft.tz, homeHour: draft.homeHour });
-      await doNotes(id, draft.notes.split("\n"));
+      await saveCatSetup(id, {
+        cat: { name: draft.name.trim() || "Bean", ...look.cat, eyes: eyes.hex },
+        decor: draft.decor,
+        clock: { tz: draft.tz, homeHour: draft.homeHour },
+        notes: draft.notes.split("\n"),
+      });
       reportAnalytics({ name: "cat_configured" });
       setOpen(false);
       await reload();

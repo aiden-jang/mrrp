@@ -2,7 +2,7 @@ import { seatRoutes } from "./seatRoutes.js";
 import { isSeatToken, ROOM_RE } from "./seatToken.js";
 import { accountOf } from "./accountOf.js";
 import { handleAnalytics } from "../../../analytics/worker.js";
-import { isRoomDecor } from "./decor.js";
+import { roomSetupRoutes } from "./roomSetupRoutes.js";
 import { Hono, type Context, type Next } from "hono";
 import { resolveSession } from "@aidenjang/auth-client";
 import type { Action, CatAct, Gift, Mood, Treat, Untrusted } from "./types.js";
@@ -28,7 +28,6 @@ const TALLY_KEYS: TallyKey[] = ["pet", "brush", "sit", "photo", "leaveout"];
 const VALID_MOODS: Mood[] = ["good", "tired", "stressed", "sad", "lonely", "bored", "feral", "done", "horny"];
 
 const room = (env: Env, id: string) => env.ROOM.get(env.ROOM.idFromName(id));
-
 // One place, so a deleted room answers the same way on every route rather than each one remembering.
 app.onError(async (err, c) => {
   if (err.message !== ROOM_GONE) throw err;
@@ -321,45 +320,7 @@ app.post("/api/room/:id/ourday", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "not yours to set" }, 403);
 });
 
-app.post("/api/room/:id/dress", async (c) => {
-  const id = c.req.param("id");
-  if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
-  const body = ((await c.req.json().catch(() => null)) ?? {}) as Untrusted<"dress">;
-  const me = typeof body.me === "string" ? body.me : "";
-  if (!isSeatToken(me)) return c.json({ error: "bad request" }, 400);
-  // Keyed off the body's own field names, so a typo here is a build error and not a silent skip.
-  const pick = <T>(k: keyof Untrusted<"dress">, ok: (v: unknown) => boolean): T | undefined =>
-    ok(body[k]) ? (body[k] as T) : undefined;
-  const hex = (v: unknown) => typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v);
-  if (body.decor !== undefined && !isRoomDecor(body.decor)) return c.json({ error: "bad room decor" }, 400);
-  const ok = await room(c.env, id).dress(
-    me,
-    {
-      name: pick<string>("name", (v) => typeof v === "string" && (v as string).length <= 24),
-      fur: pick<string>("fur", hex),
-      furDk: pick<string>("furDk", hex),
-      belly: pick<string>("belly", hex),
-      eyes: pick<string>("eyes", hex),
-      tabby: pick<boolean>("tabby", (v) => typeof v === "boolean"),
-    },
-    body.decor as import("./types.js").RoomDecor | undefined,
-  );
-  return ok ? c.json({ ok: true }) : c.json({ error: "not yours to set" }, 403);
-});
-
-app.post("/api/room/:id/notes", async (c) => {
-  const id = c.req.param("id");
-  if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
-  const body = ((await c.req.json().catch(() => null)) ?? {}) as Untrusted<"notes">;
-  const me = typeof body.me === "string" ? body.me : "";
-  if (!isSeatToken(me)) return c.json({ error: "bad request" }, 400);
-  if (!Array.isArray(body.notes) || body.notes.some((n) => typeof n !== "string")) {
-    return c.json({ error: "bad request" }, 400);
-  }
-  const ok = await room(c.env, id).setNotes(me, body.notes as string[]);
-  return ok ? c.json({ ok: true }) : c.json({ error: "not yours to set" }, 403);
-});
-
+app.route("/", roomSetupRoutes);
 app.route("/", seatRoutes);
 
 app.post("/api/room/:id/found", async (c) => {
@@ -466,35 +427,6 @@ app.post("/api/room/:id/leave", async (c) => {
   if (!isSeatToken(me)) return c.json({ error: "bad request" }, 400);
   const ok = await room(c.env, id).leaveRoom(me);
   return ok ? c.json({ ok: true }) : c.json({ error: "not your seat to leave" }, 403);
-});
-
-app.post("/api/room/:id/clock", async (c) => {
-  const id = c.req.param("id");
-  if (!ROOM_RE.test(id)) return c.json({ error: "bad request" }, 400);
-  const body = ((await c.req.json().catch(() => null)) ?? {}) as Untrusted<"clock">;
-  const me = typeof body.me === "string" ? body.me : "";
-  if (!isSeatToken(me)) return c.json({ error: "bad request" }, 400);
-
-  let tz: string | undefined;
-  if (typeof body.tz === "string") {
-    try {
-      new Intl.DateTimeFormat("en-CA", { timeZone: body.tz });
-      tz = body.tz;
-    } catch {
-      return c.json({ error: "unknown timezone" }, 400);
-    }
-  }
-  const homeHour =
-    typeof body.homeHour === "number" &&
-    Number.isInteger(body.homeHour) &&
-    body.homeHour >= 0 &&
-    body.homeHour <= 23
-      ? body.homeHour
-      : undefined;
-
-  if (tz === undefined && homeHour === undefined) return c.json({ error: "nothing to set" }, 400);
-  const ok = await room(c.env, id).setClock(me, { tz, homeHour });
-  return ok ? c.json({ ok: true }) : c.json({ error: "not yours to set" }, 403);
 });
 
 app.get("/r/:id", (c) => c.env.ASSETS.fetch(new Request(new URL("/", c.req.url))));

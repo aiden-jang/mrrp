@@ -444,16 +444,44 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  async dress(me: string, cat: Partial<Cat>, decor?: RoomDecor): Promise<boolean> {
+  async saveSetup(
+    me: string,
+    patch: { cat?: Partial<Cat>; decor?: RoomDecor; clock?: Partial<Clock>; notes?: string[] },
+  ): Promise<boolean> {
     await this.guard();
-    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
-    if (this.roles(people).him !== me) return false;
-    const current = (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT;
-    // Omitted dress fields must not wipe her existing colors.
-    const given = Object.fromEntries(Object.entries(cat).filter(([, v]) => v !== undefined));
-    await this.ctx.storage.put("cat", { ...current, ...given });
-    if (decor) await this.ctx.storage.put("decor", decor);
-    return true;
+    return this.ctx.storage.transaction(async (txn) => {
+      if (await txn.get<Tombstone>(TOMBSTONE)) throw new RoomGone();
+      const people = (await txn.get<Record<string, Person>>("people")) ?? {};
+      if (this.roles(people).him !== me) return false;
+
+      if (patch.cat) {
+        const current = (await txn.get<Cat>("cat")) ?? DEFAULT_CAT;
+        const given = Object.fromEntries(Object.entries(patch.cat).filter(([, v]) => v !== undefined));
+        await txn.put("cat", { ...current, ...given });
+      }
+      if (patch.decor) await txn.put("decor", patch.decor);
+      if (patch.clock) {
+        const current = (await txn.get<Clock>("clock")) ?? DEFAULT_CLOCK;
+        const tz = patch.clock.tz ?? current.tz;
+        const homeHour = patch.clock.homeHour ?? current.homeHour;
+        await txn.put("clock", { tz, homeHour });
+        if (tz !== current.tz) await txn.delete("weather");
+      }
+      if (patch.notes) {
+        const clean = patch.notes
+          .map((n) => n.trim().slice(0, NOTE_MAX))
+          .filter(Boolean)
+          .slice(0, NOTES_KEPT);
+        if (clean.length === 0) {
+          await txn.delete("notes");
+        } else {
+          await txn.put("notes", clean);
+          const idx = (await txn.get<number>("noteIdx")) ?? 0;
+          if (idx > clean.length - 1) await txn.put("noteIdx", clean.length - 1);
+        }
+      }
+      return true;
+    });
   }
 
   // Plaintext on purpose. All this can do is become one seat of one room, and anybody who can read
@@ -592,25 +620,6 @@ export class Room extends DurableObject<Env> {
   private async notes(): Promise<string[]> {
     const own = await this.ctx.storage.get<string[]>("notes");
     return own && own.length > 0 ? own : NOTES;
-  }
-
-  async setNotes(me: string, notes: string[]): Promise<boolean> {
-    await this.guard();
-    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
-    if (this.roles(people).him !== me) return false;
-
-    const clean = notes
-      .map((n) => n.trim().slice(0, NOTE_MAX))
-      .filter(Boolean)
-      .slice(0, NOTES_KEPT);
-    if (clean.length === 0) {
-      await this.ctx.storage.delete("notes");
-    } else {
-      await this.ctx.storage.put("notes", clean);
-      const idx = (await this.ctx.storage.get<number>("noteIdx")) ?? 0;
-      if (idx > clean.length - 1) await this.ctx.storage.put("noteIdx", clean.length - 1);
-    }
-    return true;
   }
 
   // A first that can happen twice is not a first, so this only ever writes a key that is missing.
@@ -1162,19 +1171,6 @@ export class Room extends DurableObject<Env> {
     const key = me === him ? "ourDay" : HER_DAY;
     if (day) await this.ctx.storage.put(key, day);
     else await this.ctx.storage.delete(key);
-    return true;
-  }
-
-  async setClock(me: string, clock: Partial<Clock>): Promise<boolean> {
-    await this.guard();
-    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
-    if (this.roles(people).him !== me) return false;
-    const current = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
-    await this.ctx.storage.put("clock", { ...current, ...clock });
-
-    // Key the cache on her timezone. He opens the room before picking one, so the first lookup is always
-    // for the default and the very next thing he does changes it.
-    if (clock.tz !== undefined && clock.tz !== current.tz) await this.ctx.storage.delete("weather");
     return true;
   }
 

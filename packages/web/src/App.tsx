@@ -15,7 +15,7 @@ import { ArrivalCard, FOUND_ANNOUNCEMENTS, FOUND_AS_HER } from "./RoomArrival.js
 import { RoomHeader } from "./RoomChrome.js";
 import { SoundToggle } from "./RoomControls.js";
 import { ChromeSync, DocTitle, FaviconSync, VoiceSync } from "./RoomEffects.js";
-import { RoomFallback } from "./RoomFallback.js";
+import { InvalidRoomLink, RoomFallback } from "./RoomFallback.js";
 import { RoomFooter } from "./RoomFooter.js";
 import { Landing } from "./RoomLanding.js";
 import { RoomSettings } from "./RoomSettings.js";
@@ -44,8 +44,11 @@ export function App() {
   const [storageReady, setStorageReady] = useState(seatStorageAvailable);
   if (!storageReady) return <StorageUnavailable onRetry={() => setStorageReady(seatStorageAvailable())} />;
   const id = roomFromPath();
-  if (id) lastRoom.set(id);
-  return id ? <RoomPage key={id} id={id} /> : <Landing />;
+  if (id) {
+    lastRoom.set(id);
+    return <RoomPage key={id} id={id} />;
+  }
+  return /^\/r(?:\/|$)/.test(window.location.pathname) ? <InvalidRoomLink /> : <Landing />;
 }
 
 function RoomPage({ id }: { id: string }) {
@@ -132,6 +135,7 @@ function RoomPage({ id }: { id: string }) {
         gone={gone}
         err={err}
         exit={exit}
+        onRetry={load}
         onEnter={() => {
           markMine(id);
           setAsking(false);
