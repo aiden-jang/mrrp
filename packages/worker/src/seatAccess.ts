@@ -1,6 +1,25 @@
 import { isSeatToken } from "./seatToken.js";
 import type { Visit } from "./types.js";
 import type { FoundLedger } from "./discoveries.js";
+import type { OurDay } from "./remembers.js";
+
+export const HER_DAY = "herDay";
+export interface SeatDay {
+  owner: string;
+  day: OurDay;
+}
+
+export async function readHerDay(storage: DurableObjectStorage, seat: string | null): Promise<OurDay | null> {
+  const day = await storage.get<SeatDay>(HER_DAY);
+  if (day && !day.owner) {
+    // An unowned date may already have outlasted its original seat.
+    await storage.transaction(async (txn) => {
+      const saved = await txn.get<SeatDay>(HER_DAY);
+      if (saved && !saved.owner) await txn.delete(HER_DAY);
+    });
+  }
+  return day?.owner === seat ? day.day : null;
+}
 
 export interface SeatPerson {
   name: string;
@@ -44,6 +63,7 @@ export async function touchSeat(
     const now = Date.now();
     if (!people[me] && !blocked && Object.keys(people).length < 2) {
       const firstSeen = Math.max(now, ...Object.values(people).map((p) => p.firstSeen + 1));
+      if (Object.keys(people).length === 1) await transaction.delete("leftSide");
       people[me] = { name: name?.trim().slice(0, 24) || "Someone", firstSeen, lastSeen: now, visits: 0 };
     }
     if (people[me]) {
@@ -79,6 +99,8 @@ export async function replaceSeat(ctx: DurableObjectState, from: string, to: str
       delete moods[from];
       await storage.put("moods", moods);
     }
+    const date = await storage.get<SeatDay>(HER_DAY);
+    if (date?.owner === from) await storage.put<SeatDay>(HER_DAY, { ...date, owner: to });
     const log = await storage.get<Visit[]>("log");
     if (log)
       await storage.put(

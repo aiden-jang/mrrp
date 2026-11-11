@@ -1,4 +1,13 @@
-import { replaceSeat, touchSeat, seatRoles, type SeatPerson as Person } from "./seatAccess.js";
+import {
+  HER_DAY,
+  readHerDay,
+  replaceSeat,
+  touchSeat,
+  seatRoles,
+  type SeatDay,
+  type SeatPerson as Person,
+} from "./seatAccess.js";
+import { moodDeadline, sweepMoods, type StoredMood } from "./moodRetention.js";
 import { isSeatToken } from "./seatToken.js";
 import { exportActivity, recentActivity } from "./activity.js";
 import { DurableObject } from "cloudflare:workers";
@@ -52,7 +61,6 @@ import {
 } from "./remembers.js";
 
 const HER_LINES = "herLines";
-const HER_DAY = "herDay";
 // Keep as many answers as notes, or older replies disappear from their history.
 const LINES_KEPT = 120;
 
@@ -99,7 +107,8 @@ interface LeftSide {
   at: number;
   dropsAt: number;
   person: Person;
-  mood?: Told;
+  mood?: StoredMood;
+  day?: OurDay;
   visits: Visit[];
   recovery?: string;
   light?: WindowLight;
@@ -814,8 +823,8 @@ export class Room extends DurableObject<Env> {
       await this.erase(stone);
       return;
     }
-    await this.sweepLeftSide();
     await this.scheduleNext();
+    if (!stone) await this.broadcast();
   }
 
   private async erase(stone: Tombstone): Promise<void> {
@@ -840,145 +849,124 @@ export class Room extends DurableObject<Env> {
   }
 
   async leaveRoom(me: string): Promise<boolean> {
-    await this.guard();
-    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
-    if (this.roles(people).her !== me) return false;
-    await this.wipeHerSide(people, true);
-    return true;
+    return this.wipeHerSide(me, true);
   }
 
   async releaseHerSeat(me: string): Promise<boolean> {
-    await this.guard();
-    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
-    const { him, her } = this.roles(people);
-    if (him !== me || !her) return false;
-    await this.wipeHerSide(people, false);
-    return true;
+    return this.wipeHerSide(me, false);
   }
 
-  // `bar` is what separates her leaving from him freeing her seat. Leaving has to stop this browser
-  // being reseated by its own next page load, or leaving undoes itself.
-  private async wipeHerSide(people: Record<string, Person>, bar: boolean): Promise<void> {
-    const her = this.roles(people).her;
-    if (!her) return;
-
-    const moods = (await this.ctx.storage.get<Record<string, Told>>("moods")) ?? {};
-    const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
-    const light = await this.ctx.storage.get<WindowLight>("windowLight");
-    const recovery = await this.ctx.storage.get<string>("recoveryHer");
-    const lines = await this.lines();
-    const doodle = await this.ctx.storage.get<Doodle>("doodle");
-    const blanket = await this.ctx.storage.get<Blanket>("blanket");
-    const gift = await this.ctx.storage.get<Gift>("gift");
-
-    if (bar) {
-      const at = Date.now();
-      await this.ctx.storage.put<LeftSide>(LEFT_SIDE, {
-        token: her,
-        at,
-        dropsAt: at + UNDO_MS,
-        person: people[her]!,
-        mood: moods[her],
-        visits: log.filter((v) => v.who === her),
-        recovery,
-        light: light?.from === her ? light : undefined,
-        lines,
-        doodle: doodle?.by === her ? doodle : undefined,
-        blanket: blanket ?? undefined,
-        gift: gift ?? undefined,
-      });
-    }
-
-    delete moods[her];
-    delete people[her];
-    await this.ctx.storage.put("people", people);
-    await this.ctx.storage.put("moods", moods);
-    await this.ctx.storage.put(
-      "log",
-      log.filter((v) => v.who !== her),
-    );
-    if (light?.from === her) await this.ctx.storage.delete("windowLight");
-    if (bar) {
-      await this.ctx.storage.delete(HER_LINES);
-      await this.ctx.storage.delete("herLine");
-      // It goes only if she is the one who put it there. He can draw in that frame too, and his picture is
-      // not hers to take.
-      if (doodle?.by === her) await this.ctx.storage.delete("doodle");
-      await this.ctx.storage.delete("blanket");
-      await this.ctx.storage.delete("gift");
-    }
-    await this.ctx.storage.delete("recoveryHer");
-    if (!bar) await this.ctx.storage.put("handover", her);
-
-    if (bar) {
-      const left = (await this.ctx.storage.get<string[]>("left")) ?? [];
-      await this.ctx.storage.put("left", [her, ...left.filter((t) => t !== her)].slice(0, LEFT_KEEP));
-      await this.scheduleNext();
-    }
+  private async wipeHerSide(me: string, leaving: boolean): Promise<boolean> {
+    await this.guard();
+    return this.ctx.storage.transaction(async (txn) => {
+      if (await txn.get(TOMBSTONE)) throw new RoomGone();
+      const people = (await txn.get<Record<string, Person>>("people")) ?? {};
+      const { him, her } = this.roles(people);
+      if (!her || me !== (leaving ? her : him)) return false;
+      const moods = (await txn.get<Record<string, StoredMood>>("moods")) ?? {};
+      const log = (await txn.get<Visit[]>("log")) ?? [];
+      const light = await txn.get<WindowLight>("windowLight");
+      const keys = [HER_DAY, "recoveryHer"];
+      if (light?.from === her) keys.push("windowLight");
+      if (leaving) {
+        const at = Date.now();
+        const date = await txn.get<SeatDay>(HER_DAY);
+        const doodle = await txn.get<Doodle>("doodle");
+        await txn.put<LeftSide>(LEFT_SIDE, {
+          token: her,
+          at,
+          dropsAt: at + UNDO_MS,
+          person: people[her]!,
+          mood: moods[her],
+          day: date?.owner === her ? date.day : undefined,
+          visits: log.filter((v) => v.who === her),
+          recovery: await txn.get<string>("recoveryHer"),
+          light: light?.from === her ? light : undefined,
+          lines: await this.lines(txn),
+          doodle: doodle?.by === her ? doodle : undefined,
+          blanket: await txn.get<Blanket>("blanket"),
+          gift: await txn.get<Gift>("gift"),
+        });
+        const left = (await txn.get<string[]>("left")) ?? [];
+        await txn.put("left", [her, ...left.filter((token) => token !== her)].slice(0, LEFT_KEEP));
+        keys.push(HER_LINES, "herLine", "blanket", "gift");
+        if (doodle?.by === her) keys.push("doodle");
+      } else await txn.put("handover", her);
+      delete people[her];
+      delete moods[her];
+      await txn.put({ people, log: log.filter((v) => v.who !== her) });
+      if (Object.keys(moods).length) await txn.put("moods", moods);
+      else keys.push("moods");
+      await txn.delete(keys);
+      await this.scheduleNext(txn);
+      return true;
+    });
   }
 
   async undoLeaveUntil(me: string): Promise<number | null> {
     await this.guard();
-    const kept = await this.sweepLeftSide();
-    if (!kept || kept.token !== me) return null;
+    const kept = await this.ctx.storage.get<LeftSide>(LEFT_SIDE);
+    if (!kept) return null;
+    const now = Date.now();
+    if (kept.dropsAt <= now || (kept.mood && (kept.mood.expiresAt ?? 0) <= now)) {
+      await this.scheduleNext();
+    }
+    if (kept.dropsAt <= now || kept.token !== me) return null;
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     return this.roles(people).her ? null : kept.dropsAt;
   }
 
   async unleave(me: string): Promise<boolean> {
     await this.guard();
-    if (!(await this.undoLeaveUntil(me))) return false;
-    const kept = (await this.ctx.storage.get<LeftSide>(LEFT_SIDE))!;
-
-    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
-    people[kept.token] = kept.person;
-    await this.ctx.storage.put("people", people);
-
-    if (kept.mood) {
-      const moods = (await this.ctx.storage.get<Record<string, Told>>("moods")) ?? {};
-      moods[kept.token] = kept.mood;
-      await this.ctx.storage.put("moods", moods);
-    }
-    if (kept.visits.length > 0) {
-      const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
-      const merged = [...log, ...kept.visits].sort((a, b) => b.at - a.at).slice(0, LOG_KEEP);
-      await this.ctx.storage.put("log", merged);
-    }
-    if (kept.lines && kept.lines.length > 0) await this.ctx.storage.put(HER_LINES, kept.lines);
-    if (kept.doodle) await this.ctx.storage.put("doodle", kept.doodle);
-    if (kept.blanket) await this.ctx.storage.put("blanket", kept.blanket);
-    if (kept.gift) await this.ctx.storage.put("gift", kept.gift);
-    if (kept.recovery) await this.ctx.storage.put("recoveryHer", kept.recovery);
-    if (kept.light) await this.ctx.storage.put("windowLight", kept.light);
-
-    if ((await this.ctx.storage.get<string>("handover")) === kept.token) {
-      await this.ctx.storage.delete("handover");
-    }
-
-    const left = (await this.ctx.storage.get<string[]>("left")) ?? [];
-    await this.ctx.storage.put(
-      "left",
-      left.filter((t) => t !== kept.token),
-    );
-    await this.ctx.storage.delete(LEFT_SIDE);
-    await this.scheduleNext();
-    return true;
+    return this.ctx.storage.transaction(async (txn) => {
+      if (await txn.get(TOMBSTONE)) throw new RoomGone();
+      const kept = await txn.get<LeftSide>(LEFT_SIDE);
+      const people = (await txn.get<Record<string, Person>>("people")) ?? {};
+      if (!kept || kept.token !== me || this.roles(people).her) return false;
+      if (kept.dropsAt <= Date.now()) {
+        await this.scheduleNext(txn);
+        return false;
+      }
+      people[me] = kept.person;
+      await txn.put("people", people);
+      if (kept.mood) await txn.put("moods", { [me]: kept.mood });
+      if (kept.day) await txn.put<SeatDay>(HER_DAY, { owner: me, day: kept.day });
+      if (kept.visits.length) {
+        const log = (await txn.get<Visit[]>("log")) ?? [];
+        await txn.put("log", [...log, ...kept.visits].sort((a, b) => b.at - a.at).slice(0, LOG_KEEP));
+      }
+      if (kept.lines?.length) await txn.put(HER_LINES, kept.lines);
+      if (kept.doodle) await txn.put("doodle", kept.doodle);
+      if (kept.blanket) await txn.put("blanket", kept.blanket);
+      if (kept.gift) await txn.put("gift", kept.gift);
+      if (kept.recovery) await txn.put("recoveryHer", kept.recovery);
+      if (kept.light) await txn.put("windowLight", kept.light);
+      if ((await txn.get<string>("handover")) === me) await txn.delete("handover");
+      const left = (await txn.get<string[]>("left")) ?? [];
+      await txn.put(
+        "left",
+        left.filter((token) => token !== me),
+      );
+      await txn.delete(LEFT_SIDE);
+      await this.scheduleNext(txn);
+      return true;
+    });
   }
 
-  private async sweepLeftSide(): Promise<LeftSide | null> {
-    const kept = await this.ctx.storage.get<LeftSide>(LEFT_SIDE);
-    if (!kept) return null;
-    if (Date.now() < kept.dropsAt) return kept;
-    await this.ctx.storage.delete(LEFT_SIDE);
-    return null;
-  }
-
-  private async scheduleNext(): Promise<void> {
-    const stone = await this.ctx.storage.get<Tombstone>(TOMBSTONE);
-    const kept = await this.ctx.storage.get<LeftSide>(LEFT_SIDE);
-    const due = [stone?.erasesAt, kept?.dropsAt].filter((t): t is number => typeof t === "number");
-    if (due.length === 0) await this.ctx.storage.deleteAlarm();
-    else await this.ctx.storage.setAlarm(Math.min(...due));
+  private async scheduleNext(txn?: DurableObjectTransaction): Promise<void> {
+    if (!txn) return this.ctx.storage.transaction((storage) => this.scheduleNext(storage));
+    const now = Date.now();
+    const stone = await txn.get<Tombstone>(TOMBSTONE);
+    let kept = await txn.get<LeftSide>(LEFT_SIDE);
+    if (kept && kept.dropsAt <= now) {
+      await txn.delete(LEFT_SIDE);
+      kept = undefined;
+    }
+    const clock = (await txn.get<Clock>("clock")) ?? DEFAULT_CLOCK;
+    const moods = await sweepMoods(txn, kept, clock.tz, now);
+    const due = [stone?.erasesAt, kept?.dropsAt, ...moods].filter((t): t is number => t !== undefined);
+    if (due.length) await txn.setAlarm(Math.min(...due));
+    else await txn.deleteAlarm();
   }
 
   async setBlanket(me: string, key: unknown, stripe: unknown): Promise<boolean> {
@@ -1019,13 +1007,15 @@ export class Room extends DurableObject<Env> {
       clock,
       blanket: (await this.ctx.storage.get<Blanket>("blanket")) ?? null,
       // The day you named, never theirs. A copy of the room must not be a way round the surprise.
-      ourDay: (await this.ctx.storage.get<OurDay>(youAreHer ? HER_DAY : "ourDay")) ?? null,
+      ourDay: youAreHer
+        ? await readHerDay(this.ctx.storage, her)
+        : ((await this.ctx.storage.get<OurDay>("ourDay")) ?? null),
       drawing: ((c) => (c ? widenDoodle(c) : null))((await this.ctx.storage.get<Doodle>("doodle"))?.cells),
       notes: youAreHer ? notes.slice(0, readSoFar + 1) : notes,
       notesInAll: notes.length,
       found: Object.keys(await this.found()),
       herLines: await this.lines(),
-      moodNow: (await this.ctx.storage.get<Record<string, Told>>("moods"))?.[her ?? ""] ?? null,
+      moodNow: await this.moodFor(her, clock.tz),
       whatHeHasDone: (await this.ctx.storage.get<Tally>("tally")) ?? {},
       lately: exportActivity((await this.ctx.storage.get<Visit[]>("log")) ?? [], me, youAreHer ? him : her),
       expectsHimAt: youAreHer
@@ -1040,18 +1030,31 @@ export class Room extends DurableObject<Env> {
     };
   }
 
+  private async moodFor(her: string | null, tz: string): Promise<Told | null> {
+    if (!her) return null;
+    const stored = (await this.ctx.storage.get<Record<string, StoredMood>>("moods"))?.[her];
+    if (!stored) return null;
+    const deadline = moodDeadline(stored, tz);
+    if (stored.expiresAt === undefined || deadline <= Date.now()) await this.scheduleNext();
+    return deadline > Date.now() ? { mood: stored.mood, at: stored.at } : null;
+  }
+
   async tell(me: string, mood: Mood): Promise<RoomView> {
     await this.guard();
-    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
-    if (!people[me]) return this.build(me, people);
-    if (this.roles(people).her !== me) return this.build(me, people);
-
-    const moods = (await this.ctx.storage.get<Record<string, Told>>("moods")) ?? {};
-    moods[me] = { mood, at: Date.now() };
-    await this.ctx.storage.put("moods", moods);
-
-    people[me].lastSeen = Date.now();
-    await this.ctx.storage.put("people", people);
+    const people = await this.ctx.storage.transaction(async (txn) => {
+      if (await txn.get(TOMBSTONE)) throw new RoomGone();
+      const seated = (await txn.get<Record<string, Person>>("people")) ?? {};
+      if (this.roles(seated).her !== me) return seated;
+      const at = Date.now();
+      const clock = (await txn.get<Clock>("clock")) ?? DEFAULT_CLOCK;
+      seated[me]!.lastSeen = at;
+      await txn.put({
+        people: seated,
+        moods: { [me]: { mood, at, expiresAt: moodDeadline({ mood, at }, clock.tz) } },
+      });
+      await this.scheduleNext(txn);
+      return seated;
+    });
     return this.build(me, people);
   }
 
@@ -1082,10 +1085,10 @@ export class Room extends DurableObject<Env> {
 
   // Her lines, newest first. Don't move the old single-line key to a write-side migration: a room
   // nobody opens is a room nobody writes to, so her line would vanish from every untouched room.
-  private async lines(): Promise<Told2[]> {
-    const kept = await this.ctx.storage.get<Told2[]>(HER_LINES);
+  private async lines(storage: Pick<DurableObjectTransaction, "get"> = this.ctx.storage): Promise<Told2[]> {
+    const kept = await storage.get<Told2[]>(HER_LINES);
     if (kept) return kept;
-    const old = await this.ctx.storage.get<Told2>("herLine");
+    const old = await storage.get<Told2>("herLine");
     return old ? [old] : [];
   }
 
@@ -1165,13 +1168,15 @@ export class Room extends DurableObject<Env> {
   // Each seat owns a private date; the other seat learns of it through the room on that day.
   async setOurDay(me: string, day: OurDay | null): Promise<boolean> {
     await this.guard();
-    const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
-    const { him, her } = this.roles(people);
-    if (me !== him && me !== her) return false;
-    const key = me === him ? "ourDay" : HER_DAY;
-    if (day) await this.ctx.storage.put(key, day);
-    else await this.ctx.storage.delete(key);
-    return true;
+    return this.ctx.storage.transaction(async (txn) => {
+      if (await txn.get(TOMBSTONE)) throw new RoomGone();
+      const { him, her } = this.roles((await txn.get<Record<string, Person>>("people")) ?? {});
+      if (me !== him && me !== her) return false;
+      const key = me === him ? "ourDay" : HER_DAY;
+      if (day) await txn.put(key, me === her ? { owner: me, day } : day);
+      else await txn.delete(key);
+      return true;
+    });
   }
 
   private async doodleFor(me: string, seated: boolean): Promise<RoomView["doodle"]> {
@@ -1212,16 +1217,19 @@ export class Room extends DurableObject<Env> {
     const cat = (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT;
     const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
     const log = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
-    const moods = (await this.ctx.storage.get<Record<string, Told>>("moods")) ?? {};
     const { him, her } = this.roles(people);
     const youAreHer = !!her && me === her;
     const seated = me === him || me === her;
+    const catTold = seated ? await this.moodFor(her, clock.tz) : null;
+    const herDay = seated ? await readHerDay(this.ctx.storage, her) : null;
+    const hisDay = seated ? await this.ctx.storage.get<OurDay>("ourDay") : null;
     // Null unless you have a seat. Without that a stranger holding the link counts as him, so `them`
     // becomes her: her name, whether she is in the room this second, and when she was last in it.
     const otherId = seated ? (youAreHer ? him : her) : null;
     const them = otherId ? (people[otherId] ?? null) : null;
     const waitingForThem = !her;
     const kept = waitingForThem && me === him ? await this.ctx.storage.get<LeftSide>(LEFT_SIDE) : null;
+    if (kept?.mood && (kept.mood.expiresAt ?? 0) <= Date.now()) await this.scheduleNext();
     // She is the cat, so her seat goes by the name he gave her. She is never asked for one, and the
     // placeholder on her record is not a name anybody chose.
     const nameOf = (token: string | null): string | null =>
@@ -1257,9 +1265,8 @@ export class Room extends DurableObject<Env> {
             .map((visit) => ({ kind: "action" as const, at: visit.at, action: visit.action })),
         );
       } else if (her) {
-        const mood = moods[her];
         const lines = await this.lines();
-        if (mood && mood.at > since) arrivals.push({ kind: "mood", at: mood.at, mood: mood.mood });
+        if (catTold && catTold.at > since) arrivals.push({ kind: "mood", ...catTold });
         const said = lines.filter((x) => x.at > since).slice(0, 6);
         for (const l of said) {
           arrivals.push({ kind: "line", at: l.at, text: l.text, gift: l.gift, note: l.about });
@@ -1306,9 +1313,6 @@ export class Room extends DurableObject<Env> {
       arrivals.sort((a, b) => b.at - a.at);
     }
 
-    const told = seated && her ? (moods[her] ?? null) : null;
-    const catTold =
-      told && localDayNumber(told.at, clock.tz) === localDayNumber(Date.now(), clock.tz) ? told : null;
     const note = await this.noteFor(clock, youAreHer, !waitingForThem);
     // Him only, and only once she is at the end. `note.final` says the same thing but rides on her
     // note, which never reaches him, so the notes running dry was his to notice or miss.
@@ -1339,7 +1343,7 @@ export class Room extends DurableObject<Env> {
       sheHasReadAll,
       notesInAll: sheHasReadAll ? allNotes.length : null,
       // The day you named, never the one they did.
-      ourDay: seated ? ((await this.ctx.storage.get<OurDay>(youAreHer ? HER_DAY : "ourDay")) ?? null) : null,
+      ourDay: (youAreHer ? herDay : hisDay) ?? null,
       framed: (await this.ctx.storage.get<boolean>("framed")) ?? false,
       shelfDown: (await this.ctx.storage.get<boolean>("shelfDown")) ?? false,
       gift: seated ? ((await this.ctx.storage.get<Gift>("gift")) ?? null) : null,
@@ -1348,9 +1352,8 @@ export class Room extends DurableObject<Env> {
       expectAt: learnedHour((await this.ctx.storage.get<Homing>("homing")) ?? null, clock.homeHour),
       sky: ((await this.ctx.storage.get<Weather>("weather"))?.sky ?? "clear") as Sky,
       windowLight: seated && !!windowLight && windowLight.from !== me,
-      box: ((await this.ctx.storage.get<number>("boxDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
-      boxOut:
-        ((await this.ctx.storage.get<number>("boxOutDay")) ?? -1) === localDayNumber(Date.now(), clock.tz),
+      box: ((await this.ctx.storage.get<number>("boxDay")) ?? -1) === today,
+      boxOut: ((await this.ctx.storage.get<number>("boxOutDay")) ?? -1) === today,
       brought: seated && !!leftOut,
       brushed: markLives(await this.ctx.storage.get<Mark>("brushedDay"), today, herLastLook),
       satWith: markLives(await this.ctx.storage.get<Mark>("satWithDay"), today, herLastLook),
@@ -1377,12 +1380,7 @@ export class Room extends DurableObject<Env> {
       noticed: seated ? foundCount(await this.found()) : 0,
       bothCalledHer: seated && him && her ? bothFound(await this.found(), "herName", him, her) : false,
       awayMs: since !== undefined ? Math.max(0, Date.now() - since) : null,
-      milestone: seated
-        ? milestoneFor(startedAt, Date.now(), clock.tz, [
-            await this.ctx.storage.get<OurDay>("ourDay"),
-            await this.ctx.storage.get<OurDay>(HER_DAY),
-          ])
-        : null,
+      milestone: seated ? milestoneFor(startedAt, Date.now(), clock.tz, [hisDay, herDay]) : null,
       personality: seated
         ? personalityFrom(
             (await this.ctx.storage.get<Tally>("tally")) ?? tallyFrom(log),

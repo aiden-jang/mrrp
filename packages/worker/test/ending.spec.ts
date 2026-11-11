@@ -100,7 +100,7 @@ describe("deleting the room", () => {
     "bothHere",
     "noteHomecoming",
     "noteFirst",
-    "sweepLeftSide",
+    "moodFor",
     "scheduleNext",
     "hereNow",
     "liveTokens",
