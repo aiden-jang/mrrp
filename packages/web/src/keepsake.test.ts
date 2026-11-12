@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { keepsakeCaption, keepsakeDate } from "./keepsake.js";
+import { keepsakeCaption, keepsakeDate, keepsakeImageBounds } from "./keepsake.js";
 
 describe("keepsake copy", () => {
   it("remembers rare time together instead of reducing it to the cat pose", () => {
@@ -32,5 +32,22 @@ describe("the postcard she keeps", () => {
   it("does not tell her she was here with herself", () => {
     expect(keepsakeCaption({ ...base, together: true, youAreHer: true })).not.toMatch(/Bean/);
     expect(keepsakeCaption({ ...base, together: true })).toMatch(/Bean/);
+  });
+});
+
+describe("the room inside the postcard", () => {
+  it.each([
+    [1200, 960],
+    [480, 640],
+    [480, 480],
+  ])("preserves a %s by %s scene without stretching", (width, height) => {
+    const bounds = keepsakeImageBounds(width, height);
+    expect(bounds.width / bounds.height).toBeCloseTo(width / height);
+    expect(bounds.x).toBeGreaterThanOrEqual(72);
+    expect(bounds.y).toBeGreaterThanOrEqual(72);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(1128);
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(1128);
+    expect(bounds.x + bounds.width / 2).toBe(600);
+    expect(bounds.y + bounds.height / 2).toBe(600);
   });
 });

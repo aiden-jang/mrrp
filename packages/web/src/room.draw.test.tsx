@@ -17,6 +17,22 @@ describe("the room actually draws", () => {
     r.frame(16);
     expect(r.furSpan(), "she is on screen").not.toBeNull();
   });
+
+  it("keeps waxing and waning crescents the same size on the finer grid", () => {
+    const crescent = (phase: number) => {
+      const date = new Date(Date.UTC(2000, 0, 6, 18, 14) + (phase / 8) * 29.530588853 * 86_400_000);
+      date.setUTCHours(23, 0, 0, 0);
+      r = room({}, date.toISOString());
+      r.frame(16);
+      const area = r.count("#f4e6b8", 4, 24);
+      r.unmount();
+      r = null;
+      return area;
+    };
+    const waxing = crescent(1);
+    expect(waxing).toBeGreaterThan(0);
+    expect(crescent(7)).toBe(waxing);
+  });
 });
 
 describe("her trip to the shelf", () => {
@@ -34,19 +50,21 @@ describe("her trip to the shelf", () => {
   });
 
   it("brings the shelf on screen, which is the whole point of walking there", () => {
-    // The shelf sits at x 80-95 with an 80 wide viewport, so it is only ever seen when she is.
+    // The cabinet is at the right edge and the camera follows her over to it.
     // Just before the hour he is due home, when she waits by the door: as far from the shelf as she
     // ever gets, and the case the feature exists for.
     r = room({}, "2026-04-02T17:40:00Z");
     r.run(0, 400);
-    const shelfBefore = r.count(SHELF_WOOD, 20, 30);
+    const shelfBefore = r.count(SHELF_WOOD, 40, 47, 40, 79);
 
     // She knocks it off from where she is, which is the only realistic way this starts.
     r.set({ shelfDown: true, shelfAt: 1 });
     r.run(416, 416 + SHELF_TIP_MS);
     // She walks right, the camera follows her, and that is the only thing that ever brings the
     // shelf into view. Nothing else in the room moves the camera.
-    expect(r.count(SHELF_WOOD, 20, 30), "more of the shelf is in view").toBeGreaterThan(shelfBefore);
+    expect(r.count(SHELF_WOOD, 40, 47, 40, 79), "more of the cabinet is in view").toBeGreaterThan(
+      shelfBefore,
+    );
   });
 
   it("draws the mug on the floor with no trip at all", () => {
@@ -102,13 +120,26 @@ describe("the marks his actions leave", () => {
     expect(hearts(r), "a tap of the button reaches the drawing").toBeGreaterThan(0);
   });
 
-  it("draws what he left out where she can see it", () => {
-    // Six painted cells, and not one of them legible before this: 1.75:1, pink on a pink floor. It
-    // stays small on purpose, so this is four of six rather than a count that means "big".
-    r = room({ brought: true });
-    r.run(0, 300);
-    expect(legibleCells(r, 68, 76, 22, 32)).toBeGreaterThan(3);
-  });
+  it.each(["rose", "moss", "honey", "dusk", "cream"] as const)(
+    "keeps what he left out visible on the %s bed",
+    (key) => {
+      r = room({ blanket: { key, stripe: false } });
+      r.run(0, 300);
+      const before = new Map<string, string>();
+      for (let y = 68; y <= 76; y++) for (let x = 22; x <= 32; x++) before.set(`${x},${y}`, r.at(x, y)!);
+      r.set({ brought: true });
+      r.frame(316);
+      let visible = 0;
+      for (let y = 68; y <= 76; y++) {
+        for (let x = 22; x <= 32; x++) {
+          const under = before.get(`${x},${y}`)!;
+          const after = r.at(x, y)!;
+          if (under !== after && contrast(under, after) >= 3) visible++;
+        }
+      }
+      expect(visible).toBeGreaterThan(3);
+    },
+  );
 
   it("draws a dent that is not the same colour as the rug it is in", () => {
     r = room({ satWith: true });

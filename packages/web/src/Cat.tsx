@@ -1,6 +1,11 @@
 import { DEFAULT_DECOR, decorateScene, mugColors, ROOM_ART, rugColors, rugPattern } from "./roomDecor.js";
 import { useEffect, useRef } from "react";
-import { companionCushion, facialMoment } from "./roomPolish.js";
+import * as polish from "./roomPolish.js";
+import * as sceneArt from "./roomShell.js";
+import { roomPainter, type RasterView } from "./roomPainter.js";
+import { roomArt } from "./roomArt.js";
+import { catPalette } from "./catArt.js";
+import { fitRoom, project, propBounds } from "./roomGeometry.js";
 import type { Cat as CatLook, Clock, Gift, Mood, RoomDecor } from "./types.js";
 import { DOOR_X, mixHex, sceneFor } from "./hours.js";
 import { fireflyAt, mothAt, MOTH_CYCLE_MS } from "./critters.js";
@@ -65,7 +70,6 @@ import {
   TUFT,
   WINDOW,
   type Pose,
-  type Sprite,
 } from "./sprites.js";
 
 const GW = 100,
@@ -77,6 +81,7 @@ const CAT_REACH_LEFT = Math.max(...Object.values(POSES).map((p) => -p.ox));
 const CAT_REACH_RIGHT = Math.max(...Object.values(POSES).map((p) => p.ox + p.w));
 const WIN_X = 60,
   WIN_CX = WIN_X + 8;
+const WINDOW_CENTER_X = project("window", WIN_CX, 4).x;
 const BOX_X = 44,
   BOX_Y = FLOOR + 9;
 /* Measured off the sprite, never written down. Its left edge puts her half out of the box. */
@@ -149,7 +154,6 @@ const PAW_CURSOR =
   );
 
 const ROOM_RESERVE = 210;
-const ROOM_MAX_SHARE = 0.78;
 
 const COLLAR_BAND = "#9c5468";
 const COLLAR_TAG = "#e8ad55";
@@ -192,7 +196,6 @@ const PROPS = [
 
 const INK = "#4a3520";
 const PINK = "#e79ba3";
-const BLUSH = "#f0aeb4";
 const WHITE = "#fffdf6";
 
 const CLOSED_EYES: Record<Pose, { y: number; left: number; right: number; width: number }> = {
@@ -526,6 +529,8 @@ export function Cat({
   const toldVoice = useRef(-1);
   const catBox = useRef<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
   const camRef = useRef(0);
+  const viewportRef = useRef(VW);
+  const propIntent = useRef<string | null>(null);
   const poked = useRef<{ key: string; at: number } | null>(null);
   const lookAt = useRef<{ x: number; until: number } | null>(null);
 
@@ -544,9 +549,10 @@ export function Cat({
       const prop = PROPS.find((p) => p.key === key);
       if (!prop) return;
       const rect = cv.getBoundingClientRect();
-      const cx = prop.x + prop.sp.w / 2;
-      const cy = prop.y + prop.sp.h / 2;
-      const clientX = rect.left + ((cx - camRef.current) / VW) * rect.width;
+      const bounds = propBounds(prop.key, prop.x, prop.y, prop.sp.w, prop.sp.h);
+      const cx = bounds.x + bounds.w / 2;
+      const cy = bounds.y + bounds.h / 2;
+      const clientX = rect.left + ((cx - camRef.current) / viewportRef.current) * rect.width;
       const clientY = rect.top + (cy / GH) * rect.height;
       const init: PointerEventInit = {
         clientX,
@@ -558,8 +564,13 @@ export function Cat({
         isPrimary: true,
       };
       const before = document.activeElement as HTMLElement | null;
-      cv.dispatchEvent(new PointerEvent("pointerdown", init));
-      cv.dispatchEvent(new PointerEvent("pointerup", init));
+      propIntent.current = key;
+      try {
+        cv.dispatchEvent(new PointerEvent("pointerdown", init));
+        cv.dispatchEvent(new PointerEvent("pointerup", init));
+      } finally {
+        propIntent.current = null;
+      }
       if (before && before !== cv && document.activeElement === cv) before.focus({ preventScroll: true });
     };
 
@@ -664,29 +675,27 @@ export function Cat({
     const season = seasonFor(new Date());
     const seasonalPlant = seasonalPlantColors(season);
 
-    let s = 5;
     let cam = 0;
+    let viewport = VW;
+    const raster: RasterView = { scale: 6, camera: cam, width: viewport, layer: null };
+    const { px, rect, dither, blit } = roomPainter(g, raster, roomArt);
 
     const box = cv.parentElement;
     let refit = 0;
     const fit = () => {
       cancelAnimationFrame(refit);
-      // Whole device pixels keep every floorboard the same width.
-      const d = Math.min(2, devicePixelRatio || 1);
       const wide = box ? box.clientWidth : cv.getBoundingClientRect().width;
-      const h = innerHeight;
-      // Cap the height to keep the door button above the fold.
-      const cap = h > 0 ? Math.min(h * ROOM_MAX_SHARE, h - reserveRef.current) : Infinity;
-      const avail = Math.min(wide > 0 ? wide : Infinity, cap);
-      if (!Number.isFinite(avail) || avail < VW) {
+      const fitted = fitRoom(wide, innerHeight, devicePixelRatio, reserveRef.current);
+      if (!fitted) {
         refit = requestAnimationFrame(fit);
         return;
       }
-      s = Math.max(1, Math.floor((avail * d) / VW));
-      cv.width = VW * s;
-      cv.height = GH * s;
-      cv.style.width = `${cv.width / d}px`;
-      cv.style.height = `${cv.height / d}px`;
+      raster.scale = fitted.scale;
+      viewport = raster.width = viewportRef.current = fitted.viewport;
+      cv.width = fitted.width;
+      cv.height = fitted.height;
+      cv.style.width = `${cv.width / fitted.ratio}px`;
+      cv.style.height = `${cv.height / fitted.ratio}px`;
     };
     fit();
     const ro = new ResizeObserver(fit);
@@ -705,7 +714,7 @@ export function Cat({
     let typedRoomCode = "";
     const onMove = (e: PointerEvent) => {
       const r = cv.getBoundingClientRect();
-      const nextX = cam + ((e.clientX - r.left) / r.width) * VW;
+      const nextX = cam + ((e.clientX - r.left) / r.width) * viewport;
       const nextY = ((e.clientY - r.top) / r.height) * GH;
       if (Math.hypot(nextX - ptr.stillX, nextY - ptr.stillY) > 1.2) {
         ptr.stillX = nextX;
@@ -770,17 +779,21 @@ export function Cat({
 
     const gridAt = (e: PointerEvent) => {
       const r = cv.getBoundingClientRect();
-      return { x: cam + ((e.clientX - r.left) / r.width) * VW, y: ((e.clientY - r.top) / r.height) * GH };
+      return {
+        x: cam + ((e.clientX - r.left) / r.width) * viewport,
+        y: ((e.clientY - r.top) / r.height) * GH,
+      };
     };
     const onDown = (e: PointerEvent) => {
       cv.focus({ preventScroll: true });
       const { x, y } = gridAt(e);
+      const intended = propIntent.current;
       ptr.x = x;
       ptr.y = y;
       ptr.in = true;
       const game = bubbleGame.current;
       const bubbleElapsed = performance.now() - game.startedAt;
-      if (bubbleElapsed >= 0 && bubbleElapsed < BUBBLE_GAME_MS && game.completedAt < 0) {
+      if (!intended && bubbleElapsed >= 0 && bubbleElapsed < BUBBLE_GAME_MS && game.completedAt < 0) {
         const bubbleHit = game.seeds.findIndex((seed, index) => {
           if (game.popped.has(index)) return false;
           const bubble = bubbleMomentAt(seed, bubbleElapsed, reduce);
@@ -805,7 +818,7 @@ export function Cat({
         }
       }
       const piano = pianoGame.current;
-      if (performance.now() < piano.until) {
+      if (!intended && performance.now() < piano.until) {
         const key = pianoKeyAt(pianoKeys(piano.center), x, y);
         if (key !== null) {
           const now = performance.now();
@@ -826,7 +839,7 @@ export function Cat({
         }
       }
       const b = catBox.current;
-      if (b && x >= b.x0 - 2 && x <= b.x1 + 2 && y >= b.y0 - 2 && y <= b.y1 + 3) {
+      if (!intended && b && x >= b.x0 - 2 && x <= b.x1 + 2 && y >= b.y0 - 2 && y <= b.y1 + 3) {
         const now = performance.now();
         if (roleRef.current === "him") {
           // Holding the brush means a press on her starts a stroke, not a pet.
@@ -855,6 +868,7 @@ export function Cat({
         return;
       }
       if (
+        !intended &&
         downRef.current &&
         x >= MUG_FLOOR_X - 3 &&
         x < MUG_FLOOR_X + 11 &&
@@ -866,7 +880,7 @@ export function Cat({
         tidyRef.current?.();
         return;
       }
-      if (giftRef.current && x >= 14 && x < 24 && y >= FLOOR + 13 && y < FLOOR + 22) {
+      if (!intended && giftRef.current && x >= 14 && x < 24 && y >= FLOOR + 13 && y < FLOOR + 22) {
         const now = performance.now();
         giftGlint.current = now;
         speakUntil.current = now + 800;
@@ -885,9 +899,13 @@ export function Cat({
       }
       // Match `boxHere`: boxes he leaves out must also be tappable.
       const boxIsHere = boxOutRef.current || boxRef.current || performance.now() < secretBoxUntil.current;
-      const hit = PROPS.find(
-        (q) => (q.key !== "box" || boxIsHere) && x >= q.x && x < q.x + q.sp.w && y >= q.y && y < q.y + q.sp.h,
-      );
+      const hit = PROPS.map((q) => ({ ...q, ...propBounds(q.key, q.x, q.y, q.sp.w, q.sp.h) }))
+        .reverse()
+        .find(
+          (q) =>
+            (q.key !== "box" || boxIsHere) &&
+            (intended ? q.key === intended : x >= q.x && x < q.x + q.w && y >= q.y && y < q.y + q.h),
+        );
       let rainStarted = false;
       if (hit?.key === "window") {
         const now = performance.now();
@@ -1030,11 +1048,11 @@ export function Cat({
           if (progress.discovered) {
             constellation.current.found = new Set(progress.found);
             constellation.current.flight = {
-              fromX: hit.x + hit.sp.w / 2,
-              fromY: hit.y + hit.sp.h / 2,
+              fromX: hit.x + hit.w / 2,
+              fromY: hit.y + hit.h / 2,
               startedAt: now,
             };
-            lookAt.current = { x: hit.x + hit.sp.w / 2, until: now + STAR_FLIGHT_MS };
+            lookAt.current = { x: hit.x + hit.w / 2, until: now + STAR_FLIGHT_MS };
             speakUntil.current = now + 900;
             play("twinkle");
             if (progress.justCompleted) {
@@ -1063,7 +1081,7 @@ export function Cat({
         poked.current = { key: hit.key, at: performance.now() };
         onTouchRef.current?.(hit.key);
         lookAt.current = {
-          x: rainStarted ? WIN_CX : hit.x + hit.sp.w / 2,
+          x: rainStarted ? WINDOW_CENTER_X : hit.x + hit.w / 2,
           until: performance.now() + (rainStarted ? 4200 : 2400),
         };
       }
@@ -1256,38 +1274,6 @@ export function Cat({
       sp: 0.04 + Math.random() * 0.06,
     }));
 
-    const px = (x: number, y: number, c: string) => {
-      if (!c || y < 0 || y >= GH) return;
-      const vx = x - cam;
-      if (vx < 0 || vx >= VW) return;
-      const X = Math.round(vx * s),
-        Y = Math.round(y * s);
-      g.fillStyle = c;
-      g.fillRect(X, Y, Math.round((vx + 1) * s) - X, Math.round((y + 1) * s) - Y);
-    };
-
-    const rect = (x: number, y: number, w: number, h: number, c: string) => {
-      for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) px(x + i, y + j, c);
-    };
-
-    const dither = (x: number, y: number, w: number, h: number, c: string, phase = 0) => {
-      for (let j = 0; j < h; j++) {
-        for (let i = 0; i < w; i++) {
-          if ((x + i + y + j + phase) % 2 === 0) px(x + i, y + j, c);
-        }
-      }
-    };
-
-    const blit = (sp: Sprite, x: number, y: number, pal: Record<string, string>, flip = false) => {
-      for (let j = 0; j < sp.h; j++) {
-        const row = sp.rows[j]!;
-        for (let i = 0; i < sp.w; i++) {
-          const ch = row[flip ? sp.w - 1 - i : i]!;
-          px(x + sp.ox + i, y + sp.oy + j, pal[ch] ?? "");
-        }
-      }
-    };
-
     let raf = 0;
     const minFrameMs = reduce ? 250 : 0;
     let lastFrame = -Infinity;
@@ -1309,9 +1295,12 @@ export function Cat({
         doorProg = Math.max(0, doorShutFrom.current.from * (1 - since / 900));
       }
 
-      const camBase = Math.max(0, Math.min(GW - VW, Math.round((catX.current ?? GW / 2) - VW / 2)));
+      const camBase = Math.max(
+        0,
+        Math.min(GW - viewport, Math.round(((catX.current ?? GW / 2) - viewport / 2) * 2) / 2),
+      );
       const pull = doorProg / 3;
-      cam = Math.round(camBase * (1 - pull) + Math.min(camBase, 2) * pull);
+      cam = raster.camera = Math.round((camBase * (1 - pull) + Math.min(camBase, 2) * pull) * 2) / 2;
       camRef.current = cam;
       const L = lookRef.current;
       const hourly = decorateScene(
@@ -1321,35 +1310,22 @@ export function Cat({
       const sc = waitingRef.current ? { ...hourly, catX: DOOR_X, atDoor: true, sleepy: 0.1 } : hourly;
       const beamX = Math.round(sc.beam * GW);
 
-      rect(0, 0, GW, FLOOR - 9, sc.wallTop);
-      rect(0, FLOOR - 9, GW, 9, sc.wallBottom);
-      rect(0, FLOOR, GW, 10, sc.floorFar);
-      rect(0, FLOOR + 10, GW, GH - FLOOR - 10, sc.floorNear);
-
-      const wallShade = mixHex(sc.wallBottom, INK, 0.08);
-      const wallLift = mixHex(sc.wallTop, sc.beamWarm, 0.12 + sc.sun * 0.08);
-      // prettier-ignore
-      for (const [x, y, w] of [[4, 8, 5], [38, 17, 3], [48, 7, 6], [90, 27, 4]] as const) {
-        dither(x, y, w, 2, wallShade);
-      }
-      // prettier-ignore
-      for (const [x, y] of [[12, 30], [34, 6], [52, 31], [96, 11]] as const) px(x, y, wallLift);
-      rect(0, FLOOR - 1, GW, 1, mixHex(sc.wallBottom, sc.beamWarm, 0.3 + sc.sun * 0.35));
-      rect(0, FLOOR, GW, 1, mixHex(sc.floorFar, INK, 0.14));
+      const outside = skyRef.current;
+      const raining = plantTaps.current.rainUntil - t > 0 || outside === "rain";
+      const snowing = plantTaps.current.rainUntil - t <= 0 && outside === "snow";
+      const overcast = outside === "cloud";
+      const dull = raining || snowing || overcast;
+      sceneArt.shell(rect, sc);
       const bleach = Math.min(1, monthsOldRef.current / 12);
       if (bleach > 0.02) {
         const faded = mixHex(sc.floorNear, sc.beamWarm, bleach * 0.16);
         rect(36, FLOOR + 4, 26, GH - FLOOR - 4, faded);
       }
 
-      for (const by of [FLOOR + 9, FLOOR + 15, FLOOR + 23, FLOOR + 30]) rect(0, by, GW, 1, sc.floorFar);
-      const boardJoin = mixHex(sc.floorFar, INK, 0.16);
-      const boardGlint = mixHex(sc.floorNear, sc.beamWarm, 0.1 + sc.sun * 0.08);
-      // prettier-ignore
-      for (const [x, y, h] of [[8, 49, 8], [31, 49, 8], [70, 49, 8], [18, 58, 5], [52, 58, 5], [86, 58, 5], [5, 64, 7], [40, 64, 7], [75, 64, 7], [25, 72, 8], [62, 72, 8]] as const) {
-        rect(x, y, 1, h, boardJoin);
-        px(x + 1, y + 1, boardGlint);
-      }
+      const poolScale = sceneArt.poolScale(sc);
+      sceneArt.sunlight(rect, sc, beamX, WINDOW_CENTER_X, dull);
+      sceneArt.joinery(rect, sc);
+      sceneArt.floor(rect, sc);
 
       const rugShadow = mixHex(sc.floorNear, INK, 0.25);
       const { edge: rugEdge, body: rugBody } = rugColors(sc, decorRef.current);
@@ -1358,7 +1334,7 @@ export function Cat({
       rect(35, FLOOR + 12, 40, 1, rugShadow);
       rect(32, FLOOR + 13, 46, 13, rugEdge);
       rect(34, FLOOR + 12, 42, 15, rugEdge);
-      rect(35, FLOOR + 13, 40, 13, rugBody);
+      polish.rugSurface(rect, sc, rugBody, rugEdge);
 
       if (spotRef.current !== null) {
         const wx = Math.max(41, Math.min(69, Math.round(spotRef.current * GW)));
@@ -1373,58 +1349,11 @@ export function Cat({
       for (const x of [35, 40, 69, 74]) px(x, FLOOR + 27, rugEdge);
 
       rugPattern(rect, decorRef.current, rugBody);
-      const outside = skyRef.current;
-      const raining = plantTaps.current.rainUntil - t > 0 || outside === "rain";
-      const snowing = plantTaps.current.rainUntil - t <= 0 && outside === "snow";
-      const overcast = outside === "cloud";
-      const dull = raining || snowing || overcast;
-      const litWall = dull ? mixHex(sc.litWall, sc.wallTop, 0.66) : sc.litWall;
-      const litPatch = dull ? mixHex(sc.patch, sc.floorNear, 0.66) : sc.patch;
-
-      const beamCore = sc.lightPhase === "golden" ? 18 : sc.lightPhase === "dawn" ? 10 : 16;
-      if (sc.lightPhase !== "night") {
-        for (let y = 14; y < FLOOR; y++) {
-          const k = (y - 14) / (FLOOR - 14);
-          const cx = Math.round(WIN_CX + (beamX - WIN_CX) * k);
-          const half = beamCore >> 1;
-          rect(cx - half, y, beamCore, 1, litWall);
-          dither(cx - half - 3, y, 3, 1, mixHex(sc.wallTop, litWall, 0.45));
-          dither(cx + half, y, 3, 1, mixHex(sc.wallTop, litWall, 0.45));
-          for (const ox of [-half - 5, -half - 4, half + 2, half + 3]) {
-            if ((ox + y) % 4 === 0) px(cx + ox, y, mixHex(sc.wallTop, litWall, 0.25));
-          }
-        }
-      }
-      // prettier-ignore
-      const POOL = [
-        [1, 16], [2, 20], [3, 24], [4, 26], [5, 26], [6, 24], [7, 22], [8, 18], [9, 14],
-      ] as const;
-      const poolScale = sc.lightPhase === "golden" ? 1.14 : sc.lightPhase === "dawn" ? 0.72 : 1;
-      if (sc.lightPhase !== "night") {
-        for (const [dy, w] of POOL) {
-          const width = Math.round(w * poolScale);
-          rect(beamX - (width >> 1), FLOOR + dy, width, 1, litPatch);
-        }
-      }
-      if (sc.lightPhase !== "night") {
-        const edgeWidth = Math.round(30 * poolScale);
-        dither(beamX - (edgeWidth >> 1), FLOOR + 5, edgeWidth, 9, mixHex(sc.floorNear, litPatch, 0.4));
-      } else {
-        const nightGlow = mixHex(sc.wallBottom, "#d79a62", 0.3);
-        // prettier-ignore
-        for (const [dx, dy] of [[-6, -3], [-3, -6], [0, -7], [3, -6], [6, -3], [-4, -1], [4, -1]] as const) {
-          px(40 + dx, FLOOR - 3 + dy, nightGlow);
-        }
-        rect(36, FLOOR - 6, 9, 1, mixHex(sc.wallBottom, "#d79a62", 0.16));
-        rect(39, FLOOR - 4, 3, 3, INK);
-        px(40, FLOOR - 3, "#ffd598");
-      }
-
       const occupied = togetherRef.current && sittingRef.current ? 1 : 0;
       companionDepth.current = reduce
         ? occupied
         : companionDepth.current + (occupied - companionDepth.current) * 0.04;
-      companionCushion(rect, sc, togetherRef.current, companionDepth.current);
+      polish.companionCushion(rect, sc, togetherRef.current, companionDepth.current);
 
       const wy = (row: number) => 4 + 1 + row;
 
@@ -1454,15 +1383,9 @@ export function Cat({
         play("rain");
       }
 
-      const curtainDark = mixHex(sc.wallBottom, "#66516f", 0.5);
-      const curtainLight = mixHex(curtainDark, sc.beamWarm, 0.12 + sc.sun * 0.16);
-      rect(wx - 3, 3, 2, 21, curtainDark);
-      rect(wx - 1, 3, 1, 20, curtainLight);
-      rect(wx + WINDOW.w, 3, 2, 21, curtainDark);
-      rect(wx + WINDOW.w + 2, 3, 1, 20, curtainLight);
+      raster.layer = "window";
       const curtainHem = reduce ? 0 : Math.round(Math.sin(t / 2400));
-      px(wx - 2 + curtainHem, 24, curtainLight);
-      px(wx + WINDOW.w + 1 - curtainHem, 24, curtainLight);
+      sceneArt.curtains(rect, sc, wx, curtainHem);
       // Mix weather after night or rainy nights glow like noon.
       const nightGlass = raining
         ? mixHex("#2b3450", "#718aa1", 0.34)
@@ -1483,13 +1406,13 @@ export function Cat({
                   : sc.lightPhase === "evening"
                     ? "#685b7d"
                     : mixHex("#b7d8dc", sc.beamWarm, 0.2);
-      blit(WINDOW, wx, 4, { w: INK, h: glass });
+      blit(WINDOW, wx, 4, polish.windowPalette(sc, glass));
 
       if (raining && !reduce) {
         const wet = mixHex(glass, "#e8f1f4", 0.55);
         for (const [sx, phase] of RAIN_STREAKS) {
           const y = ((t / 420 + phase) % 1) * 9;
-          rect(wx + sx, 5 + Math.floor(y), 1, 2, wet);
+          rect(wx + sx, 5 + Math.round(y * 3) / 3, 1 / 3, 1, wet);
         }
       } else if (raining) {
         const wet = mixHex(glass, "#e8f1f4", 0.55);
@@ -1499,8 +1422,8 @@ export function Cat({
         const flake = mixHex(glass, "#ffffff", 0.8);
         for (const [sx, phase] of SNOW_FLAKES) {
           const y = reduce ? 4 + phase * 6 : ((t / 1500 + phase) % 1) * 10;
-          const drift = Math.round(Math.sin(t / 1100 + phase * 6));
-          px(wx + sx + drift, 5 + Math.floor(y), flake);
+          const drift = Math.round(Math.sin(t / 1100 + phase * 6) * 3) / 3;
+          px(wx + sx + drift, 5 + Math.round(y * 3) / 3, flake, 1 / 3);
         }
       }
       if (overcast) {
@@ -1537,7 +1460,7 @@ export function Cat({
         px(wx + 11, wy(7), "#d99d62");
         px(wx + 14, wy(6), "#e8bd72");
       }
-      const atTheGlass = Math.abs(sc.catX * GW - WIN_CX) < 9 && sc.sleepy < 0.5;
+      const atTheGlass = Math.abs(sc.catX * GW - WINDOW_CENTER_X) < 9 && sc.sleepy < 0.5;
       if (night && atTheGlass) {
         const shine = mixHex(glass, L.eyes, 0.42);
         const ear = mixHex(glass, INK, 0.3);
@@ -1607,12 +1530,11 @@ export function Cat({
         }
       }
       if (night) {
-        // prettier-ignore
-        const moonRows = [[1, 3], [0, 4], [0, 4], [0, 4], [1, 3]] as const;
-        for (let my = 0; my < moonRows.length; my++) {
-          const [start, end] = moonRows[my]!;
-          for (let mx = start; mx <= end; mx++) {
-            if (moonPixelLit(lunar.index, mx)) px(wx + 2 + mx, wy(my + 1), "#f4e6b8");
+        for (let my = 0; my < 15; my++) {
+          for (let mx = 0; mx < 15; mx++) {
+            if (Math.hypot(mx - 7, my - 7) <= 7.25 && moonPixelLit(lunar.index, Math.floor(mx / 3))) {
+              px(wx + 2 + mx / 3, wy(1) + my / 3, "#f4e6b8", 1 / 3);
+            }
           }
         }
         // prettier-ignore
@@ -1692,13 +1614,14 @@ export function Cat({
         px(wx + sx, wy(sy), `rgba(255,232,166,${glow})`);
       }
 
+      raster.layer = null;
       const starFlight = constellation.current.flight;
       if (starFlight) {
         const age = t - starFlight.startedAt;
         if (age >= 0 && age < STAR_FLIGHT_MS) {
           const raw = reduce ? 1 : age / STAR_FLIGHT_MS;
           const p = 1 - Math.pow(1 - raw, 3);
-          const targetX = Math.max(cam + 12, Math.min(cam + VW - 12, catX.current ?? WIN_CX));
+          const targetX = Math.max(cam + 12, Math.min(cam + viewport - 12, catX.current ?? WINDOW_CENTER_X));
           const x = Math.round(starFlight.fromX + (targetX - starFlight.fromX) * p);
           const y = Math.round(starFlight.fromY + (9 - starFlight.fromY) * p - Math.sin(p * Math.PI) * 6);
           const c = `rgba(255,236,177,${Math.min(1, 0.45 + p)})`;
@@ -1713,7 +1636,9 @@ export function Cat({
       if (t < constellation.current.rewardUntil) {
         const remaining = constellation.current.rewardUntil - t;
         const fade = Math.min(1, (CONSTELLATION_REWARD_MS - remaining) / 700, remaining / 900);
-        const cx = Math.round(Math.max(cam + 12, Math.min(cam + VW - 12, catX.current ?? WIN_CX)));
+        const cx = Math.round(
+          Math.max(cam + 12, Math.min(cam + viewport - 12, catX.current ?? WINDOW_CENTER_X)),
+        );
         const cy = 10;
         // prettier-ignore
         const points = [[-8, 0], [-7, -4], [-3, -2], [0, -3], [3, -2], [7, -4], [8, 0], [6, 3], [3, 5], [0, 6], [-3, 5], [-6, 3], [-3, 1], [3, 1]] as const;
@@ -1734,7 +1659,7 @@ export function Cat({
           `rgba(137,164,215,${a})`,
         ];
         for (let i = 0; i < colors.length; i++) {
-          const x = WIN_CX - 8 + i * 5 + Math.round(Math.sin(t / 480 + i) * 1);
+          const x = WINDOW_CENTER_X - 8 + i * 5 + Math.round(Math.sin(t / 480 + i) * 1);
           rect(x, 25 + i, 3, 1, colors[i]!);
           px(x + 1, FLOOR + 8 + i * 2, colors[i]!);
         }
@@ -1742,6 +1667,7 @@ export function Cat({
       const rainbowing = !reduce && rainRemaining <= 0 && t < plantTaps.current.rainbowUntil;
       const plantBlooming =
         !reduce && t >= plantTaps.current.rainbowUntil && t < plantTaps.current.bloomUntil;
+      raster.layer = "window";
       if (!reduce && rainRemaining > 0) {
         const drift = Math.floor(t / 90);
         const a = Math.min(1, rainRemaining / 750);
@@ -1774,12 +1700,12 @@ export function Cat({
           colors.forEach((color, band) => px(wx + x, wy(1 + band + curve), color));
         }
       }
+      raster.layer = "shelf";
       if (night) {
-        const lampGlow = mixHex(sc.wallBottom, "#d89b65", 0.28);
-        dither(79, FLOOR - 32, 20, 12, lampGlow);
+        sceneArt.lampGlow(rect, sc);
       }
       rect(79, FLOOR - 23, 18, 2, mixHex(sc.wallBottom, INK, 0.14));
-      blit(SHELF, 80 + shake("shelf"), FLOOR - 24, { w: INK, d: "#8a6a48" });
+      blit(SHELF, 80 + shake("shelf"), FLOOR - 24, polish.shelfPalette(sc));
       rect(92 + shake("shelf"), FLOOR - 28, 2, 4, "#7d6b86");
       rect(94 + shake("shelf"), FLOOR - 29, 2, 5, "#b87868");
       if (night) {
@@ -1790,7 +1716,7 @@ export function Cat({
         px(90, FLOOR - 29, "#ffd79a");
       }
       if (!downRef.current || trip.mugStillUp) {
-        blit(MUG, 84 + shake("shelf"), FLOOR - 29, { w: INK, ...mugColors(decorRef.current) });
+        blit(MUG, 84 + shake("shelf"), FLOOR - 29, polish.mugPalette(mugColors(decorRef.current)));
         const steamAge = t - mugSteamedAt.current;
         if (!reduce && steamAge >= 0 && steamAge < MUG_STEAM_MS) {
           const p = steamAge / MUG_STEAM_MS;
@@ -1811,6 +1737,7 @@ export function Cat({
           }
         }
       }
+      raster.layer = null;
       {
         const prog = doorProg;
         const dx = 6 + shake("door");
@@ -1895,19 +1822,9 @@ export function Cat({
         }
       }
       const hangingX = 48 + (!reduce ? Math.round(Math.sin(t / 1900)) : 0);
-      rect(49, 5, 1, 6, INK);
-      px(48, 11, INK);
-      px(50, 11, INK);
-      rect(hangingX - 2, 12, 6, 3, "#a86f4f");
-      rect(hangingX - 1, 15, 4, 1, "#7d523d");
-      const hangingLeaf = mixHex(seasonalPlant.leaf, sc.wallTop, night ? 0.22 : 0.08);
-      // prettier-ignore
-      for (const [dx, dy] of [[-4, -2], [-2, -4], [1, -5], [4, -3], [-5, 1], [5, 0], [-3, 3], [3, 4]] as const) {
-        px(hangingX + dx, 12 + dy, hangingLeaf);
-        px(hangingX + dx + (dx < 0 ? 1 : -1), 13 + dy, hangingLeaf);
-      }
+      sceneArt.hangingPlant(rect, sc, hangingX, seasonalPlant.leaf);
 
-      blit(PLANT, 87 + shake("plant"), FLOOR - 13, { g: seasonalPlant.leaf, w: INK, d: "#b07a4e" });
+      blit(PLANT, 87 + shake("plant"), FLOOR - 13, sceneArt.plantPalette(sc, seasonalPlant.leaf));
 
       const grown = monthsOldRef.current;
       if (grown >= 3) {
@@ -1953,7 +1870,7 @@ export function Cat({
       }
       rect(13, FLOOR + 23, 22, 2, mixHex(sc.floorNear, INK, 0.18));
       const bedPal = blanketPalette(blanketRef.current?.key ?? null);
-      blit(BED, 24 + shake("bed"), FLOOR + 22, bedPal);
+      blit(BED, 24 + shake("bed"), FLOOR + 22, polish.bedPalette(bedPal));
       if (blanketRef.current?.stripe) {
         const bx = 24 + shake("bed") + BED.ox;
         for (const i of BED_STRIPES) {
@@ -1968,7 +1885,7 @@ export function Cat({
         blit(CAKE, 42, FLOOR + 20, { d: "#e8d3b0", g: "#f0a6b4", r: flame });
       }
       if (broughtRef.current) {
-        blit(LEFT_OUT, 24, FLOOR + 22, { r: legible(sc.floorNear), h: "#f0b9c4" });
+        blit(LEFT_OUT, 24, FLOOR + 22, { r: "#302418", h: "#f0b9c4" });
       }
 
       if (brushedRef.current) {
@@ -2028,7 +1945,7 @@ export function Cat({
           }
           if (sc.sun > 0.25) {
             const k = Math.max(0, (m.y - 14) / (FLOOR - 14));
-            const cx = Math.round(WIN_CX + (beamX - WIN_CX) * k);
+            const cx = Math.round(WINDOW_CENTER_X + (beamX - WINDOW_CENTER_X) * k);
             px(cx + m.dx, Math.floor(m.y), sc.beamWarm);
           }
         }
@@ -2220,7 +2137,7 @@ export function Cat({
       }
 
       const slowBlinking = t < slowBlink.current.until;
-      const expression = facialMoment(t, moodRef.current);
+      const expression = polish.facialMoment(t, moodRef.current);
       const blink = !reduce && expression.blink;
       const la = lookAt.current;
       const looking = !!la && t < la.until;
@@ -2341,18 +2258,7 @@ export function Cat({
       const warmth = (litSpan / sp.w) * sc.sun * 0.24;
       const sunlit = (c: string) => (warmth > 0.01 ? mixHex(c, sc.beamWarm, warmth) : c);
 
-      const pal: Record<string, string> = {
-        w: INK,
-        f: sunlit(L.fur),
-        d: sunlit(L.furDk),
-        b: sunlit(L.belly),
-        p: PINK,
-        n: PINK,
-        m: INK,
-        c: awake ? BLUSH : "",
-        h: awake ? WHITE : "",
-        e: awake ? L.eyes : "",
-      };
+      const pal = catPalette(L, awake, sunlit);
 
       if (pianoPlaying) {
         const nextNote = pianoGame.current.history.length;
@@ -2428,7 +2334,7 @@ export function Cat({
         px(step.x + 2, ky + 2, ink);
       }
 
-      const lean = (beamX - WIN_CX) / GW;
+      const lean = (beamX - WINDOW_CENTER_X) / GW;
       const cast = Math.round(lean * 7 * Math.min(1, sc.sun * 1.4));
       const shadowX = kx - (sp.w >> 1);
       rect(shadowX + 1, ky + 1, sp.w - 2, 1, mixHex(sc.floorNear, INK, 0.1));
@@ -2464,25 +2370,26 @@ export function Cat({
       }
 
       if (warmth > 0.06) {
-        const rimOnLeft = beamX > WIN_CX;
+        const rimOnLeft = beamX > WINDOW_CENTER_X;
         const rim = mixHex(sc.beamWarm, WHITE, 0.4);
-        for (let j = 0; j < sp.h; j++) {
-          const row = sp.rows[j]!;
+        const art = roomArt(sp);
+        for (let j = 0; j < art.rows.length; j++) {
+          const row = art.rows[j]!;
           let edge = -1;
           if (rimOnLeft) {
-            for (let i = 0; i < sp.w; i++)
+            for (let i = 0; i < row.length; i++)
               if (row[i] !== ".") {
                 edge = i;
                 break;
               }
           } else {
-            for (let i = sp.w - 1; i >= 0; i--)
+            for (let i = row.length - 1; i >= 0; i--)
               if (row[i] !== ".") {
                 edge = i;
                 break;
               }
           }
-          if (edge >= 0) px(kx + sp.ox + edge, y + sp.oy + j, rim);
+          if (edge >= 0) px(kx + art.ox + edge * art.step, y + art.oy + j * art.step, rim, art.step);
         }
       }
       if (
@@ -2545,7 +2452,7 @@ export function Cat({
         const eye = CLOSED_EYES[pose];
         const ex = kx + sp.ox + eye.right;
         const ey = y + sp.oy + eye.y;
-        rect(ex, ey, eye.width, 2, pal.b);
+        rect(ex, ey - 1, eye.width, 2, pal.b);
         rect(ex, ey, eye.width, 1, INK);
       }
 
@@ -2752,7 +2659,7 @@ export function Cat({
 
       // Only the cat goes behind BOX_FRONT; otherwise the box hides floor treats.
       if (downRef.current && !trip.mugStillUp) {
-        blit(MUG_DOWN, MUG_FLOOR_X, MUG_FLOOR_Y, { w: INK, ...mugColors(decorRef.current) });
+        blit(MUG_DOWN, MUG_FLOOR_X, MUG_FLOOR_Y, polish.mugPalette(mugColors(decorRef.current)));
       }
       if (treating) {
         const ty = FLOOR + 18;
@@ -2842,7 +2749,8 @@ export function Cat({
       }
 
       if (awake) {
-        const ey = y + sp.oy + eyeHighlights(pose).row;
+        const spot = eyeHighlights(pose);
+        const ey = y + sp.oy + spot.row;
         const TRACKS: Record<Pose, boolean> = {
           loaf: true,
           sit: true,
@@ -2855,8 +2763,6 @@ export function Cat({
           peek: true,
           flop: true,
         };
-        const spot = eyeHighlights(pose);
-        const e = { l: spot.l, r: spot.r, wide: TRACKS[pose] };
         const at = mouseVisiting
           ? mouseMoment!.x
           : looking
@@ -2866,9 +2772,9 @@ export function Cat({
               : ptr.in
                 ? ptr.x
                 : null;
-        const look = !e.wide || at === null ? 0 : Math.sign(at - kx) * (Math.abs(at - kx) > 4 ? 1 : 0);
-        px(kx + e.l + look, ey, WHITE);
-        px(kx + e.r + look, ey, WHITE);
+        const look = !TRACKS[pose] || at === null ? 0 : Math.sign(at - kx) * (Math.abs(at - kx) > 4 ? 1 : 0);
+        px(kx + spot.l + look, ey, WHITE);
+        if (!expression.wink || forced || walking || grooming) px(kx + spot.r + look, ey, WHITE);
       }
 
       if (sc.play > 0.5) {

@@ -17,8 +17,20 @@ hand-authored sprites keep animation, custom colors and hit areas consistent.
 
 ## What is in the room
 
-Everything visible is a hand-laid grid in `packages/web/src/sprites.ts` or a rect drawn in
-`packages/web/src/Cat.tsx`. Nothing is generated at runtime and nothing is fetched.
+The cat's original face, silhouette and tail live in `packages/web/src/sprites.ts` and render
+directly from those grids. `catArt.ts` supplies her custom colors. `roomArt.ts` authors the
+finer props, and `roomShell.ts` paints the architecture, materials and light. The canvas engine
+in `Cat.tsx` owns behavior and layering. No image model or external asset request runs in the room.
+
+Movement still uses the same 100 by 80 world. Most new art uses half-cell details;
+`roomPainter.ts` aligns them to whole device pixels. The viewport can widen to show more of
+the room without stretching it. A very short landscape window uses the coarse grid so the
+entrance controls remain visible. Postcards preserve the captured scene's proportions.
+
+The enlarged window, low cabinet and fuller plant share their placement and activation bounds
+through `roomGeometry.ts`. Cat poses retain their original movement anchors, eye highlights,
+collars and expression positions. Closed eyes fill with her face color, and her coat and eye
+colors remain customizable.
 
 Landed as authored Canvas work: whole-pixel rendering (one logical pixel is a whole number of device
 pixels, or the floorboards come out at two different widths); the cat lit by the room, with a rim from
@@ -111,4 +123,6 @@ from everyday controls.
 - The app remains keyboard accessible, screen-reader understandable, reduced-motion safe, and usable
   on a small phone.
 
-Small prop details remain inside their existing pixel grids: an open ceramic mug handle, stitched cushion marks, shelf grain and a striped plant pot. Their dimensions, anchors, palette roles and interaction geometry stay shared with the room renderer.
+Ceramic glaze, an open mug handle, cushion stitching, cabinet books and clustered leaves use
+the same palette roles as the room. Stronger golden-hour light, moonlight and lamp light sit
+under the floor seams and fabric details so those materials remain readable.

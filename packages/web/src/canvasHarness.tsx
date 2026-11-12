@@ -38,23 +38,24 @@ export interface Room {
   set: (next: Partial<Parameters<typeof Cat>[0]>) => void;
   at: (x: number, y: number) => string | null;
   furSpan: () => [number, number] | null;
-  count: (colour: string, y0: number, y1: number) => number;
+  count: (colour: string, y0: number, y1: number, x0?: number, x1?: number) => number;
   unmount: () => void;
 }
 
 /* Read `scale` off the canvas rather than predicting it: the rule it follows is under test. */
 export function room(props: Partial<Parameters<typeof Cat>[0]> = {}, when = "2026-04-02T09:00:00Z"): Room {
-  // One cell per fill, not one device pixel. Every fill is one cell, and storing device pixels is
-  // 160,000 writes a frame, which times the test out.
-  const grid: (string | null)[] = new Array(80 * 80).fill(null);
+  // Keep the art grid independent of device scale so detail can be checked at any viewport size.
+  const grid: (string | null)[] = new Array(160 * 160).fill(null);
   let scale = 1;
 
   const context = {
     fillStyle: "",
-    fillRect(x: number, y: number) {
-      const cx = Math.floor(x / scale);
-      const cy = Math.floor(y / scale);
-      if (cx >= 0 && cx < 80 && cy >= 0 && cy < 80) grid[cy * 80 + cx] = this.fillStyle;
+    fillRect(x: number, y: number, width: number, height: number) {
+      const left = Math.max(0, Math.round((x / scale) * 2));
+      const top = Math.max(0, Math.round((y / scale) * 2));
+      const right = Math.min(160, Math.round(((x + width) / scale) * 2));
+      const bottom = Math.min(160, Math.round(((y + height) / scale) * 2));
+      for (let row = top; row < bottom; row++) grid.fill(this.fillStyle, row * 160 + left, row * 160 + right);
     },
   };
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(context as never);
@@ -94,7 +95,7 @@ export function room(props: Partial<Parameters<typeof Cat>[0]> = {}, when = "202
   );
   const view = render(draw(live));
   const canvas = view.container.querySelector("canvas")!;
-  scale = Math.max(1, Math.round(canvas.width / 80));
+  scale = Math.max(1, Math.round(canvas.height / 80));
 
   const frame = (at: number) => {
     now = at;
@@ -106,7 +107,8 @@ export function room(props: Partial<Parameters<typeof Cat>[0]> = {}, when = "202
   // The first frame is what the mount scheduled; without it nothing has been painted at all.
   frame(0);
 
-  const at = (x: number, y: number) => (x >= 0 && x < 80 && y >= 0 && y < 80 ? grid[y * 80 + x] : null);
+  const at = (x: number, y: number) =>
+    x >= 0 && x < 80 && y >= 0 && y < 80 ? grid[(Math.floor(y * 2) + 1) * 160 + Math.floor(x * 2) + 1] : null;
 
   const run = (from: number, to: number, step = 16) => {
     for (let t = from; t <= to; t += step) frame(t);
@@ -134,10 +136,12 @@ export function room(props: Partial<Parameters<typeof Cat>[0]> = {}, when = "202
       }
       return hi < 0 ? null : [lo, hi];
     },
-    count: (colour, y0, y1) => {
+    count: (colour, y0, y1, x0 = 0, x1 = 79) => {
       let n = 0;
-      for (let y = y0; y <= y1; y++) for (let x = 0; x < 80; x++) if (at(x, y) === colour) n++;
-      return n;
+      for (let y = y0 * 2; y < (y1 + 1) * 2; y++) {
+        for (let x = x0 * 2; x < (x1 + 1) * 2; x++) if (grid[y * 160 + x] === colour) n++;
+      }
+      return n / 4;
     },
     unmount: () => {
       view.unmount();

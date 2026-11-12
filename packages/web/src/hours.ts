@@ -68,15 +68,15 @@ export function mixHex(a: string, b: string, t: number): string {
 
 // prettier-ignore
 const KEYS: { h: number; sun: number; beam: number; wall: string; wall2: string; floor: string; floor2: string; warm: string }[] = [
-  { h: 0,  sun: 0.00, beam: 0.30, wall: "#4a4560", wall2: "#3e3a52", floor: "#3b3548", floor2: "#4a4258", warm: "#8f9bd6" },
-  { h: 5,  sun: 0.04, beam: 0.18, wall: "#6b6178", wall2: "#5a5168", floor: "#514863", floor2: "#615675", warm: "#b7a9d8" },
-  { h: 7,  sun: 0.55, beam: 0.16, wall: "#f0dcc4", wall2: "#e6cfb2", floor: "#cfae86", floor2: "#e0c6a4", warm: "#ffe9c0" },
-  { h: 11, sun: 0.92, beam: 0.38, wall: "#f6e6cf", wall2: "#eed9bd", floor: "#d8b992", floor2: "#e9d1af", warm: "#fff3d2" },
-  { h: 15, sun: 1.00, beam: 0.56, wall: "#efdcc2", wall2: "#e4cdae", floor: "#d3b48d", floor2: "#e3caa8", warm: "#fff0c9" },
-  { h: 18, sun: 0.70, beam: 0.74, wall: "#eccfae", wall2: "#dfba94", floor: "#c9a175", floor2: "#dcb890", warm: "#ffd9a0" },
+  { h: 0,  sun: 0.00, beam: 0.30, wall: "#30364e", wall2: "#292d41", floor: "#282a3a", floor2: "#343144", warm: "#8f9bd6" },
+  { h: 5,  sun: 0.04, beam: 0.18, wall: "#786d88", wall2: "#60566e", floor: "#514863", floor2: "#615675", warm: "#b7a9d8" },
+  { h: 7,  sun: 0.55, beam: 0.16, wall: "#dfcdb6", wall2: "#bca58e", floor: "#987651", floor2: "#b7956c", warm: "#ffe9c0" },
+  { h: 11, sun: 0.92, beam: 0.38, wall: "#e0d2c0", wall2: "#c1ac92", floor: "#a17b57", floor2: "#c29b70", warm: "#fff3d2" },
+  { h: 15, sun: 1.00, beam: 0.56, wall: "#e1d0bd", wall2: "#c2a98f", floor: "#9d7752", floor2: "#bd9365", warm: "#fff0c9" },
+  { h: 18, sun: 0.70, beam: 0.74, wall: "#b6a0a0", wall2: "#927c89", floor: "#88614b", floor2: "#a97c57", warm: "#ffd9a0" },
   { h: 20, sun: 0.28, beam: 0.86, wall: "#a98a86", wall2: "#8e7076", floor: "#7d6467", floor2: "#94787b", warm: "#e0a98f" },
-  { h: 22, sun: 0.08, beam: 0.40, wall: "#6a6076", wall2: "#584f6a", floor: "#4f4661", floor2: "#5f5473", warm: "#a99ad2" },
-  { h: 24, sun: 0.00, beam: 0.30, wall: "#4a4560", wall2: "#3e3a52", floor: "#3b3548", floor2: "#4a4258", warm: "#8f9bd6" },
+  { h: 22, sun: 0.08, beam: 0.40, wall: "#48475e", wall2: "#39374d", floor: "#343044", floor2: "#433a50", warm: "#a99ad2" },
+  { h: 24, sun: 0.00, beam: 0.30, wall: "#30364e", wall2: "#292d41", floor: "#282a3a", floor2: "#343144", warm: "#8f9bd6" },
 ];
 
 const NAP_FROM = 13,

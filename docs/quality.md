@@ -46,6 +46,7 @@ pixels, page errors, overflow, and automated WCAG A/AA findings. It reviews both
 editors, settings, recovery, sharing failure, app updates, reversible exits, and day/night palettes
 at phone, tablet, and desktop widths. `MRRP_UI_WIDTHS=320,1440` narrows a follow-up to supported
 review widths. See the [full-app polish review](polish-review.md) for the completed review and limits.
+The [scene redesign review](scene-redesign-review.md) records the subsequent canvas changes.
 
 Captures use overlapping viewport sections because Chromium's full-page compositor can
 omit a canvas even when its pixels are painted. Inspect the actual screenshots as well as

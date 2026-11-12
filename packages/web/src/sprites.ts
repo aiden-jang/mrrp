@@ -314,17 +314,17 @@ export const DOOR = sprite(
 /** The window the beam comes from. Drawn on the wall so the light has a source. */
 export const WINDOW = sprite(
   [
-    "wwwwwwwwwwwwwwwww",
-    "whhhhhhhwhhhhhhhw",
-    "whhhhhhhwhhhhhhhw",
-    "whhhhhhhwhhhhhhhw",
-    "whhhhhhhwhhhhhhhw",
-    "wwwwwwwwwwwwwwwww",
-    "whhhhhhhwhhhhhhhw",
-    "whhhhhhhwhhhhhhhw",
-    "whhhhhhhwhhhhhhhw",
-    "whhhhhhhwhhhhhhhw",
-    "wwwwwwwwwwwwwwwww",
+    "wbbbbbbbbbbbbbbbw",
+    "fhhhhhhhchhhhhhhw",
+    "fhhhhhhhchhhhhhhw",
+    "fhhhhhhhchhhhhhhw",
+    "fhhhhhhhchhhhhhhw",
+    "wfffffffcfffffffw",
+    "fhhhhhhhchhhhhhhw",
+    "fhhhhhhhchhhhhhhw",
+    "fhhhhhhhchhhhhhhw",
+    "fhhhhhhhchhhhhhhw",
+    "wdddddddddddddddw",
   ],
   0,
   0,
@@ -333,14 +333,14 @@ export const WINDOW = sprite(
 /** Her bed, which she is usually not in. `d` is the rim, `f` the cushion, `b` the dent she leaves. */
 export const BED = sprite(
   [
-    "....dddddddddddd....",
+    "....dhhhhhhhhhhd....",
     "..ddffbffffffbffdd..",
     ".dfffbbbbbbbbbbfffd.",
     "dffbbbbbbbbbbbbbbffd",
-    "dffbbbbbbbbbbbbbbffd",
-    ".dfffbbbbbbbbbbfffd.",
-    "..ddffbffffffbffdd..",
-    "....dddddddddddd....",
+    "wffbbbbbbbbbbbbbbffw",
+    ".wddfbbbbbbbbbbfddw.",
+    "..wwffbffffffbffww..",
+    "....wwwwwwwwwwww....",
   ],
   -11,
   0,
@@ -348,7 +348,7 @@ export const BED = sprite(
 
 /** A shelf, so the thing she knocks off has somewhere to have been. */
 export const SHELF = sprite(
-  ["wwwwwwwwwwwwwwww", "wddddwddddwddddw", "wwwwwwwwwwwwwwww", "...ww......ww..."],
+  ["wffffffffffffffw", "wddddwddddwddddw", "wwccccccccccccww", "...ww......ww..."],
   0,
   0,
 );
@@ -598,10 +598,10 @@ export const GIFT_MOTH = sprite(["n.w.n", "nnwnn", ".n.n."], 0, 0);
  *
  * `c` the glaze, `d` its shadow side, `w` outline.
  */
-export const MUG = sprite([".wwww.", "wcccww", "wccw.w", "wcccdw", ".wwww."], 0, 0);
+export const MUG = sprite([".wbbw.", "whccww", "whcw.w", "wccddw", ".wwww."], 0, 0);
 
 /** On its side, where it landed. Same object, so it has to read as the same object. */
-export const MUG_DOWN = sprite(["..wwww..", ".wccccw.", "wdccccdw", ".wwwwww."], 0, 0);
+export const MUG_DOWN = sprite(["..wbbw..", ".whcccw.", "wdcccddw", ".wwwwww."], 0, 0);
 
 /** Two ek glyphs fit the bubble; a third exceeds its pixel width. */
 export const EK = sprite(

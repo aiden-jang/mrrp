@@ -6,10 +6,9 @@ import decisions from "../../../DECISIONS.md?raw";
 
 const CLOCK = { tz: "UTC", homeHour: 20 };
 
-/** Every hour of the day, as the room actually draws it. */
-const HOURS = Array.from({ length: 24 }, (_, h) => ({
-  hour: h,
-  chrome: chromeFor(sceneFor(CLOCK, Date.UTC(2026, 3, 2, h, 0, 0))),
+const MOMENTS = Array.from({ length: 1440 }, (_, minute) => ({
+  time: `${Math.floor(minute / 60)}:${String(minute % 60).padStart(2, "0")}`,
+  chrome: chromeFor(sceneFor(CLOCK, Date.UTC(2026, 3, 2, 0, minute, 0))),
 }));
 
 /* Text and the surface it is written on. The chrome is retinted every hour, so one spot check
@@ -29,10 +28,10 @@ const PAIRS: [string, string][] = [
 describe("text you can read at any hour", () => {
   it("clears 4.5:1 everywhere text meets a surface, around the whole clock", () => {
     const bad: string[] = [];
-    for (const { hour, chrome } of HOURS) {
+    for (const { time, chrome } of MOMENTS) {
       for (const [fg, bg] of PAIRS) {
         const ratio = contrast(chrome[fg]!, chrome[bg]!);
-        if (ratio < 4.5) bad.push(`${hour}:00 ${fg} on ${bg} = ${ratio.toFixed(2)}`);
+        if (ratio < 4.5) bad.push(`${time} ${fg} on ${bg} = ${ratio.toFixed(2)}`);
       }
     }
     expect(bad).toEqual([]);
@@ -47,7 +46,7 @@ describe("text you can read at any hour", () => {
      * chrome fails here and the fix is to write the new number down.
      */
     const worst = Math.min(
-      ...HOURS.flatMap(({ chrome }) => PAIRS.map(([fg, bg]) => contrast(chrome[fg]!, chrome[bg]!))),
+      ...MOMENTS.flatMap(({ chrome }) => PAIRS.map(([fg, bg]) => contrast(chrome[fg]!, chrome[bg]!))),
     );
     const claimed = decisions.match(/the worst ratio anywhere is (\d+\.\d+)/)?.[1];
     expect(claimed, "DECISIONS.md no longer states a worst ratio").toBeDefined();

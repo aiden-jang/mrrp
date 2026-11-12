@@ -65,7 +65,7 @@ function roundedRect(
   g.closePath();
 }
 
-async function loadImage(blob: Blob): Promise<CanvasImageSource> {
+async function loadImage(blob: Blob): Promise<HTMLImageElement | ImageBitmap> {
   if (typeof createImageBitmap === "function") return createImageBitmap(blob);
 
   return new Promise((resolve, reject) => {
@@ -84,6 +84,18 @@ async function loadImage(blob: Blob): Promise<CanvasImageSource> {
 }
 
 const KEEPSAKE_FONT = 'Quicksand, ui-rounded, "SF Pro Rounded", system-ui, sans-serif';
+
+export function keepsakeImageBounds(width: number, height: number) {
+  const scale = Math.min(1056 / width, 1056 / height);
+  const fittedWidth = width * scale;
+  const fittedHeight = height * scale;
+  return {
+    x: 72 + (1056 - fittedWidth) / 2,
+    y: 72 + (1056 - fittedHeight) / 2,
+    width: fittedWidth,
+    height: fittedHeight,
+  };
+}
 
 async function keepsakeFontReady(): Promise<void> {
   try {
@@ -127,7 +139,8 @@ export async function makeKeepsake(room: Blob, details: KeepsakeDetails): Promis
   roundedRect(g, 72, 72, 1056, 1056, 44);
   g.clip();
   g.imageSmoothingEnabled = false;
-  g.drawImage(image, 72, 72, 1056, 1056);
+  const bounds = keepsakeImageBounds(image.width, image.height);
+  g.drawImage(image, bounds.x, bounds.y, bounds.width, bounds.height);
   g.restore();
 
   g.fillStyle = card.caption;

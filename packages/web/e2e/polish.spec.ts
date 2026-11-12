@@ -71,7 +71,13 @@ test("an invitation keeps the consent button and the whole scene in a short land
     .poll(() =>
       page.locator("canvas").evaluate((canvas: HTMLCanvasElement) => {
         const corner = canvas.getContext("2d")!.getImageData(canvas.width - 1, canvas.height - 1, 1, 1);
-        return canvas.width === canvas.height && corner.data[3] === 255;
+        const scale = canvas.height / 80;
+        return (
+          Number.isInteger(scale) &&
+          canvas.width / scale <= 100 &&
+          canvas.width / scale >= 60 &&
+          corner.data[3] === 255
+        );
       }),
     )
     .toBe(true);

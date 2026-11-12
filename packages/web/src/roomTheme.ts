@@ -1,5 +1,5 @@
 import { mixHex, type Scene } from "./hours.js";
-import { standOff } from "./legible.js";
+import { contrast, standOff } from "./legible.js";
 
 const MOOD_TINT: Record<string, string> = {
   good: "#f8e3b8",
@@ -43,17 +43,28 @@ export function chromeFor(scene: Scene): Record<string, string> {
   const to = night ? DUSK : FULL;
   const tint = (key: keyof typeof DEEP, hue: string) =>
     mixHex(mixHex(from[key], to[key], t), hue, night ? 0.06 : 0.1);
+  const air = tint("air", scene.wallTop);
+  const warm = tint("warm", scene.beamWarm);
+  const panel = tint("panel", scene.wallTop);
+  const ink = night ? INK_ON_DARK : "#3f2f1f";
+  const readable = (color: string) => {
+    for (let step = 0; step <= 20; step++) {
+      const candidate = mixHex(color, ink, step / 20);
+      if ([air, warm, panel].every((surface) => contrast(candidate, surface) >= 4.5)) return candidate;
+    }
+    return ink;
+  };
   return {
-    "--air": tint("air", scene.wallTop),
-    "--air-warm": tint("warm", scene.beamWarm),
-    "--panel": tint("panel", scene.wallTop),
+    "--air": air,
+    "--air-warm": warm,
+    "--panel": panel,
     "--line": tint("line", scene.wallBottom),
     // A separator can be faint. The edge of something you press cannot: `--line` measured 1.38:1 on the
     // panel, so every pill in the room was text floating with a ghost around it.
     "--control": standOff(tint("panel", scene.wallTop)),
     "--honey": mixHex(from.honey, to.honey, t),
-    "--ink": night ? INK_ON_DARK : "#3f2f1f",
-    "--soft": night ? SOFT_ON_DARK : "#77634a",
-    "--error": night ? ERROR_ON_DARK : "#984a34",
+    "--ink": ink,
+    "--soft": readable(night ? SOFT_ON_DARK : "#77634a"),
+    "--error": readable(night ? ERROR_ON_DARK : "#984a34"),
   };
 }
