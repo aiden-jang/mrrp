@@ -220,10 +220,40 @@
 }
 
 .actionColumn > .quiet,
+.actionSection > .quiet,
+.roomTools > .quiet,
 .note .quiet {
   margin-inline: 0;
   padding-inline: 0;
   text-align: left;
+}
+
+.actionSection {
+  margin-top: 24px;
+  min-width: 0;
+}
+
+.actionSection > :first-child {
+  margin-top: 0;
+}
+
+.actionSection > .moodRow {
+  margin-bottom: 0;
+}
+
+.roomTools {
+  margin-top: 24px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.roomTools > .small {
+  margin-block: 8px;
+}
+
+.catPresenceAction {
+  width: 100%;
+  margin-bottom: 8px;
 }
 
 .actionHeading {
@@ -490,14 +520,6 @@
 .recentItem + .recentItem {
   font-size: 12.5px;
   opacity: 0.7;
-}
-
-.tellLabel {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--soft);
-  text-align: center;
-  margin: 18px 0 8px;
 }
 
 .moodRow {
@@ -874,25 +896,29 @@ details[open] > .recoverySummary::before {
 }
 
 .blanketRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
   margin-top: 14px;
-  text-align: center;
 }
 .blanketLabel {
   font-size: 12px;
   color: var(--soft);
-  margin: 0 0 6px;
+  margin: 0;
 }
 .blanketSwatches {
   display: flex;
-  gap: 8px;
-  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 /* Same trick as the fur swatches: the box is 44 for your thumb, the paint stays small. */
 .blanketSwatch,
 .blanketStripe {
   width: 44px;
   height: 44px;
-  border-radius: 16px;
+  flex-shrink: 0;
+  border-radius: 8px;
   border: 7px solid transparent;
   background-clip: padding-box;
   cursor: pointer;
@@ -1238,11 +1264,18 @@ details[open] > .recoverySummary::before {
 }
 
 .moodChoice > span {
-  flex-direction: column;
-  gap: 10px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.moodChoice svg {
+  flex-shrink: 0;
 }
 .moodChoice {
-  min-height: 78px;
+  font-size: 13px;
+  padding: 10px 2px;
 }
 .moodChoice[aria-pressed="true"] {
   box-shadow: inset 0 0 0 2px var(--ink);
@@ -1250,7 +1283,7 @@ details[open] > .recoverySummary::before {
 .moodResponse {
   font-size: 12px;
   color: var(--soft);
-  text-align: center;
+  margin: 10px 0 0;
   min-height: 36px;
   line-height: 1.5;
 }

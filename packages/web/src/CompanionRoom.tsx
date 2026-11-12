@@ -41,78 +41,81 @@ export function CompanionRoom({
   const hisFades = fadeNote(view, "him", now);
   return (
     <>
-      <p className={s.theirsMain}>
-        {view.catMood ? (
-          <>
-            <b>{view.them}</b> is {MOODS.find((m) => m.id === view.catMood)?.said}
-            {view.catMoodAt ? `, ${whenish(view.catMoodAt)}` : ""}.
-          </>
-        ) : (
-          <>
-            <b>{view.them}</b> hasn't said how she is yet today.
-          </>
+      <section className={s.actionSection} aria-label="Keep her company">
+        <p className={s.theirsMain}>
+          {view.catMood ? (
+            <>
+              <b>{view.them}</b> is {MOODS.find((m) => m.id === view.catMood)?.said}
+              {view.catMoodAt ? `, ${whenish(view.catMoodAt)}` : ""}.
+            </>
+          ) : (
+            <>
+              <b>{view.them}</b> hasn't said how she is yet today.
+            </>
+          )}
+        </p>
+
+        {view.herLine && (
+          <div className={s.note}>
+            <p className={s.noteFrom}>{view.them} left you this</p>
+            <p className={s.noteText}>{view.herLine.text}</p>
+            <p className={s.noteDay}>{whenish(view.herLine.at)}</p>
+          </div>
         )}
-      </p>
 
-      {view.herLine && (
-        <div className={s.note}>
-          <p className={s.noteFrom}>{view.them} left you this</p>
-          <p className={s.noteText}>{view.herLine.text}</p>
-          <p className={s.noteDay}>{whenish(view.herLine.at)}</p>
+        <div className={s.row} style={{ marginTop: 14 }}>
+          {ACTIONS.map((a) => {
+            const brushingNow = a.id === "brush" && strokes !== null;
+            // The frame holds one thing, so a photo takes down whatever is drawn in it. Ask
+            // first: he cannot see that his button is about to delete her drawing.
+            const overDrawing = a.id === "photo" && !!view.doodle;
+            const sitting = a.id === "sit" && view.sittingWith;
+            // Sitting shows where he is, never where he has been. Dimming the button once he stands up would say
+            // he had used it up.
+            const on = a.id === "sit" ? sitting : brushingNow || (HIS_MARKS[a.id]?.(view) ?? false);
+            return (
+              <button
+                key={a.id}
+                aria-pressed={on}
+                className={`${s.btn} ${a.id === "sit" ? s.btnGo : ""} ${on ? s.btnOn : ""} ${sitting || brushingNow ? s.btnStaying : ""}`}
+                onClick={() => {
+                  if (a.id === "sit") return void sitWith(!view.sittingWith);
+                  if (a.id === "brush") return setStrokes(brushingNow ? null : 0);
+                  if (overDrawing && !photoOver) return setPhotoOver(true);
+                  setPhotoOver(false);
+                  void act(a.id);
+                }}
+              >
+                {sitting
+                  ? "Get up"
+                  : brushingNow
+                    ? `Brushing${".".repeat(strokes)}`
+                    : overDrawing && photoOver
+                      ? "That takes her drawing down"
+                      : a.label}
+              </button>
+            );
+          })}
         </div>
-      )}
+        {strokes !== null && (
+          <p className={s.hint} style={{ marginTop: 6 }} aria-live="polite">
+            Brush her: drag across {view.cat.name}, back and forth.
+          </p>
+        )}
+        {hisMarks && (
+          <p className={s.small} style={{ marginTop: 6 }}>
+            She'll find {hisMarks}.
+          </p>
+        )}
+        {hisFades && <p className={s.fades}>{hisFades}</p>}
 
-      <div className={s.row} style={{ marginTop: 14 }}>
-        {ACTIONS.map((a) => {
-          const brushingNow = a.id === "brush" && strokes !== null;
-          // The frame holds one thing, so a photo takes down whatever is drawn in it. Ask
-          // first: he cannot see that his button is about to delete her drawing.
-          const overDrawing = a.id === "photo" && !!view.doodle;
-          const sitting = a.id === "sit" && view.sittingWith;
-          // Sitting shows where he is, never where he has been. Dimming the button once he stands up would say
-          // he had used it up.
-          const on = a.id === "sit" ? sitting : brushingNow || (HIS_MARKS[a.id]?.(view) ?? false);
-          return (
-            <button
-              key={a.id}
-              aria-pressed={on}
-              className={`${s.btn} ${a.id === "sit" ? s.btnGo : ""} ${on ? s.btnOn : ""} ${sitting || brushingNow ? s.btnStaying : ""}`}
-              onClick={() => {
-                if (a.id === "sit") return void sitWith(!view.sittingWith);
-                if (a.id === "brush") return setStrokes(brushingNow ? null : 0);
-                if (overDrawing && !photoOver) return setPhotoOver(true);
-                setPhotoOver(false);
-                void act(a.id);
-              }}
-            >
-              {sitting
-                ? "Get up"
-                : brushingNow
-                  ? `Brushing${".".repeat(strokes)}`
-                  : overDrawing && photoOver
-                    ? "That takes her drawing down"
-                    : a.label}
-            </button>
-          );
-        })}
-      </div>
-      {strokes !== null && (
-        <p className={s.hint} style={{ marginTop: 6 }} aria-live="polite">
-          Brush her: drag across {view.cat.name}, back and forth.
+        <p className={s.did} style={{ opacity: did && did !== "saved" ? 1 : 0 }} aria-live="polite">
+          {did && did !== "saved" ? `She'll see that you ${did}.` : "\u00a0"}
         </p>
-      )}
-      {hisMarks && (
-        <p className={s.small} style={{ marginTop: 6 }}>
-          She'll find {hisMarks}.
-        </p>
-      )}
-      {hisFades && <p className={s.fades}>{hisFades}</p>}
+        <TheirRecent subject="She" items={theirLive} />
+      </section>
 
-      <p className={s.did} style={{ opacity: did && did !== "saved" ? 1 : 0 }} aria-live="polite">
-        {did && did !== "saved" ? `She'll see that you ${did}.` : "\u00a0"}
-      </p>
-
-      <section aria-label="Leave something out">
+      <section className={s.actionSection} aria-label="Leave something out">
         <h2 className={s.actionHeading}>Leave something out</h2>
         <p className={s.small} style={{ marginBottom: 8 }}>
           {view.forHer
@@ -146,35 +149,36 @@ export function CompanionRoom({
           ))}
         </div>
       </section>
-      <TheirRecent subject="She" items={theirLive} />
 
-      <button ref={history.trigger} className={s.quiet} onClick={() => void history.open()}>
-        Everything the two of you have said
-      </button>
-      {history.panel}
-
-      <FrameSheet current={view.doodle} saving={drawing} onSave={hangUp} />
-
-      {view.noteDay && (
-        <p className={s.small} style={{ textAlign: "center" }}>
-          She has note {view.noteDay} waiting. Hold on {view.cat.name} to pet her.
-        </p>
-      )}
-      {view.sheHasReadAll && (
-        <p className={s.small} style={{ textAlign: "center" }}>
-          She has read all {view.notesInAll} of them. The box below takes more whenever you have some.
-        </p>
-      )}
-      {!setup && (
-        <button
-          ref={setupTrigger}
-          className={s.quiet}
-          disabled={cat.loading}
-          onClick={() => void cat.start()}
-        >
-          Write her notes, or change the cat and room
+      <section className={s.roomTools} aria-label="Notes and room details">
+        <button ref={history.trigger} className={s.quiet} onClick={() => void history.open()}>
+          Everything the two of you have said
         </button>
-      )}
+        {history.panel}
+
+        <FrameSheet current={view.doodle} saving={drawing} onSave={hangUp} />
+
+        {view.noteDay && (
+          <p className={s.small}>
+            She has note {view.noteDay} waiting. Hold on {view.cat.name} to pet her.
+          </p>
+        )}
+        {view.sheHasReadAll && (
+          <p className={s.small}>
+            She has read all {view.notesInAll} of them. The box below takes more whenever you have some.
+          </p>
+        )}
+        {!setup && (
+          <button
+            ref={setupTrigger}
+            className={s.quiet}
+            disabled={cat.loading}
+            onClick={() => void cat.start()}
+          >
+            Write her notes, or change the cat and room
+          </button>
+        )}
+      </section>
     </>
   );
 }

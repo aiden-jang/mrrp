@@ -49,176 +49,175 @@ export function CatRoom({
   const herFades = fadeNote(view, "her", now);
   return (
     <>
-      {view.note && (
-        <div className={s.note}>
-          <p className={s.noteFrom}>
-            {view.note.final ? `${view.them} left this out for you` : `${view.them} left you something`}
+      <section className={s.actionSection} aria-label="Notes and replies">
+        {view.note && (
+          <div className={s.note}>
+            <p className={s.noteFrom}>
+              {view.note.final ? `${view.them} left this out for you` : `${view.them} left you something`}
+            </p>
+            <p className={s.noteText}>{view.note.text}</p>
+            {!view.note.final && <p className={s.noteDay}>day {view.note.day}</p>}
+            {!sayBox.open && (
+              <button
+                className={`${s.btn} ${s.btnGo} ${s.noteReply}`}
+                onClick={() => sayBox.start(view.note!.day - 1)}
+              >
+                Say something back
+              </button>
+            )}
+          </div>
+        )}
+
+        {sayBox.open ? (
+          <SayBox
+            value={sayBox.text}
+            max={LINE_MAX}
+            answering={sayBox.replyTo !== null && view.note ? view.note.text : null}
+            him={view.them ?? "him"}
+            saving={sayBox.saving}
+            canClear={!!view.herLine}
+            clearing={sayBox.clearing}
+            boxRef={sayBox.boxRef}
+            onChange={sayBox.setText}
+            onSave={() => void sayBox.say()}
+            onNeverMind={sayBox.neverMind}
+            onClearTap={() => void sayBox.clearTap()}
+          />
+        ) : view.herLine ? (
+          /* Opens empty. Saving adds a line rather than replacing this one, and a prefilled box says the opposite. */
+          <button className={s.yourLine} onClick={() => sayBox.start(null)}>
+            <span className={s.yourLineLabel}>the last thing you said to him</span>
+            <span className={s.yourLineText}>{view.herLine.text}</span>
+          </button>
+        ) : (
+          <button className={s.quiet} onClick={() => sayBox.start(null)}>
+            Leave {view.them ?? "him"} a line
+          </button>
+        )}
+
+        {view.note && (
+          <>
+            <button ref={history.trigger} className={s.quiet} onClick={() => void history.open()}>
+              Everything he's written you
+            </button>
+            {history.panel}
+          </>
+        )}
+
+        {theirLive.length > 0 ? (
+          <TheirRecent subject={<b>{view.them}</b>} items={theirLive} />
+        ) : view.themHereNow ? null : view.themLastAt ? (
+          <p className={s.came}>
+            <b>{view.them}</b> looked in {whenish(view.themLastAt)}.
           </p>
-          <p className={s.noteText}>{view.note.text}</p>
-          {!view.note.final && <p className={s.noteDay}>day {view.note.day}</p>}
-          {!sayBox.open && (
+        ) : null}
+
+        {view.theyCameAfter && !view.themHereNow && <p className={s.came}>He came in after you said that.</p>}
+      </section>
+
+      <section className={s.actionSection} aria-label="How are you feeling?">
+        <h2 className={s.actionHeading}>How are you feeling?</h2>
+        <div className={s.moodRow}>
+          {MOODS.map((m) => (
             <button
-              className={`${s.btn} ${s.btnGo} ${s.noteReply}`}
-              onClick={() => sayBox.start(view.note!.day - 1)}
+              key={m.id}
+              aria-pressed={view.catMood === m.id}
+              className={`${s.mood} ${s.moodChoice} ${view.catMood === m.id ? s.moodOn : ""}`}
+              style={view.catMood === m.id ? undefined : { background: moodTint(m.id, nightChrome, panel) }}
+              onClick={() => void tell(m.id)}
             >
-              Say something back
+              <span>
+                <MoodFace mood={m.id} color="var(--ink)" size={14} />
+                {m.label}
+              </span>
             </button>
-          )}
+          ))}
         </div>
-      )}
+        <MoodResponse mood={view.catMood} />
+      </section>
 
-      {sayBox.open ? (
-        <SayBox
-          value={sayBox.text}
-          max={LINE_MAX}
-          answering={sayBox.replyTo !== null && view.note ? view.note.text : null}
-          him={view.them ?? "him"}
-          saving={sayBox.saving}
-          canClear={!!view.herLine}
-          clearing={sayBox.clearing}
-          boxRef={sayBox.boxRef}
-          onChange={sayBox.setText}
-          onSave={() => void sayBox.say()}
-          onNeverMind={sayBox.neverMind}
-          onClearTap={() => void sayBox.clearTap()}
+      <section className={s.actionSection} aria-label="Be a cat about it">
+        <h2 className={s.actionHeading}>Be a cat about it</h2>
+        {!view.sittingWithYou && (
+          <button
+            className={`${s.btn} ${s.catPresenceAction} ${view.waitingAtDoor ? `${s.btnOn} ${s.btnStaying}` : ""}`}
+            aria-pressed={view.waitingAtDoor}
+            onClick={() => void waitAtDoor(!view.waitingAtDoor)}
+          >
+            {view.waitingAtDoor ? "Come away from the door" : "Go and wait by the door"}
+          </button>
+        )}
+
+        {view.sittingWithYou && (
+          <button
+            className={`${s.btn} ${s.catPresenceAction} ${view.settled ? `${s.btnOn} ${s.btnStaying}` : s.btnGo}`}
+            aria-pressed={view.settled}
+            onClick={() => void settleIn(!view.settled)}
+          >
+            {view.settled ? "Settled" : "Settle into it"}
+          </button>
+        )}
+
+        <div className={s.row}>
+          {CAT_ACTS.filter((a) => a.id !== "gift").map((a) => {
+            const noBox = a.id === "box" && !view.boxOut;
+            const done = a.id === "shelf" ? view.shelfDown : view.box;
+            return (
+              <button
+                key={a.id}
+                aria-pressed={done}
+                disabled={noBox}
+                className={`${s.mood} ${done ? s.moodOn : ""}`}
+                style={{
+                  justifyContent: "center",
+                  padding: "9px 8px",
+                  opacity: noBox ? 0.45 : undefined,
+                }}
+                onClick={() => void catAct(a.id)}
+              >
+                {noBox ? "no box to get into" : a.id === "box" && view.box ? "Get out of the box" : a.label}
+              </button>
+            );
+          })}
+        </div>
+        {herMarks && (
+          <p className={s.small} style={{ marginTop: 4 }}>
+            He'll find {herMarks}.
+          </p>
+        )}
+        {herFades && <p className={s.fades}>{herFades}</p>}
+      </section>
+
+      <section className={s.actionSection} aria-label="Leave him something">
+        <h2 className={s.actionHeading}>Leave him something</h2>
+        <input
+          value={giftWords}
+          maxLength={LINE_MAX}
+          placeholder="say something with it, if you want"
+          onChange={(e) => setGiftWords(e.target.value)}
+          className={s.giftWords}
+          aria-label="Something to say with the thing you leave him"
         />
-      ) : view.herLine ? (
-        /* Opens empty. Saving adds a line rather than replacing this one, and a prefilled box says the opposite. */
-        <button className={s.yourLine} onClick={() => sayBox.start(null)}>
-          <span className={s.yourLineLabel}>the last thing you said to him</span>
-          <span className={s.yourLineText}>{view.herLine.text}</span>
-        </button>
-      ) : (
-        <button className={s.quiet} onClick={() => sayBox.start(null)}>
-          Leave {view.them ?? "him"} a line
-        </button>
-      )}
-
-      <h2 className={s.actionHeading}>How are you feeling?</h2>
-      <div className={s.moodRow}>
-        {MOODS.map((m) => (
-          <button
-            key={m.id}
-            aria-pressed={view.catMood === m.id}
-            className={`${s.mood} ${s.moodChoice} ${view.catMood === m.id ? s.moodOn : ""}`}
-            style={
-              view.catMood === m.id
-                ? { justifyContent: "center", padding: "9px 8px" }
-                : {
-                    justifyContent: "center",
-                    padding: "9px 8px",
-                    background: moodTint(m.id, nightChrome, panel),
-                  }
-            }
-            onClick={() => void tell(m.id)}
-          >
-            <span style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
-              <MoodFace mood={m.id} color="var(--ink)" />
-              {m.label}
-            </span>
-          </button>
-        ))}
-      </div>
-      <MoodResponse mood={view.catMood} />
-
-      {view.note && (
-        <>
-          <button ref={history.trigger} className={s.quiet} onClick={() => void history.open()}>
-            Everything he's written you
-          </button>
-          {history.panel}
-        </>
-      )}
-
-      {theirLive.length > 0 ? (
-        <TheirRecent subject={<b>{view.them}</b>} items={theirLive} />
-      ) : view.themHereNow ? null : view.themLastAt ? (
-        <p className={s.came}>
-          <b>{view.them}</b> looked in {whenish(view.themLastAt)}.
-        </p>
-      ) : null}
-
-      {view.theyCameAfter && !view.themHereNow && <p className={s.came}>He came in after you said that.</p>}
-
-      <FrameSheet current={view.doodle} saving={drawing} onSave={(c) => hangUp(c)} />
-
-      <BlanketRow current={view.blanket} busy={bedding} onPick={(k, st) => void pickBlanket(k, st)} />
-
-      {!view.sittingWithYou && (
-        <button
-          className={`${s.btn} ${view.waitingAtDoor ? `${s.btnOn} ${s.btnStaying}` : ""}`}
-          style={{ width: "100%", marginTop: 12 }}
-          aria-pressed={view.waitingAtDoor}
-          onClick={() => void waitAtDoor(!view.waitingAtDoor)}
-        >
-          {view.waitingAtDoor ? "Come away from the door" : "Go and wait by the door"}
-        </button>
-      )}
-
-      {view.sittingWithYou && (
-        <button
-          className={`${s.btn} ${view.settled ? `${s.btnOn} ${s.btnStaying}` : s.btnGo}`}
-          style={{ width: "100%", marginTop: 12 }}
-          aria-pressed={view.settled}
-          onClick={() => void settleIn(!view.settled)}
-        >
-          {view.settled ? "Settled" : "Settle into it"}
-        </button>
-      )}
-
-      <p className={s.tellLabel}>Be a cat about it</p>
-      <div className={s.row}>
-        {CAT_ACTS.filter((a) => a.id !== "gift").map((a) => {
-          const noBox = a.id === "box" && !view.boxOut;
-          const done = a.id === "shelf" ? view.shelfDown : view.box;
-          return (
+        <div className={s.moodRow}>
+          {GIFTS.map((g) => (
             <button
-              key={a.id}
-              aria-pressed={done}
-              disabled={noBox}
-              className={`${s.mood} ${done ? s.moodOn : ""}`}
-              style={{
-                justifyContent: "center",
-                padding: "9px 8px",
-                opacity: noBox ? 0.45 : undefined,
-              }}
-              onClick={() => void catAct(a.id)}
+              key={g.id}
+              disabled={actions.gifting}
+              aria-pressed={view.gift === g.id}
+              className={`${s.mood} ${view.gift === g.id ? s.moodOn : ""}`}
+              style={{ justifyContent: "center", padding: "9px 8px" }}
+              onClick={() => void leaveGift(g.id)}
             >
-              {noBox ? "no box to get into" : a.id === "box" && view.box ? "Get out of the box" : a.label}
+              {g.label}
             </button>
-          );
-        })}
-      </div>
-      {herMarks && (
-        <p className={s.small} style={{ marginTop: 4 }}>
-          He'll find {herMarks}.
-        </p>
-      )}
-      {herFades && <p className={s.fades}>{herFades}</p>}
+          ))}
+        </div>
+      </section>
 
-      <p className={s.tellLabel}>Leave him something</p>
-      <input
-        value={giftWords}
-        maxLength={LINE_MAX}
-        placeholder="say something with it, if you want"
-        onChange={(e) => setGiftWords(e.target.value)}
-        className={s.giftWords}
-        aria-label="Something to say with the thing you leave him"
-      />
-      <div className={s.moodRow}>
-        {GIFTS.map((g) => (
-          <button
-            key={g.id}
-            disabled={actions.gifting}
-            aria-pressed={view.gift === g.id}
-            className={`${s.mood} ${view.gift === g.id ? s.moodOn : ""}`}
-            style={{ justifyContent: "center", padding: "9px 8px" }}
-            onClick={() => void leaveGift(g.id)}
-          >
-            {g.label}
-          </button>
-        ))}
-      </div>
+      <section className={s.roomTools} aria-label="Room details">
+        <FrameSheet current={view.doodle} saving={drawing} onSave={(c) => hangUp(c)} />
+        <BlanketRow current={view.blanket} busy={bedding} onPick={(k, st) => void pickBlanket(k, st)} />
+      </section>
     </>
   );
 }
