@@ -1327,13 +1327,8 @@ export function Cat({
       sceneArt.joinery(rect, sc);
       sceneArt.floor(rect, sc);
 
-      const rugShadow = mixHex(sc.floorNear, INK, 0.25);
       const { edge: rugEdge, body: rugBody } = rugColors(sc, decorRef.current);
       const under = rugBody;
-      const rugThread = mixHex(rugBody, sc.beamWarm, 0.16);
-      rect(35, FLOOR + 12, 40, 1, rugShadow);
-      rect(32, FLOOR + 13, 46, 13, rugEdge);
-      rect(34, FLOOR + 12, 42, 15, rugEdge);
       polish.rugSurface(rect, sc, rugBody, rugEdge);
 
       if (spotRef.current !== null) {
@@ -1343,10 +1338,6 @@ export function Cat({
         rect(wx - 7, FLOOR + 17, 15, 4, worn);
         rect(wx - 5, FLOOR + 21, 11, 1, worn);
       }
-
-      dither(38, FLOOR + 16, 34, 1, rugThread);
-      dither(38, FLOOR + 22, 34, 1, rugThread, 1);
-      for (const x of [35, 40, 69, 74]) px(x, FLOOR + 27, rugEdge);
 
       rugPattern(rect, decorRef.current, rugBody);
       const occupied = togetherRef.current && sittingRef.current ? 1 : 0;
@@ -2295,6 +2286,7 @@ export function Cat({
         }
       }
 
+      polish.cozyLight(rect, sc, kx, ky);
       if (sc.moodVisual === "warm-pool") {
         const warmth = mixHex(sc.floorNear, "#f3c985", 0.62);
         // prettier-ignore
@@ -2960,13 +2952,6 @@ export function Cat({
           px(kx - radius, ky + 2, c);
           px(kx + radius, ky + 2, c);
           if (ring < 2) px(kx - radius + 2, ky + 4, c);
-        }
-      }
-
-      if (sc.snug > 0.35) {
-        // prettier-ignore
-        for (const [dy, w] of [[1, 20], [2, 24], [3, 26], [4, 24], [5, 18]] as const) {
-          dither(kx - (w >> 1), ky + dy, w, 1, sc.patch);
         }
       }
 

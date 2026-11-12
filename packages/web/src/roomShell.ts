@@ -33,8 +33,8 @@ export function shell(paint: Paint, scene: Scene) {
 }
 
 export function floor(paint: Paint, scene: Scene) {
-  const seam = mixHex(scene.floorFar, INK, 0.22);
-  const edge = mixHex(scene.floorNear, scene.beamWarm, 0.14);
+  const seam = mixHex(scene.floorNear, INK, 0.14);
+  const edge = mixHex(scene.floorNear, scene.beamWarm, 0.05);
   const bands = [48, 51, 55, 61, 69, 79, 80];
   for (let band = 1; band < bands.length - 1; band++) {
     const y = bands[band]!;
@@ -44,14 +44,14 @@ export function floor(paint: Paint, scene: Scene) {
   for (let band = 0; band < bands.length - 1; band++) {
     for (let y = bands[band]!; y < bands[band + 1]!; y += 0.5) {
       const depth = 0.62 + ((y - 48) / 32) * 0.55;
-      for (const joint of [-15, 13, 41, 69, 97, 125]) {
-        const x = Math.round((50 + (joint + (band % 2) * 14 - 50) * depth) * 2) / 2;
+      for (const joint of [-10, 30, 70, 110]) {
+        const x = Math.round((50 + (joint + (band % 2) * 20 - 50) * depth) * 2) / 2;
         paint(x, y, 0.5, 0.5, seam);
-        paint(x + 0.5, y, 0.5, 0.5, mixHex(scene.floorNear, scene.beamWarm, 0.06));
+        paint(x + 0.5, y, 0.5, 0.5, mixHex(scene.floorNear, scene.beamWarm, 0.03));
       }
     }
   }
-  const grain = mixHex(scene.floorNear, INK, 0.07);
+  const grain = mixHex(scene.floorNear, INK, 0.045);
   for (const [x, y, width] of [
     [7, 53, 4],
     [35, 57, 6],

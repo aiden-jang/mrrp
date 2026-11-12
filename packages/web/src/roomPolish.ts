@@ -5,18 +5,27 @@ import type { Mood } from "./types.js";
 type Paint = (x: number, y: number, width: number, height: number, color: string) => void;
 
 export function rugSurface(paint: Paint, scene: Scene, body: string, edge: string) {
+  const binding = mixHex(body, edge, 0.45);
+  const inset = mixHex(body, edge, 0.15);
+  paint(34, 60, 42, 15, binding);
+  paint(32, 61, 46, 13, binding);
+  paint(34.5, 60.5, 41, 14, inset);
+  paint(32.5, 61.5, 45, 12, inset);
   paint(35, 61, 40, 13, body);
   rugLight(paint, scene, body);
-  paint(36, 61, 38, 1, mixHex(body, scene.beamWarm, 0.12));
-  paint(36, 73, 38, 1, mixHex(body, edge, 0.28));
-  paint(35, 62, 1, 11, mixHex(body, edge, 0.18));
-  paint(74, 62, 1, 11, mixHex(body, scene.beamWarm, 0.06));
-  const thread = mixHex(body, scene.beamWarm, 0.09);
-  const tuck = mixHex(body, edge, 0.12);
-  for (const x of [39, 47, 55, 63, 71]) {
-    paint(x, 66, 2, 1, thread);
-    paint(x + 1, 68, 1, 1, tuck);
+  paint(35.5, 61, 39, 0.5, mixHex(body, scene.beamWarm, 0.08));
+  paint(35.5, 73.5, 39, 0.5, mixHex(body, edge, 0.2));
+  const thread = mixHex(body, scene.beamWarm, 0.12);
+  for (const x of [37, 43, 49, 55, 61, 67, 73]) {
+    paint(x, 61.5, 1, 0.5, thread);
+    paint(x, 73, 1, 0.5, thread);
   }
+  const weave = mixHex(body, scene.beamWarm, 0.06);
+  for (const x of [39, 47, 55, 63, 71]) {
+    paint(x, 66, 1.5, 0.5, weave);
+    paint(x + 1, 68, 1, 0.5, mixHex(body, edge, 0.08));
+  }
+  for (const x of [35, 40, 69, 74]) paint(x, 75, 1, 0.5, binding);
 }
 
 export function shelfPalette(scene: Scene) {
@@ -70,17 +79,42 @@ export function facialMoment(time: number, mood: Mood | null) {
   };
 }
 
+export function cozyLight(paint: Paint, scene: Scene, x: number, floor: number) {
+  if (scene.snug <= 0.35) return;
+  const strength = 0.025 + scene.snug * 0.1;
+  const tint = (alpha: number) => `rgba(244,197,133,${alpha.toFixed(3)})`;
+  for (let row = 0; row < 9; row++) {
+    const distance = Math.abs(row - 4) / 4;
+    const width = 27 - Math.round(distance * distance * 13);
+    const alpha = strength * (1 - distance * 0.65);
+    const y = floor + 0.5 + row * 0.5;
+    paint(x - width / 2, y, width, 0.5, tint(alpha * 0.35));
+    paint(x - width / 2 + 1, y, width - 2, 0.5, tint(alpha * 0.65));
+  }
+}
+
 export function companionCushion(paint: Paint, scene: Scene, here: boolean, depth: number) {
   const ink = "#4a3520";
-  const edge = mixHex(scene.floorNear, "#796b82", 0.72);
   const cloth = mixHex(scene.floorNear, "#c1a6b8", 0.78);
-  const dip = Math.round(depth * 2);
-  paint(66, 73, 18, 1, mixHex(scene.floorNear, ink, 0.18));
-  paint(64, 68, 22, 4, edge);
-  paint(66, 65 + dip, 18, 7 - dip, edge);
-  paint(66, 67 + dip, 18, 4 - dip, cloth);
-  paint(68, 66 + dip, 14, 1, mixHex(cloth, scene.beamWarm, here ? 0.42 : 0.14));
-  if (depth > 0.3) paint(70, 68 + dip, 10, 1, mixHex(cloth, ink, 0.23));
-  paint(66, 70, 1, 1, mixHex(cloth, ink, 0.3));
-  paint(83, 70, 1, 1, mixHex(cloth, ink, 0.3));
+  const edge = mixHex(cloth, "#65515f", 0.22);
+  const dip = Math.round(depth * 4) / 2;
+  const top = 65 + dip;
+  paint(65, 73, 20, 1, mixHex(scene.floorNear, ink, 0.08));
+  paint(67, 72.5, 16, 0.5, mixHex(scene.floorNear, ink, 0.13));
+  paint(66, top, 18, 7.5 - dip, edge);
+  paint(65, top + 0.5, 20, 6.5 - dip, edge);
+  paint(64.5, top + 1.5, 21, 4.5 - dip, edge);
+  paint(66, top + 0.5, 18, 6.5 - dip, cloth);
+  paint(65.5, top + 1, 19, 5.5 - dip, cloth);
+  paint(65, top + 2, 20, 3.5 - dip, cloth);
+  paint(66, 70.5, 18, 1.5, mixHex(cloth, ink, 0.08));
+  paint(68, top + 0.5, 14, 0.5, mixHex(cloth, scene.beamWarm, here ? 0.16 : 0.08));
+  if (depth > 0) {
+    const dent = mixHex(cloth, ink, depth * 0.12);
+    paint(70, top + 1.5, 10, 0.5, dent);
+    paint(71, top + 2, 8, 0.5, dent);
+  }
+  paint(66.5, 71, 17, 0.5, mixHex(cloth, ink, 0.12));
+  const thread = mixHex(cloth, scene.beamWarm, 0.12);
+  for (const x of [67, 72, 78, 83]) paint(x, 71, 0.5, 0.5, thread);
 }
