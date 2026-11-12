@@ -6,10 +6,10 @@
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.06fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-areas: "copy preview" "start preview";
-  column-gap: clamp(24px, 5vw, 56px);
-  padding-top: clamp(24px, 4vw, 44px);
+  column-gap: clamp(28px, 5vw, 64px);
+  padding-top: clamp(32px, 5vw, 64px);
 }
 
 .copy {
@@ -19,19 +19,19 @@
 
 .title {
   margin: 0;
-  font-size: clamp(36px, 4.6vw, 62px);
-  line-height: 1.06;
-  letter-spacing: -0.037em;
+  font-size: clamp(36px, 4.6vw, 66px);
+  line-height: 1.1;
+  letter-spacing: -0.04em;
   font-weight: 700;
   text-wrap: balance;
 }
 
 .intro {
-  max-width: 38ch;
-  font-size: 17px;
+  max-width: 36ch;
+  font-size: 16px;
   line-height: 1.6;
   color: var(--soft);
-  margin: 16px 0 0;
+  margin: 20px 0 0;
 }
 
 .preview {
@@ -49,18 +49,23 @@
 
 .caption {
   text-align: center;
-  margin: 10px 0 0;
-  font-size: 13px;
+  margin: 14px 0 0;
+  font-size: 12px;
   color: var(--soft);
 }
 
 .start {
   grid-area: start;
   align-self: start;
-  margin-top: 20px;
-  max-width: 340px;
+  margin-top: 28px;
+  max-width: 440px;
   display: grid;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.start > :not(input, button[type="submit"]) {
+  grid-column: 1 / -1;
 }
 
 .start > button {
@@ -68,7 +73,7 @@
 }
 
 .label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 650;
   margin-top: 4px;
 }
@@ -76,22 +81,22 @@
 .fine {
   font-size: 13px;
   color: var(--soft);
-  margin: 2px 0 0;
+  margin: 4px 0 0;
   line-height: 1.5;
 }
 
 .steps {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  padding: 18px 0;
+  padding: 24px 0 0;
   padding-inline-start: 22px;
-  margin: 28px 0 0;
-  border-block: 1px solid var(--line);
+  margin: 44px 0 0;
+  border-top: 1px solid var(--line);
   gap: 12px 26px;
 }
 
 .steps li {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 650;
 }
 
@@ -104,7 +109,7 @@
   display: block;
   font-size: 13px;
   color: var(--soft);
-  margin-top: 3px;
+  margin-top: 6px;
   font-weight: 500;
   line-height: 1.5;
 }
@@ -113,7 +118,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 16px;
+  padding-top: 28px;
   gap: 12px;
   color: var(--soft);
   font-size: 13px;
@@ -130,10 +135,10 @@
   .layout {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: "copy" "start" "preview";
-    gap: 20px;
+    gap: 24px;
   }
   .title {
-    font-size: clamp(34px, 9vw, 50px);
+    font-size: clamp(34px, 9vw, 48px);
   }
   .intro {
     margin-top: 12px;
@@ -144,7 +149,8 @@
   }
   .steps {
     grid-template-columns: minmax(0, 1fr);
-    margin-top: 20px;
+    margin-top: 28px;
+    gap: 20px;
   }
   .footer {
     flex-direction: column;
