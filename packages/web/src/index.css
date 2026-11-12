@@ -26,8 +26,10 @@
   --ink: #3f2f1f;
   --soft: #77634a;
   --line: #e6d5bb;
-  --error: #a4563d;
+  --error: #984a34;
   --honey: #e0a03f;
+  --radius-control: 8px;
+  --radius-panel: 14px;
   /*
    * What goes on honey is ink, never white. White on this amber measures 2.27:1, and honey carries the
    * main button, the chosen mood and the both-here card. Darkening it enough for white turns it brown.
@@ -168,16 +170,17 @@ button,
 select,
 [role="button"] {
   transition:
-    transform 0.2s var(--ease-bounce),
+    transform 0.16s ease-out,
     filter 0.12s ease;
   touch-action: manipulation;
 }
 button:active:not(:disabled),
 select:active {
-  transform: scale(0.965);
+  transform: scale(0.985);
 }
 button:disabled {
   opacity: 0.55;
+  cursor: not-allowed;
 }
 
 /*
@@ -207,7 +210,7 @@ button:disabled {
   top: 0;
   z-index: 30;
   padding: 9px 13px;
-  border-radius: 14px;
+  border-radius: var(--radius-panel);
   border: 1px solid var(--line);
   background: var(--panel);
   color: var(--ink);

@@ -8,6 +8,7 @@
   min-height: 100%;
   display: grid;
   place-items: start center;
+  align-content: start;
   padding: clamp(18px, 4vmin, 44px) clamp(16px, 4vw, 40px) clamp(24px, 5vmin, 48px);
   padding-bottom: max(clamp(24px, 5vmin, 48px), env(safe-area-inset-bottom));
   background: radial-gradient(120% 90% at 78% 6%, var(--air-warm) 0%, var(--air) 62%);
@@ -21,6 +22,38 @@
   font-size: 13px;
   line-height: 1.65;
   color: var(--soft);
+}
+
+.updateNotice {
+  width: 100%;
+  max-width: 1080px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  border-radius: var(--radius-panel);
+  background: var(--panel);
+}
+
+.updateTitle {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.updateActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.updateActions > .quiet {
+  margin: 0;
 }
 .roomGuide > summary {
   min-height: 44px;
@@ -75,7 +108,7 @@
   z-index: 20;
   width: 44px;
   height: 44px;
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   cursor: pointer;
   display: grid;
   place-items: center;
@@ -129,21 +162,51 @@
 .recovery {
   margin-top: 18px;
   padding: 10px 14px;
-  border-radius: 14px;
+  border-radius: var(--radius-panel);
   background: var(--air);
   border: 1px solid var(--line);
 }
 
+.recoveryTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.codeRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.copyButton {
+  padding: 9px 12px;
+  font-size: 13px;
+}
+
+.fieldError {
+  color: var(--error);
+  margin-top: 8px;
+  scroll-margin-block-end: 6rem;
+}
+
 .code {
   font: inherit;
-  font-size: 17.5px;
-  letter-spacing: 0.08em;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  color: var(--ink);
   text-align: center;
   margin: 0;
   padding: 11px 13px;
-  border-radius: 14px;
+  border-radius: var(--radius-control);
   background: var(--air);
-  border: 1px dashed var(--line);
+  border: 1px solid var(--control);
   user-select: all;
 }
 
@@ -210,7 +273,7 @@
 
 .actionColumn {
   background: var(--panel);
-  border-radius: 14px;
+  border-radius: var(--radius-panel);
   padding: clamp(14px, 2.2vw, 24px);
   scroll-margin-block: 18px;
 }
@@ -356,7 +419,7 @@
   animation: arrive 0.42s var(--ease-bounce) both;
   margin: 14px 0 4px;
   padding: 20px;
-  border-radius: 24px;
+  border-radius: var(--radius-panel);
   background: linear-gradient(145deg, var(--air-warm), var(--panel));
   border: 1px solid var(--line);
   box-shadow: 0 10px 24px -17px rgba(120, 84, 44, 0.55);
@@ -383,7 +446,7 @@
   width: 28px;
   height: 28px;
   flex-shrink: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-control);
   cursor: pointer;
   border: 1px solid var(--control);
   background: var(--air);
@@ -439,7 +502,7 @@
   width: 100%;
   resize: none;
   padding: 11px 13px;
-  border-radius: 14px;
+  border-radius: var(--radius-control);
   border: 1px solid var(--control);
   background: var(--panel);
   color: var(--ink);
@@ -452,7 +515,7 @@
   cursor: pointer;
   margin: 16px 0 4px;
   padding: 12px 15px;
-  border-radius: 18px;
+  border-radius: var(--radius-control);
   background: var(--panel);
   border: 1px dashed var(--line);
   color: var(--ink);
@@ -538,7 +601,7 @@
   color: var(--ink);
   background: var(--panel);
   border: 1px solid var(--control);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   padding: 10px 12px;
   cursor: pointer;
 }
@@ -553,7 +616,7 @@
 .panel {
   margin: 16px 0 4px;
   padding: clamp(14px, 2vw, 22px);
-  border-radius: 14px;
+  border-radius: var(--radius-panel);
   background: var(--panel);
   border: 1px solid var(--line);
 }
@@ -566,8 +629,9 @@
 }
 
 .fieldLabel {
-  font-size: 12px;
-  color: var(--soft);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
   margin: 14px 0 6px;
 }
 
@@ -593,7 +657,7 @@
    */
   width: 44px;
   height: 44px;
-  border-radius: 15px;
+  border-radius: var(--radius-control);
   border: 5px solid transparent;
   background-clip: padding-box;
   cursor: pointer;
@@ -691,7 +755,7 @@
   color: var(--ink);
   background: var(--panel);
   border: 1px solid var(--control);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   padding: 12px 16px;
   cursor: pointer;
 }
@@ -782,7 +846,7 @@ details[open] > .recoverySummary::before {
   padding: 11px 34px 11px 13px;
   appearance: none;
   border: 1px solid var(--control);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   background: var(--panel);
   color: var(--ink);
   cursor: pointer;
@@ -806,7 +870,7 @@ details[open] > .recoverySummary::before {
   min-width: 0;
   padding: 12px 14px;
   border: 1px solid var(--control);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   background: var(--panel);
   color: var(--ink);
 }
@@ -846,13 +910,16 @@ details[open] > .recoverySummary::before {
 }
 .inkRow {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-top: 12px;
 }
 .inkDot {
-  width: 28px;
-  height: 28px;
-  border: 0;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: 8px solid transparent;
+  background-clip: padding-box;
   border-radius: 999px;
   padding: 0;
   cursor: pointer;
@@ -866,7 +933,7 @@ details[open] > .recoverySummary::before {
   margin-top: 10px;
   padding: 10px 14px;
   border: 1px solid var(--control);
-  border-radius: 16px;
+  border-radius: var(--radius-control);
   background: var(--panel);
   color: var(--soft);
   font: inherit;
@@ -918,7 +985,7 @@ details[open] > .recoverySummary::before {
   width: 44px;
   height: 44px;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   border: 7px solid transparent;
   background-clip: padding-box;
   cursor: pointer;
@@ -950,8 +1017,8 @@ details[open] > .recoverySummary::before {
   margin-top: 6px;
 }
 .accountSection {
-  margin: 14px 0 0;
-  padding-top: 14px;
+  margin: 24px 0 0;
+  padding-top: 20px;
   border-top: 1px solid var(--line);
 }
 .accountSection > h2 {
@@ -963,6 +1030,13 @@ details[open] > .recoverySummary::before {
   margin-inline: 0;
   padding-inline: 0;
   text-align: left;
+}
+
+.accountSection > details.recovery {
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  background: none;
 }
 
 .accountBtn {
@@ -977,8 +1051,13 @@ details[open] > .recoverySummary::before {
 
 .ending {
   margin-top: 22px;
-  border-style: dashed;
+  border-style: solid;
   background: none;
+}
+
+.ending > .recoverySummary,
+.ending .quiet {
+  color: var(--error);
 }
 
 .errorBar {
@@ -1047,7 +1126,7 @@ details[open] > .recoverySummary::before {
   width: 100%;
   margin-bottom: 8px;
   padding: 11px 13px;
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   border: 1px solid var(--control);
   background: var(--panel);
   color: var(--ink);
@@ -1315,7 +1394,7 @@ details[open] > .recoverySummary::before {
 .saveFeedback {
   padding: 12px 16px;
   border: 1px solid var(--honey);
-  border-radius: 14px;
+  border-radius: var(--radius-panel);
   background: var(--panel);
   color: var(--ink);
   font-size: 13px;
@@ -1324,13 +1403,15 @@ details[open] > .recoverySummary::before {
 
 .decorPicker {
   margin: 24px 0;
-  padding: 18px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
+  padding: 0;
+  min-width: 0;
+  border: 0;
 }
 .decorPicker legend {
-  padding: 0 8px;
-  font-weight: 600;
+  padding: 0;
+  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: 700;
 }
 .decorPalettes {
   display: grid;
@@ -1345,8 +1426,8 @@ details[open] > .recoverySummary::before {
   padding: 10px 4px;
   font-size: 12px;
   min-width: 0;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 1px solid var(--control);
+  border-radius: var(--radius-control);
   background: var(--panel);
   color: var(--ink);
 }
@@ -1375,8 +1456,8 @@ details[open] > .recoverySummary::before {
   width: 100%;
   min-width: 0;
   min-height: 44px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  border: 1px solid var(--control);
+  border-radius: var(--radius-control);
   padding: 8px;
   font: inherit;
   color: var(--ink);
@@ -1388,5 +1469,13 @@ details[open] > .recoverySummary::before {
   }
   .decorObjects {
     grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 360px) {
+  .codeRow {
+    grid-template-columns: 1fr;
+  }
+  .copyButton {
+    justify-self: start;
   }
 }

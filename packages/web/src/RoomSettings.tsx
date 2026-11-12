@@ -93,13 +93,13 @@ export function RoomSettings({
               </p>
             )}
           </div>
-          <details className={s.recovery}>
-            <summary className={s.recoverySummary}>or keep a code instead</summary>
+          <div className={s.recovery}>
+            <h3 className={s.recoveryTitle}>Or keep a recovery code</h3>
             <p className={s.small} style={{ marginTop: 8 }}>
               For getting back in without an account. Keep it somewhere that is not this phone.
             </p>
             <RecoveryCode code={view.recoveryCode} />
-          </details>
+          </div>
         </section>
       )}
       <section className={s.accountSection} aria-label="Room access">
@@ -154,6 +154,47 @@ export function RoomSettings({
               {view.them ?? "She"} can&apos;t get in
             </button>
           ))}
+      </section>
+      <section className={s.accountSection} aria-label="A day worth remembering">
+        <details>
+          <summary className={s.summary}>a day worth remembering</summary>
+          <div style={{ marginTop: 8 }}>
+            <input
+              className={`${s.input} ${s.dateInput}`}
+              type="date"
+              value={ourDay.date}
+              min="1900-01-01"
+              max="2100-12-31"
+              aria-label="The date"
+              name="room-day"
+              onChange={(e) => ourDay.setDate(e.target.value)}
+            />
+            <input
+              className={s.input}
+              style={{ marginTop: 8 }}
+              value={ourDay.label}
+              maxLength={32}
+              placeholder="what it is, in a few words"
+              aria-label="What the day is"
+              name="room-day-label"
+              onChange={(e) => ourDay.setLabel(e.target.value)}
+            />
+            <p className={s.small} style={{ marginTop: 6 }}>
+              {view.cat.name} says it every year on the day, to both of you, in exactly those words.{" "}
+              {view.them ?? "They"} will not see it here, so it stays a surprise. Leave either blank for no
+              day at all.
+            </p>
+            <button
+              className={s.btn}
+              style={{ width: "100%", marginTop: 8 }}
+              onClick={() => void ourDay.save()}
+            >
+              {ourDay.saved ? "Kept" : "Keep this day"}
+            </button>
+          </div>
+        </details>
+      </section>
+      <section className={s.accountSection} aria-label="Leaving the room">
         {(iAmHim || view.youAreHer) && (
           <details className={`${s.recovery} ${s.ending}`} onToggle={() => setLeaveArmed(false)}>
             <summary className={s.recoverySummary}>{iAmHim ? "delete this room" : "leave this room"}</summary>
@@ -216,45 +257,6 @@ export function RoomSettings({
             )}
           </details>
         )}
-      </section>
-      <section className={s.accountSection} aria-label="A day worth remembering">
-        <details>
-          <summary className={s.summary}>a day worth remembering</summary>
-          <div style={{ marginTop: 8 }}>
-            <input
-              className={`${s.input} ${s.dateInput}`}
-              type="date"
-              value={ourDay.date}
-              min="1900-01-01"
-              max="2100-12-31"
-              aria-label="The date"
-              name="room-day"
-              onChange={(e) => ourDay.setDate(e.target.value)}
-            />
-            <input
-              className={s.input}
-              style={{ marginTop: 8 }}
-              value={ourDay.label}
-              maxLength={32}
-              placeholder="what it is, in a few words"
-              aria-label="What the day is"
-              name="room-day-label"
-              onChange={(e) => ourDay.setLabel(e.target.value)}
-            />
-            <p className={s.small} style={{ marginTop: 6 }}>
-              {view.cat.name} says it every year on the day, to both of you, in exactly those words.{" "}
-              {view.them ?? "They"} will not see it here, so it stays a surprise. Leave either blank for no
-              day at all.
-            </p>
-            <button
-              className={s.btn}
-              style={{ width: "100%", marginTop: 8 }}
-              onClick={() => void ourDay.save()}
-            >
-              {ourDay.saved ? "Kept" : "Keep this day"}
-            </button>
-          </div>
-        </details>
       </section>
     </details>
   );

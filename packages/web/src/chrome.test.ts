@@ -20,8 +20,10 @@ const PAIRS: [string, string][] = [
   ["--error", "--panel"],
   ["--ink", "--air"],
   ["--soft", "--air"],
+  ["--error", "--air"],
   ["--ink", "--air-warm"],
   ["--soft", "--air-warm"],
+  ["--error", "--air-warm"],
 ];
 
 describe("text you can read at any hour", () => {

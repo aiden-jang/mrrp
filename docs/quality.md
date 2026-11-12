@@ -43,7 +43,9 @@ MRRP_UI_URL=http://127.0.0.1:34611 pnpm --filter @mrrp/web run capture:ui
 keep only selected images with a dated record. The tool accepts only local origins,
 blocks external browser requests, creates disposable rooms, and checks painted canvas
 pixels, page errors, overflow, and automated WCAG A/AA findings. It reviews both roles,
-editors, sharing failure, and day/night palettes at phone, tablet, and desktop widths.
+editors, settings, recovery, sharing failure, app updates, reversible exits, and day/night palettes
+at phone, tablet, and desktop widths. `MRRP_UI_WIDTHS=320,1440` narrows a follow-up to supported
+review widths. See the [full-app polish review](polish-review.md) for the completed review and limits.
 
 Captures use overlapping viewport sections because Chromium's full-page compositor can
 omit a canvas even when its pixels are painted. Inspect the actual screenshots as well as

@@ -340,7 +340,7 @@ function RoomPage({ id }: { id: string }) {
                 onClose={() => setArrivalCard(null)}
               />
             )}
-            {view.waitingForThem ? (
+            {setup ? null : view.waitingForThem ? (
               <RoomWaiting
                 view={view}
                 cat={cat}

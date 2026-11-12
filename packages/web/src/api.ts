@@ -241,7 +241,9 @@ async function submitAccess(
   if (r.status === 410) throw await goneFrom(r);
   if (r.status === 400 || r.status === 403)
     throw new AccessDenied(
-      "That access change was not accepted. Your existing recovery code is still available.",
+      pending.kind === "recover"
+        ? "That recovery code wasn’t accepted. Check the code and try again."
+        : "That access change was not accepted. Your existing recovery code is still available.",
     );
   if (!r.ok) throw new Error("Couldn't reach the room. Try again to finish the access change.");
 }

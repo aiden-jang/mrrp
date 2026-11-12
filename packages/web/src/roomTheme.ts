@@ -54,6 +54,6 @@ export function chromeFor(scene: Scene): Record<string, string> {
     "--honey": mixHex(from.honey, to.honey, t),
     "--ink": night ? INK_ON_DARK : "#3f2f1f",
     "--soft": night ? SOFT_ON_DARK : "#77634a",
-    "--error": night ? ERROR_ON_DARK : "#a4563d",
+    "--error": night ? ERROR_ON_DARK : "#984a34",
   };
 }

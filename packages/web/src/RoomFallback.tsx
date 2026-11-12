@@ -103,6 +103,7 @@ export function RoomFallback({
         )}
         <div className={`${s.card} ${s.doorNotice}`}>
           <RoomWordmark />
+          {err && <h1 className={s.h1}>Couldn’t open the room.</h1>}
           <p className={s.small} role={err ? "alert" : "status"}>
             {err ?? "opening the door quietly…"}
           </p>

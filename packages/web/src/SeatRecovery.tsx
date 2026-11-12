@@ -1,7 +1,10 @@
 import s from "./App.module.css";
+import { useId } from "react";
 import type { SeatAccount } from "./useSeatAccount.js";
 
 export function SeatRecovery({ account }: { account: SeatAccount }) {
+  const fieldId = useId();
+  const errorId = `${fieldId}-error`;
   const { code: claimCode, setCode: setClaimCode, claiming, claimError: claimErr } = account;
   return (
     <>
@@ -12,6 +15,7 @@ export function SeatRecovery({ account }: { account: SeatAccount }) {
         browser that is not yours, ask whoever sent you the link to free it.
       </p>
       <form
+        aria-label="Recover your seat"
         className={s.panel}
         style={{ marginTop: 14 }}
         onSubmit={(e) => {
@@ -24,12 +28,17 @@ export function SeatRecovery({ account }: { account: SeatAccount }) {
           Either of you can come back on a new phone. Put your recovery code in and the room works out which
           seat is yours.
         </p>
+        <label className={s.fieldLabel} htmlFor={fieldId}>
+          Recovery code
+        </label>
         <input
+          id={fieldId}
           className={s.input}
           aria-label="Recovery code"
           name="recovery-code"
           autoComplete="off"
           aria-invalid={!!claimErr}
+          aria-describedby={claimErr ? errorId : undefined}
           value={claimCode}
           placeholder="xxxx-xxxx-xxxx"
           autoCapitalize="none"
@@ -38,7 +47,7 @@ export function SeatRecovery({ account }: { account: SeatAccount }) {
           onChange={(e) => setClaimCode(e.target.value)}
         />
         {claimErr && (
-          <p role="alert" className={s.small} style={{ color: "var(--error)", marginTop: 8 }}>
+          <p id={errorId} role="alert" className={`${s.small} ${s.fieldError}`}>
             {claimErr}
           </p>
         )}

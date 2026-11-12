@@ -28,7 +28,7 @@ export function RoomWaiting({
         <>
           <h2 className={s.newsMain}>Nobody else is here yet.</h2>
           <p className={s.small}>
-            Send this link to the one person it's for. Whoever opens it second is the one the cat is.
+            Send this link to the one person it's for. They can choose to enter as the cat.
           </p>
         </>
       )}

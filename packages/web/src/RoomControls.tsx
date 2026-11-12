@@ -67,11 +67,10 @@ export function RecoveryCode({ code }: { code: string }) {
   };
   return (
     <>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div className={s.codeRow}>
         <input
           ref={codeField}
           className={s.code}
-          style={{ flex: 1, minWidth: 0, width: "100%", color: "inherit" }}
           aria-label="Your recovery code"
           aria-describedby={failed ? copyErrorId : undefined}
           readOnly
@@ -80,8 +79,7 @@ export function RecoveryCode({ code }: { code: string }) {
         />
         <button
           type="button"
-          className={s.btn}
-          style={{ flexShrink: 0, padding: "9px 11px", fontSize: 12 }}
+          className={`${s.btn} ${s.copyButton}`}
           onClick={() => void copy()}
           aria-label={copied ? "Recovery code copied" : "Copy the recovery code"}
         >
@@ -89,13 +87,7 @@ export function RecoveryCode({ code }: { code: string }) {
         </button>
       </div>
       {failed && (
-        <p
-          ref={copyError}
-          id={copyErrorId}
-          className={s.small}
-          role="alert"
-          style={{ marginTop: 8, scrollMarginBlockEnd: "5rem" }}
-        >
+        <p ref={copyError} id={copyErrorId} className={`${s.small} ${s.fieldError}`} role="alert">
           Couldn’t copy automatically. Your code is selected above; use your browser’s Copy command, or try
           again.
         </p>

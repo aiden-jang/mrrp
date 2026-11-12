@@ -9,6 +9,15 @@ async function accessible(page: Page) {
   expect(result.violations).toEqual([]);
 }
 
+test("incomplete room links explain how to recover", async ({ page }) => {
+  for (const path of ["/r", "/r/", "/r/x", "/r/abc/extra"]) {
+    await page.goto(path);
+    await expect(page.getByRole("heading", { name: "This room link is incomplete." })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Back to mrrp", exact: true })).toHaveAttribute("href", "/");
+    await noOverflow(page);
+  }
+});
+
 for (const width of [1440, 390, 320]) {
   test(`room setup stays usable at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 });

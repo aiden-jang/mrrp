@@ -429,6 +429,6 @@ app.post("/api/room/:id/leave", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "not your seat to leave" }, 403);
 });
 
-app.get("/r/:id", (c) => c.env.ASSETS.fetch(new Request(new URL("/", c.req.url))));
+app.on("GET", ["/r", "/r/*"], (c) => c.env.ASSETS.fetch(new Request(new URL("/", c.req.url))));
 
 export default { fetch: app.fetch } satisfies ExportedHandler<Env>;

@@ -1,27 +1,43 @@
 .panel {
-  padding: 20px;
+  padding: 4px 8px 0 4px;
   max-height: min(78dvh, 780px);
   overflow-y: auto;
   overscroll-behavior: contain;
-  scroll-padding-block: 20px 80px;
+  scroll-padding-block: 8px 88px;
+  scrollbar-gutter: stable;
 }
 .title {
   font-size: 20px;
   line-height: 1.3;
-  margin: 0 0 20px;
-  letter-spacing: -0.5px;
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
 }
-.panel > label {
+.section {
+  min-width: 0;
+  padding: 0;
+  margin: 24px 0 0;
+  border: 0;
+}
+.section > legend {
+  padding: 0;
+  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.section > label {
   display: block;
+}
+.notes {
+  min-height: 150px;
 }
 .actions {
   display: flex;
   gap: 10px;
   position: sticky;
-  bottom: -20px;
+  bottom: 0;
   z-index: 2;
-  margin: 20px -20px -20px;
-  padding: 12px 20px;
+  margin: 24px 0 0;
+  padding: 12px 0;
   background: var(--panel);
   border-top: 1px solid var(--line);
 }

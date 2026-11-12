@@ -95,6 +95,12 @@ the cat’s whole-pixel canvas.
 Honey marks the main action. The existing day and night palettes carry through the same layout.
 Room & account stays with the controls and groups seat recovery, room access and the remembered day.
 
+The interface uses Quicksand, dark readable text and a restrained spacing scale. Controls share an
+8px radius; panels use 14px. Editors group related fields without adding nested cards, and their
+save/cancel actions stay visible. Feedback follows the room palette. Motion is brief feedback;
+the living scene carries the atmosphere. Keep recovery easy to find and destructive actions separate
+from everyday controls.
+
 ## The bar
 
 - The cat remains recognizable and customizable in every pose.
