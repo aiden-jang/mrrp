@@ -29,7 +29,7 @@ typography:
     letterSpacing: "-0.04em"
   headline:
     fontFamily: '"Bricolage Grotesque", "Nunito Sans", ui-sans-serif, -apple-system, system-ui, sans-serif'
-    fontSize: "clamp(28px, 4vw, 36px)"
+    fontSize: "clamp(27px, 4vw, 32px)"
     fontWeight: 700
     lineHeight: 1.08
     letterSpacing: "-0.037em"
@@ -152,12 +152,13 @@ At 760px and below, introduction and form precede the scene. Invitations put act
 in source order and use adjacent columns from 860px.
 
 An occupied room leads with its scene and caption, then a four-action dock. Role sections use
-two columns from 860px and one below it. Setup and waiting use an adjacent scene/editor layout
-from that breakpoint. Notes status and its edit action stay together. Room & account is reachable
+one adjacent column from 860px and follow the scene below it. Setup and waiting use the
+same scene/editor layout from that breakpoint. Notes status and its edit action stay together. Room & account is reachable
 from the header and opens the existing details section.
 
 The scene keeps the original 100 by 80 interaction world inside a viewport that can widen to
-160 logical units. Wide displays cap scene height at 480 CSS pixels. `roomGeometry.ts` and
+160 logical units. Occupied rooms cap scene height at 320 CSS pixels from 440px wide; setup and waiting retain
+the taller scene, capped at 480px on wide displays. `roomGeometry.ts` and
 `roomPainter.ts` fit the camera and align half-cell art to whole device pixels; a short landscape
 window can use the coarse grid. Preserve this fitting rather than stretching a screenshot.
 
@@ -184,10 +185,15 @@ round form; they are not a replacement shape for ordinary buttons.
 - **Mood choices:** compact labels in a three-column grid, with pressed state and a
   visible selected outline. Feedback sits immediately below the choices.
 - **Notes:** a quiet panel with a small source label, larger message and secondary date.
+- **Editors:** notes use one field per day; appearance separates the cat, room and her day.
+  Furniture choices preview the existing pixel art. Drawing uses one Undo step per stroke,
+  an undoable Clear action and a bounded workspace.
+- **Postcards:** prepare an inline preview before offering Save and native Share. The exported
+  image keeps its scene proportions and uses the room's sage or forest palette.
 - **Header utilities:** the wordmark, sound control and Room & account share a quiet ruled header.
   The tagline yields space on phones before actions do.
 - **Action dock:** four role-specific actions below the scene, with inline line icons and text.
-  Labels sit below icons at 600px and below. Long labels wrap inside their column.
+  Phones use a two-by-two grid with inline icons and text. Long labels wrap inside their column.
 - **Focus and motion:** keyboard focus uses an ink outline with an offset. Brief hover, press and
   arrival feedback supports the scene. Reduced motion collapses durations without exposing hidden
   content or removing access to actions.

@@ -29,15 +29,16 @@ async function goneFrom(r: Response): Promise<GoneError> {
 export interface SignedInAs {
   signedIn: boolean;
   name: string | null;
+  unavailable?: boolean;
 }
 
 export async function whoAmI(): Promise<SignedInAs> {
   try {
     const r = await timed("/api/me");
-    if (!r.ok) return { signedIn: false, name: null };
+    if (!r.ok) return { signedIn: false, name: null, unavailable: true };
     return (await r.json()) as SignedInAs;
   } catch {
-    return { signedIn: false, name: null };
+    return { signedIn: false, name: null, unavailable: true };
   }
 }
 
@@ -335,6 +336,11 @@ export async function fetchNotes(id: string): Promise<string[]> {
   const r = await timed(`/api/room/${id}/notes?me=${encodeURIComponent(myToken(id))}`);
   if (!r.ok) throw new Error("Couldn't get your notes.");
   return (await r.json()).notes as string[];
+}
+
+export async function saveRoomNotes(id: string, notes: string[]): Promise<void> {
+  const r = await send(`/api/room/${id}/notes`, { me: myToken(id), notes });
+  if (!r.ok) throw new Error("Couldn’t save your notes. Try again; your words are still here.");
 }
 
 export async function fetchSaid(id: string): Promise<SaidSoFar> {

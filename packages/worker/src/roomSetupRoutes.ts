@@ -73,8 +73,7 @@ roomSetupRoutes.post("/api/room/:id/setup", async (c) => {
     !clock ||
     !isTimeZone(clock.tz) ||
     !isHomeHour(clock.homeHour) ||
-    !Array.isArray(notes) ||
-    notes.some((note) => typeof note !== "string")
+    (notes !== undefined && (!Array.isArray(notes) || notes.some((note) => typeof note !== "string")))
   ) {
     return c.json({ error: "bad room settings" }, 400);
   }

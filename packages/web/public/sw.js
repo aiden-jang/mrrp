@@ -1,6 +1,6 @@
 // Static shell only. API requests always use the network.
 
-const CACHE = "mrrp-v3";
+const CACHE = "mrrp-v4";
 // The font is here rather than left to the cache-first rule below so a home-screen open on no signal
 // still gets the right typeface. Not content-hashed, so replacing the file needs a CACHE bump.
 const SHELL = [
@@ -8,7 +8,8 @@ const SHELL = [
   "/icon.svg",
   "/apple-touch-icon.png",
   "/manifest.webmanifest",
-  "/fonts/quicksand-latin.woff2",
+  "/fonts/bricolage-latin.woff2",
+  "/fonts/nunito-sans-latin.woff2",
 ];
 
 self.addEventListener("install", (e) => {

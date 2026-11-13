@@ -1,0 +1,18 @@
+.drawingPanel {
+  width: 100%;
+  max-width: 540px;
+  justify-self: start;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}

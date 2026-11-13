@@ -4,6 +4,8 @@ import { moonLine } from "./moon.js";
 import { homingLine, milestoneLine, personalityLine } from "./remembers.js";
 import type { RoomView } from "./types.js";
 import type { useRoomSharing } from "./useRoomSharing.js";
+import { PostcardPreview } from "./PostcardPreview.js";
+import { useRef } from "react";
 
 export function RoomAnnotations({
   view,
@@ -24,6 +26,7 @@ export function RoomAnnotations({
   awayNote: string | null;
   nightChrome: boolean;
 }) {
+  const postcardTrigger = useRef<HTMLButtonElement>(null);
   const iAmHim = view.you !== null && !view.youAreHer;
   const { imageStatus } = postcard;
   const imagePending = imageStatus === "saving" || imageStatus === "sharing";
@@ -53,27 +56,18 @@ export function RoomAnnotations({
         </p>
         {postcard.captureRoom && !setup && (
           <div className={s.postcardActions}>
-            <button className={s.quiet} onClick={() => void postcard.saveRoomImage()} disabled={imagePending}>
-              {imageStatus === "saving"
-                ? "Making postcard…"
-                : imageStatus === "shared"
-                  ? "Postcard shared"
-                  : imageStatus === "saved"
-                    ? "Download started"
-                    : "Make a postcard"}
+            <button
+              ref={postcardTrigger}
+              className={s.quiet}
+              onClick={() => void postcard.saveRoomImage()}
+              disabled={imagePending}
+            >
+              {imageStatus === "saving" ? "Making postcard…" : "Make a postcard"}
             </button>
-            {postcard.canSharePostcard && (
-              <button
-                className={s.quiet}
-                disabled={imagePending}
-                onClick={() => void postcard.sharePostcard()}
-              >
-                {imageStatus === "sharing" ? "Opening sharing…" : "Share postcard"}
-              </button>
-            )}
           </div>
         )}
       </div>
+      {!setup && <PostcardPreview postcard={postcard} onClose={() => postcardTrigger.current?.focus()} />}
       {!setup && view.noticed >= 2 && (iAmHim || view.youAreHer) && (
         <p className={s.noticed}>Between you, you have noticed {view.noticed} things in here.</p>
       )}

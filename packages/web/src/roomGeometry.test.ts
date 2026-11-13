@@ -2,6 +2,17 @@ import { describe, expect, it } from "vitest";
 import { fitRoom, project, propBounds } from "./roomGeometry.js";
 
 describe("the finer room grid", () => {
+  it.each([1, 1.5, 2, 3])("fits the compact room beside its controls at ratio %s", (ratio) => {
+    for (const width of [480, 560, 700, 960]) {
+      const fit = fitRoom(width, 900, ratio, 210, true)!;
+      expect(fit.height / fit.ratio).toBeLessThanOrEqual(320);
+      expect(fit.width / fit.ratio).toBeLessThanOrEqual(width);
+      expect(fit.scale % 2).toBe(0);
+      expect(fit.viewport).toBeGreaterThanOrEqual(100);
+    }
+    expect(fitRoom(390, 844, ratio, 210, true)).toEqual(fitRoom(390, 844, ratio, 210));
+  });
+
   it.each([1, 1.5, 2, 3])("keeps half-cell details on whole device pixels at ratio %s", (ratio) => {
     for (const width of [224, 272, 390, 480, 640]) {
       const fit = fitRoom(width, 844, ratio, 210)!;

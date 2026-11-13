@@ -149,7 +149,7 @@ export interface Bodies {
   rotate: { me: string; next: string };
   release: { me: string };
   say: { me: string; text: string; aboutDay?: number };
-  setup: { me: string; cat: Cat; decor: RoomDecor; clock: Clock; notes: string[] };
+  setup: { me: string; cat: Cat; decor: RoomDecor; clock: Clock; notes?: string[] };
   shelf: { me: string };
   settle: { me: string; on: boolean };
   wait: { me: string; on: boolean };

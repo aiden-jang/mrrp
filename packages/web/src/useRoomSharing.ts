@@ -9,7 +9,7 @@ import type { RoomView } from "./types.js";
 export function useRoomSharing(view: RoomView | null, onError: (message: string) => void) {
   const [captureRoom, setCaptureRoom] = useState<(() => Promise<Blob | null>) | null>(null);
   const [imageStatus, setImageStatus] = useState<"saving" | "sharing" | "shared" | "saved" | null>(null);
-  const [postcard, setPostcard] = useState<File | null>(null);
+  const [postcard, setPostcard] = useState<{ file: File; href: string } | null>(null);
   const imageBusy = useRef(false);
   const linkBusy = useRef(false);
   const lifetime = useRef(0);
@@ -33,8 +33,6 @@ export function useRoomSharing(view: RoomView | null, onError: (message: string)
     if (!imageStatus || imageStatus === "saving" || imageStatus === "sharing") return;
     const timer = setTimeout(() => {
       setImageStatus(null);
-      for (const url of objectUrls.current) URL.revokeObjectURL(url);
-      objectUrls.current.clear();
     }, 2200);
     return () => clearTimeout(timer);
   }, [imageStatus]);
@@ -66,7 +64,6 @@ export function useRoomSharing(view: RoomView | null, onError: (message: string)
         : null;
       const blob = await makeKeepsake(roomBlob, {
         catName: view?.cat.name ?? "the cat",
-        doing: currentScene?.doing ?? "keeping the room warm",
         youAreHer: view?.youAreHer ?? false,
         together: view?.bothHereNow ?? false,
         night: currentScene ? isNightChrome(currentScene.sun) : false,
@@ -81,17 +78,12 @@ export function useRoomSharing(view: RoomView | null, onError: (message: string)
           .replace(/[^a-z0-9]+/g, "-") || "mrrp";
       const fileName = `${slug}-${new Date().toISOString().slice(0, 10)}.png`;
       const file = new File([blob], fileName, { type: "image/png" });
-      setPostcard(file);
       const href = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = href;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      for (const url of objectUrls.current) URL.revokeObjectURL(url);
+      objectUrls.current.clear();
       objectUrls.current.add(href);
-      reportAnalytics({ name: "room_image_saved" });
-      setImageStatus("saved");
+      setPostcard({ file, href });
+      setImageStatus(null);
     } catch {
       if (!current()) return;
       setImageStatus(null);
@@ -104,10 +96,32 @@ export function useRoomSharing(view: RoomView | null, onError: (message: string)
   let canSharePostcard = false;
   try {
     canSharePostcard =
-      !!postcard && typeof navigator.share === "function" && !!navigator.canShare?.({ files: [postcard] });
+      !!postcard &&
+      typeof navigator.share === "function" &&
+      !!navigator.canShare?.({ files: [postcard.file] });
   } catch {
     // Some browsers expose file sharing but refuse it under their permissions policy.
   }
+  const closePostcard = () => {
+    if (imageBusy.current) return;
+    if (postcard) {
+      URL.revokeObjectURL(postcard.href);
+      objectUrls.current.delete(postcard.href);
+    }
+    setPostcard(null);
+    setImageStatus(null);
+  };
+  const savePostcard = () => {
+    if (!postcard || imageBusy.current || imageStatus === "saved") return;
+    const link = document.createElement("a");
+    link.href = postcard.href;
+    link.download = postcard.file.name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    reportAnalytics({ name: "room_image_saved" });
+    setImageStatus("saved");
+  };
   const sharePostcard = async () => {
     if (!postcard || !canSharePostcard || imageBusy.current) return;
     imageBusy.current = true;
@@ -115,7 +129,7 @@ export function useRoomSharing(view: RoomView | null, onError: (message: string)
     setImageStatus("sharing");
     try {
       // The file is ready before this click, so native sharing keeps its user activation.
-      await navigator.share({ title: `${view?.cat.name ?? "mrrp"}'s room`, files: [postcard] });
+      await navigator.share({ title: `${view?.cat.name ?? "mrrp"}'s room`, files: [postcard.file] });
       if (request === lifetime.current) setImageStatus("shared");
     } catch (error) {
       if (request !== lifetime.current) return;
@@ -166,6 +180,9 @@ export function useRoomSharing(view: RoomView | null, onError: (message: string)
 
   return {
     captureRoom,
+    postcardHref: postcard?.href ?? null,
+    savePostcard,
+    closePostcard,
     imageStatus,
     handleCaptureReady,
     saveRoomImage,

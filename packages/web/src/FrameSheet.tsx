@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import s from "./App.module.css";
+import d from "./FrameSheet.module.css";
 import {
   BLANK,
   cellAt,
@@ -16,31 +17,45 @@ export function FrameSheet({
   current,
   saving,
   onSave,
+  onEditingChange,
 }: {
   current: { cells: string; mine: boolean } | null;
   saving: boolean;
   onSave: (cells: string) => Promise<boolean>;
+  onEditingChange?: (open: boolean) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [sheet, setSheet] = useState(BLANK);
   const [ink, setInk] = useState(1);
   const [activeCell, setActiveCell] = useState(0);
+  const [history, setHistory] = useState<string[]>([]);
+  const sheetRef = useRef(BLANK);
   const trigger = useRef<HTMLButtonElement>(null);
   const cells = useRef<(HTMLButtonElement | null)[]>([]);
   const wasOpen = useRef(false);
-  const painting = useRef(false);
+  const painting = useRef<number | null>(null);
+  const freshStroke = useRef(true);
+  useEffect(() => {
+    onEditingChange?.(open);
+    return () => onEditingChange?.(false);
+  }, [open, onEditingChange]);
   useEffect(() => {
     if (open) cells.current[0]?.focus();
     else if (wasOpen.current) trigger.current?.focus();
     wasOpen.current = open;
   }, [open]);
   useEffect(() => {
-    const up = () => (painting.current = false);
+    const up = (e: PointerEvent) => {
+      if (e.pointerId === painting.current) painting.current = null;
+    };
+    const blur = () => (painting.current = null);
     window.addEventListener("pointerup", up);
     window.addEventListener("pointercancel", up);
+    window.addEventListener("blur", blur);
     return () => {
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointercancel", up);
+      window.removeEventListener("blur", blur);
     };
   }, []);
 
@@ -50,7 +65,10 @@ export function FrameSheet({
         ref={trigger}
         className={current ? s.sheetPeek : s.quiet}
         onClick={() => {
-          setSheet(current?.cells ?? BLANK);
+          sheetRef.current = current?.cells ?? BLANK;
+          setSheet(sheetRef.current);
+          setHistory([]);
+          painting.current = null;
           setInk(1);
           setActiveCell(0);
           setOpen(true);
@@ -68,11 +86,22 @@ export function FrameSheet({
     );
   }
 
-  const paint = (x: number, y: number) => setSheet((c) => withCell(c, x, y, ink));
+  const paint = (x: number, y: number) => {
+    if (saving) return;
+    const previous = sheetRef.current;
+    const next = withCell(previous, x, y, ink);
+    if (next === previous) return;
+    if (painting.current === null || freshStroke.current) {
+      setHistory((entries) => [...entries.slice(-49), previous]);
+      freshStroke.current = false;
+    }
+    sheetRef.current = next;
+    setSheet(next);
+  };
 
   return (
     <div
-      className={s.panel}
+      className={`${s.panel} ${d.drawingPanel}`}
       onKeyDown={(e) => {
         if (e.key === "Escape" && !saving) {
           e.stopPropagation();
@@ -85,6 +114,33 @@ export function FrameSheet({
         Pick an ink and draw.{" "}
         <span className={s.keyboardHint}>Arrow keys move; Space paints. Escape closes.</span>
       </p>
+      <div className={d.toolbar}>
+        <button
+          className={s.quiet}
+          disabled={saving || !history.length}
+          onClick={() => {
+            sheetRef.current = history[history.length - 1]!;
+            setSheet(sheetRef.current);
+            setHistory((entries) => entries.slice(0, -1));
+            painting.current = null;
+          }}
+        >
+          Undo
+        </button>
+        <button
+          className={s.quiet}
+          disabled={saving || isBlank(sheet)}
+          onClick={() => {
+            const previous = sheetRef.current;
+            setHistory((entries) => [...entries.slice(-49), previous]);
+            sheetRef.current = BLANK;
+            setSheet(BLANK);
+            painting.current = null;
+          }}
+        >
+          Clear
+        </button>
+      </div>
       <div
         className={s.sheetGrid}
         role="group"
@@ -103,6 +159,7 @@ export function FrameSheet({
                 cells.current[i] = node;
               }}
               tabIndex={activeCell === i ? 0 : -1}
+              disabled={saving}
               onFocus={() => setActiveCell(i)}
               onKeyDown={(e) => {
                 const next =
@@ -124,12 +181,16 @@ export function FrameSheet({
               style={{ background: DOODLE_INK[at] || "transparent" }}
               aria-label={`Row ${y + 1}, column ${x + 1}: ${DOODLE_NAMES[at]}`}
               onPointerDown={(e) => {
+                if (saving || painting.current !== null) return;
                 e.currentTarget.releasePointerCapture?.(e.pointerId);
-                painting.current = true;
+                painting.current = e.pointerId;
+                freshStroke.current = true;
                 paint(x, y);
               }}
-              onPointerEnter={() => painting.current && paint(x, y)}
-              onClick={() => paint(x, y)}
+              onPointerEnter={(e) => painting.current === e.pointerId && paint(x, y)}
+              onClick={(e) => {
+                if (e.detail === 0) paint(x, y);
+              }}
             />
           );
         })}
@@ -139,6 +200,7 @@ export function FrameSheet({
         {DOODLE_INK.map((hex, i) => (
           <button
             key={i}
+            disabled={saving}
             className={s.inkDot}
             aria-label={DOODLE_NAMES[i]}
             aria-pressed={ink === i}
@@ -152,12 +214,9 @@ export function FrameSheet({
         ))}
       </div>
 
-      <div className={s.row} style={{ marginTop: 12 }}>
-        <button className={s.btn} disabled={isBlank(sheet)} onClick={() => setSheet(BLANK)}>
-          Start over
-        </button>
+      <div className={d.actions}>
         <button className={s.btn} disabled={saving} onClick={() => setOpen(false)}>
-          Never mind
+          Cancel
         </button>
         <button
           className={`${s.btn} ${s.btnGo}`}
@@ -166,7 +225,7 @@ export function FrameSheet({
             if (await onSave(sheet)) setOpen(false);
           }}
         >
-          {isBlank(sheet) && current ? "Take it down" : "Hang it up"}
+          {saving ? "Hanging…" : isBlank(sheet) && current ? "Take it down" : "Hang it up"}
         </button>
       </div>
     </div>

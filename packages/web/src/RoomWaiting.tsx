@@ -3,6 +3,7 @@ import s from "./App.module.css";
 import { TheyLeftNotice } from "./screens.js";
 import type { RoomView } from "./types.js";
 import type { useCatSetup } from "./useCatSetup.js";
+import type { useRoomNotes } from "./useRoomNotes.js";
 import type { useRoomSharing } from "./useRoomSharing.js";
 import { InviteLinkFallback } from "./InviteLinkFallback.js";
 
@@ -10,12 +11,16 @@ export function RoomWaiting({
   view,
   cat,
   setupTrigger,
+  notes,
+  notesTrigger,
   shareResult,
   onShare,
 }: {
   view: RoomView;
   cat: ReturnType<typeof useCatSetup>;
   setupTrigger: RefObject<HTMLButtonElement>;
+  notes: ReturnType<typeof useRoomNotes>;
+  notesTrigger: RefObject<HTMLButtonElement>;
   shareResult: ReturnType<typeof useRoomSharing>["shareResult"];
   onShare: () => void;
 }) {
@@ -53,16 +58,19 @@ export function RoomWaiting({
       {shareResult === "failed" && <InviteLinkFallback />}
       {!setup && (
         <button
-          ref={setupTrigger}
+          ref={notesTrigger}
           className={s.btn}
           style={{ width: "100%", marginTop: 12 }}
-          disabled={cat.loading}
-          onClick={() => void cat.start()}
+          disabled={notes.loading}
+          onClick={() => void notes.start()}
           aria-expanded={setup}
         >
-          Write her notes, name her, or decorate the room
+          {notes.loading ? "Opening her notes…" : "Write her notes"}
         </button>
       )}
+      <button ref={setupTrigger} className={s.quiet} disabled={notes.loading} onClick={cat.start}>
+        Change the cat and room
+      </button>
     </>
   );
 }

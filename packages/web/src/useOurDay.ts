@@ -15,7 +15,10 @@ export function useOurDay(
 ) {
   const [date, setDate] = useState("");
   const [label, setLabel] = useState("");
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useState<{ date: string; label: string } | null>(null);
+  const [baseline, setBaseline] = useState({ date: "", label: "" });
+  const [saving, setSaving] = useState(false);
+  const pending = useRef(false);
   const loaded = useRef(false);
   const clearKept = useRef(0);
 
@@ -24,23 +27,46 @@ export function useOurDay(
   useEffect(() => {
     if (loaded.current || !view) return;
     loaded.current = true;
-    setDate(view.ourDay ? `2000-${pad(view.ourDay.month)}-${pad(view.ourDay.day)}` : "");
-    setLabel(view.ourDay?.label ?? "");
+    const initial = {
+      date: view.ourDay ? `2000-${pad(view.ourDay.month)}-${pad(view.ourDay.day)}` : "",
+      label: view.ourDay?.label ?? "",
+    };
+    setDate(initial.date);
+    setLabel(initial.label);
+    setBaseline(initial);
   }, [view]);
 
   const save = async () => {
+    if (pending.current) return;
+    pending.current = true;
+    setSaving(true);
+    setSaved(null);
+    const submitted = { date, label };
     const [, mm, dd] = date.match(/^\d{4}-(\d{2})-(\d{2})$/) ?? [];
     const words = label.trim();
     try {
       await doOurDay(id, mm && dd && words ? { month: Number(mm), day: Number(dd), label: words } : null);
       await reload();
-      setSaved(true);
+      setSaved(submitted);
+      setBaseline(submitted);
       window.clearTimeout(clearKept.current);
-      clearKept.current = window.setTimeout(() => setSaved(false), KEPT_MS);
+      clearKept.current = window.setTimeout(() => setSaved(null), KEPT_MS);
     } catch (e) {
       onError(e instanceof Error ? e.message : "Couldn't keep that day.");
+    } finally {
+      pending.current = false;
+      setSaving(false);
     }
   };
 
-  return { date, setDate, label, setLabel, saved, save };
+  return {
+    date,
+    setDate,
+    label,
+    setLabel,
+    saved: saved?.date === date && saved?.label === label,
+    saving,
+    dirty: baseline.date !== date || baseline.label !== label,
+    save,
+  };
 }

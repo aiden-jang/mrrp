@@ -9,9 +9,9 @@ export function RoomAccess({ id, reload }: { id: string; reload: () => Promise<v
     <details className={s.recovery}>
       <summary className={s.recoverySummary}>refresh room access</summary>
       <p className={s.small} style={{ marginTop: 8 }}>
-        Replace this room’s browser key if an older downloaded copy might have been shared. Other browsers
-        will need your recovery code or linked account to return. Your recovery code, this browser, the other
-        person’s seat and your other rooms stay in place.
+        If a downloaded room copy was shared, stop older browsers from using your seat. They will need your
+        recovery code or linked account to return. This browser, your recovery code, the other person’s seat
+        and your other rooms stay as they are.
       </p>
       <button
         type="button"

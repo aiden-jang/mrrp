@@ -105,10 +105,12 @@ async function updates(page, width, errors) {
 async function settings(page, role, width, errors) {
   await page.locator("#room-account > summary").click();
   await capture(page, `${role}-settings`, width, errors);
+  await page.getByText("Use a recovery code", { exact: true }).click();
   const code = await page.getByLabel("Your recovery code", { exact: true }).inputValue();
   await page.getByRole("button", { name: "Copy the recovery code", exact: true }).click();
   await page.getByText(/Couldn’t copy automatically/).waitFor();
   await capture(page, `${role}-recovery-copy`, width, errors);
+  await page.getByText("Use a recovery code", { exact: true }).click();
   await page.getByText("refresh room access", { exact: true }).click();
   await capture(page, `${role}-access`, width, errors);
   await page.getByText("refresh room access", { exact: true }).click();
@@ -220,13 +222,14 @@ try {
       if (new URL(page.url()).origin !== base.origin) throw new Error("Room left the local origin");
       const room = page.url();
       await capture(page, "waiting", width, errors);
-      await page.getByRole("button", { name: /Write her notes/ }).click();
+      await page.getByRole("button", { name: "Change the cat and room", exact: true }).click();
       await page.getByLabel("Her name", { exact: true }).fill("Bean with a long name");
+      await capture(page, "setup-cat", width, errors);
+      await page.getByRole("button", { name: "The room", exact: true }).click();
+      await capture(page, "setup-room", width, errors);
+      await page.getByRole("button", { name: "Her day", exact: true }).click();
       await page.getByLabel("Her timezone", { exact: true }).selectOption("UTC");
-      await page
-        .getByLabel("Her notes, one per line", { exact: true })
-        .fill("A quiet room, with space for whatever today feels like.\n괜찮아 🌱");
-      await capture(page, "setup", width, errors);
+      await capture(page, "setup-day", width, errors);
       await page.route("**/api/room/*/setup", (route) => route.fulfill({ status: 503, body: "unavailable" }));
       await page.getByRole("button", { name: "Save", exact: true }).click();
       await page.getByRole("alert").waitFor();
@@ -234,6 +237,26 @@ try {
       await page.unroute("**/api/room/*/setup");
       await page.getByRole("button", { name: "Save", exact: true }).click();
       await page.getByRole("status").filter({ hasText: "Saved." }).waitFor();
+      await page.getByRole("button", { name: "Write her notes", exact: true }).click();
+      const noteFields = page.getByRole("textbox", { name: /^Note for day / });
+      for (let index = 0; index < (await noteFields.count()); index++)
+        await noteFields
+          .nth(index)
+          .fill(
+            index === 0
+              ? "A quiet room, with space for whatever today feels like."
+              : index === 1
+                ? "괜찮아 🌱"
+                : "",
+          );
+      await capture(page, "notes", width, errors);
+      await page.route("**/api/room/*/notes", (route) => route.fulfill({ status: 503, body: "unavailable" }));
+      await page.getByRole("button", { name: "Save notes", exact: true }).click();
+      await page.getByRole("alert").waitFor();
+      await capture(page, "notes-error", width, errors);
+      await page.unroute("**/api/room/*/notes");
+      await page.getByRole("button", { name: "Save notes", exact: true }).click();
+      await page.locator("#notes-panel").waitFor({ state: "hidden" });
       await page.getByRole("button", { name: "Send her the link", exact: true }).click();
       await page.getByRole("textbox", { name: "Room link to copy" }).waitFor();
       await capture(page, "invite-error", width, errors);
@@ -259,7 +282,11 @@ try {
       await her.getByRole("button", { name: /Draw something for the frame/ }).click();
       await her.getByRole("button", { name: /^Row 1, column 1:/ }).click();
       await capture(her, "drawing", width, errors);
-      await her.getByRole("button", { name: "Never mind", exact: true }).click();
+      await her.getByRole("button", { name: "Cancel", exact: true }).click();
+      await page.getByRole("button", { name: "Make a postcard", exact: true }).click();
+      await page.getByRole("region", { name: "Your postcard", exact: true }).waitFor();
+      await capture(page, "postcard", width, errors);
+      await page.getByRole("button", { name: "Close preview", exact: true }).click();
       for (const tab of [page, her]) {
         await tab.clock.setFixedTime(new Date("2026-10-26T23:00:00Z"));
         await tab.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));

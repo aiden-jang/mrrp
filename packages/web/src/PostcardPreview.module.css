@@ -1,0 +1,23 @@
+.preview {
+  width: 100%;
+  max-width: 620px;
+}
+.heading,
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.preview img {
+  display: block;
+  width: 100%;
+  max-height: 580px;
+  object-fit: contain;
+  margin: 12px 0 16px;
+  border-radius: 12px;
+}
+.actions > button {
+  flex: 1;
+}

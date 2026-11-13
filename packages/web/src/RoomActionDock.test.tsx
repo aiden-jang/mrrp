@@ -67,7 +67,7 @@ it("settles into company instead of sending the cat to the door", () => {
 
 it("requires a box to be out and offers a way out once she is inside", () => {
   const { actions, update } = dock({ youAreHer: true, boxOut: false, box: false });
-  fireEvent.click(screen.getByRole("button", { name: "no box to get into" }));
+  fireEvent.click(screen.getByRole("button", { name: "No box out" }));
   expect(actions.catAct).not.toHaveBeenCalled();
   update({ boxOut: true, box: true });
   fireEvent.click(screen.getByRole("button", { name: "Get out of the box" }));

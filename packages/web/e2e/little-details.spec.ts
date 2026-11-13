@@ -43,7 +43,8 @@ test("returning to a room refreshes its midnight reminder without a polling dela
   await page.goto("/");
   await page.getByPlaceholder("your name").fill("Review companion");
   await page.getByRole("button", { name: "Make a room", exact: true }).click();
-  await page.getByRole("button", { name: /Write her notes/ }).click();
+  await page.getByRole("button", { name: "Change the cat and room", exact: true }).click();
+  await page.getByRole("button", { name: "Her day", exact: true }).click();
   await page.getByLabel("Her timezone", { exact: true }).selectOption("Europe/London");
   await page.getByRole("button", { name: "Save", exact: true }).click();
   const other = await browser.newContext();
@@ -71,9 +72,10 @@ test("returning to a room refreshes its midnight reminder without a polling dela
       animations: "disabled",
     });
   }
-  const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Make a postcard", exact: true }).click();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Save postcard", exact: true }).click();
   expect((await download).suggestedFilename()).toMatch(/\.png$/);
-  await expect(page.getByRole("button", { name: "Download started", exact: true })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Download started." })).toBeVisible();
   await other.close();
 });

@@ -53,13 +53,19 @@ export function useRoomActions({
   setNudge: Dispatch<SetStateAction<number>>;
   setShelfAt: Dispatch<SetStateAction<number | null>>;
 }) {
+  const alive = useRef(false);
+  const queuedMood = useRef<Mood | null>(null);
+  const telling = useRef(false);
   const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
-  useEffect(
-    () => () => {
-      for (const timer of timers.current) clearTimeout(timer);
-    },
-    [],
-  );
+  useEffect(() => {
+    const pendingTimers = timers.current;
+    alive.current = true;
+    return () => {
+      alive.current = false;
+      queuedMood.current = null;
+      for (const timer of pendingTimers) clearTimeout(timer);
+    };
+  }, []);
   const later = useCallback((callback: () => void, delay: number) => {
     const timer = setTimeout(() => {
       timers.current.delete(timer);
@@ -117,6 +123,7 @@ export function useRoomActions({
   const [mugFell, setMugFell] = useState<number | null>(null);
   const [petAt, setPetAt] = useState<number | null>(null);
   const [drawing, setDrawing] = useState(false);
+  const [drawingOpen, setDrawingOpen] = useState(false);
   const hangUp = async (cells: string) => {
     setDrawing(true);
     try {
@@ -262,15 +269,29 @@ export function useRoomActions({
     }
   };
 
+  const [pendingMood, setPendingMood] = useState<Mood | null>(null);
   const tell = async (m: Mood) => {
+    queuedMood.current = m;
+    setPendingMood(m);
+    onError(null);
     play("chirp");
     setNudge((v) => v + 1);
-    setView((v) => (v ? { ...v, catMood: m, catMoodAt: Date.now() } : v));
-    try {
-      setView(await doTell(id, m));
-    } catch {
-      void load();
+    if (telling.current) return;
+    telling.current = true;
+    while (queuedMood.current && alive.current) {
+      const choice = queuedMood.current;
+      queuedMood.current = null;
+      try {
+        const next = await doTell(id, choice);
+        if (alive.current && !queuedMood.current) setView(next);
+      } catch {
+        if (!alive.current || queuedMood.current) continue;
+        await load();
+        if (alive.current && !queuedMood.current) onError("Couldn’t save your mood. Try again.");
+      }
     }
+    telling.current = false;
+    if (alive.current) setPendingMood(null);
   };
 
   return {
@@ -281,6 +302,8 @@ export function useRoomActions({
     mugFell,
     petAt,
     drawing,
+    drawingOpen,
+    setDrawingOpen,
     hangUp,
     giftWords,
     gifting,
@@ -299,6 +322,7 @@ export function useRoomActions({
     boxOut,
     leaveOut,
     leaveGift,
+    pendingMood,
     tell,
   };
 }

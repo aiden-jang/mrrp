@@ -35,7 +35,7 @@ export function RoomActionDock({
                     : "Settle into it"
                   : view.waitingAtDoor
                     ? "Come away from the door"
-                    : "Go and wait by the door"}
+                    : "Wait by the door"}
               </span>
             </button>
             {CAT_ACTS.filter((a) => a.id !== "gift").map((a) => {
@@ -52,10 +52,12 @@ export function RoomActionDock({
                   <ActionMark kind={a.id} />
                   <span>
                     {noBox
-                      ? "no box to get into"
+                      ? "No box out"
                       : a.id === "box" && view.box
                         ? "Get out of the box"
-                        : a.label}
+                        : a.id === "shelf"
+                          ? "Knock the mug"
+                          : a.label}
                   </span>
                 </button>
               );

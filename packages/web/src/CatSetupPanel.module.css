@@ -32,6 +32,7 @@
 }
 .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   position: sticky;
   bottom: 0;
@@ -43,6 +44,62 @@
 }
 .actions > button {
   flex: 1;
+}
+.actions > .saveError {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 13px;
+}
+.heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.heading > button {
+  flex-shrink: 0;
+}
+.heading > div {
+  min-width: 0;
+}
+.noteList {
+  padding: 0;
+  border: 0;
+  margin: 0 0 20px;
+  min-width: 0;
+  display: grid;
+  gap: 20px;
+}
+.noteEdit {
+  display: grid;
+  gap: 8px;
+}
+.noteDayRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 650;
+}
+.tabs {
+  display: flex;
+  gap: 18px;
+  border-bottom: 1px solid var(--line);
+  margin-top: 16px;
+}
+.tabs > button {
+  margin: 0;
+  padding: 10px 0;
+  border-radius: 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  text-decoration: none;
+}
+.tabs > button[aria-pressed="true"] {
+  color: var(--ink);
+  border-bottom-color: var(--honey);
 }
 @media (max-width: 480px) {
   .panel {

@@ -1,5 +1,5 @@
-import { loginUrl, logoutUrl } from "@aidenjang/auth-client";
-import { useEffect, useState } from "react";
+import { logoutUrl } from "@aidenjang/auth-client";
+import { useEffect, useRef, useState } from "react";
 import { doRelease, myToken, whoAmI, type SignedInAs } from "./api.js";
 import s from "./App.module.css";
 import { AUTH_URL } from "./config.js";
@@ -35,9 +35,17 @@ export function RoomSettings({
 }) {
   const iAmHim = view.you !== null && !view.youAreHer;
   const [releasing, setReleasing] = useState(false);
-  const [me, setMe] = useState<SignedInAs>({ signedIn: false, name: null });
+  const [freeing, setFreeing] = useState(false);
+  const releasePending = useRef(false);
+  const [me, setMe] = useState<SignedInAs | null>(null);
   useEffect(() => {
-    void whoAmI().then(setMe);
+    let active = true;
+    void whoAmI().then((result) => {
+      if (active) setMe(result);
+    });
+    return () => {
+      active = false;
+    };
   }, []);
   const { linking, linkError: linkErr, link } = account;
   const { typedName, setTypedName, ending, armed: leaveArmed, setArmed: setLeaveArmed } = exit;
@@ -65,13 +73,23 @@ export function RoomSettings({
             </p>
             <button
               className={`${s.btn} ${s.accountBtn}`}
-              disabled={linking}
+              disabled={linking || me === null}
               onClick={() => void link(!view.linked)}
             >
-              {view.linked ? "Take this seat off my account" : "Keep this seat on my account"}
+              {linking
+                ? "Updating your seat…"
+                : view.linked
+                  ? "Take this seat off my account"
+                  : me?.signedIn
+                    ? "Keep this seat on my account"
+                    : "Sign in to keep this seat"}
             </button>
             <p className={`${s.small} ${s.whoRow}`}>
-              {me.signedIn ? (
+              {me === null ? (
+                "Checking your account…"
+              ) : me.unavailable ? (
+                "Couldn’t check your account. You can still use the room."
+              ) : me.signedIn ? (
                 <>
                   Signed in{me.name ? ` as ${me.name}` : ""}.{" "}
                   <a className={s.creditLink} href={logoutUrl(AUTH_URL, window.location.href)}>
@@ -79,12 +97,7 @@ export function RoomSettings({
                   </a>
                 </>
               ) : (
-                <>
-                  Not signed in.{" "}
-                  <a className={s.creditLink} href={loginUrl(AUTH_URL, window.location.href)}>
-                    Sign in
-                  </a>
-                </>
+                <>You can use the room without signing in.</>
               )}
             </p>
             {linkErr && (
@@ -93,15 +106,62 @@ export function RoomSettings({
               </p>
             )}
           </div>
-          <div className={s.recovery}>
-            <h3 className={s.recoveryTitle}>Or keep a recovery code</h3>
+          <details className={s.recovery}>
+            <summary className={s.recoverySummary}>Use a recovery code</summary>
             <p className={s.small} style={{ marginTop: 8 }}>
               For getting back in without an account. Keep it somewhere that is not this phone.
             </p>
             <RecoveryCode code={view.recoveryCode} />
-          </div>
+          </details>
         </section>
       )}
+      <section className={s.accountSection} aria-label="A day worth remembering">
+        <details>
+          <summary className={s.summary}>a day worth remembering</summary>
+          <div style={{ marginTop: 8 }}>
+            <label className={s.fieldLabel} htmlFor="room-day">
+              The date
+            </label>
+            <input
+              id="room-day"
+              className={`${s.input} ${s.dateInput}`}
+              type="date"
+              value={ourDay.date}
+              min="1900-01-01"
+              max="2100-12-31"
+              aria-label="The date"
+              name="room-day"
+              onChange={(e) => ourDay.setDate(e.target.value)}
+            />
+            <label className={s.fieldLabel} htmlFor="room-day-label" style={{ marginTop: 12 }}>
+              What the day is
+            </label>
+            <input
+              id="room-day-label"
+              className={s.input}
+              value={ourDay.label}
+              maxLength={32}
+              placeholder="what it is, in a few words"
+              aria-label="What the day is"
+              name="room-day-label"
+              onChange={(e) => ourDay.setLabel(e.target.value)}
+            />
+            <p className={s.small} style={{ marginTop: 6 }}>
+              {view.cat.name} says it every year on the day, to both of you, in exactly those words.{" "}
+              {view.them ?? "They"} will not see it here, so it stays a surprise. Leave either blank for no
+              day at all.
+            </p>
+            <button
+              className={s.btn}
+              style={{ width: "100%", marginTop: 8 }}
+              disabled={ourDay.saving}
+              onClick={() => void ourDay.save()}
+            >
+              {ourDay.saving ? "Keeping…" : ourDay.saved ? "Kept" : "Keep this day"}
+            </button>
+          </div>
+        </details>
+      </section>
       <section className={s.accountSection} aria-label="Room access">
         <h2>Room access</h2>
         {view.recoveryCode && <RoomAccess id={id} reload={reload} />}
@@ -124,28 +184,33 @@ export function RoomSettings({
           (releasing ? (
             <div className={s.panel} style={{ marginTop: 14 }}>
               <p className={s.small} style={{ color: "var(--ink)" }}>
-                Her seat lives in one browser, so a new phone, a cleared browser or a private window you
-                opened to look at the room can all end up holding it. This frees it, and whoever opens the
-                link next becomes the cat, so send it to her again afterwards. She keeps her place in the
-                notes and the line she left you.
+                Free her seat so she can return on another browser. Whoever opens the room link next becomes
+                the cat, so send it directly to her afterwards. Her notes and reply stay here.
               </p>
               <div className={s.row} style={{ marginTop: 12 }}>
-                <button className={s.btn} onClick={() => setReleasing(false)}>
+                <button className={s.btn} disabled={freeing} onClick={() => setReleasing(false)}>
                   Never mind
                 </button>
                 <button
                   className={`${s.btn} ${s.btnGo}`}
+                  disabled={freeing}
                   onClick={async () => {
+                    if (releasePending.current) return;
+                    releasePending.current = true;
+                    setFreeing(true);
                     try {
                       await doRelease(id);
                       setReleasing(false);
                       await reload();
                     } catch (e) {
                       onError(e instanceof Error ? e.message : "Couldn't do that.");
+                    } finally {
+                      releasePending.current = false;
+                      setFreeing(false);
                     }
                   }}
                 >
-                  Free her seat
+                  {freeing ? "Freeing her seat…" : "Free her seat"}
                 </button>
               </div>
             </div>
@@ -154,45 +219,6 @@ export function RoomSettings({
               {view.them ?? "She"} can&apos;t get in
             </button>
           ))}
-      </section>
-      <section className={s.accountSection} aria-label="A day worth remembering">
-        <details>
-          <summary className={s.summary}>a day worth remembering</summary>
-          <div style={{ marginTop: 8 }}>
-            <input
-              className={`${s.input} ${s.dateInput}`}
-              type="date"
-              value={ourDay.date}
-              min="1900-01-01"
-              max="2100-12-31"
-              aria-label="The date"
-              name="room-day"
-              onChange={(e) => ourDay.setDate(e.target.value)}
-            />
-            <input
-              className={s.input}
-              style={{ marginTop: 8 }}
-              value={ourDay.label}
-              maxLength={32}
-              placeholder="what it is, in a few words"
-              aria-label="What the day is"
-              name="room-day-label"
-              onChange={(e) => ourDay.setLabel(e.target.value)}
-            />
-            <p className={s.small} style={{ marginTop: 6 }}>
-              {view.cat.name} says it every year on the day, to both of you, in exactly those words.{" "}
-              {view.them ?? "They"} will not see it here, so it stays a surprise. Leave either blank for no
-              day at all.
-            </p>
-            <button
-              className={s.btn}
-              style={{ width: "100%", marginTop: 8 }}
-              onClick={() => void ourDay.save()}
-            >
-              {ourDay.saved ? "Kept" : "Keep this day"}
-            </button>
-          </div>
-        </details>
       </section>
       <section className={s.accountSection} aria-label="Leaving the room">
         {(iAmHim || view.youAreHer) && (

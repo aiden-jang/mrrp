@@ -65,6 +65,7 @@ it("prepares the postcard before an explicit native-share click", async () => {
   const hook = renderHook(() => useRoomSharing(null, vi.fn()));
   act(() => hook.result.current.handleCaptureReady(async () => new Blob(["room"])));
   await act(() => hook.result.current.saveRoomImage());
+  expect(HTMLAnchorElement.prototype.click).not.toHaveBeenCalled();
   expect(share).not.toHaveBeenCalled();
   expect(hook.result.current.canSharePostcard).toBe(true);
   let sharing!: Promise<void>;

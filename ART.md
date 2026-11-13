@@ -104,8 +104,9 @@ beside each other. Phones put the introduction and first action before the scene
 keep the action beside the scene on desktop and before it on phones.
 
 Inside a room, the scene leads and a four-action dock sits below it. Notes, mood and objects
-follow in two columns on desktop and one on phones. Setup and waiting keep the editor or
-invitation beside the scene when there is room. The original interaction world stays centered
+sit in one adjacent column on desktop and follow the scene on phones. The dock becomes
+two-by-two on phones. Notes and appearance use separate editors; appearance has cat, room
+and day sections. Waiting keeps the invitation beside the scene when there is room. The original interaction world stays centered
 inside the wider viewport, with whole device pixels and a restrained scene height on wide screens.
 
 Bricolage Grotesque headings and Nunito Sans body text are bundled locally with their licenses.

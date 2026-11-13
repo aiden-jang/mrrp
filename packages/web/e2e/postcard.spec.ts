@@ -24,8 +24,12 @@ test("a prepared postcard shares from its own click and cancellation does not do
   page.on("download", () => {
     downloads += 1;
   });
-  const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Make a postcard", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Your postcard", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Your postcard", exact: true })).toBeFocused();
+  expect(downloads).toBe(0);
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Save postcard", exact: true }).click();
   expect((await download).suggestedFilename()).toMatch(/\.png$/);
   const share = page.getByRole("button", { name: "Share postcard", exact: true });
   await share.click();
@@ -37,4 +41,6 @@ test("a prepared postcard shares from its own click and cancellation does not do
   expect(downloads).toBe(1);
   await expect(page.getByRole("alert")).toHaveCount(0);
   await page.screenshot({ path: test.info().outputPath("postcard-ready-390.png"), animations: "disabled" });
+  await page.getByRole("button", { name: "Close preview", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Make a postcard", exact: true })).toBeFocused();
 });

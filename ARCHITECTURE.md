@@ -26,7 +26,8 @@ Neither runtime imports the other to validate its contract.
 | Room actions, optimistic updates and interaction timers     | `useRoomActions.ts`                                         |
 | Shared scene action dock                                    | `RoomActionDock.tsx`                                        |
 | Arrival and contextual feedback                             | `useRoomFeedback.ts`, `RoomArrival.tsx`                     |
-| Notes, appearance and clock draft                           | `useCatSetup.ts`, `CatSetupPanel.tsx`                       |
+| Appearance and clock draft                                  | `useCatSetup.ts`, `CatSetupPanel.tsx`                       |
+| Daily notes draft                                           | `useRoomNotes.ts`, `RoomNotesPanel.tsx`                     |
 | Saved conversations                                         | `useRoomHistory.tsx`                                        |
 | Invitations and image sharing                               | `useRoomSharing.ts`                                         |
 | Connection and action feedback                              | `RoomStatus.tsx`, `ConnectionNotice.tsx`                    |
@@ -39,6 +40,10 @@ Neither runtime imports the other to validate its contract.
 Hooks own side effects and writes. Role components render the authoritative snapshot and call
 those operations. Draft state stays with its editor. A failed notes request must not become an
 empty editable list, and a failed drawing save must keep the draft open.
+
+Mood writes run in order and keep only the latest queued choice. That choice stays visible
+while earlier live snapshots arrive. Setup and drawing controls pause during saves; the private
+date draft can keep changing, but its saved feedback belongs only to the submitted version.
 
 `api.ts` owns browser requests and seat credentials. A room link alone is not a credential for
 another person's seat. The client may preview a change immediately, but the server's response
@@ -76,10 +81,17 @@ owns projection, prop bounds and viewport fitting. The wider viewport centers th
 interaction world; drawing and pointer coordinates use the same camera.
 
 `RoomActionDock.tsx` renders each seat's main actions below the scene using `useRoomActions.ts`.
-Role components own notes, moods and objects below it. Setup and waiting use the adjacent
-desktop column. The header's Room & account link opens and focuses the existing settings
+Role components own notes, moods and objects in the adjacent desktop column. Notes and
+appearance have separate editors and writes; appearance saves omit notes. Phones keep the
+scene first and use a two-by-two action dock. The header's Room & account link opens and focuses the existing settings
 details; it does not introduce another settings state owner. See [DESIGN](DESIGN.md) for the
 interface tokens and responsive rules.
+
+`useCanvasCapture.ts` waits for a painted frame after initialization or resizing before exporting.
+`useRoomSharing.ts` prepares the postcard for an inline preview. Save and native Share each
+require a separate click; the preview URL lives until replacement, closing or room teardown.
+`RoomUpdate.tsx` withholds reload while an editor, unsaved text, postcard or relevant write is active.
+The service worker caches the static shell and local Latin fonts, while API state stays on the network.
 
 ## Worker
 

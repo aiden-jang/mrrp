@@ -1,5 +1,6 @@
 import { DEFAULT_DECOR, decorateScene, mugColors, ROOM_ART, rugColors, rugPattern } from "./roomDecor.js";
 import { useEffect, useRef } from "react";
+import { useCanvasCapture } from "./useCanvasCapture.js";
 import * as polish from "./roomPolish.js";
 import * as sceneArt from "./roomShell.js";
 import { roomPainter, type RasterView } from "./roomPainter.js";
@@ -227,6 +228,7 @@ export function Cat({
   mood,
   nudge,
   reserveBelow = ROOM_RESERVE,
+  compact = false,
   staying = false,
   eyesOpen = false,
   framed = false,
@@ -289,6 +291,7 @@ export function Cat({
   blanket?: RoomView["blanket"];
   sky?: RoomView["sky"];
   reserveBelow?: number;
+  compact?: boolean;
   staying?: boolean;
   watchDoorAt?: number | null;
   box?: boolean;
@@ -332,6 +335,9 @@ export function Cat({
   collectionKey?: string;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const capture = useCanvasCapture(ref, onCapture);
+  const captureRef = useRef(capture);
+  captureRef.current = capture;
   const lookRef = useRef(look);
   const clockRef = useRef(clock);
   const moodRef = useRef(mood);
@@ -580,18 +586,6 @@ export function Cat({
     );
   }, [onProps]);
 
-  useEffect(() => {
-    if (!onCapture) return;
-    onCapture(
-      () =>
-        new Promise((resolve) => {
-          const canvas = ref.current;
-          if (!canvas) return resolve(null);
-          canvas.toBlob((blob) => resolve(blob), "image/png");
-        }),
-    );
-  }, [onCapture]);
-
   const speakUntil = useRef(0);
 
   useEffect(() => {
@@ -641,8 +635,8 @@ export function Cat({
   }, [doodle]);
 
   const mothSwipe = useRef({ visit: -1, at: -Infinity });
-  const reserveRef = useRef(reserveBelow);
-  reserveRef.current = reserveBelow;
+  const fitRef = useRef({ reserve: reserveBelow, compact });
+  fitRef.current = { reserve: reserveBelow, compact };
   useEffect(() => {
     if (!leftOut || playedLeftOut.current === leftOut) return;
     playedLeftOut.current = leftOut;
@@ -685,13 +679,15 @@ export function Cat({
     const fit = () => {
       cancelAnimationFrame(refit);
       const wide = box ? box.clientWidth : cv.getBoundingClientRect().width;
-      const fitted = fitRoom(wide, innerHeight, devicePixelRatio, reserveRef.current);
+      const sizing = fitRef.current;
+      const fitted = fitRoom(wide, innerHeight, devicePixelRatio, sizing.reserve, sizing.compact);
       if (!fitted) {
         refit = requestAnimationFrame(fit);
         return;
       }
       raster.scale = fitted.scale;
       viewport = raster.width = viewportRef.current = fitted.viewport;
+      captureRef.current.invalidate();
       cv.width = fitted.width;
       cv.height = fitted.height;
       cv.style.width = `${cv.width / fitted.ratio}px`;
@@ -2948,6 +2944,7 @@ export function Cat({
         }
       }
 
+      captureRef.current.painted();
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);

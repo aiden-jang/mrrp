@@ -11,29 +11,43 @@ test("he makes a room, she goes in, and each gets their own half", async ({ page
   expect(link).toMatch(/\/r\/[a-z0-9]+$/);
 
   // Things belong to both of them; writing her notes is his.
+  await page.locator("#room-things").click();
   await expect(page.getByRole("button", { name: "the window" })).toBeVisible();
+  await page.locator("#room-things").click();
   await expect(page.getByRole("button", { name: /Write her notes/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Say something back/ })).toHaveCount(0);
 
-  await page.getByRole("button", { name: /Write her notes/ }).click();
+  await page.getByRole("button", { name: "Change the cat and room", exact: true }).click();
+  await page.getByRole("button", { name: "The room", exact: true }).click();
   await page.getByRole("button", { name: "Moss", exact: true }).click();
-  await page.getByLabel("Rug", { exact: true }).selectOption("stripe");
-  await page.getByLabel("Wall print", { exact: true }).selectOption("moon");
-  await page.getByLabel("Mug", { exact: true }).selectOption("rose");
+  await page.getByRole("button", { name: "Stripes", exact: true }).click();
+  await page.getByRole("button", { name: "Moon", exact: true }).click();
+  await page.getByRole("button", { name: "Rose", exact: true }).click();
   await page.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.getByRole("status")).toHaveText("Saved. A very considered look.");
+  await expect(page.getByRole("status")).toHaveText("Saved.");
   await page.reload();
-  await page.getByRole("button", { name: /Write her notes/ }).click();
+  await page.getByRole("button", { name: "Change the cat and room", exact: true }).click();
+  await page.getByRole("button", { name: "The room", exact: true }).click();
   await expect(page.getByRole("button", { name: "Moss", exact: true })).toHaveAttribute(
     "aria-pressed",
     "true",
   );
-  await expect(page.getByLabel("Rug", { exact: true })).toHaveValue("stripe");
-  await expect(page.getByLabel("Wall print", { exact: true })).toHaveValue("moon");
-  await expect(page.getByLabel("Mug", { exact: true })).toHaveValue("rose");
+  await expect(page.getByRole("button", { name: "Stripes", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(page.getByRole("button", { name: "Moon", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(page.getByRole("button", { name: "Rose", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await page.getByRole("button", { name: "Midnight", exact: true }).click();
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
-  await page.getByRole("button", { name: /Write her notes/ }).click();
+  await page.getByRole("button", { name: "Change the cat and room", exact: true }).click();
+  await page.getByRole("button", { name: "The room", exact: true }).click();
   await expect(page.getByRole("button", { name: "Moss", exact: true })).toHaveAttribute(
     "aria-pressed",
     "true",
@@ -74,7 +88,7 @@ test("he makes a room, she goes in, and each gets their own half", async ({ page
   await her.getByRole("button", { name: "Never mind" }).click();
 
   // A toggle, so the control itself is the state: pressed, and offering the way back out.
-  const door = her.getByRole("button", { name: /(Go and wait|Come away) / });
+  const door = her.getByRole("button", { name: /(Wait by|Come away) / });
   await expect(door).toHaveAttribute("aria-pressed", "false");
   await door.click();
   await expect(door).toHaveAttribute("aria-pressed", "true");

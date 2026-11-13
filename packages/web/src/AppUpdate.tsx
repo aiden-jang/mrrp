@@ -53,7 +53,7 @@ export function AppUpdate({ safe = true }: { safe?: boolean }) {
     <aside aria-label="App update" role="status" className={s.updateNotice}>
       <div>
         <p className={s.updateTitle}>An update is ready.</p>
-        <p className={s.small}>Save your changes before reloading. This page stays open until you choose.</p>
+        <p className={s.small}>Reload when you’re ready. This page stays open until you choose.</p>
       </div>
       <div className={s.updateActions}>
         <button type="button" onClick={() => window.location.reload()} className={`${s.btn} ${s.btnGo}`}>

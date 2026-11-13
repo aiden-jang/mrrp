@@ -1,9 +1,16 @@
-// Node 24+ strips the shared TypeScript mark. SVG rendering needs no browser installation.
 import { Resvg } from "@resvg/resvg-js";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { iconMark } from "../src/iconMark.ts";
+import { createServer } from "vite";
+
+const modules = await createServer({
+  server: { middlewareMode: true, hmr: false },
+  optimizeDeps: { noDiscovery: true, include: [] },
+  appType: "custom",
+});
+const { iconMark } = await modules.ssrLoadModule("/src/iconMark.ts");
+await modules.close();
 
 const PUBLIC = resolve(dirname(fileURLToPath(import.meta.url)), "../public");
 mkdirSync(PUBLIC, { recursive: true });
@@ -11,7 +18,12 @@ const svg = iconMark();
 writeFileSync(resolve(PUBLIC, "icon.svg"), svg);
 const square = svg.replace('rx="120"', 'rx="0"');
 function render(name, source, width) {
-  const png = new Resvg(source, { fitTo: { mode: "width", value: width } }).render().asPng();
+  const png = new Resvg(source, {
+    fitTo: { mode: "width", value: width },
+    font: { fontFiles: [resolve(PUBLIC, "fonts/bricolage-latin.woff2")], loadSystemFonts: true },
+  })
+    .render()
+    .asPng();
   writeFileSync(resolve(PUBLIC, name), png);
   console.log(`public/${name}`);
 }
@@ -23,12 +35,12 @@ render("apple-touch-icon.png", square, 180);
 render(
   "og.png",
   `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <rect width="1200" height="630" fill="#f7ecdc"/>
+  <rect width="1200" height="630" fill="#e5e9de"/>
   <svg x="176" y="155" width="320" height="320" viewBox="0 0 512 512">${square.replace(/<svg[^>]*>|<\/svg>/g, "")}</svg>
-  <g font-family="Arial, sans-serif" fill="#4a3520">
+  <g font-family="Bricolage Grotesque, sans-serif" fill="#2c4135">
     <text x="560" y="285" font-size="96" font-weight="700" letter-spacing="-2">mrrp</text>
-    <text x="564" y="355" font-size="34" fill="#7a6a54">One of you</text>
-    <text x="564" y="401" font-size="34" fill="#7a6a54">is the cat.</text>
+    <text x="564" y="355" font-size="34" fill="#596b5d">One of you</text>
+    <text x="564" y="401" font-size="34" fill="#596b5d">is the cat.</text>
   </g>
 </svg>`,
   1200,
@@ -43,9 +55,25 @@ writeFileSync(
       start_url: ".",
       scope: "/",
       display: "standalone",
-      background_color: "#f7ecdc",
-      theme_color: "#f7ecdc",
+      background_color: "#e5e9de",
+      theme_color: "#e5e9de",
       orientation: "portrait",
+      screenshots: [
+        {
+          src: "/screenshots/app-desktop.png",
+          sizes: "1440x900",
+          type: "image/png",
+          form_factor: "wide",
+          label: "A little room to share.",
+        },
+        {
+          src: "/screenshots/app-mobile.png",
+          sizes: "390x844",
+          type: "image/png",
+          form_factor: "narrow",
+          label: "Your cat, a note, and a moment together.",
+        },
+      ],
       icons: [
         { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
         { src: "/icon-512.png", sizes: "512x512", type: "image/png" },

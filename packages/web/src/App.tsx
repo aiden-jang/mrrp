@@ -6,6 +6,8 @@ import s from "./App.module.css";
 import { Cat } from "./Cat.js";
 import { CatRoom } from "./CatRoom.js";
 import { CatSetupPanel } from "./CatSetupPanel.js";
+import { RoomNotesPanel } from "./RoomNotesPanel.js";
+import { RoomUpdate } from "./RoomUpdate.js";
 import { CompanionRoom } from "./CompanionRoom.js";
 import { foundKeys, noticed } from "./discoveries.js";
 import { DOOR_X, HER_SPOT, sceneFor } from "./hours.js";
@@ -14,7 +16,7 @@ import { RoomAnnotations } from "./RoomAnnotations.js";
 import { RoomActionDock } from "./RoomActionDock.js";
 import { ArrivalCard, FOUND_ANNOUNCEMENTS, FOUND_AS_HER } from "./RoomArrival.js";
 import { RoomHeader } from "./RoomChrome.js";
-import { SoundToggle } from "./RoomControls.js";
+import { RoomThings, SoundToggle } from "./RoomControls.js";
 import { ChromeSync, DocTitle, FaviconSync, VoiceSync } from "./RoomEffects.js";
 import { InvalidRoomLink, RoomFallback } from "./RoomFallback.js";
 import { RoomFooter } from "./RoomFooter.js";
@@ -27,6 +29,7 @@ import { play } from "./sound.js";
 import type { Action } from "./types.js";
 import { ACTIONS } from "./types.js";
 import { useCatSetup } from "./useCatSetup.js";
+import { useRoomNotes } from "./useRoomNotes.js";
 import { useDoorway, useStaying } from "./useDoorway.js";
 import { useOurDay } from "./useOurDay.js";
 import { useRoomActions } from "./useRoomActions.js";
@@ -86,6 +89,8 @@ function RoomPage({ id }: { id: string }) {
   );
   const cat = useCatSetup(id, view, load);
   const { open: setup, draft } = cat;
+  const notes = useRoomNotes(id, load);
+  const editing = setup || notes.open;
   const { nudge, setNudge, shelfAt, setShelfAt, arriving, stage } = useRoomFeedback(view, setup, draft?.name);
   const [did, setDid] = useState<string | null>(null);
   useEffect(() => {
@@ -119,12 +124,17 @@ function RoomPage({ id }: { id: string }) {
 
   const setupTrigger = useRef<HTMLButtonElement>(null);
   const setupPanel = useRef<HTMLDivElement>(null);
-  const wasSetup = useRef(false);
+  const notesTrigger = useRef<HTMLButtonElement>(null);
+  const notesPanel = useRef<HTMLDivElement>(null);
+  const activeEditor = useRef<"cat" | "notes" | null>(null);
   useEffect(() => {
-    if (setup && !wasSetup.current) setupPanel.current?.focus();
-    if (!setup && wasSetup.current) setupTrigger.current?.focus();
-    wasSetup.current = setup;
-  }, [setup]);
+    const opened = setup ? "cat" : notes.open ? "notes" : null;
+    if (opened && opened !== activeEditor.current)
+      (opened === "cat" ? setupPanel : notesPanel).current?.focus();
+    if (!opened && activeEditor.current)
+      (activeEditor.current === "cat" ? setupTrigger : notesTrigger).current?.focus();
+    activeEditor.current = opened;
+  }, [setup, notes.open]);
 
   if (gone || asking || !view || view.youLeft) {
     return (
@@ -145,15 +155,8 @@ function RoomPage({ id }: { id: string }) {
   }
 
   const herSpot = view.personality ? HER_SPOT : null;
-  const hourly = sceneFor(
-    view.clock,
-    Date.now(),
-    view.catMood,
-    view.bothHereNow,
-    herSpot,
-    view.sky,
-    view.expectAt,
-  );
+  const mood = actions.pendingMood ?? view.catMood;
+  const hourly = sceneFor(view.clock, Date.now(), mood, view.bothHereNow, herSpot, view.sky, view.expectAt);
 
   // Keep the caption aligned with the cat when she waits at the door.
   const scene = view.waitingAtDoor ? { ...hourly, catX: DOOR_X, atDoor: true } : hourly;
@@ -186,17 +189,18 @@ function RoomPage({ id }: { id: string }) {
           }
         >
           <SoundToggle />
-          {!setup && (iAmHim || view.youAreHer) && <RoomSettingsLink />}
+          {!editing && (iAmHim || view.youAreHer) && <RoomSettingsLink />}
         </RoomHeader>
         {did === "saved" && (
           <p className={s.saveFeedback} role="status">
-            Saved. A very considered look.
+            Saved.
           </p>
         )}
-        <div className={s.roomGrid} data-editing={setup || view.waitingForThem || undefined}>
+        <div className={s.roomGrid} data-editing={editing || view.waitingForThem || undefined}>
           <div className={s.sceneColumn}>
             <div ref={stage} className={`${s.stage} ${arriving ? s.stageArrival : ""}`}>
               <Cat
+                compact={!setup && !view.waitingForThem && (iAmHim || view.youAreHer)}
                 collectionKey={id}
                 label={`${previewLook.name} is ${scene.doing}.`}
                 look={previewLook}
@@ -204,7 +208,7 @@ function RoomPage({ id }: { id: string }) {
                 clock={
                   setup && draft ? { ...view.clock, tz: draft.tz, homeHour: draft.homeHour } : view.clock
                 }
-                mood={view.catMood}
+                mood={mood}
                 nudge={nudge}
                 eyesOpen={setup}
                 framed={view.framed}
@@ -274,25 +278,12 @@ function RoomPage({ id }: { id: string }) {
                 onCapture={handleCaptureReady}
               />
             </div>
-            {roomProps && !setup && (
+            {roomProps && !editing && (
               <a href="#room-actions" data-skip="">
                 Skip to what you can do
               </a>
             )}
-            {roomProps && !setup && (
-              <nav className={s.srOnly} aria-labelledby="room-things">
-                <h2 id="room-things">things in the room</h2>
-                <ul>
-                  {roomProps.props.map((prop) => (
-                    <li key={prop.key}>
-                      <button type="button" onClick={() => roomProps.poke(prop.key)}>
-                        {prop.label}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
-            )}
+
             <p aria-live="polite" className={s.srOnly}>
               {found}
             </p>
@@ -300,39 +291,34 @@ function RoomPage({ id }: { id: string }) {
               view={view}
               scene={scene}
               name={previewLook.name}
-              setup={setup}
+              setup={editing}
               postcard={sharing}
               nudge={nudge}
               awayNote={awayNote}
               nightChrome={nightChrome}
             />
-            {!setup && !view.waitingForThem && (iAmHim || view.youAreHer) && (
+            {!editing && !view.waitingForThem && (iAmHim || view.youAreHer) && (
               <RoomActionDock view={view} actions={actions} did={did} />
             )}
+            {roomProps && !editing && <RoomThings items={roomProps.props} onPoke={roomProps.poke} />}
           </div>
           <div className={s.actionColumn} id="room-actions" tabIndex={-1}>
             {iAmHim && setup && (
               <CatSetupPanel
                 cat={cat}
-                view={view}
                 panelRef={setupPanel}
                 onSaved={() => {
                   setDid("saved");
                 }}
               />
             )}
-            {view.bothHereNow && (
-              <div className={s.together}>
-                <p className={s.togetherMain}>
-                  {view.sittingWithYou
-                    ? `${view.them ?? "He"} is sitting with you.`
-                    : view.sittingWith
-                      ? `You are sitting with ${view.cat.name}.`
-                      : view.youAreHer
-                        ? `${view.them ?? "He"} is right there. He can reach you.`
-                        : `Hold on ${view.cat.name}. She's right there.`}
-                </p>
-              </div>
+            {iAmHim && notes.open && (
+              <RoomNotesPanel
+                notes={notes}
+                view={view}
+                panelRef={notesPanel}
+                onSaved={() => setDid("saved")}
+              />
             )}
             {arrivalCard && arrivalCard.length > 0 && view.them && (
               <ArrivalCard
@@ -342,17 +328,19 @@ function RoomPage({ id }: { id: string }) {
                 onClose={() => setArrivalCard(null)}
               />
             )}
-            {setup ? null : view.waitingForThem ? (
+            {editing ? null : view.waitingForThem ? (
               <RoomWaiting
                 view={view}
                 cat={cat}
                 setupTrigger={setupTrigger}
+                notes={notes}
+                notesTrigger={notesTrigger}
                 shareResult={shareResult}
                 onShare={() => void shareRoom()}
               />
             ) : view.youAreHer ? (
               <CatRoom
-                view={view}
+                view={actions.pendingMood ? { ...view, catMood: mood } : view}
                 actions={actions}
                 history={history}
                 sayBox={sayBox}
@@ -368,13 +356,15 @@ function RoomPage({ id }: { id: string }) {
                 history={history}
                 cat={cat}
                 setupTrigger={setupTrigger}
+                notes={notes}
+                notesTrigger={notesTrigger}
                 theirLive={theirLive}
                 now={now}
               />
             ) : (
               <SeatRecovery account={account} />
             )}
-            {!setup && (iAmHim || view.youAreHer) && (
+            {!editing && (iAmHim || view.youAreHer) && (
               <RoomSettings
                 id={id}
                 view={view}
@@ -391,9 +381,18 @@ function RoomPage({ id }: { id: string }) {
         </div>
         <RoomStatus
           live={view.seat != null ? live : null}
-          message={err ?? (iAmHim && !setup ? cat.error : null)}
+          message={err ?? (iAmHim && !editing ? (notes.error ?? cat.error) : null)}
         />
         <RoomFooter youAreHer={view.youAreHer} catName={view.cat.name} />
+        <RoomUpdate
+          editing={editing || notes.loading}
+          reply={sayBox}
+          actions={actions}
+          day={ourDay}
+          exit={exit}
+          account={account}
+          postcard={sharing}
+        />
       </div>
     </main>
   );

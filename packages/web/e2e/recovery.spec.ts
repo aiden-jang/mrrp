@@ -83,7 +83,8 @@ test("a recovery-code copy failure selects the real code and supports retry", as
   await page.goto("/");
   await page.getByLabel("Your name", { exact: true }).fill("Review companion");
   await page.getByRole("button", { name: "Make a room" }).click();
-  await page.getByRole("button", { name: /Write her notes/ }).click();
+  await page.locator("#room-account > summary").click();
+  await page.getByText("Use a recovery code", { exact: true }).click();
   await page.getByRole("button", { name: "Copy the recovery code", exact: true }).click();
   const code = page.getByRole("textbox", { name: "Your recovery code", exact: true });
   await expect(code).toBeFocused();
@@ -97,8 +98,9 @@ test("a recovery-code copy failure selects the real code and supports retry", as
     await page.setViewportSize({ width, height: 900 });
     await page.getByRole("alert").scrollIntoViewIfNeeded();
     const errorBounds = (await page.getByRole("alert").boundingBox())!;
-    const actionsBounds = (await page.getByRole("button", { name: "Save", exact: true }).boundingBox())!;
-    expect(errorBounds.y + errorBounds.height).toBeLessThanOrEqual(actionsBounds.y);
+    const codeBounds = (await code.boundingBox())!;
+    expect(codeBounds.y + codeBounds.height).toBeLessThanOrEqual(errorBounds.y);
+    await expect(page.getByRole("alert")).toBeInViewport();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: test.info().outputPath(`recovery-code-${width}.png`) });
   }

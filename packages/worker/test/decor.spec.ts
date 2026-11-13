@@ -7,6 +7,19 @@ const { id, post, seat, view } = harness("decorroom");
 const decor: RoomDecor = { palette: "moss", rug: "stripe", art: "moon", mug: "rose" };
 
 describe("shared room decor", () => {
+  it("saves appearance without rewriting notes from a separate editor", async () => {
+    await seat();
+    await post("notes", { me: HIM, notes: ["a note saved in another tab"] });
+    const before = await view(HIM);
+    const setup = { me: HIM, cat: { ...before.cat, name: "Miso" }, clock: before.clock, decor };
+    expect((await post("setup", setup)).status).toBe(200);
+    expect(await view(HER)).toMatchObject({ cat: setup.cat, clock: setup.clock, decor });
+    const notes = await SELF.fetch(`https://x/api/room/${id}/notes?me=${HIM}`);
+    expect(await notes.json()).toEqual({ notes: ["a note saved in another tab"] });
+    expect((await post("setup", { ...setup, notes: null })).status).toBe(400);
+    expect((await post("setup", { ...setup, me: HER })).status).toBe(403);
+  });
+
   it("validates the entire setup before applying any of it", async () => {
     await seat();
     const before = await view(HIM);

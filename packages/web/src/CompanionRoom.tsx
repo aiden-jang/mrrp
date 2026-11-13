@@ -6,6 +6,7 @@ import { TheirRecent, whenish } from "./RoomArrival.js";
 import type { RoomView, Visit } from "./types.js";
 import { MOODS, TREATS } from "./types.js";
 import type { useCatSetup } from "./useCatSetup.js";
+import type { useRoomNotes } from "./useRoomNotes.js";
 import type { useRoomActions } from "./useRoomActions.js";
 import type { useRoomHistory } from "./useRoomHistory.js";
 
@@ -15,6 +16,8 @@ export function CompanionRoom({
   history,
   cat,
   setupTrigger,
+  notes,
+  notesTrigger,
   theirLive,
   now,
 }: {
@@ -23,6 +26,8 @@ export function CompanionRoom({
   history: ReturnType<typeof useRoomHistory>;
   cat: ReturnType<typeof useCatSetup>;
   setupTrigger: RefObject<HTMLButtonElement>;
+  notes: ReturnType<typeof useRoomNotes>;
+  notesTrigger: RefObject<HTMLButtonElement>;
   theirLive: Pick<Visit, "at" | "action">[];
   now: number;
 }) {
@@ -69,24 +74,23 @@ export function CompanionRoom({
 
         <div className={s.note}>
           <h2 className={s.noteFrom}>Her notes</h2>
-          {view.noteDay && (
-            <p className={s.small}>
-              She has note {view.noteDay} waiting. Hold on {view.cat.name} to pet her.
-            </p>
-          )}
+          {view.noteDay && !view.sheHasReadAll && <p className={s.small}>She’s on note {view.noteDay}.</p>}
           {view.sheHasReadAll && (
             <p className={s.small}>
-              She has read all {view.notesInAll} of them. You can leave more whenever you like.
+              {view.notesInAll === 1
+                ? "She has read your note."
+                : `She has read all ${view.notesInAll} of them.`}{" "}
+              You can leave more whenever you like.
             </p>
           )}
           {!setup && (
             <button
-              ref={setupTrigger}
-              className={s.quiet}
-              disabled={cat.loading}
-              onClick={() => void cat.start()}
+              ref={notesTrigger}
+              className={`${s.btn} ${s.btnGo}`}
+              disabled={notes.loading}
+              onClick={() => void notes.start()}
             >
-              Write her notes, or change the cat and room
+              {notes.loading ? "Opening her notes…" : "Write her notes"}
             </button>
           )}
         </div>
@@ -130,12 +134,25 @@ export function CompanionRoom({
       </section>
 
       <section className={s.roomTools} aria-label="Notes and room details">
-        <button ref={history.trigger} className={s.quiet} onClick={() => void history.open()}>
+        <button
+          ref={history.trigger}
+          className={s.quiet}
+          disabled={history.loading}
+          onClick={() => void history.open()}
+        >
           Everything the two of you have said
         </button>
         {history.panel}
 
-        <FrameSheet current={view.doodle} saving={drawing} onSave={hangUp} />
+        <FrameSheet
+          current={view.doodle}
+          saving={drawing}
+          onSave={hangUp}
+          onEditingChange={actions.setDrawingOpen}
+        />
+        <button ref={setupTrigger} className={s.quiet} disabled={notes.loading} onClick={cat.start}>
+          Change the cat and room
+        </button>
       </section>
     </>
   );

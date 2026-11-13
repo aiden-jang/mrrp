@@ -1,6 +1,5 @@
 export type KeepsakeDetails = {
   catName: string;
-  doing: string;
   together: boolean;
   /* She is the cat, so her copy cannot be captioned with her own name in the third person. */
   youAreHer?: boolean;
@@ -10,16 +9,16 @@ export type KeepsakeDetails = {
 };
 
 const CARD = {
-  day: { paper: "#fffaf1", caption: "#4a3520", date: "#907961", mark: "#c58c43" },
-  night: { paper: "#2b2439", caption: "#f6f1e6", date: "#c9bccb", mark: "#e8ad55" },
+  day: { paper: "#f1f4e8", caption: "#263d35", date: "#596c5e", mark: "#4d6b57" },
+  night: { paper: "#192e29", caption: "#ebf1e2", date: "#bbcbb6", mark: "#c4d2a9" },
 } as const;
 
-export function keepsakeCaption({ catName, doing, together, youAreHer }: KeepsakeDetails): string {
+export function keepsakeCaption({ catName, together, youAreHer }: KeepsakeDetails): string {
   if (together)
     return youAreHer
       ? "for a little while, you were both here."
       : `for a little while, you were both here with ${catName}.`;
-  return youAreHer ? `you were ${doing}.` : `${catName} was ${doing}.`;
+  return youAreHer ? "A little moment in your room." : `A little moment in ${catName}’s room.`;
 }
 
 export function keepsakeDate(date = new Date()): string {
@@ -91,7 +90,7 @@ export function keepsakeImageBounds(width: number, height: number) {
   const fittedHeight = height * scale;
   return {
     x: 72 + (1056 - fittedWidth) / 2,
-    y: 72 + (1056 - fittedHeight) / 2,
+    y: 72,
     width: fittedWidth,
     height: fittedHeight,
   };
@@ -130,7 +129,9 @@ export async function makeKeepsake(room: Blob, details: KeepsakeDetails): Promis
   const [image] = await Promise.all([loadImage(room), keepsakeFontReady()]);
   const canvas = document.createElement("canvas");
   canvas.width = 1200;
-  canvas.height = 1420;
+  const bounds = keepsakeImageBounds(image.width, image.height);
+  const bottom = bounds.y + bounds.height;
+  canvas.height = Math.ceil(bottom + 292);
   const g = canvas.getContext("2d");
   if (!g) return null;
 
@@ -139,17 +140,16 @@ export async function makeKeepsake(room: Blob, details: KeepsakeDetails): Promis
   g.fillRect(0, 0, canvas.width, canvas.height);
 
   g.save();
-  roundedRect(g, 72, 72, 1056, 1056, 44);
+  roundedRect(g, bounds.x, bounds.y, bounds.width, bounds.height, 24);
   g.clip();
   g.imageSmoothingEnabled = false;
-  const bounds = keepsakeImageBounds(image.width, image.height);
   g.drawImage(image, bounds.x, bounds.y, bounds.width, bounds.height);
   g.restore();
 
   g.fillStyle = card.caption;
   g.font = `600 42px ${KEEPSAKE_FONT}`;
   wrappedLines(g, keepsakeCaption(details), 1028).forEach((line, index) => {
-    g.fillText(line, 86, 1212 + index * 52);
+    g.fillText(line, 86, bottom + 84 + index * 52);
   });
 
   g.fillStyle = card.date;
@@ -157,13 +157,13 @@ export async function makeKeepsake(room: Blob, details: KeepsakeDetails): Promis
   const stamp = details.day
     ? `${keepsakeDate(details.capturedAt)}  \u00b7  day ${details.day}`
     : keepsakeDate(details.capturedAt);
-  g.fillText(stamp, 86, 1338);
+  g.fillText(stamp, 86, canvas.height - 82);
 
   g.textAlign = "right";
   g.fillStyle = card.mark;
   g.font = `700 32px ${KEEPSAKE_FONT}`;
-  g.fillText("mrrp", 1076, 1350);
-  paw(g, 1092, 1337, card.mark);
+  g.fillText("mrrp", 1076, canvas.height - 70);
+  paw(g, 1092, canvas.height - 83, card.mark);
 
   return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
 }

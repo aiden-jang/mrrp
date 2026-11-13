@@ -3,6 +3,31 @@ import s from "./App.module.css";
 import { copyText } from "./clipboard.js";
 import { isMuted, toggleMuted } from "./sound.js";
 
+export function RoomThings({
+  items,
+  onPoke,
+}: {
+  items: { key: string; label: string }[];
+  onPoke: (key: string) => void;
+}) {
+  return (
+    <details className={s.roomThings}>
+      <summary id="room-things">Things in the room</summary>
+      <nav aria-labelledby="room-things">
+        <ul>
+          {items.map((item) => (
+            <li key={item.key}>
+              <button type="button" className={s.btn} onClick={() => onPoke(item.key)}>
+                {item.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </details>
+  );
+}
+
 export function SoundToggle() {
   const [off, setOff] = useState(isMuted);
   return (

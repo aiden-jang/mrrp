@@ -164,6 +164,7 @@ export function SaidPanel({
   them,
   onClose,
   onUnsay,
+  takingBack = null,
   panelRef,
 }: {
   said: SaidSoFar;
@@ -172,6 +173,7 @@ export function SaidPanel({
   onClose: () => void;
   // Hers only. He has no business taking her words out of the room.
   onUnsay?: (at: number) => void;
+  takingBack?: number | null;
   panelRef?: React.Ref<HTMLElement>;
 }) {
   /*
@@ -208,8 +210,12 @@ export function SaidPanel({
                 <span>&ldquo;{answer.text}&rdquo;</span>
                 <small className={s.saidWhen}>{dayOf(answer.at)}</small>
                 {onUnsay && (
-                  <button className={s.takeBack} onClick={() => onUnsay(answer.at)}>
-                    take it back
+                  <button
+                    className={s.takeBack}
+                    disabled={takingBack !== null}
+                    onClick={() => onUnsay(answer.at)}
+                  >
+                    {takingBack === answer.at ? "Taking it back…" : "take it back"}
                   </button>
                 )}
               </p>
@@ -252,8 +258,12 @@ export function SaidPanel({
                   <small className={s.saidWhen}>{dayOf(line.at)}</small>
                 )}
                 {onUnsay && (
-                  <button className={s.takeBack} onClick={() => onUnsay(line.at)}>
-                    take it back
+                  <button
+                    className={s.takeBack}
+                    disabled={takingBack !== null}
+                    onClick={() => onUnsay(line.at)}
+                  >
+                    {takingBack === line.at ? "Taking it back…" : "take it back"}
                   </button>
                 )}
               </li>

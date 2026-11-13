@@ -37,6 +37,32 @@ export function CatRoom({
   const herFades = fadeNote(view, "her", now);
   return (
     <>
+      <section className={s.actionSection} aria-label="How are you feeling?">
+        <h2 className={s.actionHeading}>How are you feeling?</h2>
+        <div className={s.moodRow}>
+          {MOODS.map((m) => (
+            <button
+              key={m.id}
+              aria-pressed={view.catMood === m.id}
+              className={`${s.mood} ${s.moodChoice} ${view.catMood === m.id ? s.moodOn : ""}`}
+              style={view.catMood === m.id ? undefined : { background: moodTint(m.id, nightChrome, panel) }}
+              onClick={() => void tell(m.id)}
+            >
+              <span>
+                <MoodFace mood={m.id} color="var(--ink)" size={14} />
+                {m.label}
+              </span>
+            </button>
+          ))}
+        </div>
+        {actions.pendingMood ? (
+          <p className={s.moodResponse} role="status">
+            Sharing your mood…
+          </p>
+        ) : (
+          <MoodResponse mood={view.catMood} />
+        )}
+      </section>
       <section className={s.actionSection} aria-label="Notes and replies">
         {view.note && (
           <div className={s.note}>
@@ -85,7 +111,12 @@ export function CatRoom({
 
         {view.note && (
           <>
-            <button ref={history.trigger} className={s.quiet} onClick={() => void history.open()}>
+            <button
+              ref={history.trigger}
+              className={s.quiet}
+              disabled={history.loading}
+              onClick={() => void history.open()}
+            >
               Everything he's written you
             </button>
             {history.panel}
@@ -101,27 +132,6 @@ export function CatRoom({
         ) : null}
 
         {view.theyCameAfter && !view.themHereNow && <p className={s.came}>He came in after you said that.</p>}
-      </section>
-
-      <section className={s.actionSection} aria-label="How are you feeling?">
-        <h2 className={s.actionHeading}>How are you feeling?</h2>
-        <div className={s.moodRow}>
-          {MOODS.map((m) => (
-            <button
-              key={m.id}
-              aria-pressed={view.catMood === m.id}
-              className={`${s.mood} ${s.moodChoice} ${view.catMood === m.id ? s.moodOn : ""}`}
-              style={view.catMood === m.id ? undefined : { background: moodTint(m.id, nightChrome, panel) }}
-              onClick={() => void tell(m.id)}
-            >
-              <span>
-                <MoodFace mood={m.id} color="var(--ink)" size={14} />
-                {m.label}
-              </span>
-            </button>
-          ))}
-        </div>
-        <MoodResponse mood={view.catMood} />
       </section>
 
       <section className={s.actionSection} aria-label="Leave him something" id="cat-gift" tabIndex={-1}>
@@ -153,7 +163,12 @@ export function CatRoom({
       <section className={s.roomTools} aria-label="Room details">
         {herMarks && <p className={s.small}>He'll find {herMarks}.</p>}
         {herFades && <p className={s.fades}>{herFades}</p>}
-        <FrameSheet current={view.doodle} saving={drawing} onSave={(c) => hangUp(c)} />
+        <FrameSheet
+          current={view.doodle}
+          saving={drawing}
+          onSave={hangUp}
+          onEditingChange={actions.setDrawingOpen}
+        />
         <BlanketRow current={view.blanket} busy={bedding} onPick={(k, st) => void pickBlanket(k, st)} />
       </section>
     </>

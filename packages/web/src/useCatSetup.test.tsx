@@ -20,35 +20,53 @@ beforeEach(() => vi.resetAllMocks());
 afterEach(cleanup);
 
 describe("loading the room editor", () => {
-  it("cannot turn an unavailable notes request into a blank saved list", async () => {
+  it("does not submit the same draft twice while a save is pending", async () => {
+    vi.mocked(fetchNotes).mockResolvedValue(["a note"]);
+    let finish!: () => void;
+    vi.mocked(saveCatSetup).mockReturnValue(new Promise<void>((resolve) => (finish = resolve)));
+    const { result } = renderHook(() => useCatSetup("test-room", view, vi.fn()));
+    await act(() => result.current.start());
+    let saving!: Promise<boolean>;
+    act(() => {
+      saving = result.current.save();
+      void result.current.save();
+    });
+    expect(saveCatSetup).toHaveBeenCalledOnce();
+    await act(async () => {
+      finish();
+      await saving;
+    });
+  });
+
+  it("can edit appearance without loading or rewriting notes", async () => {
     vi.mocked(fetchNotes).mockRejectedValue(new Error("offline"));
     const { result } = renderHook(() => useCatSetup("test-room", view, vi.fn()));
     await act(() => result.current.start());
-    expect(result.current.open).toBe(false);
-    expect(result.current.draft).toBeNull();
-    expect(result.current.error).toContain("saved notes haven’t changed");
+    expect(result.current.open).toBe(true);
+    expect(fetchNotes).not.toHaveBeenCalled();
+    expect(result.current.draft).not.toHaveProperty("notes");
     await act(() => result.current.save());
-    expect(saveCatSetup).not.toHaveBeenCalled();
+    expect(saveCatSetup).toHaveBeenCalledWith(
+      "test-room",
+      expect.not.objectContaining({ notes: expect.anything() }),
+    );
   });
 
-  it("can retry and edit the saved notes after the connection recovers", async () => {
-    vi.mocked(fetchNotes)
-      .mockRejectedValueOnce(new Error("offline"))
-      .mockResolvedValueOnce(["the first note", "the second note"]);
+  it("keeps an appearance draft after a failed save and supports retry", async () => {
+    vi.mocked(saveCatSetup).mockRejectedValueOnce(new Error("offline")).mockResolvedValueOnce(undefined);
     const reload = vi.fn().mockResolvedValue(undefined);
     const { result } = renderHook(() => useCatSetup("test-room", view, reload));
     await act(() => result.current.start());
-    await act(() => result.current.start());
+    act(() => result.current.setDraft((draft) => ({ ...draft!, name: "Miso" })));
+    await act(() => result.current.save());
     expect(result.current.open).toBe(true);
-    expect(result.current.error).toBeNull();
-    expect(result.current.draft?.notes).toBe("the first note\nthe second note");
+    expect(result.current.draft?.name).toBe("Miso");
     await act(() => result.current.save());
     expect(saveCatSetup).toHaveBeenCalledWith(
       "test-room",
       expect.objectContaining({
-        cat: view.cat,
+        cat: { ...view.cat, name: "Miso" },
         clock: view.clock,
-        notes: ["the first note", "the second note"],
       }),
     );
     expect(reload).toHaveBeenCalledOnce();

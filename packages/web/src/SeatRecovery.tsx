@@ -11,8 +11,8 @@ export function SeatRecovery({ account }: { account: SeatAccount }) {
       <h2 className={s.newsMain}>Both seats are taken.</h2>
       <p className={s.small}>This room belongs to two people. You can watch the cat.</p>
       <p className={s.small} style={{ marginTop: 10 }}>
-        If you have been in here before, your recovery code will get you back in. If a seat is being held by a
-        browser that is not yours, ask whoever sent you the link to free it.
+        If you have been here before, use your recovery code below. Without a code, ask whoever sent you the
+        link to free your seat.
       </p>
       <form
         aria-label="Recover your seat"
@@ -25,8 +25,7 @@ export function SeatRecovery({ account }: { account: SeatAccount }) {
       >
         <h3 className={s.panelTitle}>Is one of these seats yours?</h3>
         <p className={s.small} style={{ marginBottom: 9 }}>
-          Either of you can come back on a new phone. Put your recovery code in and the room works out which
-          seat is yours.
+          Your code brings back your seat, even on a new phone.
         </p>
         <label className={s.fieldLabel} htmlFor={fieldId}>
           Recovery code

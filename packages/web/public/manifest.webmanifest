@@ -5,9 +5,25 @@
   "start_url": ".",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f7ecdc",
-  "theme_color": "#f7ecdc",
+  "background_color": "#e5e9de",
+  "theme_color": "#e5e9de",
   "orientation": "portrait",
+  "screenshots": [
+    {
+      "src": "/screenshots/app-desktop.png",
+      "sizes": "1440x900",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "A little room to share."
+    },
+    {
+      "src": "/screenshots/app-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Your cat, a note, and a moment together."
+    }
+  ],
   "icons": [
     {
       "src": "/icon-192.png",
@@ -29,22 +45,6 @@
       "src": "/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshots/app-desktop.png",
-      "sizes": "1425x900",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "A shared cat room. Local demonstration."
-    },
-    {
-      "src": "/screenshots/app-mobile.png",
-      "sizes": "375x806",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "A shared cat room. Local demonstration."
     }
   ]
 }

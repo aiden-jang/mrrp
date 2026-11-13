@@ -13,11 +13,11 @@ export function propBounds(key: string, x: number, y: number, width: number, hei
   return { x: point.x, y: point.y, w: width * point.scale, h: height * point.scale };
 }
 
-export function fitRoom(width: number, height: number, ratio: number, reserve: number) {
+export function fitRoom(width: number, height: number, ratio: number, reserve: number, compact = false) {
   const d = Math.min(3, ratio || 1);
   const cap = Math.min(
     height > 0 ? Math.min(height * 0.78, height - reserve) : width,
-    width >= 700 ? 480 : Infinity,
+    compact && width >= 440 ? 320 : width >= 700 ? 480 : Infinity,
   );
   const available = Math.min(width > 0 ? width : Infinity, cap);
   if (!Number.isFinite(available) || available < 80) return null;
