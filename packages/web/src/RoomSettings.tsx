@@ -42,7 +42,7 @@ export function RoomSettings({
   const { linking, linkError: linkErr, link } = account;
   const { typedName, setTypedName, ending, armed: leaveArmed, setArmed: setLeaveArmed } = exit;
   return (
-    <details className={s.roomBits}>
+    <details className={s.roomBits} id="room-account">
       <summary className={s.roomBitsTitle}>Room & account</summary>
       {view.recoveryCode && (
         <section className={s.accountSection} aria-label="Keep your seat">
@@ -259,5 +259,24 @@ export function RoomSettings({
         )}
       </section>
     </details>
+  );
+}
+
+export function RoomSettingsLink() {
+  return (
+    <a
+      className={s.settingsLink}
+      href="#room-account"
+      onClick={(event) => {
+        const panel = document.getElementById("room-account");
+        if (!(panel instanceof HTMLDetailsElement)) return;
+        event.preventDefault();
+        panel.open = true;
+        panel.querySelector("summary")?.focus();
+        panel.scrollIntoView({ block: "start" });
+      }}
+    >
+      Room & account
+    </a>
   );
 }

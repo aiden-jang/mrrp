@@ -1,13 +1,12 @@
 # Mrrp art direction
 
-Mrrp should keep the small, hand-made feeling it already has while becoming richer, warmer, and more
-visually authored. The goal is not to paste an illustration behind the cat. It is to use image
-generation to explore composition and atmosphere, then translate the approved direction into
-consistent pixel art that still responds to the clock, moods, touch, and each room's cat.
+The approved Pocket room direction gives Mrrp a wider, quiet room and a newly drawn cat.
+Ivory curtains, timber, muted fabric and window light carry the scene. Sage day chrome and
+forest night chrome let the room lead. [DESIGN.md](DESIGN.md) records the interface system.
 
-The first approved reference is
-[`docs/art/golden-hour-room-concept-v1.png`](docs/art/golden-hour-room-concept-v1.png). It is a target
-for warmth, depth, material detail, and environmental storytelling. It is not a drop-in game asset.
+Image studies guide composition and character; the interactive scene is authored Canvas work.
+The earlier [golden-hour study](docs/art/golden-hour-room-concept-v1.png) remains an atmosphere
+reference, not the current cat model or layout, and is not a runtime asset.
 
 ## The scene owns its pixels
 
@@ -17,20 +16,22 @@ hand-authored sprites keep animation, custom colors and hit areas consistent.
 
 ## What is in the room
 
-The cat's original face, silhouette and tail live in `packages/web/src/sprites.ts` and render
-directly from those grids. `catArt.ts` supplies her custom colors. `roomArt.ts` authors the
-finer props, and `roomShell.ts` paints the architecture, materials and light. The canvas engine
-in `Cat.tsx` owns behavior and layering. No image model or external asset request runs in the room.
+`sprites.ts` owns the logical pose envelopes, movement anchors and facial landmarks.
+`catArt.ts` maps a finer head, cream muzzle, small eyes, body and tail onto those envelopes,
+and supplies replaceable coat and eye colors. `roomArt.ts` selects this artwork and authors
+the props; `roomShell.ts` paints architecture, materials and light. `Cat.tsx` owns behavior
+and layering, with expression and collar placement in `overlays.ts`. No image model or
+external asset request runs in the room.
 
 Movement still uses the same 100 by 80 world. Most new art uses half-cell details;
 `roomPainter.ts` aligns them to whole device pixels. The viewport can widen to show more of
 the room without stretching it. A very short landscape window uses the coarse grid so the
 entrance controls remain visible. Postcards preserve the captured scene's proportions.
 
-The enlarged window, low cabinet and fuller plant share their placement and activation bounds
-through `roomGeometry.ts`. Cat poses retain their original movement anchors, eye highlights,
-collars and expression positions. Closed eyes fill with her face color, and her coat and eye
-colors remain customizable.
+The enlarged window, left-hand cabinet and plant share their placement and activation bounds
+through `roomGeometry.ts`. Window projection, mug positions and the shelf trip must agree
+with the visible furniture. The cat's small tracking pupils, blinks, collar and expressions
+follow her pose. Closed eyes fill with her face color; custom colors survive every pose.
 
 Landed as authored Canvas work: whole-pixel rendering (one logical pixel is a whole number of device
 pixels, or the floorboards come out at two different widths); the cat lit by the room, with a rim from
@@ -47,7 +48,7 @@ Deliberately not done: anything that could make the room worse over time, which 
 
 ## What must survive
 
-- The ginger cat, cream face and belly, dark brown outline, and tiny expressive face
+- The default ginger cat, cream muzzle and belly, brown outline, and small expressive eyes
 - User-selected fur, belly, and eye colors
 - A small private room rather than a large virtual-pet world
 - Light that follows her local time
@@ -96,22 +97,26 @@ The room renders in this order, and the Canvas renderer remains the source of in
 5. Cat shadow, tail, and cat
 6. Foreground objects, weather, and secret effects
 
-## Window seat
+## Pocket room interface
 
-The landing and invitation put the first action beside the room on wide screens and before it
-on phones. Once inside, the room gets the wider column and the current seat’s notes and actions
-stay alongside it. Below 860px the room and its caption come first, followed by the controls.
-The breakpoint gives the notes, drawing grid and setup editor room to wrap without squeezing
-the cat’s whole-pixel canvas.
+The landing leads with the scene on wide screens, then places the introduction and room form
+beside each other. Phones put the introduction and first action before the scene. Invitations
+keep the action beside the scene on desktop and before it on phones.
 
-Honey marks the main action. The existing day and night palettes carry through the same layout.
-Room & account stays with the controls and groups seat recovery, room access and the remembered day.
+Inside a room, the scene leads and a four-action dock sits below it. Notes, mood and objects
+follow in two columns on desktop and one on phones. Setup and waiting keep the editor or
+invitation beside the scene when there is room. The original interaction world stays centered
+inside the wider viewport, with whole device pixels and a restrained scene height on wide screens.
 
-The interface uses Quicksand, dark readable text and a restrained spacing scale. Controls share an
-8px radius; panels use 14px. Editors group related fields without adding nested cards, and their
-save/cancel actions stay visible. Feedback follows the room palette. Motion is brief feedback;
-the living scene carries the atmosphere. Keep recovery easy to find and destructive actions separate
-from everyday controls.
+Bricolage Grotesque headings and Nunito Sans body text are bundled locally with their licenses.
+The primary action uses sage by day and pale sage at night. The legacy `--honey` token names
+that role. Controls use an 8px radius; panels and the scene use 12px. Quiet dividers and tonal
+surfaces group content without turning every section into a card.
+
+The companion's notes status and write/edit action stay together. Room & account is reachable
+from the header and opens the existing details section, where recovery, access and lifecycle
+controls remain. Editors keep save/cancel visible; motion gives brief feedback while the living
+scene carries the atmosphere.
 
 ## The bar
 

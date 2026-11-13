@@ -3,14 +3,17 @@ import type { Mood } from "./types.js";
 import s from "./App.module.css";
 import { PawMark } from "./screens.js";
 
-export function RoomWordmark() {
+export function RoomWordmark({ children }: { children?: ReactNode }) {
   return (
     <div className={s.roomWordmark}>
       <span className={s.brand} translate="no">
         <PawMark />
         mrrp
       </span>
-      <span>A room for two</span>
+      <div className={s.roomUtilities}>
+        <span>A room for two</span>
+        {children}
+      </div>
     </div>
   );
 }
@@ -28,14 +31,13 @@ export function RoomHeader({
 }) {
   return (
     <header>
-      <RoomWordmark />
+      <RoomWordmark>{children}</RoomWordmark>
       <div className={s.roomHeader}>
         <h1 className={s.roomName}>{name}’s room</h1>
         <p className={s.roomPresence}>
           {together && <span className={s.presenceDot} aria-hidden="true" />}
           {presence}
         </p>
-        {children}
       </div>
     </header>
   );

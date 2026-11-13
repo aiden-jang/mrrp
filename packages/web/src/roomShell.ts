@@ -4,21 +4,18 @@ type Paint = (x: number, y: number, width: number, height: number, color: string
 const INK = "#4a3520";
 
 export function shell(paint: Paint, scene: Scene) {
-  paint(0, 0, 100, 48, scene.wallTop);
-  paint(0, 39, 100, 9, mixHex(scene.wallBottom, "#896c57", 0.14));
-  paint(87, 0, 13, 48, mixHex(scene.wallTop, "#4c465b", 0.2));
-  paint(86.5, 0, 0.5, 48, mixHex(scene.wallTop, scene.beamWarm, 0.16));
-  paint(87, 39, 13, 9, mixHex(scene.wallBottom, "#4c465b", 0.26));
-  paint(0, 39, 100, 0.5, mixHex(scene.wallBottom, scene.beamWarm, 0.23));
-  for (const x of [4, 25, 46, 67, 87]) {
+  paint(-40, 0, 180, 48, scene.wallTop);
+  paint(-40, 39, 180, 9, mixHex(scene.wallBottom, "#896c57", 0.14));
+  paint(-40, 39, 180, 0.5, mixHex(scene.wallBottom, scene.beamWarm, 0.23));
+  for (const x of [-38, -17, 4, 25, 46, 67, 88, 109, 130]) {
     paint(x, 40, 0.5, 7, mixHex(scene.wallBottom, INK, 0.1));
     paint(x + 0.5, 40, 0.5, 7, mixHex(scene.wallBottom, scene.beamWarm, 0.08));
   }
-  paint(0, 47, 100, 1, mixHex(scene.wallBottom, INK, 0.22));
-  paint(0, 47, 100, 0.5, mixHex(scene.wallBottom, scene.beamWarm, 0.28));
-  paint(0, 48, 100, 32, scene.floorNear);
-  paint(0, 48, 100, 6, mixHex(scene.floorFar, INK, 0.08));
-  paint(0, 48, 100, 0.5, mixHex(scene.floorFar, INK, 0.2));
+  paint(-40, 47, 180, 1, mixHex(scene.wallBottom, INK, 0.22));
+  paint(-40, 47, 180, 0.5, mixHex(scene.wallBottom, scene.beamWarm, 0.28));
+  paint(-40, 48, 180, 32, scene.floorNear);
+  paint(-40, 48, 180, 6, mixHex(scene.floorFar, INK, 0.08));
+  paint(-40, 48, 180, 0.5, mixHex(scene.floorFar, INK, 0.2));
   const plaster = mixHex(scene.wallTop, scene.wallBottom, 0.14);
   for (const [x, y, width] of [
     [8, 9, 3],
@@ -38,13 +35,13 @@ export function floor(paint: Paint, scene: Scene) {
   const bands = [48, 51, 55, 61, 69, 79, 80];
   for (let band = 1; band < bands.length - 1; band++) {
     const y = bands[band]!;
-    paint(0, y, 100, 0.5, seam);
-    paint(0, y + 0.5, 100, 0.5, edge);
+    paint(-40, y, 180, 0.5, seam);
+    paint(-40, y + 0.5, 180, 0.5, edge);
   }
   for (let band = 0; band < bands.length - 1; band++) {
     for (let y = bands[band]!; y < bands[band + 1]!; y += 0.5) {
       const depth = 0.62 + ((y - 48) / 32) * 0.55;
-      for (const joint of [-10, 30, 70, 110]) {
+      for (const joint of [-90, -50, -10, 30, 70, 110, 150, 190]) {
         const x = Math.round((50 + (joint + (band % 2) * 20 - 50) * depth) * 2) / 2;
         paint(x, y, 0.5, 0.5, seam);
         paint(x + 0.5, y, 0.5, 0.5, mixHex(scene.floorNear, scene.beamWarm, 0.03));
@@ -69,10 +66,10 @@ export function floor(paint: Paint, scene: Scene) {
 
 export function joinery(paint: Paint, scene: Scene) {
   const seam = mixHex(scene.wallBottom, INK, 0.12);
-  for (const x of [4, 25, 46, 67, 87]) paint(x, 40, 0.5, 7, seam);
-  paint(0, 39, 100, 0.5, mixHex(scene.wallBottom, scene.beamWarm, 0.28));
-  paint(0, 47, 100, 1, mixHex(scene.wallBottom, INK, 0.22));
-  paint(0, 47, 100, 0.5, mixHex(scene.wallBottom, scene.beamWarm, 0.24));
+  for (const x of [-38, -17, 4, 25, 46, 67, 88, 109, 130]) paint(x, 40, 0.5, 7, seam);
+  paint(-40, 39, 180, 0.5, mixHex(scene.wallBottom, scene.beamWarm, 0.28));
+  paint(-40, 47, 180, 1, mixHex(scene.wallBottom, INK, 0.22));
+  paint(-40, 47, 180, 0.5, mixHex(scene.wallBottom, scene.beamWarm, 0.24));
 }
 
 export function lampGlow(paint: Paint, scene: Scene) {
@@ -134,8 +131,8 @@ export function rugLight(paint: Paint, scene: Scene, body: string) {
 }
 
 export function curtains(paint: Paint, scene: Scene, x: number, hem: number) {
-  const cloth = mixHex(scene.wallBottom, "#927585", 0.72);
-  const shadow = mixHex(cloth, "#4c4053", 0.3);
+  const cloth = mixHex(scene.wallTop, "#f5e7cb", 0.82);
+  const shadow = mixHex(cloth, "#8f7655", 0.23);
   const fold = mixHex(cloth, scene.beamWarm, 0.15 + scene.sun * 0.12);
   const casing = mixHex("#806044", scene.wallBottom, 0.18);
   paint(x - 1, 3, 19, 13, mixHex(scene.wallBottom, INK, 0.22));
@@ -143,14 +140,14 @@ export function curtains(paint: Paint, scene: Scene, x: number, hem: number) {
   paint(x - 5.5, 5 / 3, 2 / 3, 1, casing);
   paint(x + 21.5, 5 / 3, 2 / 3, 1, casing);
   for (const left of [x - 5, x + 17]) {
-    paint(left, 3, 5, 22, cloth);
-    paint(left, 3, 1 / 3, 21, shadow);
-    paint(left + 1, 3, 2 / 3, 21, fold);
-    paint(left + 3, 3, 1 / 3, 22, shadow);
-    paint(left + 4, 3, 1 / 3, 21, fold);
-    paint(left + 1 / 3, 25, 4, 1 / 3, shadow);
-    paint(left + 1 + hem / 3, 25 + 1 / 3, 1, 1 / 3, cloth);
-    paint(left + 3 - hem / 3, 25 + 1 / 3, 1, 1 / 3, cloth);
+    paint(left, 3, 5, 14, cloth);
+    paint(left, 3, 1 / 3, 13, shadow);
+    paint(left + 1, 3, 2 / 3, 13, fold);
+    paint(left + 3, 3, 1 / 3, 14, shadow);
+    paint(left + 4, 3, 1 / 3, 13, fold);
+    paint(left + 1 / 3, 17, 4, 1 / 3, shadow);
+    paint(left + 1 + hem / 3, 17 + 1 / 3, 1, 1 / 3, cloth);
+    paint(left + 3 - hem / 3, 17 + 1 / 3, 1, 1 / 3, cloth);
     paint(left, 13, 5, 1 / 3, mixHex(cloth, "#d2ad74", 0.45));
   }
   paint(x - 1, 15, 19, 1, casing);
@@ -161,7 +158,7 @@ export function hangingPlant(paint: Paint, scene: Scene, x: number, seasonal: st
   const leaf = mixHex(seasonal, "#6e865f", 0.72);
   const light = mixHex(leaf, scene.beamWarm, 0.2);
   const dark = mixHex(leaf, "#3b4e38", 0.3);
-  paint(49, 4, 0.5, 6, INK);
+  paint(x, 4, 0.5, 6, INK);
   paint(x - 2, 8, 0.5, 5, "#806044");
   paint(x + 2, 8, 0.5, 5, "#806044");
   paint(x - 3, 12, 6, 3, "#a9754e");

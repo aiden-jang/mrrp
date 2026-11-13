@@ -20,15 +20,15 @@ export const SNOW_FLAKES: [number, number][] = [
 // prettier-ignore
 export const COLLAR: Record<Pose, { dx: number; w: number; dy: number; tag: number }> = {
   loaf:    { dx: -8, w: 12, dy: -7, tag: -2 },
-  sit:     { dx: -6, w: 12, dy: -9, tag:  0 },
-  stand:   { dx: -6, w: 12, dy: -7, tag:  0 },
-  play:    { dx: -7, w: 12, dy: -9, tag: -1 },
-  perk:    { dx: -6, w: 12, dy: -9, tag:  0 },
-  walk:    { dx: -6, w: 12, dy: -7, tag:  0 },
-  stretch: { dx: -6, w: 12, dy: -5, tag:  0 },
-  pounce:  { dx: -7, w: 12, dy: -6, tag: -1 },
+  sit:     { dx: -6, w: 11, dy: -9, tag:  0 },
+  stand:   { dx: -6, w: 11, dy: -7, tag:  0 },
+  play:    { dx: -6, w: 11, dy: -9, tag: -1 },
+  perk:    { dx: -6, w: 11, dy: -9, tag:  0 },
+  walk:    { dx: -6, w: 11, dy: -7, tag:  0 },
+  stretch: { dx: -6, w: 11, dy: -5, tag:  0 },
+  pounce:  { dx: -7, w: 11, dy: -6, tag: -1 },
   peek:    { dx: -4, w:  8, dy: -2, tag:  0 },
-  flop:    { dx:  5, w:  2, dy: -6, tag:  5 },
+  flop:    { dx:  8, w:  2, dy: -6, tag:  8 },
 };
 
 export const GROOM = { pawX: 10, pawY: 9, tipX: 11, tipY: 8, tongueX: 9, tongueY: 10 };

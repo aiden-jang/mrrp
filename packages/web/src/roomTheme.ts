@@ -13,15 +13,15 @@ const MOOD_TINT: Record<string, string> = {
   horny: "#f2d4d6",
 };
 
-const DEEP = { air: "#211e1a", warm: "#2b251f", panel: "#302a23", line: "#55493c", honey: "#e8ad55" };
-const DUSK = { air: "#352e26", warm: "#40362c", panel: "#463b30", line: "#6b5947", honey: "#e2a349" };
-const DAWN = { air: "#f4e9db", warm: "#fbf1e4", panel: "#fbf5ea", line: "#ded0b8", honey: "#d9963a" };
-const FULL = { air: "#f7ecdc", warm: "#fdf6ea", panel: "#fffaf0", line: "#e6d5bb", honey: "#e0a03f" };
+const DEEP = { air: "#232e26", warm: "#29372b", panel: "#303e32", line: "#52654e", honey: "#bdcba3" };
+const DUSK = { air: "#2b382b", warm: "#344332", panel: "#3b4a37", line: "#63765b", honey: "#c3cda8" };
+const DAWN = { air: "#e3e7dc", warm: "#ebedde", panel: "#f5f5e9", line: "#c5cdbb", honey: "#536746" };
+const FULL = { air: "#e5e9de", warm: "#ebeee2", panel: "#f9f8ef", line: "#c6cfbf", honey: "#566c4c" };
 
 const NIGHT_BELOW = 0.45;
 
-const INK_ON_DARK = "#f6f1e6";
-const SOFT_ON_DARK = "#d0c1ad";
+const INK_ON_DARK = "#ebf1e2";
+const SOFT_ON_DARK = "#b3c2ac";
 const ERROR_ON_DARK = "#d39a88";
 
 export function moodTint(id: string, night: boolean, panel: string): string {
@@ -46,7 +46,7 @@ export function chromeFor(scene: Scene): Record<string, string> {
   const air = tint("air", scene.wallTop);
   const warm = tint("warm", scene.beamWarm);
   const panel = tint("panel", scene.wallTop);
-  const ink = night ? INK_ON_DARK : "#3f2f1f";
+  const ink = night ? INK_ON_DARK : "#2c4135";
   const readable = (color: string) => {
     for (let step = 0; step <= 20; step++) {
       const candidate = mixHex(color, ink, step / 20);
@@ -64,7 +64,8 @@ export function chromeFor(scene: Scene): Record<string, string> {
     "--control": standOff(tint("panel", scene.wallTop)),
     "--honey": mixHex(from.honey, to.honey, t),
     "--ink": ink,
-    "--soft": readable(night ? SOFT_ON_DARK : "#77634a"),
+    "--on-honey": night ? "#263322" : "#fffdf4",
+    "--soft": readable(night ? SOFT_ON_DARK : "#596b5d"),
     "--error": readable(night ? ERROR_ON_DARK : "#984a34"),
   };
 }

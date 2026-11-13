@@ -14,6 +14,7 @@ import {
   type Sprite,
 } from "./sprites.js";
 import { enlarge, fill, grid, pixels, type PixelArt } from "./pixelArt.js";
+import { catArtwork } from "./catArt.js";
 
 const cache = new Map<Sprite, PixelArt>();
 
@@ -185,7 +186,8 @@ export function roomArt(sprite: Sprite): PixelArt {
   const saved = cache.get(sprite);
   if (saved) return saved;
   const art =
-    sprite === WINDOW
+    catArtwork(sprite) ??
+    (sprite === WINDOW
       ? windowArt()
       : sprite === SHELF
         ? cabinetArt()
@@ -201,7 +203,7 @@ export function roomArt(sprite: Sprite): PixelArt {
                   ? birdArt()
                   : [FRAME, FRAME_EMPTY, BOX_BACK, BOX_FRONT, ...DOOR_FRAMES].includes(sprite)
                     ? outlined(sprite)
-                    : { rows: sprite.rows, step: 1, ox: sprite.ox, oy: sprite.oy };
+                    : { rows: sprite.rows, step: 1, ox: sprite.ox, oy: sprite.oy });
   cache.set(sprite, art);
   return art;
 }

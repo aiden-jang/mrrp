@@ -46,7 +46,7 @@ describe("the redrawn room's targets", () => {
     act(() =>
       document
         .querySelector("canvas")!
-        .dispatchEvent(new MouseEvent("pointerdown", { clientX: 462, clientY: 252 })),
+        .dispatchEvent(new MouseEvent("pointerdown", { clientX: 162, clientY: 252 })),
     );
     expect(touch).toHaveBeenCalledWith("shelf");
   });

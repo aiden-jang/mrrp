@@ -8,7 +8,7 @@ import { MoodResponse } from "./RoomChrome.js";
 import { moodTint } from "./roomTheme.js";
 import { SayBox } from "./screens.js";
 import type { RoomView, Visit } from "./types.js";
-import { CAT_ACTS, GIFTS, LINE_MAX, MOODS } from "./types.js";
+import { GIFTS, LINE_MAX, MOODS } from "./types.js";
 import type { useRoomActions } from "./useRoomActions.js";
 import type { useRoomHistory } from "./useRoomHistory.js";
 import type { useSayBox } from "./useSayBox.js";
@@ -32,19 +32,7 @@ export function CatRoom({
   nightChrome: boolean;
   panel: string;
 }) {
-  const {
-    drawing,
-    hangUp,
-    bedding,
-    pickBlanket,
-    waitAtDoor,
-    settleIn,
-    catAct,
-    giftWords,
-    setGiftWords,
-    leaveGift,
-    tell,
-  } = actions;
+  const { drawing, hangUp, bedding, pickBlanket, giftWords, setGiftWords, leaveGift, tell } = actions;
   const herMarks = listOf([view.shelfDown && "the mug on the floor", view.box && "you in the box"]);
   const herFades = fadeNote(view, "her", now);
   return (
@@ -136,59 +124,7 @@ export function CatRoom({
         <MoodResponse mood={view.catMood} />
       </section>
 
-      <section className={s.actionSection} aria-label="Be a cat about it">
-        <h2 className={s.actionHeading}>Be a cat about it</h2>
-        {!view.sittingWithYou && (
-          <button
-            className={`${s.btn} ${s.catPresenceAction} ${view.waitingAtDoor ? `${s.btnOn} ${s.btnStaying}` : ""}`}
-            aria-pressed={view.waitingAtDoor}
-            onClick={() => void waitAtDoor(!view.waitingAtDoor)}
-          >
-            {view.waitingAtDoor ? "Come away from the door" : "Go and wait by the door"}
-          </button>
-        )}
-
-        {view.sittingWithYou && (
-          <button
-            className={`${s.btn} ${s.catPresenceAction} ${view.settled ? `${s.btnOn} ${s.btnStaying}` : s.btnGo}`}
-            aria-pressed={view.settled}
-            onClick={() => void settleIn(!view.settled)}
-          >
-            {view.settled ? "Settled" : "Settle into it"}
-          </button>
-        )}
-
-        <div className={s.row}>
-          {CAT_ACTS.filter((a) => a.id !== "gift").map((a) => {
-            const noBox = a.id === "box" && !view.boxOut;
-            const done = a.id === "shelf" ? view.shelfDown : view.box;
-            return (
-              <button
-                key={a.id}
-                aria-pressed={done}
-                disabled={noBox}
-                className={`${s.mood} ${done ? s.moodOn : ""}`}
-                style={{
-                  justifyContent: "center",
-                  padding: "9px 8px",
-                  opacity: noBox ? 0.45 : undefined,
-                }}
-                onClick={() => void catAct(a.id)}
-              >
-                {noBox ? "no box to get into" : a.id === "box" && view.box ? "Get out of the box" : a.label}
-              </button>
-            );
-          })}
-        </div>
-        {herMarks && (
-          <p className={s.small} style={{ marginTop: 4 }}>
-            He'll find {herMarks}.
-          </p>
-        )}
-        {herFades && <p className={s.fades}>{herFades}</p>}
-      </section>
-
-      <section className={s.actionSection} aria-label="Leave him something">
+      <section className={s.actionSection} aria-label="Leave him something" id="cat-gift" tabIndex={-1}>
         <h2 className={s.actionHeading}>Leave him something</h2>
         <input
           value={giftWords}
@@ -215,6 +151,8 @@ export function CatRoom({
       </section>
 
       <section className={s.roomTools} aria-label="Room details">
+        {herMarks && <p className={s.small}>He'll find {herMarks}.</p>}
+        {herFades && <p className={s.fades}>{herFades}</p>}
         <FrameSheet current={view.doodle} saving={drawing} onSave={(c) => hangUp(c)} />
         <BlanketRow current={view.blanket} busy={bedding} onPick={(k, st) => void pickBlanket(k, st)} />
       </section>

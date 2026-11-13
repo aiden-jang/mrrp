@@ -83,7 +83,7 @@ async function loadImage(blob: Blob): Promise<HTMLImageElement | ImageBitmap> {
   });
 }
 
-const KEEPSAKE_FONT = 'Quicksand, ui-rounded, "SF Pro Rounded", system-ui, sans-serif';
+const KEEPSAKE_FONT = 'Nunito Sans, ui-rounded, "SF Pro Rounded", system-ui, sans-serif';
 
 export function keepsakeImageBounds(width: number, height: number) {
   const scale = Math.min(1056 / width, 1056 / height);
@@ -99,7 +99,10 @@ export function keepsakeImageBounds(width: number, height: number) {
 
 async function keepsakeFontReady(): Promise<void> {
   try {
-    await Promise.all([document.fonts.load("600 42px Quicksand"), document.fonts.load("700 32px Quicksand")]);
+    await Promise.all([
+      document.fonts.load("600 42px Nunito Sans"),
+      document.fonts.load("700 32px Nunito Sans"),
+    ]);
   } catch {
     // The card draws in the fallback stack rather than not at all.
   }

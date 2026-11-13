@@ -170,7 +170,7 @@ const SWIPE_MS = 620;
 const WATCH_DOOR_MS = 2200;
 const PET_TAP_MS = 1800;
 
-const MUG_FLOOR_X = 66,
+const MUG_FLOOR_X = 30,
   MUG_FLOOR_Y = FLOOR + 14;
 
 const PROP_LABELS: Record<string, string> = {
@@ -1295,10 +1295,13 @@ export function Cat({
         doorProg = Math.max(0, doorShutFrom.current.from * (1 - since / 900));
       }
 
-      const camBase = Math.max(
-        0,
-        Math.min(GW - viewport, Math.round(((catX.current ?? GW / 2) - viewport / 2) * 2) / 2),
-      );
+      const camBase =
+        viewport >= GW
+          ? (GW - viewport) / 2
+          : Math.max(
+              0,
+              Math.min(GW - viewport, Math.round(((catX.current ?? GW / 2) - viewport / 2) * 2) / 2),
+            );
       const pull = doorProg / 3;
       cam = raster.camera = Math.round((camBase * (1 - pull) + Math.min(camBase, 2) * pull) * 2) / 2;
       camRef.current = cam;
@@ -1812,7 +1815,7 @@ export function Cat({
           px(hx + 1, hy + 2, c);
         }
       }
-      const hangingX = 48 + (!reduce ? Math.round(Math.sin(t / 1900)) : 0);
+      const hangingX = 45 + (!reduce ? Math.round(Math.sin(t / 1900)) : 0);
       sceneArt.hangingPlant(rect, sc, hangingX, seasonalPlant.leaf);
 
       blit(PLANT, 87 + shake("plant"), FLOOR - 13, sceneArt.plantPalette(sc, seasonalPlant.leaf));
@@ -2444,7 +2447,7 @@ export function Cat({
         const eye = CLOSED_EYES[pose];
         const ex = kx + sp.ox + eye.right;
         const ey = y + sp.oy + eye.y;
-        rect(ex, ey - 1, eye.width, 2, pal.b);
+        rect(ex, ey - 1, eye.width, 2, pal.f);
         rect(ex, ey, eye.width, 1, INK);
       }
 
@@ -2743,18 +2746,6 @@ export function Cat({
       if (awake) {
         const spot = eyeHighlights(pose);
         const ey = y + sp.oy + spot.row;
-        const TRACKS: Record<Pose, boolean> = {
-          loaf: true,
-          sit: true,
-          perk: true,
-          play: true,
-          stand: false,
-          walk: true,
-          stretch: true,
-          pounce: true,
-          peek: true,
-          flop: true,
-        };
         const at = mouseVisiting
           ? mouseMoment!.x
           : looking
@@ -2764,9 +2755,11 @@ export function Cat({
               : ptr.in
                 ? ptr.x
                 : null;
-        const look = !TRACKS[pose] || at === null ? 0 : Math.sign(at - kx) * (Math.abs(at - kx) > 4 ? 1 : 0);
-        px(kx + spot.l + look, ey, WHITE);
-        if (!expression.wink || forced || walking || grooming) px(kx + spot.r + look, ey, WHITE);
+        const look =
+          pose === "stand" || at === null ? 0 : Math.sign(at - kx) * (Math.abs(at - kx) > 4 ? 1 : 0);
+        rect(kx + spot.l + (look + 1) * 0.25, ey, 1, 1.5, pal.w);
+        if (!expression.wink || forced || walking || grooming)
+          rect(kx + spot.r + (look + 1) * 0.25, ey, 1, 1.5, pal.w);
       }
 
       if (sc.play > 0.5) {
@@ -2981,10 +2974,7 @@ export function Cat({
       aria-label={`${label} The room has quiet interactive details.`}
       style={{
         display: "block",
-        borderRadius: 26,
-        border: "1px solid rgba(95,65,43,.12)",
-        boxShadow:
-          "0 1px 0 rgba(255,255,255,.72) inset, 0 24px 56px -25px rgba(82,53,34,.58), 0 8px 22px -18px rgba(82,53,34,.35)",
+        borderRadius: 12,
         imageRendering: "pixelated",
         userSelect: "none",
         touchAction: role === "him" ? "none" : "manipulation",

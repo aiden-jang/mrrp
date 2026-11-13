@@ -46,8 +46,8 @@ is a composition layer rather than the owner of every room interaction.
 
 ## Day and night remain readable
 
-The room's palette follows its local time. Night uses warm charcoal, cream and amber rather
-than a separate purple interface. Text must clear 4.5:1 against its background: the worst ratio anywhere is 4.50, checked every minute by the palette test. Selected states also use shape, labels or pressed
+The room's palette follows its local time. Day uses sage and ivory; night uses forest green
+and pale sage. Text must clear 4.5:1 against its background: the worst ratio anywhere is 4.50, checked every minute by the palette test. Selected states also use shape, labels or pressed
 state rather than color alone.
 
 ## Local storage is not the room

@@ -36,7 +36,7 @@ for (const width of [390, 1440]) {
       await page.goto(first.url, { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("button", { name: /Write her notes/ })).toBeVisible();
       const before = await (await page.request.get(`/api/room/${first.id}?me=${original}`)).json();
-      await page.getByText("Room & account", { exact: true }).click();
+      await page.getByRole("link", { name: "Room & account", exact: true }).click();
       await page.getByText("refresh room access", { exact: true }).click();
       if (process.env.MRRP_ACCESS_QA) {
         await mkdir(process.env.MRRP_ACCESS_QA, { recursive: true });

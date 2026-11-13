@@ -14,7 +14,7 @@ describe("the fine pixel painter", () => {
       oy: 0,
     }));
     painter.rect(60 + 1 / 3, 4 + 2 / 3, 2 / 3, 1 / 3, "#123456");
-    painter.rect(76, 14, 20, 1, "#123456");
+    painter.rect(68, 14, 20, 1, "#123456");
     for (const call of calls) {
       expect(call.every((value) => Number.isInteger(value) && value % 3 === 0)).toBe(true);
       expect(call[0]! + call[2]!).toBeLessThanOrEqual(480);

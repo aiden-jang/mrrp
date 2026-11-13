@@ -50,48 +50,48 @@ const known = (name) => new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, "\\
 for (const doc of DOCS) {
   // Per document: a stray fence in one must not change how the next one is read.
   let fenced = false;
-  readFileSync(doc, "utf8")
-    .split("\n")
-    .forEach((line, i) => {
-      const at = `${doc}:${i + 1}`;
-      if (line.trimStart().startsWith("```")) fenced = !fenced;
+  const lines = readFileSync(doc, "utf8").split("\n");
+  const frontmatterEnd = lines[0] === "---" ? lines.findIndex((line, i) => i > 0 && line === "---") : -1;
+  if (lines[0] === "---" && frontmatterEnd < 1) problems.push(`${doc}: YAML frontmatter is not closed`);
+  lines.forEach((line, i) => {
+    if (i <= frontmatterEnd) return;
+    const at = `${doc}:${i + 1}`;
+    if (line.trimStart().startsWith("```")) fenced = !fenced;
 
-      for (const m of line.matchAll(/[\w./@-]*\w+\.(?:ts|tsx|css|mjs|toml|yml|html)\b/g)) {
-        const bare = m[0].replace(/^`|`$/g, "");
-        const tail = bare.split("/").pop();
-        if (![...files].some((f) => f.endsWith(bare) || f.endsWith(`/${tail}`))) {
-          problems.push(`${at}: no such file \`${bare}\``);
-        }
+    for (const m of line.matchAll(/[\w./@-]*\w+\.(?:ts|tsx|css|mjs|toml|yml|html)\b/g)) {
+      const bare = m[0].replace(/^`|`$/g, "");
+      const tail = bare.split("/").pop();
+      if (![...files].some((f) => f.endsWith(bare) || f.endsWith(`/${tail}`))) {
+        problems.push(`${at}: no such file \`${bare}\``);
       }
+    }
 
-      /* Only inside backticks or a fence: English prose says things like "a pnpm command of the
+    /* Only inside backticks or a fence: English prose says things like "a pnpm command of the
          same name", and that is not an invocation. */
-      /* Inside a fence a `#` starts a shell comment: "corepack enable  # makes pnpm available" is
+    /* Inside a fence a `#` starts a shell comment: "corepack enable  # makes pnpm available" is
          English about pnpm, not an invocation of a script called `available`. */
-      const commands = fenced
-        ? [line.replace(/#.*$/, "")]
-        : [...line.matchAll(/`([^`]+)`/g)].map((b) => b[1]);
-      for (const m of commands.join("\n").matchAll(/pnpm (?:run |-r |--filter \S+ )?([a-z][\w:-]*)/g)) {
-        const name = m[1];
-        if (["install", "exec", "audit", "why", "dlx", "add", "create", "run"].includes(name)) continue;
-        if (!scripts.has(name)) problems.push(`${at}: \`pnpm ${name}\` is not a script`);
-      }
+    const commands = fenced ? [line.replace(/#.*$/, "")] : [...line.matchAll(/`([^`]+)`/g)].map((b) => b[1]);
+    for (const m of commands.join("\n").matchAll(/pnpm (?:run |-r |--filter \S+ )?([a-z][\w:-]*)/g)) {
+      const name = m[1];
+      if (["install", "exec", "audit", "why", "dlx", "add", "create", "run"].includes(name)) continue;
+      if (!scripts.has(name)) problems.push(`${at}: \`pnpm ${name}\` is not a script`);
+    }
 
-      // Anchored per prefix, or `/api/room` would also swallow `/api/rooms`.
-      for (const m of line.matchAll(/(\/api\/[\w:/-]+|\/r\/:?\w+)\b/g)) {
-        const full = m[1].replace(/\/$/, "");
-        if (!code.includes(full)) problems.push(`${at}: no route \`${full}\``);
-      }
+    // Anchored per prefix, or `/api/room` would also swallow `/api/rooms`.
+    for (const m of line.matchAll(/(\/api\/[\w:/-]+|\/r\/:?\w+)\b/g)) {
+      const full = m[1].replace(/\/$/, "");
+      if (!code.includes(full)) problems.push(`${at}: no route \`${full}\``);
+    }
 
-      // Bare, not just `name()`: a rename can sit in a diagram with no parentheses and no backticks.
-      // camelCase in English prose is almost always a symbol.
-      for (const m of line.matchAll(/(?<!\\)\b([a-z][a-z0-9]*[A-Z][A-Za-z0-9]*)\b/g)) {
-        const name = m[1];
-        if (!NOT_OURS.has(name) && !known(name)) {
-          problems.push(`${at}: nothing named \`${name}\` in the code`);
-        }
+    // Bare, not just `name()`: a rename can sit in a diagram with no parentheses and no backticks.
+    // camelCase in English prose is almost always a symbol.
+    for (const m of line.matchAll(/(?<!\\)\b([a-z][a-z0-9]*[A-Z][A-Za-z0-9]*)\b/g)) {
+      const name = m[1];
+      if (!NOT_OURS.has(name) && !known(name)) {
+        problems.push(`${at}: nothing named \`${name}\` in the code`);
       }
-    });
+    }
+  });
 }
 
 if (problems.length > 0) {

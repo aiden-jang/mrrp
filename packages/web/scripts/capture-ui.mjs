@@ -72,6 +72,9 @@ async function capture(page, name, width, errors, needsCanvas = true) {
   const viewport = page.viewportSize().height;
   for (let y = 0, section = 0; y < height; y += Math.floor(viewport * 0.8), section += 1) {
     await page.evaluate((top) => window.scrollTo(0, top), y);
+    await page.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+    );
     const suffix = section ? `-section-${section}` : "";
     await page.screenshot({ path: resolve(output, `${name}-${width}${suffix}.png`), animations: "disabled" });
     if (y + viewport >= height) break;
@@ -100,7 +103,7 @@ async function updates(page, width, errors) {
 }
 
 async function settings(page, role, width, errors) {
-  await page.getByText("Room & account", { exact: true }).click();
+  await page.locator("#room-account > summary").click();
   await capture(page, `${role}-settings`, width, errors);
   const code = await page.getByLabel("Your recovery code", { exact: true }).inputValue();
   await page.getByRole("button", { name: "Copy the recovery code", exact: true }).click();
@@ -114,7 +117,7 @@ async function settings(page, role, width, errors) {
   await page.getByLabel("What the day is", { exact: true }).fill("Our first rainy Sunday together");
   await capture(page, `${role}-remembered-day`, width, errors);
   await page.getByText("a day worth remembering", { exact: true }).click();
-  await page.getByText("Room & account", { exact: true }).click();
+  await page.locator("#room-account > summary").click();
   return code;
 }
 
@@ -156,7 +159,7 @@ async function failures(room, width) {
 }
 
 async function endings(her, room, code, width, errors) {
-  await her.getByText("Room & account", { exact: true }).click();
+  await her.locator("#room-account > summary").click();
   await her.getByText("leave this room", { exact: true }).click();
   await her.getByRole("button", { name: "Leave this room", exact: true }).click();
   await her.getByRole("button", { name: "Yes, take my side out of it", exact: true }).click();
@@ -182,7 +185,7 @@ async function endings(her, room, code, width, errors) {
     await recovery.getByLabel("Recovery code", { exact: true }).fill(code);
     await recovery.getByRole("button", { name: "This is my room", exact: true }).click();
     await recovery.getByRole("button", { name: /Write her notes/ }).waitFor();
-    await recovery.getByText("Room & account", { exact: true }).click();
+    await recovery.locator("#room-account > summary").click();
     await recovery.getByText("delete this room", { exact: true }).click();
     await recovery.getByLabel("Type Review companion to confirm deleting this room").fill("Review companion");
     await capture(recovery, "delete-confirmation", width, errors);
@@ -262,7 +265,7 @@ try {
         await tab.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
         await tab.waitForFunction(
           () =>
-            getComputedStyle(document.querySelector("main")).getPropertyValue("--ink").trim() === "#f6f1e6",
+            getComputedStyle(document.querySelector("main")).getPropertyValue("--ink").trim() === "#ebf1e2",
         );
       }
       await capture(page, "companion-night", width, errors);

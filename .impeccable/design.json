@@ -1,0 +1,436 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-13T17:35:30Z",
+  "title": "Design System: Mrrp",
+  "extensions": {
+    "colorMeta": {
+      "air": {
+        "role": "neutral",
+        "displayName": "Sage Air",
+        "tonalRamp": [
+          "oklch(15% 0.0065 123.05)",
+          "oklch(26% 0.0113 123.05)",
+          "oklch(38% 0.0153 123.05)",
+          "oklch(49% 0.0153 123.05)",
+          "oklch(61% 0.0153 123.05)",
+          "oklch(72% 0.0153 123.05)",
+          "oklch(84% 0.0098 123.05)",
+          "oklch(95% 0.0031 123.05)"
+        ]
+      },
+      "air-warm": {
+        "role": "neutral",
+        "displayName": "Warm Sage Air",
+        "tonalRamp": [
+          "oklch(15% 0.0070 118.13)",
+          "oklch(26% 0.0121 118.13)",
+          "oklch(38% 0.0162 118.13)",
+          "oklch(49% 0.0162 118.13)",
+          "oklch(61% 0.0162 118.13)",
+          "oklch(72% 0.0162 118.13)",
+          "oklch(84% 0.0104 118.13)",
+          "oklch(95% 0.0032 118.13)"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Ivory Panel",
+        "tonalRamp": [
+          "oklch(15% 0.0051 101.48)",
+          "oklch(26% 0.0088 101.48)",
+          "oklch(38% 0.0119 101.48)",
+          "oklch(49% 0.0119 101.48)",
+          "oklch(61% 0.0119 101.48)",
+          "oklch(72% 0.0119 101.48)",
+          "oklch(84% 0.0076 101.48)",
+          "oklch(95% 0.0024 101.48)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Forest Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0145 159.02)",
+          "oklch(26% 0.0251 159.02)",
+          "oklch(38% 0.0338 159.02)",
+          "oklch(49% 0.0338 159.02)",
+          "oklch(61% 0.0338 159.02)",
+          "oklch(72% 0.0338 159.02)",
+          "oklch(84% 0.0217 159.02)",
+          "oklch(95% 0.0068 159.02)"
+        ]
+      },
+      "soft": {
+        "role": "neutral",
+        "displayName": "Quiet Sage Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0132 151.82)",
+          "oklch(26% 0.0229 151.82)",
+          "oklch(38% 0.0308 151.82)",
+          "oklch(49% 0.0308 151.82)",
+          "oklch(61% 0.0308 151.82)",
+          "oklch(72% 0.0308 151.82)",
+          "oklch(84% 0.0197 151.82)",
+          "oklch(95% 0.0062 151.82)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Quiet Seam",
+        "tonalRamp": [
+          "oklch(15% 0.0103 131.18)",
+          "oklch(26% 0.0178 131.18)",
+          "oklch(38% 0.0239 131.18)",
+          "oklch(49% 0.0239 131.18)",
+          "oklch(61% 0.0239 131.18)",
+          "oklch(72% 0.0239 131.18)",
+          "oklch(84% 0.0153 131.18)",
+          "oklch(95% 0.0048 131.18)"
+        ]
+      },
+      "error": {
+        "role": "neutral",
+        "displayName": "Clay Error",
+        "tonalRamp": [
+          "oklch(15% 0.0473 36.65)",
+          "oklch(26% 0.0819 36.65)",
+          "oklch(38% 0.1103 36.65)",
+          "oklch(49% 0.1103 36.65)",
+          "oklch(61% 0.1103 36.65)",
+          "oklch(72% 0.1103 36.65)",
+          "oklch(84% 0.0706 36.65)",
+          "oklch(95% 0.0221 36.65)"
+        ]
+      },
+      "honey": {
+        "role": "primary",
+        "displayName": "Sage Action",
+        "tonalRamp": [
+          "oklch(15% 0.0239 136.09)",
+          "oklch(26% 0.0414 136.09)",
+          "oklch(38% 0.0558 136.09)",
+          "oklch(49% 0.0558 136.09)",
+          "oklch(61% 0.0558 136.09)",
+          "oklch(72% 0.0558 136.09)",
+          "oklch(84% 0.0357 136.09)",
+          "oklch(95% 0.0112 136.09)"
+        ]
+      },
+      "on-honey": {
+        "role": "neutral",
+        "displayName": "Ivory Action Text",
+        "tonalRamp": [
+          "oklch(15% 0.0051 96.42)",
+          "oklch(26% 0.0089 96.42)",
+          "oklch(38% 0.0120 96.42)",
+          "oklch(49% 0.0120 96.42)",
+          "oklch(61% 0.0120 96.42)",
+          "oklch(72% 0.0120 96.42)",
+          "oklch(84% 0.0077 96.42)",
+          "oklch(95% 0.0024 96.42)"
+        ]
+      },
+      "night-air": {
+        "role": "neutral",
+        "displayName": "Forest Air",
+        "tonalRamp": [
+          "oklch(15% 0.0090 153.39)",
+          "oklch(26% 0.0156 153.39)",
+          "oklch(38% 0.0209 153.39)",
+          "oklch(49% 0.0209 153.39)",
+          "oklch(61% 0.0209 153.39)",
+          "oklch(72% 0.0209 153.39)",
+          "oklch(84% 0.0134 153.39)",
+          "oklch(95% 0.0042 153.39)"
+        ]
+      },
+      "night-air-warm": {
+        "role": "neutral",
+        "displayName": "Warm Forest Air",
+        "tonalRamp": [
+          "oklch(15% 0.0121 148.81)",
+          "oklch(26% 0.0209 148.81)",
+          "oklch(38% 0.0281 148.81)",
+          "oklch(49% 0.0281 148.81)",
+          "oklch(61% 0.0281 148.81)",
+          "oklch(72% 0.0281 148.81)",
+          "oklch(84% 0.0180 148.81)",
+          "oklch(95% 0.0056 148.81)"
+        ]
+      },
+      "night-panel": {
+        "role": "neutral",
+        "displayName": "Forest Panel",
+        "tonalRamp": [
+          "oklch(15% 0.0118 148.93)",
+          "oklch(26% 0.0205 148.93)",
+          "oklch(38% 0.0276 148.93)",
+          "oklch(49% 0.0276 148.93)",
+          "oklch(61% 0.0276 148.93)",
+          "oklch(72% 0.0276 148.93)",
+          "oklch(84% 0.0177 148.93)",
+          "oklch(95% 0.0055 148.93)"
+        ]
+      },
+      "night-ink": {
+        "role": "neutral",
+        "displayName": "Pale Night Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0089 124.66)",
+          "oklch(26% 0.0155 124.66)",
+          "oklch(38% 0.0208 124.66)",
+          "oklch(49% 0.0208 124.66)",
+          "oklch(61% 0.0208 124.66)",
+          "oklch(72% 0.0208 124.66)",
+          "oklch(84% 0.0133 124.66)",
+          "oklch(95% 0.0042 124.66)"
+        ]
+      },
+      "night-soft": {
+        "role": "neutral",
+        "displayName": "Quiet Night Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0148 135.57)",
+          "oklch(26% 0.0257 135.57)",
+          "oklch(38% 0.0346 135.57)",
+          "oklch(49% 0.0346 135.57)",
+          "oklch(61% 0.0346 135.57)",
+          "oklch(72% 0.0346 135.57)",
+          "oklch(84% 0.0222 135.57)",
+          "oklch(95% 0.0069 135.57)"
+        ]
+      },
+      "night-line": {
+        "role": "neutral",
+        "displayName": "Forest Seam",
+        "tonalRamp": [
+          "oklch(15% 0.0184 140.19)",
+          "oklch(26% 0.0318 140.19)",
+          "oklch(38% 0.0428 140.19)",
+          "oklch(49% 0.0428 140.19)",
+          "oklch(61% 0.0428 140.19)",
+          "oklch(72% 0.0428 140.19)",
+          "oklch(84% 0.0274 140.19)",
+          "oklch(95% 0.0086 140.19)"
+        ]
+      },
+      "night-error": {
+        "role": "neutral",
+        "displayName": "Pale Clay Error",
+        "tonalRamp": [
+          "oklch(15% 0.0315 38.25)",
+          "oklch(26% 0.0546 38.25)",
+          "oklch(38% 0.0736 38.25)",
+          "oklch(49% 0.0736 38.25)",
+          "oklch(61% 0.0736 38.25)",
+          "oklch(72% 0.0736 38.25)",
+          "oklch(84% 0.0471 38.25)",
+          "oklch(95% 0.0147 38.25)"
+        ]
+      },
+      "night-honey": {
+        "role": "primary",
+        "displayName": "Pale Sage Action",
+        "tonalRamp": [
+          "oklch(15% 0.0242 123.32)",
+          "oklch(26% 0.0419 123.32)",
+          "oklch(38% 0.0564 123.32)",
+          "oklch(49% 0.0564 123.32)",
+          "oklch(61% 0.0564 123.32)",
+          "oklch(72% 0.0564 123.32)",
+          "oklch(84% 0.0361 123.32)",
+          "oklch(95% 0.0113 123.32)"
+        ]
+      },
+      "night-on-honey": {
+        "role": "neutral",
+        "displayName": "Forest Action Text",
+        "tonalRamp": [
+          "oklch(15% 0.0148 138.43)",
+          "oklch(26% 0.0257 138.43)",
+          "oklch(38% 0.0345 138.43)",
+          "oklch(49% 0.0345 138.43)",
+          "oklch(61% 0.0345 138.43)",
+          "oklch(72% 0.0345 138.43)",
+          "oklch(84% 0.0221 138.43)",
+          "oklch(95% 0.0069 138.43)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Landing display",
+        "purpose": "The landing introduction; a separate viewport clamp applies on phones."
+      },
+      "headline": {
+        "displayName": "Room headline",
+        "purpose": "The room name and invitation heading."
+      },
+      "title": {
+        "displayName": "Section title",
+        "purpose": "Notes, mood and object section headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Messages, controls and supporting copy; size follows context."
+      },
+      "label": {
+        "displayName": "Form label",
+        "purpose": "Short field labels."
+      }
+    },
+    "shadows": [
+      {
+        "name": "arrival",
+        "value": "0 10px 24px -17px rgba(120, 84, 44, 0.55)",
+        "purpose": "Arrival feedback only."
+      },
+      {
+        "name": "floating-feedback",
+        "value": "0 6px 18px rgba(60, 40, 20, 0.14)",
+        "purpose": "Floating error feedback."
+      },
+      {
+        "name": "selected-action",
+        "value": "inset 0 0 0 1px var(--honey)",
+        "purpose": "Selected ordinary actions."
+      },
+      {
+        "name": "selected-mood",
+        "value": "inset 0 0 0 2px var(--ink)",
+        "purpose": "Pressed mood choices."
+      }
+    ],
+    "motion": [
+      {
+        "name": "interaction",
+        "value": "transform 0.16s ease-out, filter 0.12s ease",
+        "purpose": "Pointer hover and press feedback; hover runs only on devices that hover."
+      },
+      {
+        "name": "spring",
+        "value": "linear( 0, 0.038, 0.13, 0.248, 0.373, 0.494, 0.604, 0.699, 0.778, 0.842, 0.893, 0.931, 0.959, 0.98, 0.993, 1.002, 1.008, 1.01, 1.011, 1.011, 1.01, 1.009, 1.007, 1.006, 1.005, 1.004, 1.003, 1.002, 1 )",
+        "purpose": "Brief room-arrival and list feedback."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0.001ms",
+        "purpose": "Collapse animation and transition duration while preserving hidden content and action access."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "narrow-recovery",
+        "value": "360px"
+      },
+      {
+        "name": "narrow-decor",
+        "value": "440px"
+      },
+      {
+        "name": "compact-dock",
+        "value": "600px"
+      },
+      {
+        "name": "landing-stack",
+        "value": "760px"
+      },
+      {
+        "name": "room-columns",
+        "value": "860px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The main room or form action.",
+      "html": "<button class=\"ds-btn-primary\">Sit with her</button>",
+      "css": ".ds-btn-primary { font-family: var(--sans, \"Nunito Sans\", ui-sans-serif, -apple-system, system-ui, sans-serif); min-height: 44px; font-size: 15px; font-weight: 600; border: 1px solid var(--control, #998d7d); border-radius: var(--radius-control, 8px); padding: 12px 16px; cursor: pointer; transition: transform .16s ease-out, filter .12s ease; background: var(--honey, #566c4c); border-color: var(--honey, #566c4c); color: var(--on-honey, #fffdf4); } .ds-btn-primary:disabled { background: color-mix(in srgb, var(--honey, #566c4c) 22%, var(--panel, #f9f8ef)); border-color: color-mix(in srgb, var(--honey, #566c4c) 45%, var(--panel, #f9f8ef)); color: color-mix(in srgb, var(--ink, #2c4135) 75%, var(--panel, #f9f8ef)); cursor: not-allowed; }  .ds-btn-primary:focus-visible { outline: 2.5px solid var(--ink, #2c4135); outline-offset: 2px; } .ds-btn-primary:active:not(:disabled) { transform: scale(.985); } @media (hover: hover) { .ds-btn-primary:hover:not(:disabled) { filter: brightness(1.04); transform: translateY(-1px); } } @media (prefers-reduced-motion: reduce) { .ds-btn-primary { transition-duration: .001ms; } .ds-btn-primary:active:not(:disabled) { transform: none; } }"
+    },
+    {
+      "name": "Secondary button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "An ordinary room action; selected actions gain an inset outline.",
+      "html": "<button class=\"ds-btn-secondary\">Pet her</button>",
+      "css": ".ds-btn-secondary { font-family: var(--sans, \"Nunito Sans\", ui-sans-serif, -apple-system, system-ui, sans-serif); min-height: 44px; font-size: 15px; font-weight: 600; border: 1px solid var(--control, #998d7d); border-radius: var(--radius-control, 8px); padding: 12px 16px; cursor: pointer; transition: transform .16s ease-out, filter .12s ease; background: var(--panel, #f9f8ef); color: var(--ink, #2c4135); } .ds-btn-secondary:disabled { background: color-mix(in srgb, var(--honey, #566c4c) 22%, var(--panel, #f9f8ef)); border-color: color-mix(in srgb, var(--honey, #566c4c) 45%, var(--panel, #f9f8ef)); color: color-mix(in srgb, var(--ink, #2c4135) 75%, var(--panel, #f9f8ef)); cursor: not-allowed; } .ds-btn-secondary[aria-pressed=\"true\"] { border-color: var(--honey, #566c4c); box-shadow: inset 0 0 0 1px var(--honey, #566c4c); } .ds-btn-secondary:focus-visible { outline: 2.5px solid var(--ink, #2c4135); outline-offset: 2px; } .ds-btn-secondary:active:not(:disabled) { transform: scale(.985); } @media (hover: hover) { .ds-btn-secondary:hover:not(:disabled) { filter: brightness(1.04); transform: translateY(-1px); } } @media (prefers-reduced-motion: reduce) { .ds-btn-secondary { transition-duration: .001ms; } .ds-btn-secondary:active:not(:disabled) { transform: none; } }"
+    },
+    {
+      "name": "Quiet action",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Underlined access to notes, history and secondary room tools.",
+      "html": "<button class=\"ds-btn-quiet\">Draw something for the frame</button>",
+      "css": ".ds-btn-quiet { font-family: var(--sans, \"Nunito Sans\", ui-sans-serif, -apple-system, system-ui, sans-serif); font-size: 13px; font-weight: 600; color: var(--soft, #596b5d); background: none; border: none; cursor: pointer; display: block; min-height: 44px; padding: 12px 8px; text-decoration: underline; text-underline-offset: 4px; transition: transform .16s ease-out, filter .12s ease; } .ds-btn-quiet:disabled { opacity: .55; cursor: not-allowed; } .ds-btn-quiet:focus-visible { outline: 2.5px solid var(--ink, #2c4135); outline-offset: 2px; } .ds-btn-quiet:active:not(:disabled) { transform: scale(.985); } @media (hover: hover) { .ds-btn-quiet:hover:not(:disabled) { filter: brightness(1.04); transform: translateY(-1px); } } @media (prefers-reduced-motion: reduce) { .ds-btn-quiet { transition-duration: .001ms; } .ds-btn-quiet:active:not(:disabled) { transform: none; } }"
+    },
+    {
+      "name": "Text field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "A clear, full-width field with phone-safe text size.",
+      "html": "<label class=\"ds-field-label\" for=\"ds-name\">Your name</label><input class=\"ds-field\" id=\"ds-name\" placeholder=\"your name\" />",
+      "css": ".ds-field-label { display: block; margin-bottom: 10px; font-family: var(--sans, \"Nunito Sans\", ui-sans-serif, -apple-system, system-ui, sans-serif); font-size: 13px; font-weight: 650; color: var(--ink, #2c4135); } .ds-field { font-family: var(--sans, \"Nunito Sans\", ui-sans-serif, -apple-system, system-ui, sans-serif); font-size: 16px; width: 100%; min-width: 0; padding: 12px 14px; border: 1px solid var(--control, #998d7d); border-radius: var(--radius-control, 8px); background: var(--panel, #f9f8ef); color: var(--ink, #2c4135); } .ds-field::placeholder { color: var(--soft, #596b5d); opacity: 1; } .ds-field:focus-visible { outline: 2.5px solid var(--ink, #2c4135); outline-offset: 2px; } .ds-field:disabled { cursor: not-allowed; }"
+    },
+    {
+      "name": "Mood choice",
+      "kind": "chip",
+      "refersTo": "mood-choice",
+      "description": "A mood action uses pressed state and an inset selection outline.",
+      "html": "<button class=\"ds-mood\" aria-pressed=\"true\">happy</button>",
+      "css": ".ds-mood { font-family: var(--sans, \"Nunito Sans\", ui-sans-serif, -apple-system, system-ui, sans-serif); font-size: 13px; min-height: 44px; min-width: 0; color: var(--ink, #2c4135); background: var(--panel, #f9f8ef); border: 1px solid var(--control, #998d7d); border-radius: var(--radius-control, 8px); padding: 10px 2px; cursor: pointer; transition: transform .16s ease-out, filter .12s ease; } .ds-mood[aria-pressed=\"true\"] { background: var(--honey, #566c4c); border-color: var(--honey, #566c4c); color: var(--on-honey, #fffdf4); font-weight: 600; box-shadow: inset 0 0 0 2px var(--ink, #2c4135); } .ds-mood:focus-visible { outline: 2.5px solid var(--ink, #2c4135); outline-offset: 2px; } .ds-mood:active:not(:disabled) { transform: scale(.985); } @media (hover: hover) { .ds-mood:hover:not(:disabled) { filter: brightness(1.04); transform: translateY(-1px); } } @media (prefers-reduced-motion: reduce) { .ds-mood { transition-duration: .001ms; } .ds-mood:active:not(:disabled) { transform: none; } }"
+    },
+    {
+      "name": "Note panel",
+      "kind": "card",
+      "refersTo": "note",
+      "description": "A message gets a quiet tonal surface and a larger reading size.",
+      "html": "<article class=\"ds-note\"><p class=\"ds-note-from\">Aiden left this out for you</p><p class=\"ds-note-text\">Put the kettle on. I’m glad you’re here.</p><p class=\"ds-note-day\">a little while ago</p></article>",
+      "css": ".ds-note { padding: 15px 16px; border-radius: var(--radius-panel, 12px); background: var(--panel, #f9f8ef); color: var(--ink, #2c4135); font-family: var(--sans, \"Nunito Sans\", ui-sans-serif, -apple-system, system-ui, sans-serif); border: 0; } .ds-note-from { font-size: 13.5px; color: var(--soft, #596b5d); margin: 0 0 8px; font-weight: 500; } .ds-note-text { font-size: 17.5px; line-height: 1.55; margin: 0; } .ds-note-day { font-size: 12px; color: var(--soft, #596b5d); margin: 9px 0 0; text-align: right; }"
+    },
+    {
+      "name": "Header utilities",
+      "kind": "nav",
+      "description": "The small wordmark and settings link share a quiet ruled header.",
+      "html": "<header class=\"ds-header\"><span class=\"ds-brand\">mrrp</span><a class=\"ds-settings\" href=\"#room-account\">Room &amp; account</a></header>",
+      "css": ".ds-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 14px; padding-bottom: 14px; border-bottom: 1px solid var(--line, #c6cfbf); color: var(--soft, #596b5d); font-family: var(--sans, \"Nunito Sans\", ui-sans-serif, -apple-system, system-ui, sans-serif); } .ds-brand { font-family: var(--display, \"Bricolage Grotesque\", \"Nunito Sans\", ui-sans-serif, -apple-system, system-ui, sans-serif); color: var(--ink, #2c4135); font-size: 27px; font-weight: 700; line-height: 1.1; letter-spacing: -.04em; } .ds-settings { display: flex; align-items: center; min-height: 44px; padding: 8px; color: var(--soft, #596b5d); font-size: 12px; font-weight: 700; text-decoration: none; } .ds-settings:hover { text-decoration: underline; text-underline-offset: 2px; } .ds-settings:focus-visible { outline: 2.5px solid var(--ink, #2c4135); outline-offset: 2px; }"
+    },
+    {
+      "name": "Room action dock",
+      "kind": "custom",
+      "description": "Four role-specific actions sit below the living scene.",
+      "html": "<section class=\"ds-dock\" aria-label=\"Keep her company\"><button class=\"ds-dock-button ds-dock-primary\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 16 17\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.1\" stroke-linecap=\"square\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 8V4h8v4M2 7h3v4h6V7h3v6H2V7Zm1 6v2m10-2v2\" /></svg><span>Sit with her</span></button><button class=\"ds-dock-button\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 16 17\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.1\" stroke-linecap=\"square\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 8V3m3 4V1m3 7V3m3 6V6M2 8l3 5 3 2h4l3-4V8\" /></svg><span>Pet her</span></button><button class=\"ds-dock-button\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 16 17\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.1\" stroke-linecap=\"square\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m3 11 6-6 3 3-6 6H3v-3Zm5-7 3-3 4 4-3 3M10 2l4 4\" /></svg><span>Brush her</span></button><button class=\"ds-dock-button\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 16 17\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.1\" stroke-linecap=\"square\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M1 5h4l1-2h4l1 2h4v9H1V5Zm4 4h6v3H5V9Z\" /></svg><span>Take her photo</span></button></section>",
+      "css": ".ds-dock { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; max-width: 820px; margin-inline: auto; } .ds-dock-button { display: flex; justify-content: center; align-items: center; gap: 10px; font-family: var(--sans, \"Nunito Sans\", ui-sans-serif, -apple-system, system-ui, sans-serif); min-height: 44px; padding: 13px 10px; font-size: 14px; font-weight: 600; line-height: 1.4; color: var(--ink, #2c4135); background: var(--panel, #f9f8ef); border: 1px solid var(--control, #998d7d); border-radius: var(--radius-control, 8px); text-align: center; cursor: pointer; transition: transform .16s ease-out, filter .12s ease; } .ds-dock-button svg { flex-shrink: 0; } .ds-dock-primary { background: var(--honey, #566c4c); border-color: var(--honey, #566c4c); color: var(--on-honey, #fffdf4); } @media (max-width: 600px) { .ds-dock { gap: 6px; } .ds-dock-button { flex-direction: column; gap: 9px; padding: 12px 4px; font-size: 12px; min-height: 76px; } } .ds-dock-button:focus-visible { outline: 2.5px solid var(--ink, #2c4135); outline-offset: 2px; } .ds-dock-button:active:not(:disabled) { transform: scale(.985); } @media (hover: hover) { .ds-dock-button:hover:not(:disabled) { filter: brightness(1.04); transform: translateY(-1px); } } @media (prefers-reduced-motion: reduce) { .ds-dock-button { transition-duration: .001ms; } .ds-dock-button:active:not(:disabled) { transform: none; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Pocket room",
+    "overview": "The room feels small, private and lived in. Timber, ivory curtains, muted fabric and a compact\npixel cat provide the detail; the surrounding interface stays quiet and readable.\n\nSage day surfaces become forest green at night. Softly rounded controls and friendly, compact\nheadings support the authored scene without competing with it. [ART.md](ART.md) owns the\ncharacter and rendering rules; product behavior remains in the existing product and engineering docs.",
+    "keyCharacteristics": [
+      "A living pixel scene with quiet interface chrome.",
+      "Sage and forest surfaces with cream and pale sage contrast.",
+      "Friendly headings, clear body text and restrained containers."
+    ],
+    "rules": [
+      {
+        "name": "The Shared Light Rule",
+        "body": "Use the live room tokens for interface surfaces and feedback. Do not freeze a daytime color inside a component that also appears at night.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "**Do** keep the cat and room interactive, customizable and crisp at every viewport.",
+      "**Do** use the live palette for text, controls and feedback in both room palettes.",
+      "**Do** keep role-specific actions, notes and editor ownership clear.",
+      "**Do** preserve keyboard controls, readable status and reduced-motion access."
+    ],
+    "donts": [
+      "**Don't** use generated room images as runtime backgrounds or animation frames.",
+      "**Don't** stretch pixels or move furniture without moving its interaction geometry.",
+      "**Don't** turn every room section into a raised card.",
+      "**Don't** make moods or time away create neglect, decay or attendance pressure."
+    ]
+  }
+}

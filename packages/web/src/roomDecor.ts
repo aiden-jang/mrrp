@@ -29,7 +29,7 @@ export function decorateScene(scene: Scene, decor: RoomDecor): Scene {
 
 export function rugColors(scene: Scene, decor: RoomDecor) {
   if (decor.palette === "oat")
-    return { edge: mixHex(scene.floorNear, "#765367", 0.58), body: mixHex(scene.floorNear, "#a8737e", 0.48) };
+    return { edge: mixHex(scene.floorNear, "#657449", 0.7), body: mixHex(scene.floorNear, "#98a36f", 0.66) };
   const hue = decor.palette === "moss" ? "#87927b" : decor.palette === "midnight" ? "#a28fa9" : "#a8737e";
   return { edge: mixHex(scene.floorNear, hue, 0.7), body: mixHex(scene.floorNear, hue, 0.48) };
 }

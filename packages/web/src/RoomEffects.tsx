@@ -58,10 +58,10 @@ export function ChromeSync({ night }: { night: boolean }) {
   useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]');
     document.documentElement.style.colorScheme = night ? "dark" : "light";
-    meta?.setAttribute("content", night ? "#211e1a" : "#f7ecdc");
+    meta?.setAttribute("content", night ? "#232e26" : "#e5e9de");
     return () => {
       document.documentElement.style.colorScheme = "";
-      meta?.setAttribute("content", "#f7ecdc");
+      meta?.setAttribute("content", "#e5e9de");
     };
   }, [night]);
   return null;

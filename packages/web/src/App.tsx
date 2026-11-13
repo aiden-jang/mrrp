@@ -11,6 +11,7 @@ import { foundKeys, noticed } from "./discoveries.js";
 import { DOOR_X, HER_SPOT, sceneFor } from "./hours.js";
 import { liveOnly } from "./recent.js";
 import { RoomAnnotations } from "./RoomAnnotations.js";
+import { RoomActionDock } from "./RoomActionDock.js";
 import { ArrivalCard, FOUND_ANNOUNCEMENTS, FOUND_AS_HER } from "./RoomArrival.js";
 import { RoomHeader } from "./RoomChrome.js";
 import { SoundToggle } from "./RoomControls.js";
@@ -18,7 +19,7 @@ import { ChromeSync, DocTitle, FaviconSync, VoiceSync } from "./RoomEffects.js";
 import { InvalidRoomLink, RoomFallback } from "./RoomFallback.js";
 import { RoomFooter } from "./RoomFooter.js";
 import { Landing } from "./RoomLanding.js";
-import { RoomSettings } from "./RoomSettings.js";
+import { RoomSettings, RoomSettingsLink } from "./RoomSettings.js";
 import { chromeFor, isNightChrome } from "./roomTheme.js";
 import { RoomWaiting } from "./RoomWaiting.js";
 import { SeatRecovery } from "./SeatRecovery.js";
@@ -94,10 +95,9 @@ function RoomPage({ id }: { id: string }) {
   }, [did]);
   const actions = useRoomActions({ id, setView, onError: setErr, onDid: setDid, load, setNudge, setShelfAt });
   const { tidy, touchWindowLight, mugFell, petAt, strokes, sharePoke, stroke, act } = actions;
-  const wantsLink = view?.you !== undefined && view?.you !== null && !view?.linked;
 
   const history = useRoomHistory(id, view, setView, setErr);
-  const account = useSeatAccount(id, load, wantsLink);
+  const account = useSeatAccount(id, load, view?.you != null && !view.linked);
 
   const exit = useRoomEnding(
     id,
@@ -159,8 +159,6 @@ function RoomPage({ id }: { id: string }) {
   const scene = view.waitingAtDoor ? { ...hourly, catX: DOOR_X, atDoor: true } : hourly;
 
   const chrome = chromeFor(scene);
-  const roomTheme = chrome as React.CSSProperties;
-
   const nightChrome = isNightChrome(scene.sun);
 
   const iAmHim = view.you !== null && !view.youAreHer;
@@ -170,7 +168,7 @@ function RoomPage({ id }: { id: string }) {
   const previewLook = cat.preview ?? view.cat;
 
   return (
-    <main className={s.page} style={{ ...roomTheme }}>
+    <main className={s.page} style={chrome as React.CSSProperties}>
       <ChromeSync night={nightChrome} />
       <VoiceSync fur={view.cat.fur} monthsOld={view.monthsOld} />
       <DocTitle name={view.cat.name} replyAt={view.youAreHer ? null : (view.herLine?.at ?? null)} />
@@ -188,13 +186,14 @@ function RoomPage({ id }: { id: string }) {
           }
         >
           <SoundToggle />
+          {!setup && (iAmHim || view.youAreHer) && <RoomSettingsLink />}
         </RoomHeader>
         {did === "saved" && (
           <p className={s.saveFeedback} role="status">
             Saved. A very considered look.
           </p>
         )}
-        <div className={s.roomGrid}>
+        <div className={s.roomGrid} data-editing={setup || view.waitingForThem || undefined}>
           <div className={s.sceneColumn}>
             <div ref={stage} className={`${s.stage} ${arriving ? s.stageArrival : ""}`}>
               <Cat
@@ -307,6 +306,9 @@ function RoomPage({ id }: { id: string }) {
               awayNote={awayNote}
               nightChrome={nightChrome}
             />
+            {!setup && !view.waitingForThem && (iAmHim || view.youAreHer) && (
+              <RoomActionDock view={view} actions={actions} did={did} />
+            )}
           </div>
           <div className={s.actionColumn} id="room-actions" tabIndex={-1}>
             {iAmHim && setup && (
@@ -368,7 +370,6 @@ function RoomPage({ id }: { id: string }) {
                 setupTrigger={setupTrigger}
                 theirLive={theirLive}
                 now={now}
-                did={did}
               />
             ) : (
               <SeatRecovery account={account} />

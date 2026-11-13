@@ -49,22 +49,16 @@ describe("her trip to the shelf", () => {
     expect(r.count(MUG, 56, 70), "over it goes").toBeGreaterThan(0);
   });
 
-  it("brings the shelf on screen, which is the whole point of walking there", () => {
-    // The cabinet is at the right edge and the camera follows her over to it.
-    // Just before the hour he is due home, when she waits by the door: as far from the shelf as she
-    // ever gets, and the case the feature exists for.
+  it("walks from the door to the cabinet before knocking the mug down", () => {
     r = room({}, "2026-04-02T17:40:00Z");
     r.run(0, 400);
-    const shelfBefore = r.count(SHELF_WOOD, 40, 47, 40, 79);
+    const before = r.furSpan()!;
 
-    // She knocks it off from where she is, which is the only realistic way this starts.
     r.set({ shelfDown: true, shelfAt: 1 });
     r.run(416, 416 + SHELF_TIP_MS);
-    // She walks right, the camera follows her, and that is the only thing that ever brings the
-    // shelf into view. Nothing else in the room moves the camera.
-    expect(r.count(SHELF_WOOD, 40, 47, 40, 79), "more of the cabinet is in view").toBeGreaterThan(
-      shelfBefore,
-    );
+    const after = r.furSpan()!;
+    expect((after[0] + after[1]) / 2).toBeGreaterThan((before[0] + before[1]) / 2 + 3);
+    expect(r.count(SHELF_WOOD, 40, 47, 20, 45), "the cabinet is beside her").toBeGreaterThan(0);
   });
 
   it("draws the mug on the floor with no trip at all", () => {
@@ -175,10 +169,10 @@ describe("noticing their arrival", () => {
     r = room({ together: false });
     r.set({ together: true, watchDoorAt: 1 });
     r.run(16, 2000);
-    expect(r.count("#fffdf6", 44, 67), "awake while looking toward the door").toBeGreaterThan(0);
+    expect(r.count("#7cb342", 44, 67), "awake while looking toward the door").toBeGreaterThan(0);
     r.run(2016, 2600);
-    expect(r.count("#fffdf6", 44, 67), "slow blink after the glance").toBe(0);
+    expect(r.count("#7cb342", 44, 67), "slow blink after the glance").toBe(0);
     r.frame(3300);
-    expect(r.count("#fffdf6", 44, 67), "back to the room").toBeGreaterThan(0);
+    expect(r.count("#7cb342", 44, 67), "back to the room").toBeGreaterThan(0);
   });
 });

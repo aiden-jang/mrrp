@@ -74,7 +74,7 @@ test("an invitation keeps the consent button and the whole scene in a short land
         const scale = canvas.height / 80;
         return (
           Number.isInteger(scale) &&
-          canvas.width / scale <= 100 &&
+          canvas.width / scale <= 160 &&
           canvas.width / scale >= 60 &&
           corner.data[3] === 255
         );

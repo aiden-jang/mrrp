@@ -51,7 +51,7 @@ test("returning to a room refreshes its midnight reminder without a polling dela
   await her.goto(page.url());
   await her.getByRole("button", { name: "Go in", exact: true }).click();
   await page.getByRole("button", { name: "a box", exact: true }).click();
-  await page.getByText("Room & account", { exact: false }).click();
+  await page.locator("#room-account > summary").click();
   await expect(page.getByRole("link", { name: "What this keeps", exact: true })).toHaveAccessibleDescription(
     "Opens in a new tab",
   );

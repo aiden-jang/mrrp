@@ -24,6 +24,7 @@ Neither runtime imports the other to validate its contract.
 | ----------------------------------------------------------- | ----------------------------------------------------------- |
 | Initial load, live updates, visibility and polling fallback | `useRoomSession.ts`                                         |
 | Room actions, optimistic updates and interaction timers     | `useRoomActions.ts`                                         |
+| Shared scene action dock                                    | `RoomActionDock.tsx`                                        |
 | Arrival and contextual feedback                             | `useRoomFeedback.ts`, `RoomArrival.tsx`                     |
 | Notes, appearance and clock draft                           | `useCatSetup.ts`, `CatSetupPanel.tsx`                       |
 | Saved conversations                                         | `useRoomHistory.tsx`                                        |
@@ -67,6 +68,18 @@ they have an independent responsibility, not pieces of the loop merely to shorte
 Art is hand-authored code and whole-pixel sprites. The approved image references guide warmth
 and composition, not runtime assets. Reduced motion, touch targets and the accessible canvas
 controls are part of the renderer's contract.
+
+`sprites.ts` retains logical pose bounds and facial landmarks. `catArt.ts` supplies the finer
+cat artwork and replaceable palette; `roomArt.ts` selects it alongside the prop art.
+`roomShell.ts` owns the extended surfaces, curtains and material lighting. `roomGeometry.ts`
+owns projection, prop bounds and viewport fitting. The wider viewport centers the existing
+interaction world; drawing and pointer coordinates use the same camera.
+
+`RoomActionDock.tsx` renders each seat's main actions below the scene using `useRoomActions.ts`.
+Role components own notes, moods and objects below it. Setup and waiting use the adjacent
+desktop column. The header's Room & account link opens and focuses the existing settings
+details; it does not introduce another settings state owner. See [DESIGN](DESIGN.md) for the
+interface tokens and responsive rules.
 
 ## Worker
 

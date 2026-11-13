@@ -2,7 +2,7 @@
 // camera follows her, which is what brings the shelf into view at all.
 export const SHELF_TRIP_MS = 2600;
 export const SHELF_TIP_MS = 1750;
-export const SHELF_REACH_X = 78;
+export const SHELF_REACH_X = 26;
 
 export interface Trip {
   going: boolean;

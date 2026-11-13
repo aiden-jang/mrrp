@@ -10,7 +10,7 @@ async function makeRoom(page: Page) {
 }
 
 async function deleteRoom(page: Page) {
-  await page.getByText("Room & account", { exact: false }).click();
+  await page.locator("#room-account > summary").click();
   await page.getByText("delete this room", { exact: true }).click();
   await page.getByLabel("Type Undo owner to confirm deleting this room").fill("Undo owner");
   await page.getByRole("button", { name: "Delete this room for both of us" }).click();

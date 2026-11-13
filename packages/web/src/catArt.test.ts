@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { catPalette } from "./catArt.js";
 import { roomArt } from "./roomArt.js";
 import { POSES, TAIL, type Pose } from "./sprites.js";
+import { eyeHighlights, COLLAR } from "./overlays.js";
 
 const names = Object.keys(POSES) as Pose[];
 const look = {
@@ -13,14 +14,25 @@ const look = {
   tabby: false,
 };
 
-describe("the original cat artwork", () => {
-  it.each(names)("preserves the %s face, silhouette and movement anchor", (pose) => {
+describe("the pocket room cat", () => {
+  it.each(names)("keeps the %s artwork inside its movement and touch bounds", (pose) => {
     const sprite = POSES[pose];
-    expect(roomArt(sprite)).toEqual({ rows: sprite.rows, step: 1, ox: sprite.ox, oy: sprite.oy });
+    const art = roomArt(sprite);
+    expect(art.ox).toBe(sprite.ox);
+    expect(art.oy).toBe(sprite.oy);
+    expect(art.rows.length * art.step).toBe(sprite.h);
+    expect(art.rows[0]!.length * art.step).toBe(sprite.w);
+    expect(art.rows.every((row) => row.length === art.rows[0]!.length)).toBe(true);
+    const { l, r, row } = eyeHighlights(pose);
+    for (const x of [l, r]) expect(art.rows[row * 2]![Math.round((x - sprite.ox) * 2)]).toBe("e");
+    const collar = COLLAR[pose];
+    for (let x = collar.dx; x < collar.dx + collar.w; x++) {
+      expect(art.rows[(collar.dy - art.oy) * 2]![(x - art.ox) * 2], `${pose} collar`).not.toBe(".");
+    }
   });
 
   it("keeps her tail in the same pixel style as her body", () => {
-    expect(roomArt(TAIL)).toEqual({ rows: TAIL.rows, step: 1, ox: TAIL.ox, oy: TAIL.oy });
+    expect(roomArt(TAIL).step).toBe(roomArt(POSES.loaf).step);
   });
 
   it.each(["#7cb342", "#d89a4b", "#597eaa"])("keeps the chosen %s eyes when she is awake", (eyes) => {
@@ -32,8 +44,8 @@ describe("the original cat artwork", () => {
     expect(colors.b).toBe(look.belly);
   });
 
-  it("fills closed eyes and cheeks with her face color instead of leaving holes", () => {
+  it("fills closed eyes with her coat color instead of leaving cream squares", () => {
     const colors = catPalette(look, false, (color) => color);
-    for (const role of ["e", "h", "c"] as const) expect(colors[role]).toBe(look.belly);
+    for (const role of ["e", "h", "c"] as const) expect(colors[role]).toBe(look.fur);
   });
 });
