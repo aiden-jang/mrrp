@@ -24,7 +24,8 @@ describe("the pocket room cat", () => {
     expect(art.rows[0]!.length * art.step).toBe(sprite.w);
     expect(art.rows.every((row) => row.length === art.rows[0]!.length)).toBe(true);
     const { l, r, row } = eyeHighlights(pose);
-    for (const x of [l, r]) expect(art.rows[row * 2]![Math.round((x - sprite.ox) * 2)]).toBe("e");
+    for (const x of [l, r]) expect(art.rows[row * 2]![Math.round((x - sprite.ox) * 2)]).toBe("f");
+    expect(art.rows.join("")).not.toMatch(/[eh]/);
     const collar = COLLAR[pose];
     for (let x = collar.dx; x < collar.dx + collar.w; x++) {
       expect(art.rows[(collar.dy - art.oy) * 2]![(x - art.ox) * 2], `${pose} collar`).not.toBe(".");

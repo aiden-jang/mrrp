@@ -75,7 +75,8 @@ and composition, not runtime assets. Reduced motion, touch targets and the acces
 controls are part of the renderer's contract.
 
 `sprites.ts` retains logical pose bounds and facial landmarks. `catArt.ts` supplies the finer
-cat artwork and replaceable palette; `roomArt.ts` selects it alongside the prop art.
+cat artwork, round eyes and replaceable palette; `roomArt.ts` selects it alongside the prop art.
+The eye painter shares pose landmarks across open eyes, tracking pupils, curved lids and the icon.
 `roomShell.ts` owns the extended surfaces, curtains and material lighting. `roomGeometry.ts`
 owns projection, prop bounds and viewport fitting. The wider viewport centers the existing
 interaction world; drawing and pointer coordinates use the same camera.

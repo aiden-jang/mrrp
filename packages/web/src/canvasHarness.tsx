@@ -43,7 +43,11 @@ export interface Room {
 }
 
 /* Read `scale` off the canvas rather than predicting it: the rule it follows is under test. */
-export function room(props: Partial<Parameters<typeof Cat>[0]> = {}, when = "2026-04-02T09:00:00Z"): Room {
+export function room(
+  props: Partial<Parameters<typeof Cat>[0]> = {},
+  when = "2026-04-02T09:00:00Z",
+  reducedMotion = false,
+): Room {
   // Keep the art grid independent of device scale so detail can be checked at any viewport size.
   const grid: (string | null)[] = new Array(160 * 160).fill(null);
   let scale = 1;
@@ -62,7 +66,7 @@ export function room(props: Partial<Parameters<typeof Cat>[0]> = {}, when = "202
 
   // What the room reaches for and jsdom lacks. Reduced motion off, or she skips most of this.
   vi.stubGlobal("matchMedia", (query: string) => ({
-    matches: false,
+    matches: reducedMotion,
     media: query,
     addEventListener: () => {},
     removeEventListener: () => {},

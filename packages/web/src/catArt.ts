@@ -1,6 +1,7 @@
 import type { Cat as CatLook } from "./types.js";
 import { enlarge, fill, pixels, type PixelArt } from "./pixelArt.js";
-import { POSES, TAIL, type Sprite } from "./sprites.js";
+import { POSES, TAIL, type Pose, type Sprite } from "./sprites.js";
+import { eyeHighlights } from "./overlays.js";
 
 const cats = new Set(Object.values(POSES));
 
@@ -76,7 +77,7 @@ export function catArtwork(sprite: Sprite): PixelArt | null {
     fill(cells, left + 5 + Math.abs(2 - row), top + 14 + row, 23 - Math.abs(2 - row) * 2, 1, "b");
   const eyes = sprite.rows.findIndex((row) => row.includes("h"));
   const columns = [...sprite.rows[eyes]!].flatMap((cell, x) => (cell === "h" ? [x] : []));
-  for (const x of columns) fill(cells, x * 2, eyes * 2, 3, 3, "e");
+  for (const x of columns) fill(cells, x * 2, eyes * 2, 3, 3, "f");
   fill(cells, center * 2 - 1, nose * 2 + 1, 2, 1, "w");
   fill(cells, center * 2, nose * 2 + 2, 1, 1, "m");
   if (sprite === POSES.peek) {
@@ -108,4 +109,30 @@ export function catPalette(look: CatLook, awake: boolean, light: (color: string)
     h: awake ? "#fffdf6" : light(look.fur),
     e: awake ? look.eyes : light(look.fur),
   };
+}
+
+export function paintCatEyes(
+  paint: (x: number, y: number, width: number, height: number, color: string) => void,
+  pose: Pose,
+  x: number,
+  y: number,
+  palette: { e: string; w: string; h: string },
+  expression: { awake: boolean; wink: boolean; gaze: number },
+) {
+  const spot = eyeHighlights(pose);
+  const top = y + POSES[pose].oy + spot.row;
+  for (const [side, col] of [spot.l, spot.r].entries()) {
+    const left = x + col - 1;
+    if (!expression.awake || (expression.wink && side === 1)) {
+      paint(left + 0.5, top + 1, 1, 0.5, palette.w);
+      paint(left, top + 1.5, 0.5, 0.5, palette.w);
+      paint(left + 1.5, top + 1.5, 0.5, 0.5, palette.w);
+      continue;
+    }
+    paint(left + 0.5, top, 1, 0.5, palette.e);
+    paint(left, top + 0.5, 2, 1, palette.e);
+    paint(left + 0.5, top + 1.5, 1, 0.5, palette.e);
+    paint(left + 0.5 + expression.gaze * 0.5, top + 0.5, 1, 1, palette.w);
+    paint(left + 0.5, top + 0.5, 0.5, 0.5, palette.h);
+  }
 }

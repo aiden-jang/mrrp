@@ -30,8 +30,9 @@ entrance controls remain visible. Postcards preserve the captured scene's propor
 
 The enlarged window, left-hand cabinet and plant share their placement and activation bounds
 through `roomGeometry.ts`. Window projection, mug positions and the shelf trip must agree
-with the visible furniture. The cat's small tracking pupils, blinks, collar and expressions
-follow her pose. Closed eyes fill with her face color; custom colors survive every pose.
+with the visible furniture. The cat's round eyes have small tracking pupils and cream catchlights.
+Blinks use curved lids; winks close one eye. Eyes, collar and expressions follow her pose.
+Closed eyes keep her face color; custom colors survive every pose.
 
 Landed as authored Canvas work: whole-pixel rendering (one logical pixel is a whole number of device
 pixels, or the floorboards come out at two different widths); the cat lit by the room, with a rim from

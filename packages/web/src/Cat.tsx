@@ -5,7 +5,7 @@ import * as polish from "./roomPolish.js";
 import * as sceneArt from "./roomShell.js";
 import { roomPainter, type RasterView } from "./roomPainter.js";
 import { roomArt } from "./roomArt.js";
-import { catPalette } from "./catArt.js";
+import { catPalette, paintCatEyes } from "./catArt.js";
 import { fitRoom, project, propBounds } from "./roomGeometry.js";
 import type { Cat as CatLook, Clock, Gift, Mood, RoomDecor } from "./types.js";
 import { DOOR_X, mixHex, sceneFor } from "./hours.js";
@@ -29,7 +29,6 @@ import {
   RAIN_STREAKS,
   SNOW_FLAKES,
   YAWN,
-  eyeHighlights,
   COLLAR,
 } from "./overlays.js";
 import type { RoomView } from "./types.js";
@@ -198,19 +197,6 @@ const PROPS = [
 const INK = "#4a3520";
 const PINK = "#e79ba3";
 const WHITE = "#fffdf6";
-
-const CLOSED_EYES: Record<Pose, { y: number; left: number; right: number; width: number }> = {
-  flop: { y: 7, left: 5, right: 11, width: 2 },
-  loaf: { y: 7, left: 5, right: 11, width: 2 },
-  sit: { y: 7, left: 5, right: 11, width: 2 },
-  stand: { y: 7, left: 5, right: 11, width: 2 },
-  play: { y: 7, left: 5, right: 11, width: 2 },
-  perk: { y: 8, left: 5, right: 11, width: 2 },
-  walk: { y: 7, left: 5, right: 11, width: 2 },
-  stretch: { y: 7, left: 5, right: 11, width: 2 },
-  pounce: { y: 7, left: 5, right: 11, width: 2 },
-  peek: { y: 7, left: 5, right: 11, width: 2 },
-};
 
 const YAWN_MS = 900;
 
@@ -2415,6 +2401,21 @@ export function Cat({
       }
 
       const grooming = t - groom.current.at < GROOM_MS;
+      const at = mouseVisiting
+        ? mouseMoment!.x
+        : looking
+          ? la!.x
+          : m && sc.sun > 0.15
+            ? m.x
+            : ptr.in
+              ? ptr.x
+              : null;
+      const gaze = pose === "stand" || at === null ? 0 : Math.sign(at - kx) * (Math.abs(at - kx) > 4 ? 1 : 0);
+      paintCatEyes(rect, pose, kx, y, pal, {
+        awake,
+        wink: !reduce && awake && expression.wink && !forced && !walking && !grooming,
+        gaze,
+      });
       if (grooming && awake) {
         const faceX = kx + sp.ox;
         // `perk` has its face a row lower than every other pose. Assuming otherwise puts the yawn on her nose.
@@ -2437,22 +2438,6 @@ export function Cat({
         rect(faceX + YAWN.x, jawY, YAWN.w, 1, INK);
         rect(faceX + YAWN.x + 1, jawY + 1, YAWN.w - 2, 1, INK);
         px(faceX + YAWN.x + 2, jawY + 1, PINK);
-      }
-
-      if (!reduce && awake && expression.wink && !forced && !walking && !grooming) {
-        const eye = CLOSED_EYES[pose];
-        const ex = kx + sp.ox + eye.right;
-        const ey = y + sp.oy + eye.y;
-        rect(ex, ey - 1, eye.width, 2, pal.f);
-        rect(ex, ey, eye.width, 1, INK);
-      }
-
-      if (!awake) {
-        const eye = CLOSED_EYES[pose];
-        const faceX = kx + sp.ox;
-        const eyeY = y + sp.oy + eye.y;
-        rect(faceX + eye.left, eyeY, eye.width, 1, INK);
-        rect(faceX + eye.right, eyeY, eye.width, 1, INK);
       }
 
       if (sc.moodVisual === "blanket") {
@@ -2737,25 +2722,6 @@ export function Cat({
         px(mx, my, `rgba(246,234,208,${a2})`);
         px(mx - 1, my - flap, `rgba(232,214,180,${a2})`);
         px(mx + 1, my - flap, `rgba(232,214,180,${a2})`);
-      }
-
-      if (awake) {
-        const spot = eyeHighlights(pose);
-        const ey = y + sp.oy + spot.row;
-        const at = mouseVisiting
-          ? mouseMoment!.x
-          : looking
-            ? la!.x
-            : m && sc.sun > 0.15
-              ? m.x
-              : ptr.in
-                ? ptr.x
-                : null;
-        const look =
-          pose === "stand" || at === null ? 0 : Math.sign(at - kx) * (Math.abs(at - kx) > 4 ? 1 : 0);
-        rect(kx + spot.l + (look + 1) * 0.25, ey, 1, 1.5, pal.w);
-        if (!expression.wink || forced || walking || grooming)
-          rect(kx + spot.r + (look + 1) * 0.25, ey, 1, 1.5, pal.w);
       }
 
       if (sc.play > 0.5) {

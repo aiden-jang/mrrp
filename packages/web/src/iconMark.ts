@@ -1,9 +1,19 @@
-import { catArtwork } from "./catArt.js";
+import { catArtwork, paintCatEyes } from "./catArt.js";
+import { fill } from "./pixelArt.js";
 import { POSES } from "./sprites.js";
 import type { Cat } from "./types.js";
 
 const INK = "#2c4135";
-const HEAD = catArtwork(POSES.sit)!.rows.slice(0, 22);
+const head = catArtwork(POSES.sit)!.rows.map((row) => [...row]);
+paintCatEyes(
+  (x, y, width, height, color) => fill(head, x * 2, y * 2, width * 2, height * 2, color),
+  "sit",
+  -POSES.sit.ox,
+  -POSES.sit.oy,
+  { e: "e", w: "w", h: "h" },
+  { awake: true, wink: false, gaze: 0 },
+);
+const HEAD = head.slice(0, 22);
 
 export function iconMark(fur = "#e8963f", maskable = false, look?: Omit<Cat, "name">): string {
   const coat = /^#[\da-f]{6}$/i.test(fur) ? fur : "#e8963f";
@@ -16,8 +26,8 @@ export function iconMark(fur = "#e8963f", maskable = false, look?: Omit<Cat, "na
     n: "#e79ba3",
     m: "#4a3520",
     c: coat,
-    h: coat,
-    e: "#4a3520",
+    h: "#fffdf6",
+    e: look && /^#[\da-f]{6}$/i.test(look.eyes) ? look.eyes : "#7cb342",
   };
   const face = HEAD.flatMap((row, y) =>
     [...row].flatMap((pixel, x) =>

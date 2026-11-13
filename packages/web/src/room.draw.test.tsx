@@ -176,3 +176,39 @@ describe("noticing their arrival", () => {
     expect(r.count("#7cb342", 44, 67), "back to the room").toBeGreaterThan(0);
   });
 });
+
+describe("her round eyes in the living room", () => {
+  it("winks with one iris, then restores both round eyes", () => {
+    r = room({ mood: "horny" });
+    r.run(0, 2400);
+    expect(r.count("#7cb342", 30, 70)).toBe(4);
+    r.frame(2700);
+    expect(r.count("#7cb342", 30, 70)).toBe(2);
+    r.frame(3100);
+    expect(r.count("#7cb342", 30, 70)).toBe(4);
+  });
+
+  it.each(["good", "tired"] as const)("keeps the %s blink timing and reopens both eyes", (mood) => {
+    r = room({ mood, together: true });
+    r.frame(3450);
+    expect(r.count("#7cb342", 30, 70)).toBe(0);
+    r.frame(3650);
+    expect(r.count("#7cb342", 30, 70)).toBe(mood === "tired" ? 0 : 4);
+    r.frame(3900);
+    expect(r.count("#7cb342", 30, 70)).toBe(4);
+  });
+
+  it("keeps both eyes open when an interaction overrides the flirty wink", () => {
+    r = room({ mood: "horny", eyesOpen: true });
+    r.frame(2700);
+    expect(r.count("#7cb342", 30, 70)).toBe(4);
+  });
+
+  it("skips animated blinks and winks with reduced motion", () => {
+    r = room({ mood: "horny" }, undefined, true);
+    for (const at of [2700, 3450, 4150]) {
+      r.frame(at);
+      expect(r.count("#7cb342", 30, 70)).toBe(4);
+    }
+  });
+});
