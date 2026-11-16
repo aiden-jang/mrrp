@@ -1,7 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { fitRoom, project, propBounds } from "./roomGeometry.js";
+import { fitRoom, project, propBounds, propPointer, roomPoint } from "./roomGeometry.js";
 
 describe("the finer room grid", () => {
+  it.each([80, 100, 160])("round-trips prop targets through a %s-unit viewport", (width) => {
+    for (const camera of [0, 12, -20]) {
+      const rect = { left: 80, top: 140, width: 960, height: 480 };
+      const prop = { x: 48, y: 32, w: 16, h: 12 };
+      const pointer = propPointer(prop, rect, camera, width);
+      const point = roomPoint(pointer, rect, camera, width);
+      expect(point.x).toBeCloseTo(56);
+      expect(point.y).toBeCloseTo(38);
+    }
+  });
   it.each([1, 1.5, 2, 3])("fits the compact room beside its controls at ratio %s", (ratio) => {
     for (const width of [480, 560, 700, 960]) {
       const fit = fitRoom(width, 900, ratio, 210, true)!;

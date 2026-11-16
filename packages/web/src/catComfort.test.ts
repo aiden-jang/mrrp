@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { bodyOffset, comfortMoment, peekRise, recordBrush } from "./catComfort.js";
+import {
+  bodyOffset,
+  brushTravel,
+  catTouchBounds,
+  comfortMoment,
+  peekRise,
+  recordBrush,
+  touchResponse,
+} from "./catComfort.js";
+import { POSES, type Pose } from "./sprites.js";
 
 const rest = {
   time: 0,
@@ -12,6 +21,34 @@ const rest = {
 };
 
 describe("pleasure without a needs meter", () => {
+  it.each(Object.keys(POSES) as Pose[])("keeps touch landmarks on the %s face", (pose) => {
+    const bounds = catTouchBounds(pose, 40, 50);
+    expect(bounds.noseX).toBeGreaterThan(bounds.x0);
+    expect(bounds.noseX).toBeLessThan(bounds.x1);
+    expect(bounds.noseY).toBeGreaterThan(bounds.y0);
+    expect(bounds.noseY).toBeLessThan(bounds.y1);
+    expect(touchResponse(bounds, { x: bounds.noseX, y: bounds.noseY }).nose).toBe(true);
+    const chin = touchResponse(bounds, { x: bounds.noseX, y: bounds.noseY + 3 });
+    const cheek = touchResponse(bounds, { x: bounds.noseX + 6, y: bounds.noseY });
+    expect(chin.chin).toBe(1);
+    expect(cheek.side).toBe(1);
+    const options = { ...rest, time: 1900, petDepth: 1 };
+    expect(comfortMoment({ ...options, touch: chin }).lift).toBeGreaterThan(
+      comfortMoment({ ...options, touch: cheek }).lift,
+    );
+    expect(comfortMoment({ ...options, touch: cheek }).lean).toBeGreaterThan(0);
+  });
+
+  it("counts brush distance rather than the number of pointer events", () => {
+    const bounds = catTouchBounds("sit", 40, 50);
+    const start = { x: bounds.x0 + 1, y: bounds.noseY };
+    const mid = { x: start.x + 3, y: start.y };
+    const end = { x: start.x + 6, y: start.y };
+    expect(brushTravel(bounds, start, end)).toBe(
+      brushTravel(bounds, start, mid) + brushTravel(bounds, mid, end),
+    );
+    expect(brushTravel(bounds, { x: -100, y: -100 }, end)).toBe(0);
+  });
   it("leans into a stroke, enjoys it briefly, then returns to herself", () => {
     const start = comfortMoment(rest);
     const pleased = comfortMoment({ ...rest, time: 300 });

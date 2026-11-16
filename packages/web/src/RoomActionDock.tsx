@@ -103,7 +103,7 @@ export function RoomActionDock({
       </div>
       {strokes !== null && !view.youAreHer && (
         <p className={s.hint} aria-live="polite">
-          Brush her: drag across {view.cat.name}, back and forth.
+          Brush her: drag across {view.cat.name}, back and forth, or focus the scene and press Enter.
         </p>
       )}
       {!view.youAreHer && (

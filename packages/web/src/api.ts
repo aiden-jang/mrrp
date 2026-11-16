@@ -289,13 +289,9 @@ export async function doCatAct(id: string, act: CatAct): Promise<RoomView> {
   return r.json() as Promise<RoomView>;
 }
 
-/*
- * Fire and forget, and it must stay that way. It fires on every press and release of the cat, and a
- * dropped one costs a hand she does not see. Not worth a red bar across a room somebody is petting a
- * cat in.
- */
-export function doHold(id: string, on: boolean): void {
-  void send(`/api/room/${id}/hold`, { me: myToken(id), on }).catch(() => {});
+// Petting stays quiet on failure; the promise lets releases follow their presses in order.
+export async function doHold(id: string, on: boolean): Promise<void> {
+  await send(`/api/room/${id}/hold`, { me: myToken(id), on }).catch(() => {});
 }
 
 export async function doSit(id: string, on: boolean): Promise<RoomView> {

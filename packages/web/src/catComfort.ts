@@ -1,3 +1,48 @@
+import { POSES, type Pose } from "./sprites.js";
+
+interface Point {
+  x: number;
+  y: number;
+}
+interface TouchBounds {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  noseX: number;
+  noseY: number;
+}
+
+export function catTouchBounds(pose: Pose, x: number, y: number): TouchBounds {
+  const sprite = POSES[pose];
+  const row = sprite.rows.findIndex((line) => line.includes("nn"));
+  return {
+    x0: x + sprite.ox,
+    y0: y + sprite.oy,
+    x1: x + sprite.ox + sprite.w,
+    y1: y + sprite.oy + sprite.h,
+    noseX: x + sprite.ox + sprite.rows[row]!.indexOf("nn") + 1,
+    noseY: y + sprite.oy + row + 0.25,
+  };
+}
+
+export function touchResponse(bounds: TouchBounds | null, point: Point) {
+  if (!bounds) return { side: 0, chin: 0, nose: false };
+  const dx = point.x - bounds.noseX;
+  const dy = point.y - bounds.noseY;
+  return {
+    side: Math.max(-1, Math.min(1, dx / 6)),
+    chin: Math.abs(dx) < 6 && dy > 1 && dy < 5 ? 1 : 0,
+    nose: Math.hypot(dx, dy) < 2.5,
+  };
+}
+
+export function brushTravel(bounds: TouchBounds | null, from: Point, to: Point) {
+  const inside = (p: Point) =>
+    bounds && p.x >= bounds.x0 - 1 && p.x <= bounds.x1 + 1 && p.y >= bounds.y0 - 1 && p.y <= bounds.y1 + 2;
+  return inside(from) && inside(to) ? Math.hypot(to.x - from.x, to.y - from.y) : 0;
+}
+
 interface BrushMoment {
   started: number;
   last: number;
@@ -18,6 +63,7 @@ export function comfortMoment({
   side,
   busy,
   reduced,
+  touch,
 }: {
   time: number;
   brushAt: BrushMoment;
@@ -26,14 +72,18 @@ export function comfortMoment({
   side: number;
   busy: boolean;
   reduced: boolean;
+  touch?: { side: number; chin: number } | null;
 }) {
   const age = time - brushAt.started;
   const released = time - brushAt.last;
   const brush = age < 0 || released > 1800 ? 0 : Math.min(1, age / 180, (1800 - released) / 850);
   const content = busy ? 0 : Math.max(brush, petDepth);
   return {
-    lift: reduced || busy ? 0 : Math.round(content * 2) / 2,
-    lean: reduced || busy ? 0 : (Math.sign(side) * Math.round(brush * 2)) / 2,
+    lift: reduced || busy ? 0 : Math.round(content * (touch ? 0.5 + touch.chin : 1) * 2) / 2,
+    lean:
+      reduced || busy
+        ? 0
+        : Math.round((touch ? touch.side * petDepth * 1.5 : Math.sign(side) * brush) * 2) / 2,
     softEyes: content > 0.35 || (!busy && stayDepth > 0.45),
     tailEase: busy ? 1 : 1 - Math.max(content, stayDepth * 0.8) * 0.7,
   };

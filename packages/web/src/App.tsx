@@ -1,7 +1,7 @@
 import { usePageAnalytics } from "./usePageAnalytics.js";
 import { pageForPath } from "../../../analytics/schema.js";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { doHold, lastRoom, markMine, myToken, roomFromPath } from "./api.js";
+import { lastRoom, markMine, myToken, roomFromPath } from "./api.js";
 import s from "./App.module.css";
 import { Cat } from "./Cat.js";
 import { CatRoom } from "./CatRoom.js";
@@ -237,8 +237,8 @@ function RoomPage({ id }: { id: string }) {
                 mugFell={mugFell}
                 role={iAmHim ? "him" : view.youAreHer ? "her" : null}
                 together={view.bothHereNow}
-                onPet={() => void act("pet")}
-                onHold={(on) => doHold(id, on)}
+                onPet={(fromTouch) => void act("pet", fromTouch)}
+                onHold={actions.hold}
                 onTouch={sharePoke}
                 heldByThem={view.heldByThem}
                 sitting={view.sittingWith || view.sittingWithYou}

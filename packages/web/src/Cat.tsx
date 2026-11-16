@@ -5,9 +5,9 @@ import * as polish from "./roomPolish.js";
 import * as sceneArt from "./roomShell.js";
 import { roomPainter, type RasterView } from "./roomPainter.js";
 import { roomArt } from "./roomArt.js";
-import { bodyOffset, comfortMoment, paintPurr, recordBrush } from "./catComfort.js";
+import * as catComfort from "./catComfort.js";
 import { catPalette, paintCatEyes } from "./catArt.js";
-import { fitRoom, project, propBounds } from "./roomGeometry.js";
+import * as geometry from "./roomGeometry.js";
 import type { Cat as CatLook, Clock, Gift, Mood, RoomDecor } from "./types.js";
 import { DOOR_X, mixHex, sceneFor } from "./hours.js";
 import { fireflyAt, mothAt, MOTH_CYCLE_MS } from "./critters.js";
@@ -82,7 +82,7 @@ const CAT_REACH_LEFT = Math.max(...Object.values(POSES).map((p) => -p.ox));
 const CAT_REACH_RIGHT = Math.max(...Object.values(POSES).map((p) => p.ox + p.w));
 const WIN_X = 60,
   WIN_CX = WIN_X + 8;
-const WINDOW_CENTER_X = project("window", WIN_CX, 4).x;
+const WINDOW_CENTER_X = geometry.project("window", WIN_CX, 4).x;
 const BOX_X = 44,
   BOX_Y = FLOOR + 9;
 /* Measured off the sprite, never written down. Its left edge puts her half out of the box. */
@@ -169,7 +169,6 @@ const PRINT_FADE_MS = 9000;
 const DOOR_CENTRE = 12;
 const SWIPE_MS = 620;
 const WATCH_DOOR_MS = 2200;
-const PET_TAP_MS = 1800;
 
 const MUG_FLOOR_X = 30,
   MUG_FLOOR_Y = FLOOR + 14;
@@ -299,7 +298,7 @@ export function Cat({
   onTidy?: () => void;
   role?: "him" | "her" | null;
   together?: boolean;
-  onPet?: () => void;
+  onPet?: (fromTouch?: boolean) => void;
   onHold?: (on: boolean) => void;
   heldByThem?: boolean;
   sitting?: boolean;
@@ -385,13 +384,8 @@ export function Cat({
   boxOutRef.current = boxOut;
   const downRef = useRef(shelfDown);
   downRef.current = shelfDown;
-  const petShownUntil = useRef(-1e9);
-  const petShown = useRef(0);
-  useEffect(() => {
-    if (!petAt || petAt === petShown.current) return;
-    petShown.current = petAt;
-    petShownUntil.current = performance.now() + PET_TAP_MS;
-  }, [petAt]);
+  const petAtRef = useRef(petAt);
+  petAtRef.current = petAt;
 
   const tripFrom = useRef(-1e9);
   const tipped = useRef(0);
@@ -521,7 +515,8 @@ export function Cat({
   const petting = useRef(false);
   const petDepth = useRef(0);
   const toldVoice = useRef(-1);
-  const catBox = useRef<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
+  const catBox = useRef<ReturnType<typeof catComfort.catTouchBounds> | null>(null);
+  const boopUntil = useRef(-1e9);
   const camRef = useRef(0);
   const viewportRef = useRef(VW);
   const propIntent = useRef<string | null>(null);
@@ -543,14 +538,10 @@ export function Cat({
       const prop = PROPS.find((p) => p.key === key);
       if (!prop) return;
       const rect = cv.getBoundingClientRect();
-      const bounds = propBounds(prop.key, prop.x, prop.y, prop.sp.w, prop.sp.h);
-      const cx = bounds.x + bounds.w / 2;
-      const cy = bounds.y + bounds.h / 2;
-      const clientX = rect.left + ((cx - camRef.current) / viewportRef.current) * rect.width;
-      const clientY = rect.top + (cy / GH) * rect.height;
+      const bounds = geometry.propBounds(prop.key, prop.x, prop.y, prop.sp.w, prop.sp.h);
+      const point = geometry.propPointer(bounds, rect, camRef.current, viewportRef.current);
       const init: PointerEventInit = {
-        clientX,
-        clientY,
+        ...point,
         bubbles: true,
         cancelable: true,
         pointerId: 1,
@@ -651,6 +642,8 @@ export function Cat({
 
   useEffect(() => {
     const cv = ref.current!;
+    const events = new window.AbortController();
+    const signal = events.signal;
     const g = cv.getContext("2d")!;
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const lunar = moonPhase(new Date());
@@ -668,7 +661,7 @@ export function Cat({
       cancelAnimationFrame(refit);
       const wide = box ? box.clientWidth : cv.getBoundingClientRect().width;
       const sizing = fitRef.current;
-      const fitted = fitRoom(wide, innerHeight, devicePixelRatio, sizing.reserve, sizing.compact);
+      const fitted = geometry.fitRoom(wide, innerHeight, devicePixelRatio, sizing.reserve, sizing.compact);
       if (!fitted) {
         refit = requestAnimationFrame(fit);
         return;
@@ -684,7 +677,7 @@ export function Cat({
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(box ?? cv);
-    addEventListener("resize", fit);
+    addEventListener("resize", fit, { signal });
 
     const ptr = {
       x: GW / 2,
@@ -696,32 +689,26 @@ export function Cat({
     };
     let roomCodeAt = 0;
     let typedRoomCode = "";
+    let pointer: number | null = null;
+    let brushPressed = false;
+    const gridAt = (e: PointerEvent) => geometry.roomPoint(e, cv.getBoundingClientRect(), cam, viewport);
     const onMove = (e: PointerEvent) => {
-      const r = cv.getBoundingClientRect();
-      const nextX = cam + ((e.clientX - r.left) / r.width) * viewport;
-      const nextY = ((e.clientY - r.top) / r.height) * GH;
+      if (pointer !== null && pointer !== (e.pointerId ?? 0)) return;
+      const { x: nextX, y: nextY } = gridAt(e);
       if (Math.hypot(nextX - ptr.stillX, nextY - ptr.stillY) > 1.2) {
         ptr.stillX = nextX;
         ptr.stillY = nextY;
         ptr.stillSince = performance.now();
         slowBlink.current.answered = false;
       }
-      /*
-       * Brushing is the distance travelled over her, not a count of moves. A mouse fires far more move
-       * events than a finger for the same stroke, so counting events would make it four times quicker on a
-       * laptop than on the phone this is mostly used on.
-       */
-      if (brushingRef.current) {
-        const b = catBox.current;
-        const over = b && nextX >= b.x0 - 1 && nextX <= b.x1 + 1 && nextY >= b.y0 - 1 && nextY <= b.y1 + 2;
-        if (over) {
-          recordBrush(brushAt.current, performance.now());
-          brushRun.current += Math.hypot(nextX - ptr.x, nextY - ptr.y);
-          if (brushRun.current >= BRUSH_RUN) {
-            brushRun.current = 0;
-            onStrokeRef.current?.();
-          }
-        } else brushRun.current = 0;
+      if (brushPressed && brushingRef.current) {
+        const distance = catComfort.brushTravel(catBox.current, ptr, { x: nextX, y: nextY });
+        if (distance > 0) catComfort.recordBrush(brushAt.current, performance.now());
+        brushRun.current = distance > 0 ? brushRun.current + distance : 0;
+        while (brushRun.current >= BRUSH_RUN) {
+          brushRun.current -= BRUSH_RUN;
+          onStrokeRef.current?.();
+        }
       }
       ptr.x = nextX;
       ptr.y = nextY;
@@ -750,10 +737,17 @@ export function Cat({
         lookAt.current = { x: laser.current.x, until: laser.current.until };
       }
     };
-    const onLeave = () => {
-      ptr.in = false;
+    const endTouch = () => {
+      pointer = null;
+      brushPressed = false;
+      brushRun.current = 0;
       if (petting.current) onHoldRef.current?.(false);
       petting.current = false;
+    };
+    const onLeave = () => {
+      endTouch();
+      ptr.in = false;
+      boopUntil.current = -1e9;
       slowBlink.current.answered = false;
       if (floorPress.current?.active) laser.current.until = performance.now() + LASER_RELEASE_MS;
       floorPress.current = null;
@@ -761,14 +755,9 @@ export function Cat({
       poked.current = null;
     };
 
-    const gridAt = (e: PointerEvent) => {
-      const r = cv.getBoundingClientRect();
-      return {
-        x: cam + ((e.clientX - r.left) / r.width) * viewport,
-        y: ((e.clientY - r.top) / r.height) * GH,
-      };
-    };
     const onDown = (e: PointerEvent) => {
+      if (e.button !== 0 || e.isPrimary === false || pointer !== null) return;
+      pointer = e.pointerId ?? 0;
       cv.focus({ preventScroll: true });
       const { x, y } = gridAt(e);
       const intended = propIntent.current;
@@ -826,11 +815,12 @@ export function Cat({
       if (!intended && b && x >= b.x0 - 2 && x <= b.x1 + 2 && y >= b.y0 - 2 && y <= b.y1 + 3) {
         const now = performance.now();
         if (roleRef.current === "him") {
-          // Holding the brush means a press on her starts a stroke, not a pet.
-          if (!brushingRef.current) {
+          brushPressed = brushingRef.current;
+          if (!brushPressed) {
+            if (catComfort.touchResponse(b, { x, y }).nose) boopUntil.current = now + 650;
             petting.current = true;
             onHoldRef.current?.(true);
-            onPetRef.current?.();
+            onPetRef.current?.(true);
           }
         } else if (roleRef.current === "her") onPokeRef.current?.();
         else {
@@ -883,7 +873,7 @@ export function Cat({
       }
       // Match `boxHere`: boxes he leaves out must also be tappable.
       const boxIsHere = boxOutRef.current || boxRef.current || performance.now() < secretBoxUntil.current;
-      const hit = PROPS.map((q) => ({ ...q, ...propBounds(q.key, q.x, q.y, q.sp.w, q.sp.h) }))
+      const hit = PROPS.map((q) => ({ ...q, ...geometry.propBounds(q.key, q.x, q.y, q.sp.w, q.sp.h) }))
         .reverse()
         .find(
           (q) =>
@@ -1076,9 +1066,9 @@ export function Cat({
         onTouchRef.current?.("floor");
       }
     };
-    const onUp = () => {
-      if (petting.current) onHoldRef.current?.(false);
-      petting.current = false;
+    const onUp = (e: PointerEvent) => {
+      if (pointer !== (e.pointerId ?? 0)) return;
+      endTouch();
       ptr.in = true;
       const press = floorPress.current;
       floorPress.current = null;
@@ -1097,12 +1087,18 @@ export function Cat({
       speakUntil.current = performance.now() + 850;
       play("mrrp");
     };
-    const onCancel = () => {
-      if (petting.current) onHoldRef.current?.(false);
-      petting.current = false;
-      floorPress.current = null;
+    const onCancel = (e: PointerEvent) => {
+      if (pointer === (e.pointerId ?? 0)) onLeave();
     };
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && roleRef.current === "him") {
+        e.preventDefault();
+        if (brushingRef.current) {
+          catComfort.recordBrush(brushAt.current, performance.now());
+          onStrokeRef.current?.();
+        } else onPetRef.current?.();
+        return;
+      }
       if (ROOM_CODE.includes(e.key)) e.preventDefault();
       const expected = ROOM_CODE[roomCodeAt];
       roomCodeAt = e.key === expected ? roomCodeAt + 1 : e.key === ROOM_CODE[0] ? 1 : 0;
@@ -1245,12 +1241,15 @@ export function Cat({
         typedRoomCode = "";
       }
     };
-    cv.addEventListener("pointermove", onMove);
-    cv.addEventListener("pointerleave", onLeave);
-    cv.addEventListener("pointerdown", onDown);
-    cv.addEventListener("pointerup", onUp);
-    cv.addEventListener("pointercancel", onCancel);
-    cv.addEventListener("keydown", onKey);
+    cv.addEventListener("pointermove", onMove, { signal });
+    cv.addEventListener("pointerleave", onLeave, { signal });
+    cv.addEventListener("pointerdown", onDown, { signal });
+    window.addEventListener("pointerup", onUp, { signal });
+    window.addEventListener("blur", onLeave, { signal });
+    window.addEventListener("offline", onLeave, { signal });
+    document.addEventListener("visibilitychange", onLeave, { signal });
+    window.addEventListener("pointercancel", onCancel, { signal });
+    cv.addEventListener("keydown", onKey, { signal });
 
     const motes = Array.from({ length: 12 }, () => ({
       dx: Math.floor(Math.random() * 15) - 7,
@@ -1267,6 +1266,7 @@ export function Cat({
         raf = requestAnimationFrame(frame);
         return;
       }
+      const elapsed = Number.isFinite(lastFrame) ? Math.min(250, t - lastFrame) : 16;
       lastFrame = t;
       const nowMs = Date.now();
       const openAt = doorRef.current;
@@ -2066,10 +2066,11 @@ export function Cat({
       const want = ptr.in ? Math.max(0, 1 - Math.hypot(ptr.x - kx, ptr.y - (ky - 8)) / 44) : 0;
       near.current += (want - near.current) * 0.07;
       const n = near.current;
-      const pet = petting.current || heldRef.current || t < petShownUntil.current;
+      const pet = petting.current || heldRef.current || petAtRef.current !== null;
+      const booped = t < boopUntil.current;
       bounce.current = Math.max(0, bounce.current - 0.02);
 
-      petDepth.current = Math.max(0, Math.min(1, petDepth.current + (pet ? 0.006 : -0.003)));
+      petDepth.current = Math.max(0, Math.min(1, petDepth.current + elapsed * (pet ? 0.00036 : -0.00018)));
 
       stayDepth.current = Math.max(
         0,
@@ -2202,7 +2203,7 @@ export function Cat({
                             ? "loaf"
                             : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
-      const comfort = comfortMoment({
+      const comfort = catComfort.comfortMoment({
         time: t,
         brushAt: brushAt.current,
         petDepth: petDepth.current,
@@ -2210,12 +2211,13 @@ export function Cat({
         side: ptr.x - kx,
         busy: walking || pouncing || boxPlaying || peeking,
         reduced: reduce,
+        touch: petting.current ? catComfort.touchResponse(catBox.current, ptr) : null,
       });
       kx += comfort.lean;
       const y =
         ky -
         comfort.lift +
-        bodyOffset(t, {
+        catComfort.bodyOffset(t, {
           reduced: reduce,
           loaf: pose === "loaf",
           settled: settledRef.current,
@@ -2226,7 +2228,7 @@ export function Cat({
           peeking,
           peekUntil: boxPeekUntil.current,
         });
-      catBox.current = { x0: kx + sp.ox, y0: y + sp.oy, x1: kx + sp.ox + sp.w, y1: y + sp.oy + sp.h };
+      catBox.current = catComfort.catTouchBounds(pose, kx, y);
 
       const poolHalf = (26 * poolScale) / 2;
       const litSpan =
@@ -2239,7 +2241,7 @@ export function Cat({
       const warmth = (litSpan / sp.w) * sc.sun * 0.24;
       const sunlit = (c: string) => (warmth > 0.01 ? mixHex(c, sc.beamWarm, warmth) : c);
 
-      const pal = catPalette(L, awake, sunlit);
+      const pal = catPalette(L, awake || booped, sunlit);
 
       if (pianoPlaying) {
         const nextNote = pianoGame.current.history.length;
@@ -2419,7 +2421,8 @@ export function Cat({
               : null;
       const gaze = pose === "stand" || at === null ? 0 : Math.sign(at - kx) * (Math.abs(at - kx) > 4 ? 1 : 0);
       paintCatEyes(rect, pose, kx, y, pal, {
-        awake: awake && !comfort.softEyes,
+        awake: booped || (awake && !comfort.softEyes),
+        crossed: booped,
         wink: !reduce && awake && expression.wink && !forced && !walking && !grooming,
         gaze,
       });
@@ -2894,7 +2897,7 @@ export function Cat({
       if (pet || sc.purring || slowBlinking || staySettled) {
         const a = pet ? 0.7 + petDepth.current * 0.3 : slowBlinking ? 0.8 : staySettled ? 0.34 : 0.42;
         const purrX = kx + Math.min(10, Math.max(2, (sp.w >> 1) - 3));
-        paintPurr(px, t, purrX, y + sp.oy, a, reduce);
+        catComfort.paintPurr(px, t, purrX, y + sp.oy, a, reduce);
       }
 
       const chorusRemaining = catTaps.current.chorusUntil - t;
@@ -2916,16 +2919,11 @@ export function Cat({
     raf = requestAnimationFrame(frame);
 
     return () => {
+      onLeave();
       cancelAnimationFrame(raf);
       ro.disconnect();
       cancelAnimationFrame(refit);
-      removeEventListener("resize", fit);
-      cv.removeEventListener("pointermove", onMove);
-      cv.removeEventListener("pointerleave", onLeave);
-      cv.removeEventListener("pointerdown", onDown);
-      cv.removeEventListener("pointerup", onUp);
-      cv.removeEventListener("pointercancel", onCancel);
-      cv.removeEventListener("keydown", onKey);
+      events.abort();
     };
   }, []);
 
@@ -2934,6 +2932,7 @@ export function Cat({
       ref={ref}
       role="img"
       tabIndex={0}
+      aria-keyshortcuts={role === "him" ? "Enter" : undefined}
       aria-label={`${label} The room has quiet interactive details.`}
       style={{
         display: "block",

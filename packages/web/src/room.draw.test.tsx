@@ -109,7 +109,7 @@ describe("the marks his actions leave", () => {
     r.run(0, 400);
     expect(hearts(r), "not being petted").toBe(0);
 
-    r.set({ petAt: 1 });
+    r.set({ petAt: Date.now() });
     r.run(416, 900);
     expect(hearts(r), "a tap of the button reaches the drawing").toBeGreaterThan(0);
   });

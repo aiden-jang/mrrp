@@ -41,6 +41,9 @@ Hooks own side effects and writes. Role components render the authoritative snap
 those operations. Draft state stays with its editor. A failed notes request must not become an
 empty editable list, and a failed drawing save must keep the draft open.
 
+`useRoomPetting.ts` owns pointer and button contact, interruption cleanup and ordered hold writes.
+The canvas keeps local touch feedback in its draw loop.
+
 Mood writes run in order and keep only the latest queued choice. That choice stays visible
 while earlier live snapshots arrive. Setup and drawing controls pause during saves; the private
 date draft can keep changing, but its saved feedback belongs only to the submitted version.

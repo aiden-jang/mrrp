@@ -12,7 +12,16 @@ const look = { name: "Bean", ...LOOKS[0]!.cat, eyes: EYES[0]!.hex };
 const open = ["..ee..", ".ehwe.", "ewwwwe", "ewwwwe", ".ewhe.", "..ee.."];
 const closed = ["......", "......", "......", ".wwww.", "w....w", "......"];
 
-function portrait(pose: Pose, expression = { awake: true, wink: false, gaze: 0 }, colors = look, scale = 2) {
+function portrait(
+  pose: Pose,
+  expression: { awake: boolean; wink: boolean; gaze: number; crossed?: boolean } = {
+    awake: true,
+    wink: false,
+    gaze: 0,
+  },
+  colors = look,
+  scale = 2,
+) {
   const pixels = new Map<string, string>();
   const context = {
     fillStyle: "",
@@ -44,6 +53,13 @@ function portrait(pose: Pose, expression = { awake: true, wink: false, gaze: 0 }
 }
 
 describe("the round-eye design", () => {
+  it.each(names)("looks inward for a %s nose boop and keeps the eye highlights", (pose) => {
+    const boop = portrait(pose, { awake: true, wink: false, gaze: 0, crossed: true });
+    expect(boop.left).toEqual(portrait(pose, { awake: true, wink: false, gaze: 1 }).left);
+    expect(boop.right).toEqual(portrait(pose, { awake: true, wink: false, gaze: -1 }).right);
+    expect(boop.left.join("")).toContain("h");
+    expect(boop.right.join("")).toContain("h");
+  });
   it.each(names)("keeps the selected shape and small highlights on her %s face", (pose) => {
     const face = portrait(pose);
     expect(face.left).toEqual(open);

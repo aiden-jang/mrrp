@@ -1,5 +1,36 @@
 export type RoomLayer = "window" | "shelf" | null;
 
+interface CanvasRect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+export function roomPoint(
+  point: { clientX: number; clientY: number },
+  rect: CanvasRect,
+  camera: number,
+  width: number,
+) {
+  return {
+    x: camera + ((point.clientX - rect.left) / rect.width) * width,
+    y: ((point.clientY - rect.top) / rect.height) * 80,
+  };
+}
+
+export function propPointer(
+  bounds: { x: number; y: number; w: number; h: number },
+  rect: CanvasRect,
+  camera: number,
+  width: number,
+) {
+  return {
+    clientX: rect.left + ((bounds.x + bounds.w / 2 - camera) / width) * rect.width,
+    clientY: rect.top + ((bounds.y + bounds.h / 2) / 80) * rect.height,
+  };
+}
+
 export function project(layer: RoomLayer, x: number, y: number) {
   if (layer === "window") return { x: 54 + (x - 60) * 3, y: 4 + (y - 4) * 3, scale: 3 };
   if (layer === "shelf") return { x: x - 56, y: y + 16, scale: 1 };

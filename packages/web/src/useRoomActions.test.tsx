@@ -2,13 +2,15 @@
 import { useState } from "react";
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { doTell } from "./api.js";
+import { doAct, doHold, doTell } from "./api.js";
 import type { RoomView } from "./types.js";
 import { useRoomActions } from "./useRoomActions.js";
 
 vi.mock("./api.js", async (original) => ({
   ...(await original<typeof import("./api.js")>()),
   doTell: vi.fn(),
+  doAct: vi.fn(),
+  doHold: vi.fn(),
 }));
 vi.mock("./sound.js", () => ({ play: vi.fn(), buzz: vi.fn() }));
 beforeEach(() => vi.resetAllMocks());
@@ -62,6 +64,23 @@ it("sends rapid mood changes in order and keeps only the latest queued choice", 
   });
   expect(result.current.view?.catMood).toBe("tired");
   expect(result.current.actions.pendingMood).toBeNull();
+});
+
+it("records a direct pet without starting a second timed button pet", async () => {
+  vi.mocked(doAct).mockResolvedValue({ catMood: null } as RoomView);
+  vi.mocked(doHold).mockResolvedValue(undefined);
+  const { result } = setup();
+  await act(async () => {
+    result.current.actions.hold(true);
+    await result.current.actions.act("pet", true);
+  });
+  expect(doHold).toHaveBeenCalledExactlyOnceWith("test-room", true);
+  expect(result.current.actions.petAt).toBeNull();
+  await act(async () => result.current.actions.hold(false));
+  expect(vi.mocked(doHold).mock.calls).toEqual([
+    ["test-room", true],
+    ["test-room", false],
+  ]);
 });
 
 it("explains a failed mood save after refreshing the saved room", async () => {

@@ -142,11 +142,12 @@ export function paintCatEyes(
   x: number,
   y: number,
   palette: { e: string; w: string; h: string },
-  expression: { awake: boolean; wink: boolean; gaze: number },
+  expression: { awake: boolean; wink: boolean; gaze: number; crossed?: boolean },
 ) {
   const spot = eyeHighlights(pose);
   const top = y + POSES[pose].oy + spot.row - 1;
   for (const [side, col] of [spot.l, spot.r].entries()) {
+    const gaze = expression.crossed ? (side === 0 ? 1 : -1) : expression.gaze;
     const left = x + col - 1.5;
     if (!expression.awake || (expression.wink && side === 1)) {
       paint(left + 0.5, top + 1.5, 2, 0.5, palette.w);
@@ -159,8 +160,8 @@ export function paintCatEyes(
     paint(left, top + 1, 3, 1, palette.e);
     paint(left + 0.5, top + 2, 2, 0.5, palette.e);
     paint(left + 1, top + 2.5, 1, 0.5, palette.e);
-    paint(left + 1 + expression.gaze * 0.5, top + 0.5, 1, 2, palette.w);
-    paint(left + 0.5 + expression.gaze * 0.5, top + 1, 2, 1, palette.w);
+    paint(left + 1 + gaze * 0.5, top + 0.5, 1, 2, palette.w);
+    paint(left + 0.5 + gaze * 0.5, top + 1, 2, 1, palette.w);
     paint(left + 1, top + 0.5, 0.5, 0.5, palette.h);
     paint(left + 1.5, top + 2, 0.5, 0.5, palette.h);
   }

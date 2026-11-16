@@ -5,7 +5,6 @@ import {
   doBoxOut,
   doCatAct,
   doDraw,
-  doHold,
   doLeaveGift,
   doLeaveOut,
   doPoke,
@@ -22,6 +21,7 @@ import type { BlanketKey } from "./blanket.js";
 import { buzz, play, type Cue } from "./sound.js";
 import type { Action, CatAct, Gift, Mood, RoomView, Treat } from "./types.js";
 import { ACTIONS } from "./types.js";
+import { useRoomPetting } from "./useRoomPetting.js";
 
 const ACTION_SOUND: Record<Action, Cue> = {
   pet: "purr",
@@ -32,9 +32,6 @@ const ACTION_SOUND: Record<Action, Cue> = {
 
 const MUG_AGAIN_MS = 1400;
 const STROKES_NEEDED = 5;
-
-/* Must match PET_TAP_MS in Cat.tsx: how long a tap of the pet button reads as a hold. */
-const PET_TAP_MS = 1800;
 
 export function useRoomActions({
   id,
@@ -53,6 +50,7 @@ export function useRoomActions({
   setNudge: Dispatch<SetStateAction<number>>;
   setShelfAt: Dispatch<SetStateAction<number | null>>;
 }) {
+  const { petAt, hold, pet } = useRoomPetting(id);
   const alive = useRef(false);
   const queuedMood = useRef<Mood | null>(null);
   const telling = useRef(false);
@@ -121,7 +119,6 @@ export function useRoomActions({
   }, [id, setView]);
 
   const [mugFell, setMugFell] = useState<number | null>(null);
-  const [petAt, setPetAt] = useState<number | null>(null);
   const [drawing, setDrawing] = useState(false);
   const [drawingOpen, setDrawingOpen] = useState(false);
   const hangUp = async (cells: string) => {
@@ -200,18 +197,12 @@ export function useRoomActions({
     }
   };
 
-  const act = async (a: Action) => {
+  const act = async (a: Action, fromTouch = false) => {
     onError(null);
     setNudge((v) => v + 1);
     play(ACTION_SOUND[a]);
     if (a === "pet" || a === "brush") buzz(a);
-    // The button is a short hold, because that is what it is. Petting leaves no mark, so the hold is the
-    // whole of it, and the two `doHold` calls send it down the path a real hold uses.
-    if (a === "pet") {
-      setPetAt(Date.now());
-      doHold(id, true);
-      later(() => doHold(id, false), PET_TAP_MS);
-    }
+    if (a === "pet" && !fromTouch) pet();
     try {
       setView(await doAct(id, a));
       const said = ACTIONS.find((x) => x.id === a)?.mine;
@@ -301,6 +292,7 @@ export function useRoomActions({
     touchWindowLight,
     mugFell,
     petAt,
+    hold,
     drawing,
     drawingOpen,
     setDrawingOpen,
