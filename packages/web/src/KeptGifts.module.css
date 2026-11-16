@@ -1,0 +1,52 @@
+.panel {
+  padding: 18px;
+  margin-block: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--panel);
+  scroll-margin-block: 24px;
+}
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.heading h2 {
+  font-size: 20px;
+  margin: 0;
+}
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+.list li {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 14px;
+  padding-block: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.list h3 {
+  font-size: 16px;
+  margin: 0;
+  font-weight: 650;
+}
+.mark {
+  width: 36px;
+  height: 30px;
+  margin-top: 3px;
+}
+.words {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+  margin: 8px 0;
+}
+.date {
+  display: block;
+  font-size: 12px;
+  color: var(--soft);
+  margin-top: 8px;
+}

@@ -1,3 +1,5 @@
+import { roomStartedAt } from "./remembers.js";
+import type { SeatPerson } from "./seatAccess.js";
 import type { Arrival, FirstKey, SaidSoFar, Told, Told2, Visit } from "@mrrp/shared";
 
 export function firstArrivals(firsts: Record<string, number>, since: number): Arrival[] {
@@ -78,5 +80,34 @@ export function replyHistory(all: string[], lines: Told2[], read: number): SaidS
     lines: lines
       .filter((line) => home(line) === null)
       .map(({ text, at, gift, about, drawing }) => ({ text, at, gift, about, drawing })),
+  };
+}
+
+export function exportPeople(
+  people: Record<string, SeatPerson>,
+  me: string,
+  him: string | null,
+  her: string | null,
+  catName: string,
+  now: number,
+) {
+  const nameOf = (token: string | null): string | null =>
+    token && token === her ? catName : token ? (people[token]?.name ?? null) : null;
+  return {
+    you: nameOf(me),
+    them: nameOf(me === her ? him : her),
+    youAreTheCat: me === her,
+    startedAt: new Date(
+      roomStartedAt(
+        Object.values(people).map((person) => person.firstSeen),
+        now,
+      ),
+    ).toISOString(),
+    visits: Object.fromEntries(
+      Object.entries(people).map(([token, person]) => [
+        token === me ? "you" : "them",
+        { name: nameOf(token), since: new Date(person.firstSeen).toISOString(), times: person.visits },
+      ]),
+    ),
   };
 }

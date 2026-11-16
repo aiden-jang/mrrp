@@ -1,3 +1,4 @@
+import { KeptGifts } from "./KeptGifts.js";
 import { ReplyDrawing } from "./ReplyDrawing.js";
 import { NoteLetter } from "./NoteLetter.js";
 import s from "./App.module.css";
@@ -158,6 +159,7 @@ export function CatRoom({
       <section className={s.roomTools} aria-label="Room details">
         {herMarks && <p className={s.small}>He'll find {herMarks}.</p>}
         {herFades && <p className={s.fades}>{herFades}</p>}
+        <KeptGifts view={view} />
         <FrameSheet
           current={view.doodle}
           saving={drawing}

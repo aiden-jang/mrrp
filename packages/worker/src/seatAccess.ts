@@ -1,3 +1,4 @@
+import { transferKeepsakes, discardLeftKeepsakes } from "./keepsakes.js";
 import { isSeatToken } from "./seatToken.js";
 import type { Visit } from "./types.js";
 import type { FoundLedger } from "./discoveries.js";
@@ -63,7 +64,10 @@ export async function touchSeat(
     const now = Date.now();
     if (!people[me] && !blocked && Object.keys(people).length < 2) {
       const firstSeen = Math.max(now, ...Object.values(people).map((p) => p.firstSeen + 1));
-      if (Object.keys(people).length === 1) await transaction.delete("leftSide");
+      if (Object.keys(people).length === 1) {
+        await discardLeftKeepsakes(transaction);
+        await transaction.delete("leftSide");
+      }
       people[me] = { name: name?.trim().slice(0, 24) || "Someone", firstSeen, lastSeen: now, visits: 0 };
     }
     if (people[me]) {
@@ -132,6 +136,7 @@ export async function replaceSeat(ctx: DurableObjectState, from: string, to: str
       const value = await storage.get<Record<string, unknown>>(key);
       if (value?.[field] === from) await storage.put(key, { ...value, [field]: to });
     }
+    await transferKeepsakes(storage, from, to);
     if ((await storage.get("handover")) === from) await storage.put("handover", to);
     return true;
   });

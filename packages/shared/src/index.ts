@@ -239,6 +239,18 @@ export type FirstKey = "snow" | "rain" | "storm" | "held" | "settled";
 
 export type Gift = "leaf" | "cap" | "moth";
 
+export interface GiftKeepsake {
+  id: string;
+  gift: Gift;
+  at: number;
+  text?: string;
+}
+
+export interface KeepsakePage {
+  items: GiftKeepsake[];
+  next: string | null;
+}
+
 export interface Milestone {
   kind: "anniversary" | "first-week" | "first-month" | "ours";
   years: number;

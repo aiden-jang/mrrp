@@ -1,11 +1,14 @@
+import { recordKeepsake } from "./keepsakes.js";
 import { GIFTS, type Arrival, type Gift, type RoomView } from "./types.js";
 
-interface GiftTag {
+export interface GiftTag {
+  text?: string;
   id: string;
   from: string;
 }
 
 export interface KeptGift {
+  text?: string;
   id: string;
   from: string;
   gift: Gift;
@@ -20,8 +23,13 @@ export function isGiftId(value: unknown): value is string {
   );
 }
 
-export function placeGift(storage: Pick<DurableObjectTransaction, "put">, gift: Gift, from: string) {
-  return storage.put({ gift, giftTag: { id: crypto.randomUUID(), from } });
+export function placeGift(
+  storage: Pick<DurableObjectTransaction, "put">,
+  gift: Gift,
+  from: string,
+  text?: string,
+) {
+  return storage.put({ gift, giftTag: { id: crypto.randomUUID(), from, text } });
 }
 
 export async function acceptGift(storage: DurableObjectTransaction, id: string, her: string | null) {
@@ -31,7 +39,9 @@ export async function acceptGift(storage: DurableObjectTransaction, id: string, 
   const gift = values.get("gift") as Gift | undefined;
   const tag = values.get("giftTag") as GiftTag | undefined;
   if (!gift || (tag?.id ?? `legacy:${gift}`) !== id || !her) return false;
-  await storage.put("giftKept", { id, gift, from: tag?.from ?? her, at: Date.now() });
+  const receipt = { id, gift, from: tag?.from ?? her, text: tag?.text, at: Date.now() };
+  if (receipt.from === her) await recordKeepsake(storage, receipt);
+  await storage.put("giftKept", receipt);
   await storage.delete(["gift", "giftTag"]);
   return true;
 }

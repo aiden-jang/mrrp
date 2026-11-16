@@ -43,19 +43,19 @@ describe("the box she says something in", () => {
 
   it("asks before taking everything back, rather than doing it on the first tap", () => {
     box({ clearing: false });
-    expect(screen.getByRole("button", { name: "Take back everything you've said" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Take back your replies" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /Sure/ })).toBeNull();
   });
 
   it("asks out loud once it is armed, so the second tap is not a blind one", () => {
     const props = box({ clearing: true });
-    fireEvent.click(screen.getByRole("button", { name: "Sure? All of it goes." }));
+    fireEvent.click(screen.getByRole("button", { name: "Clear replies? Kept gift messages stay." }));
     expect(props.onClearTap).toHaveBeenCalledOnce();
   });
 
   it("only offers to take it back when there is something to take back", () => {
     box({ canClear: false });
-    expect(screen.queryByRole("button", { name: /Take back everything/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Take back your replies/ })).toBeNull();
   });
 
   it("says which note she is answering, so she is not replying into the dark", () => {

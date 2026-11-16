@@ -1,3 +1,4 @@
+import { KeptGifts } from "./KeptGifts.js";
 import { ReplyDrawing } from "./ReplyDrawing.js";
 import type { RefObject } from "react";
 import s from "./App.module.css";
@@ -146,6 +147,7 @@ export function CompanionRoom({
       </section>
 
       <section className={s.roomTools} aria-label="Notes and room details">
+        <KeptGifts view={view} />
         <button
           ref={history.trigger}
           className={s.quiet}

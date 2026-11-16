@@ -1,3 +1,4 @@
+import { isKeepsakeCursor } from "./keepsakes.js";
 import { Hono } from "hono";
 import type { Env } from "./env.js";
 import { isGiftId } from "./gifts.js";
@@ -25,4 +26,14 @@ giftRoutes.post("/api/room/:id/keepgift", async (c) => {
   }
   const ok = await room(c.env, id).keepGift(body.me, body.giftId);
   return ok ? c.json({ ok: true }) : c.json({ error: "gift changed" }, 409);
+});
+
+giftRoutes.get("/api/room/:id/keepsakes", async (c) => {
+  const id = c.req.param("id"),
+    me = c.req.query("me"),
+    before = c.req.query("before");
+  if (!ROOM_RE.test(id) || !isSeatToken(me) || (before !== undefined && !isKeepsakeCursor(before)))
+    return c.json({ error: "bad request" }, 400);
+  const page = await room(c.env, id).keepsakesFor(me, before);
+  return page ? c.json(page) : c.json({ error: "not yours" }, 403);
 });

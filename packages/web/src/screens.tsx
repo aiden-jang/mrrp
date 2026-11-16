@@ -369,7 +369,7 @@ export function SayBox({
       </div>
       {canClear && (
         <button className={s.quiet} onClick={onClearTap} disabled={saving}>
-          {clearing ? "Sure? All of it goes." : "Take back everything you've said"}
+          {clearing ? "Clear replies? Kept gift messages stay." : "Take back your replies"}
         </button>
       )}
     </div>

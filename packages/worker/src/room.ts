@@ -1,3 +1,4 @@
+import * as keepsakes from "./keepsakes.js";
 import * as gifts from "./gifts.js";
 import * as affection from "./affection.js";
 import {
@@ -15,6 +16,7 @@ import {
   actionArrivals,
   catArrivals,
   exportActivity,
+  exportPeople,
   firstArrivals,
   recentActivity,
   replyHistory,
@@ -123,6 +125,7 @@ interface LeftSide {
   doodle?: Doodle;
   blanket?: Blanket;
   gift?: Gift;
+  giftText?: string;
 }
 
 export const ROOM_GONE = "mrrp: room deleted";
@@ -426,10 +429,10 @@ export class Room extends DurableObject<Env> {
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (this.roles(people).her !== me) return this.build(me, people);
 
-    await gifts.placeGift(this.ctx.storage, gift, me);
     // Matching stamps let his arrival card combine the gift with her words.
     const now = Date.now();
     const said = text.trim().slice(0, LINE_MAX);
+    await gifts.placeGift(this.ctx.storage, gift, me, said || undefined);
     if (said) await this.keepLine({ text: said, at: now, gift });
     const previous = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
     await this.ctx.storage.put(
@@ -448,6 +451,12 @@ export class Room extends DurableObject<Env> {
       const { him, her } = this.roles((await txn.get<Record<string, Person>>("people")) ?? {});
       return me === him && gifts.acceptGift(txn, id, her);
     });
+  }
+
+  async keepsakesFor(me: string, before?: string) {
+    await this.guard();
+    const { him, her } = this.roles((await this.ctx.storage.get<Record<string, Person>>("people")) ?? {});
+    return me === him || me === her ? keepsakes.readKeepsakes(this.ctx.storage, her, before) : null;
   }
 
   async putBack(me: string): Promise<false | "tidy" | "again"> {
@@ -889,12 +898,16 @@ export class Room extends DurableObject<Env> {
           doodle: doodle?.by === her ? doodle : undefined,
           blanket: await txn.get<Blanket>("blanket"),
           gift: await txn.get<Gift>("gift"),
+          giftText: (await txn.get<gifts.GiftTag>("giftTag"))?.text,
         });
         const left = (await txn.get<string[]>("left")) ?? [];
         await txn.put("left", [her, ...left.filter((token) => token !== her)].slice(0, LEFT_KEEP));
         keys.push(HER_LINES, "herLine", "blanket", "gift", "giftTag");
         if (doodle?.by === her) keys.push("doodle");
-      } else await txn.put("handover", her);
+      } else {
+        await keepsakes.eraseKeepsakes(txn, her);
+        await txn.put("handover", her);
+      }
       delete people[her];
       delete moods[her];
       await txn.put({ people, log: log.filter((v) => v.who !== her) });
@@ -941,7 +954,7 @@ export class Room extends DurableObject<Env> {
       if (kept.lines?.length) await txn.put(HER_LINES, kept.lines);
       if (kept.doodle) await txn.put("doodle", kept.doodle);
       if (kept.blanket) await txn.put("blanket", kept.blanket);
-      if (kept.gift) await gifts.placeGift(txn, kept.gift, me);
+      if (kept.gift) await gifts.placeGift(txn, kept.gift, me, kept.giftText);
       if (kept.recovery) await txn.put("recoveryHer", kept.recovery);
       if (kept.light) await txn.put("windowLight", kept.light);
       if ((await txn.get<string>("handover")) === me) await txn.delete("handover");
@@ -962,6 +975,7 @@ export class Room extends DurableObject<Env> {
     const stone = await txn.get<Tombstone>(TOMBSTONE);
     let kept = await txn.get<LeftSide>(LEFT_SIDE);
     if (kept && kept.dropsAt <= now) {
+      await keepsakes.eraseKeepsakes(txn, kept.token);
       await txn.delete(LEFT_SIDE);
       kept = undefined;
     }
@@ -991,20 +1005,11 @@ export class Room extends DurableObject<Env> {
     const notes = await this.notes();
     const readSoFar = Math.min((await this.ctx.storage.get<number>("noteIdx")) ?? 0, notes.length - 1);
     const cat = (await this.ctx.storage.get<Cat>("cat")) ?? DEFAULT_CAT;
-    const nameOf = (token: string | null): string | null =>
-      token && token === her ? cat.name : token ? (people[token]?.name ?? null) : null;
 
     return {
       takenAt: new Date().toISOString(),
-      you: nameOf(me),
-      them: nameOf(youAreHer ? him : her),
-      youAreTheCat: youAreHer,
-      startedAt: new Date(
-        roomStartedAt(
-          Object.values(people).map((person) => person.firstSeen),
-          Date.now(),
-        ),
-      ).toISOString(),
+      ...exportPeople(people, me, him, her, cat.name, Date.now()),
+      keepsakes: await keepsakes.allKeepsakes(this.ctx.storage, her),
       cat,
       decor: await this.ctx.storage.get<RoomDecor>("decor"),
       clock,
@@ -1024,12 +1029,6 @@ export class Room extends DurableObject<Env> {
       expectsHimAt: youAreHer
         ? null
         : learnedHour((await this.ctx.storage.get<Homing>("homing")) ?? null, clock.homeHour),
-      visits: Object.fromEntries(
-        Object.entries(people).map(([token, person]) => [
-          token === me ? "you" : "them",
-          { name: nameOf(token), since: new Date(person.firstSeen).toISOString(), times: person.visits },
-        ]),
-      ),
     };
   }
 
