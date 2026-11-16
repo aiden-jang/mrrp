@@ -17,6 +17,8 @@
   gap: 10px;
   padding: 12px 10px;
   min-height: 52px;
+  border-radius: 12px;
+  box-shadow: 0 2px 0 var(--line);
   font-size: 14px;
   line-height: 1.4;
   text-decoration: none;
@@ -50,4 +52,9 @@
 .actions > :is(button, a):focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 3px;
+}
+
+.actions > :is(button, a):active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: none;
 }

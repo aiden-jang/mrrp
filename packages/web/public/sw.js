@@ -1,6 +1,6 @@
 // Static shell only. API requests always use the network.
 
-const CACHE = "mrrp-v4";
+const CACHE = "mrrp-v5";
 // The font is here rather than left to the cache-first rule below so a home-screen open on no signal
 // still gets the right typeface. Not content-hashed, so replacing the file needs a CACHE bump.
 const SHELL = [

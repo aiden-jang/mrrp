@@ -81,6 +81,15 @@ function mugArt(down: boolean) {
     fill(cells, 9, 2, 3, 5, "w");
     fill(cells, 10, 3, 1, 3, ".");
   }
+  // A tiny maker's mark belongs to the mug in either orientation.
+  if (down) {
+    fill(cells, 7, 3, 2, 1, "w");
+    fill(cells, 8, 4, 1, 1, "w");
+  } else {
+    fill(cells, 4, 4, 3, 2, "b");
+    fill(cells, 4, 3, 1, 1, "w");
+    fill(cells, 6, 3, 1, 1, "w");
+  }
   return pixels(cells, 0.5);
 }
 
@@ -110,6 +119,17 @@ function bedArt() {
     if (y > 3 && y < 10) fill(cells, left + 5, y, right - left - 9, 1, "b");
   });
   fill(cells, 10, 1, 20, 1, "h");
+  // Quilted cushion: lifted patches, a soft dip and sparse stitches instead of flat stripes.
+  for (const [x, y] of [
+    [9, 5],
+    [17, 4],
+    [25, 5],
+    [13, 8],
+    [22, 8],
+  ] as const) {
+    fill(cells, x, y, 5, 1, "h");
+    fill(cells, x + 1, y + 2, 4, 1, "f");
+  }
   for (const x of [8, 14, 25, 31]) fill(cells, x, 10, 1, 2, "d");
   return pixels(cells, 0.5, BED.ox, BED.oy);
 }

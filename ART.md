@@ -17,7 +17,7 @@ hand-authored sprites keep animation, custom colors and hit areas consistent.
 ## What is in the room
 
 `sprites.ts` owns the logical pose envelopes, movement anchors and facial landmarks.
-`catArt.ts` maps a finer head, cream muzzle, small eyes, body and tail onto those envelopes,
+`catArt.ts` maps a finer head, cream muzzle, round eyes, body and tail onto those envelopes,
 and supplies replaceable coat and eye colors. `roomArt.ts` selects this artwork and authors
 the props; `roomShell.ts` paints architecture, materials and light. `Cat.tsx` owns behavior
 and layering, with expression and collar placement in `overlays.ts`. No image model or
@@ -49,7 +49,7 @@ Deliberately not done: anything that could make the room worse over time, which 
 
 ## What must survive
 
-- The default ginger cat, cream muzzle and belly, brown outline, and small expressive eyes
+- The default ginger cat, cream muzzle and belly, brown outline, and round expressive eyes
 - User-selected fur, belly, and eye colors
 - A small private room rather than a large virtual-pet world
 - Light that follows her local time
@@ -133,3 +133,20 @@ scene carries the atmosphere.
 Ceramic glaze, an open mug handle, cushion stitching, cabinet books and clustered leaves use
 the same palette roles as the room. Stronger golden-hour light, moonlight and lamp light sit
 under the floor seams and fabric details so those materials remain readable.
+
+## The cute character pass
+
+The [authored pose sheet](docs/art/cute-character-study.svg) records one face across the pose envelopes.
+Round irises, two small catchlights, a pink nose, low weight and tucked paws carry the character.
+Custom coats and eyes still use palette roles rather than baked colors. The icon generator uses the
+same head as the room; installed icons, the tab icon and the sharing mark belong to the same cat.
+
+`catComfort.ts` gives brushing a small lean and chin lift, a pleased expression, then composure.
+Company softens the expression without adding a need to maintain it. Box peeks reveal ears before
+holding the face above the rim. Reduced motion keeps content expressions and still purr marks.
+Sage curtains, a quilted cushion and the mug's small maker's mark carry the room's softer materials.
+Folded note edges and tactile dock controls echo the room without changing touch targets.
+Postcards retain the captured scene, local day/night treatment, actual name and date.
+
+The authored models and recorded day, night and quiet-mood Canvas frames were inspected.
+Full browser review remains blocked by host browser-launch permissions in this environment; the art sheet is not a browser screenshot or UI sign-off.

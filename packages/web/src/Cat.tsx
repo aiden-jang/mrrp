@@ -5,6 +5,7 @@ import * as polish from "./roomPolish.js";
 import * as sceneArt from "./roomShell.js";
 import { roomPainter, type RasterView } from "./roomPainter.js";
 import { roomArt } from "./roomArt.js";
+import { bodyOffset, comfortMoment, paintPurr, recordBrush } from "./catComfort.js";
 import { catPalette, paintCatEyes } from "./catArt.js";
 import { fitRoom, project, propBounds } from "./roomGeometry.js";
 import type { Cat as CatLook, Clock, Gift, Mood, RoomDecor } from "./types.js";
@@ -507,6 +508,7 @@ export function Cat({
   const onStrokeRef = useRef(onStroke);
   onStrokeRef.current = onStroke;
   const brushRun = useRef(0);
+  const brushAt = useRef({ started: -1e9, last: -1e9 });
   const onTouchRef = useRef(onTouch);
   onTouchRef.current = onTouch;
   const onPokeRef = useRef(onPoke);
@@ -713,10 +715,10 @@ export function Cat({
         const b = catBox.current;
         const over = b && nextX >= b.x0 - 1 && nextX <= b.x1 + 1 && nextY >= b.y0 - 1 && nextY <= b.y1 + 2;
         if (over) {
+          recordBrush(brushAt.current, performance.now());
           brushRun.current += Math.hypot(nextX - ptr.x, nextY - ptr.y);
           if (brushRun.current >= BRUSH_RUN) {
             brushRun.current = 0;
-            bounce.current = 1;
             onStrokeRef.current?.();
           }
         } else brushRun.current = 0;
@@ -2033,7 +2035,7 @@ export function Cat({
       wantX = bounded(wantX);
       if (catX.current === null) catX.current = firstEverRef.current ? 19 : wantX;
       catX.current += (wantX - catX.current) * (catnipping || zooming || mouseChasing ? 0.4 : 0.05);
-      const kx = Math.round(catX.current);
+      let kx = Math.round(catX.current);
 
       const m = reduce ? null : mothAt(t, beamX);
       const mothVisit = Math.floor(t / MOTH_CYCLE_MS);
@@ -2196,31 +2198,34 @@ export function Cat({
                         ? "flop"
                         : admiring && !walking
                           ? "sit"
-                          : // Somebody sat down with her. She settles, and loafing is the pose that
-                            sittingRef.current && !walking
+                          : sittingRef.current && !walking
                             ? "loaf"
                             : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
       const sp = POSES[pose]!;
-
-      const breathe =
-        reduce || pose !== "loaf"
-          ? 0
-          : settledRef.current
-            ? Math.round(Math.sin(t / 1900) * 1.6)
-            : Math.round(Math.sin(t / 1100));
-      const hop =
-        Math.round(bounce.current * 3) +
-        (musicDancing || (pianoRewarding && !reduce)
-          ? Math.round(Math.abs(Math.sin(t / 145)) * 3)
-          : reduce || sc.play <= 0.5
-            ? 0
-            : Math.round(Math.abs(Math.sin(t / 260)) * 2));
-      const peekLift = boxPlaying
-        ? 4 + Math.round(Math.abs(Math.sin(t / 210)) * 3)
-        : peeking
-          ? Math.round(Math.sin(((boxPeekUntil.current - t) / 1200) * Math.PI) * 5)
-          : 0;
-      const y = ky + breathe - hop - peekLift;
+      const comfort = comfortMoment({
+        time: t,
+        brushAt: brushAt.current,
+        petDepth: petDepth.current,
+        stayDepth: stayDepth.current,
+        side: ptr.x - kx,
+        busy: walking || pouncing || boxPlaying || peeking,
+        reduced: reduce,
+      });
+      kx += comfort.lean;
+      const y =
+        ky -
+        comfort.lift +
+        bodyOffset(t, {
+          reduced: reduce,
+          loaf: pose === "loaf",
+          settled: settledRef.current,
+          bounce: bounce.current,
+          dancing: musicDancing || pianoRewarding,
+          play: sc.play,
+          boxPlaying,
+          peeking,
+          peekUntil: boxPeekUntil.current,
+        });
       catBox.current = { x0: kx + sp.ox, y0: y + sp.oy, x1: kx + sp.ox + sp.w, y1: y + sp.oy + sp.h };
 
       const poolHalf = (26 * poolScale) / 2;
@@ -2318,7 +2323,9 @@ export function Cat({
       rect(shadowX + 3 + Math.round(cast * 0.5), ky + 2, sp.w - 6, 1, mixHex(sc.floorNear, INK, 0.2));
       rect(shadowX + 6 + cast, ky + 3, sp.w - 12, 1, mixHex(sc.floorNear, INK, 0.12));
 
-      const wag = reduce ? 0 : Math.round(Math.sin(t / (620 - sc.play * 380)) * (1 + sc.play * 2 + n));
+      const wag = reduce
+        ? 0
+        : Math.round(Math.sin(t / (620 - sc.play * 380)) * (1 + sc.play * 2 + n) * comfort.tailEase);
       const tailX =
         pose === "loaf" ? kx + 8 : pose === "stretch" ? kx + 14 : pose === "pounce" ? kx + 9 : kx + 5;
       const tailY = pose === "loaf" ? y - 4 : pose === "perk" ? y - 9 : y - 6;
@@ -2412,7 +2419,7 @@ export function Cat({
               : null;
       const gaze = pose === "stand" || at === null ? 0 : Math.sign(at - kx) * (Math.abs(at - kx) > 4 ? 1 : 0);
       paintCatEyes(rect, pose, kx, y, pal, {
-        awake,
+        awake: awake && !comfort.softEyes,
         wink: !reduce && awake && expression.wink && !forced && !walking && !grooming,
         gaze,
       });
@@ -2887,14 +2894,7 @@ export function Cat({
       if (pet || sc.purring || slowBlinking || staySettled) {
         const a = pet ? 0.7 + petDepth.current * 0.3 : slowBlinking ? 0.8 : staySettled ? 0.34 : 0.42;
         const purrX = kx + Math.min(10, Math.max(2, (sp.w >> 1) - 3));
-        for (let i = 0; i < 2; i++) {
-          const p = (t / 1500 + i * 0.5) % 1;
-          const yy = Math.round(y + sp.oy - 2 - p * 7);
-          const c = `rgba(255,255,255,${a * (1 - p)})`;
-          px(purrX, yy, c);
-          px(purrX + 1, yy - 1, c);
-          px(purrX + 2, yy, c);
-        }
+        paintPurr(px, t, purrX, y + sp.oy, a, reduce);
       }
 
       const chorusRemaining = catTaps.current.chorusUntil - t;

@@ -140,6 +140,14 @@ export async function makeKeepsake(room: Blob, details: KeepsakeDetails): Promis
   const card = details.night ? CARD.night : CARD.day;
   g.fillStyle = card.paper;
   g.fillRect(0, 0, canvas.width, canvas.height);
+  g.fillStyle = card.mark;
+  for (const x of [34, canvas.width - 40]) {
+    for (const y of [34, canvas.height - 40]) {
+      g.fillRect(x, y, 6, 6);
+      g.fillRect(x - 8, y + 1, 3, 3);
+      g.fillRect(x + 11, y + 1, 3, 3);
+    }
+  }
 
   g.save();
   roundedRect(g, bounds.x, bounds.y, bounds.width, bounds.height, 24);

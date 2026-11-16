@@ -707,9 +707,23 @@
   animation: arrive 0.42s var(--ease-bounce) both;
   margin: 14px 0 2px;
   padding: 18px 20px;
-  border-radius: var(--radius-panel);
+  border-radius: 3px 15px 3px 3px;
   background: var(--panel);
   border: 1px solid var(--line);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--panel) 70%, var(--line));
+}
+
+.note::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 14px;
+  height: 14px;
+  border-left: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  border-radius: 0 13px 0 3px;
+  background: var(--air);
 }
 
 .noteFrom {

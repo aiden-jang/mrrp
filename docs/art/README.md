@@ -91,3 +91,12 @@ Prompt:
 > lavender, and honey palette. Keep the cat as the highest-contrast object. No labels, text, UI,
 > extra furniture, weather icons, neon, harsh black shadows, full-screen overlays, photorealism, 3D,
 > smooth gradients, antialiasing, mixed pixel sizes, or watermark.
+
+## Cute character study
+
+File: `cute-character-study.svg`
+
+Role: authored model sheet rendered from the current cat artwork and eye painter, with the same
+collar landmarks as the live scene. It covers quiet and active poses at a common pixel scale.
+This is a review reference, not a runtime background. The generated joint concept shown in the
+conversation guided softer materials and expressive shapes; the committed SVG uses runtime geometry.

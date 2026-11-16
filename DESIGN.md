@@ -232,3 +232,10 @@ passed. The browser journey for both seats could not start its local runtime bec
 was denied; visual review and fresh screenshots remain unverified. Full verification stopped at
 the audit because registry DNS failed. The available Node runtime was outside the declared range,
 so complete validation still needs a supported runtime with network and local-server access.
+
+## Character and material refinement
+
+The cat's round eyes and tucked paws lead the cute character pass. Brushing leans into a stroke,
+then settles; company softens the face. Notes have a folded paper edge, the action dock has a soft
+pressed surface, and postcards keep a small pixel border mark. Sage curtains and quilted fabric
+carry the room's material palette. [ART.md](ART.md) records the authored models and visual review limits.

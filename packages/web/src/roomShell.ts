@@ -131,7 +131,7 @@ export function rugLight(paint: Paint, scene: Scene, body: string) {
 }
 
 export function curtains(paint: Paint, scene: Scene, x: number, hem: number) {
-  const cloth = mixHex(scene.wallTop, "#f5e7cb", 0.82);
+  const cloth = mixHex(scene.wallTop, "#cbd2b7", scene.lightPhase === "night" ? 0.3 : 0.78);
   const shadow = mixHex(cloth, "#8f7655", 0.23);
   const fold = mixHex(cloth, scene.beamWarm, 0.15 + scene.sun * 0.12);
   const casing = mixHex("#806044", scene.wallBottom, 0.18);

@@ -9,8 +9,8 @@ import { POSES, type Pose } from "./sprites.js";
 
 const names = Object.keys(POSES) as Pose[];
 const look = { name: "Bean", ...LOOKS[0]!.cat, eyes: EYES[0]!.hex };
-const open = [".ee.", "ehwe", "ewwe", ".ee."];
-const closed = ["....", "....", ".ww.", "w..w"];
+const open = ["..ee..", ".ehwe.", "ewwwwe", "ewwwwe", ".ewhe.", "..ee.."];
+const closed = ["......", "......", "......", ".wwww.", "w....w", "......"];
 
 function portrait(pose: Pose, expression = { awake: true, wink: false, gaze: 0 }, colors = look, scale = 2) {
   const pixels = new Map<string, string>();
@@ -32,10 +32,10 @@ function portrait(pose: Pose, expression = { awake: true, wink: false, gaze: 0 }
   paintCatEyes(painter.rect, pose, 40, 50, palette, expression);
   const eye = eyeHighlights(pose);
   const crop = (col: number) =>
-    Array.from({ length: 4 }, (_, row) =>
-      Array.from({ length: 4 }, (_, cell) => {
-        const x = Math.round((40 + col - 1 + cell / 2) * scale);
-        const y = Math.round((50 + POSES[pose].oy + eye.row + row / 2) * scale);
+    Array.from({ length: 6 }, (_, row) =>
+      Array.from({ length: 6 }, (_, cell) => {
+        const x = Math.round((40 + col - 1.5 + cell / 2) * scale);
+        const y = Math.round((50 + POSES[pose].oy + eye.row - 1 + row / 2) * scale);
         const color = pixels.get(`${x},${y}`);
         return color === colors.eyes ? "e" : color === palette.w ? "w" : color === "#fffdf6" ? "h" : ".";
       }).join(""),
@@ -66,7 +66,10 @@ describe("the round-eye design", () => {
   it.each(names)("tracks either way in %s without moving the iris or losing a highlight", (pose) => {
     for (const gaze of [-1, 1]) {
       const face = portrait(pose, { awake: true, wink: false, gaze });
-      const expected = gaze < 0 ? [".ee.", "whee", "wwee", ".ee."] : [".ee.", "ehww", "eeww", ".ee."];
+      const expected =
+        gaze < 0
+          ? ["..ee..", ".whee.", "wwwwee", "wwwwee", ".wwhe.", "..ee.."]
+          : ["..ee..", ".ehww.", "eewwww", "eewwww", ".eehw.", "..ee.."];
       expect(face.left).toEqual(expected);
       expect(face.right).toEqual(expected);
     }
@@ -89,7 +92,7 @@ describe("the round-eye design", () => {
 
   it("keeps eyes and highlights in the matching cat icon", () => {
     const icon = iconMark(look.fur, false, { ...look, eyes: "#b72f8a" });
-    expect(icon.match(/fill="#b72f8a"/g)).toHaveLength(16);
-    expect(icon.match(/fill="#fffdf6"/g)).toHaveLength(2);
+    expect(icon.match(/fill="#b72f8a"/g)).toHaveLength(24);
+    expect(icon.match(/fill="#fffdf6"/g)).toHaveLength(4);
   });
 });
