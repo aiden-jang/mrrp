@@ -1,3 +1,4 @@
+import type { StoredWindowDrawing } from "./windowDrawing.js";
 import { transferKeepsakes, discardLeftKeepsakes } from "./keepsakes.js";
 import { isSeatToken } from "./seatToken.js";
 import type { Visit } from "./types.js";
@@ -138,6 +139,12 @@ export async function replaceSeat(ctx: DurableObjectState, from: string, to: str
       const value = await storage.get<Record<string, unknown>>(key);
       if (value?.[field] === from) await storage.put(key, { ...value, [field]: to });
     }
+    const window = await storage.get<StoredWindowDrawing>("windowDrawing");
+    if (window)
+      await storage.put("windowDrawing", {
+        ...window,
+        strokes: window.strokes.map((s) => (s.by === from ? { ...s, by: to } : s)),
+      });
     await transferKeepsakes(storage, from, to);
     if ((await storage.get("handover")) === from) await storage.put("handover", to);
     return true;

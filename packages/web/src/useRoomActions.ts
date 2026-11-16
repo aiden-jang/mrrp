@@ -1,3 +1,4 @@
+import { useWindowDrawing } from "./useWindowDrawing.js";
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import {
   doAct,
@@ -56,6 +57,7 @@ export function useRoomActions({
   setShelfAt: Dispatch<SetStateAction<number | null>>;
 }) {
   const { petAt, hold, pet } = useRoomPetting(id);
+  const windowDrawing = useWindowDrawing(id, view?.windowDrawing, load);
   const hideSeek = useHideSeek(id, view, load);
   const { searchProp } = hideSeek;
   const affection = useRoomAffection({ id, view, load, onError });
@@ -317,6 +319,7 @@ export function useRoomActions({
   return {
     ...affection,
     ...hideSeek,
+    ...windowDrawing,
     tidy,
     bedding,
     pickBlanket,

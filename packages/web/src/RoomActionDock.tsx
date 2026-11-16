@@ -1,3 +1,4 @@
+import { WindowDrawingPanel } from "./WindowDrawingPanel.js";
 import { HideSeekControls } from "./HideSeekControls.js";
 import s from "./App.module.css";
 import d from "./RoomActionDock.module.css";
@@ -105,6 +106,7 @@ export function RoomActionDock({
         )}
       </fieldset>
       <HideSeekControls view={view} actions={actions} />
+      <WindowDrawingPanel actions={actions} />
       <CatAffectionControls view={view} actions={actions} />
       <CatReactionControls view={view} actions={actions} />
       {strokes !== null && !view.youAreHer && !view.hideSeek && (

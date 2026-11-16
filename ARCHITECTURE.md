@@ -54,6 +54,11 @@ chosen spot private until a correct search. Round IDs reject delayed commands, a
 snapshots survive reloads without giving the seeker the answer. `roomTargets.ts` shares furniture
 hit areas; `hideSeekArt.ts` draws the ears and found pose.
 
+`useWindowDrawing.ts` keeps unsaved window strokes local and merges saved marks by stroke ID.
+The shared editor saves completed strokes; the server appends them transactionally and accepts
+identical retries without duplication. Revisions keep delayed acknowledgements from hiding newer
+marks. Window drawings have their own storage and leave the framed artwork untouched.
+
 Mood writes run in order and keep only the latest queued choice. That choice stays visible
 while earlier live snapshots arrive. Setup and drawing controls pause during saves; the private
 date draft can keep changing, but its saved feedback belongs only to the submitted version.

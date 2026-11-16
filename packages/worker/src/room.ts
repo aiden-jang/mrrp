@@ -1,3 +1,4 @@
+import * as windowDrawing from "./windowDrawing.js";
 import * as company from "./companyView.js";
 import * as hideSeek from "./hideSeek.js";
 import * as keepsakes from "./keepsakes.js";
@@ -27,6 +28,7 @@ import {
 import { DurableObject } from "cloudflare:workers";
 import type {
   Action,
+  WindowStroke,
   HideSeekCommand,
   CatAct,
   Arrival,
@@ -85,7 +87,6 @@ const HERE_NOW_MS = 3 * 60_000;
 const SITTING = "sitting";
 const SETTLED = "settled";
 const WAITING = "waiting";
-const POKE_LIVE_MS = 4_000;
 const REACH_MS = 3_000;
 const DEFAULT_CAT: Cat = {
   name: "Bean",
@@ -122,9 +123,10 @@ interface LeftSide {
   day?: OurDay;
   visits: Visit[];
   recovery?: string;
-  light?: WindowLight;
+  light?: company.WindowLight;
   lines?: Told2[];
   doodle?: Doodle;
+  windowDrawing?: WindowStroke[];
   blanket?: Blanket;
   gift?: Gift;
   giftText?: string;
@@ -146,17 +148,6 @@ interface Blanket {
 }
 
 type Held = affection.Hold;
-
-interface Poke {
-  who: string;
-  what: string;
-  at: number;
-}
-
-interface WindowLight {
-  from: string;
-  at: number;
-}
 
 export class Room extends DurableObject<Env> {
   async view(me: string, name: string | null, account?: string | null): Promise<RoomView> {
@@ -306,11 +297,11 @@ export class Room extends DurableObject<Env> {
     const { him, her } = this.roles(people);
     if (me !== him && me !== her) return this.build(me, people);
 
-    const last = await this.ctx.storage.get<Poke>("poke");
+    const last = await this.ctx.storage.get<company.Poke>("poke");
     if (last && last.who !== me && last.what === what && Date.now() - last.at < REACH_MS) {
       await this.ctx.storage.put("reach", { what, at: Date.now() });
     }
-    await this.ctx.storage.put<Poke>("poke", { who: me, what, at: Date.now() });
+    await this.ctx.storage.put<company.Poke>("poke", { who: me, what, at: Date.now() });
     people[me].lastSeen = Date.now();
     await this.ctx.storage.put("people", people);
     return this.build(me, people);
@@ -492,9 +483,9 @@ export class Room extends DurableObject<Env> {
     const { him, her } = this.roles(people);
     if (me !== him && me !== her) return null;
 
-    const current = await this.ctx.storage.get<WindowLight>("windowLight");
+    const current = await this.ctx.storage.get<company.WindowLight>("windowLight");
     if (current && current.from !== me) await this.ctx.storage.delete("windowLight");
-    else await this.ctx.storage.put<WindowLight>("windowLight", { from: me, at: Date.now() });
+    else await this.ctx.storage.put<company.WindowLight>("windowLight", { from: me, at: Date.now() });
 
     people[me]!.lastSeen = Date.now();
     await this.ctx.storage.put("people", people);
@@ -892,7 +883,8 @@ export class Room extends DurableObject<Env> {
       if (!her || me !== (leaving ? her : him)) return false;
       const moods = (await txn.get<Record<string, StoredMood>>("moods")) ?? {};
       const log = (await txn.get<Visit[]>("log")) ?? [];
-      const light = await txn.get<WindowLight>("windowLight");
+      const light = await txn.get<company.WindowLight>("windowLight");
+      const windowStrokes = await windowDrawing.takeSeat(txn, her);
       const keys = [HER_DAY, "recoveryHer", "affection", "hideSeek"];
       if (light?.from === her) keys.push("windowLight");
       if (leaving) {
@@ -911,6 +903,7 @@ export class Room extends DurableObject<Env> {
           light: light?.from === her ? light : undefined,
           lines: await this.lines(txn),
           doodle: doodle?.by === her ? doodle : undefined,
+          windowDrawing: windowStrokes,
           blanket: await txn.get<Blanket>("blanket"),
           gift: await txn.get<Gift>("gift"),
           giftText: (await txn.get<gifts.GiftTag>("giftTag"))?.text,
@@ -968,6 +961,7 @@ export class Room extends DurableObject<Env> {
       }
       if (kept.lines?.length) await txn.put(HER_LINES, kept.lines);
       if (kept.doodle) await txn.put("doodle", kept.doodle);
+      await windowDrawing.restoreSeat(txn, kept.windowDrawing ?? [], me);
       if (kept.blanket) await txn.put("blanket", kept.blanket);
       if (kept.gift) await gifts.placeGift(txn, kept.gift, me, kept.giftText);
       if (kept.recovery) await txn.put("recoveryHer", kept.recovery);
@@ -1025,6 +1019,7 @@ export class Room extends DurableObject<Env> {
       takenAt: new Date().toISOString(),
       ...exportPeople(people, me, him, her, cat.name, Date.now()),
       keepsakes: await keepsakes.allKeepsakes(this.ctx.storage, her),
+      windowDrawing: await windowDrawing.view(this.ctx.storage, me, him, her),
       cat,
       decor: await this.ctx.storage.get<RoomDecor>("decor"),
       clock,
@@ -1135,16 +1130,19 @@ export class Room extends DurableObject<Env> {
     await this.ctx.storage.put(HER_LINES, [line, ...(await this.lines())].slice(0, LINES_KEPT));
   }
 
-  async draw(me: string, cells: string): Promise<RoomView> {
+  async draw(me: string, cells: string | WindowStroke[]): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (!people[me]) return this.build(me, people);
     const { him, her } = this.roles(people);
     if (me !== him && me !== her) return this.build(me, people);
-    if (cells.length !== DOODLE_CELLS || !/^[0-4]+$/.test(cells)) return this.build(me, people);
-
-    if (/[1-4]/.test(cells)) await this.ctx.storage.put<Doodle>("doodle", { cells, by: me, at: Date.now() });
-    else await this.ctx.storage.delete("doodle");
+    if (typeof cells !== "string") await windowDrawing.append(this.ctx.storage, me, cells);
+    else {
+      if (cells.length !== DOODLE_CELLS || !/^[0-4]+$/.test(cells)) return this.build(me, people);
+      if (/[1-4]/.test(cells))
+        await this.ctx.storage.put<Doodle>("doodle", { cells, by: me, at: Date.now() });
+      else await this.ctx.storage.delete("doodle");
+    }
 
     people[me].lastSeen = Date.now();
     await this.ctx.storage.put("people", people);
@@ -1260,9 +1258,9 @@ export class Room extends DurableObject<Env> {
     // When she last opened the room, from before this request touched it. On her own read her `lastSeen`
     // is already now, so it has to come from `since`.
     const herLastLook = youAreHer ? (since ?? 0) : her ? (people[her]?.lastSeen ?? 0) : 0;
-    const poke = seated ? await this.ctx.storage.get<Poke>("poke") : null;
+    const poke = seated ? await this.ctx.storage.get<company.Poke>("poke") : null;
     const reach = seated ? await this.ctx.storage.get<{ what: string; at: number }>("reach") : null;
-    const windowLight = await this.ctx.storage.get<WindowLight>("windowLight");
+    const windowLight = await this.ctx.storage.get<company.WindowLight>("windowLight");
     const startedAt = roomStartedAt(
       Object.values(people).map((person) => person.firstSeen),
       Date.now(),
@@ -1309,6 +1307,7 @@ export class Room extends DurableObject<Env> {
     return {
       cat,
       hideSeek: await hideSeek.view(this.ctx.storage, me, him, her),
+      windowDrawing: await windowDrawing.view(this.ctx.storage, me, him, her),
       decor: await this.ctx.storage.get<RoomDecor>("decor"),
       clock,
       youLeft,
@@ -1347,12 +1346,7 @@ export class Room extends DurableObject<Env> {
       seat: seated ? me : null,
       linked: seated ? (people[me]?.account ?? null) !== null : false,
       ...company.view(contact, me, him, her, Date.now()),
-      // Theirs only. Your own tap already moved your room; sent back it plays the wobble twice.
-      pokedByThem:
-        poke && poke.who === otherId && Date.now() - poke.at < POKE_LIVE_MS
-          ? { what: poke.what, at: poke.at }
-          : null,
-      reachedTogether: reach && Date.now() - reach.at < POKE_LIVE_MS ? reach : null,
+      ...company.sharedPokes(poke, reach, otherId, Date.now()),
       // Keep `seated` here. Without it anybody holding the link is told what she has been doing.
       theirRecent: seated && otherId ? recentActivity(log, otherId) : [],
       theyCameAfter: !!catTold && !!them && youAreHer && them.lastSeen > catTold.at,

@@ -1,0 +1,56 @@
+.editor {
+  margin-top: 12px;
+}
+.editor summary {
+  width: fit-content;
+  min-height: 44px;
+  padding-block: 10px;
+  box-sizing: border-box;
+  cursor: pointer;
+  color: var(--soft);
+}
+.editor summary:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+.surface {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  margin: 12px 0;
+  background: #dbe3dc;
+  border: 1px solid var(--control);
+  border-radius: 8px;
+  touch-action: none;
+}
+.surface:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+.inks,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 12px;
+}
+.inks button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.inks button[aria-pressed="true"] {
+  border-color: var(--honey);
+  box-shadow: inset 0 0 0 1px var(--honey);
+}
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.error {
+  color: var(--error);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}

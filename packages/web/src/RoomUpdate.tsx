@@ -35,6 +35,9 @@ export function RoomUpdate({
     !actions.pendingMood &&
     !actions.affectionPending &&
     !actions.hideSeekPending &&
+    !actions.windowDrawingOpen &&
+    !actions.windowDrawingDirty &&
+    !actions.windowDrawingPending &&
     !postcard.postcardHref &&
     !postcard.imageStatus &&
     !day.dirty &&

@@ -27,3 +27,28 @@ export function view(
     waitingAtDoor: !!waiting && now - waiting.at < WAITING_LAPSE_MS,
   };
 }
+
+export interface Poke {
+  who: string;
+  what: string;
+  at: number;
+}
+
+export function sharedPokes(
+  poke: Poke | null | undefined,
+  reach: { what: string; at: number } | null | undefined,
+  otherId: string | null,
+  now: number,
+) {
+  const live = (at: number) => now - at < 4000;
+  return {
+    // Own taps already moved this room; echoing them would play the same wobble twice.
+    pokedByThem: poke && poke.who === otherId && live(poke.at) ? { what: poke.what, at: poke.at } : null,
+    reachedTogether: reach && live(reach.at) ? reach : null,
+  };
+}
+
+export interface WindowLight {
+  from: string;
+  at: number;
+}

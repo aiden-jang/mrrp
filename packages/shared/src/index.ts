@@ -1,3 +1,5 @@
+import type { WindowStroke, WindowDrawing } from "./windowDrawing.js";
+export * from "./windowDrawing.js";
 export const DISCOVERY_KEYS = [
   "constellation",
   "roomTour",
@@ -172,6 +174,7 @@ export interface Bodies {
   clock: { me: string; tz?: string; homeHour?: number };
   delete: { me: string; name: string };
   draw: { me: string; cells: string };
+  "window-drawing": { me: string; strokes: WindowStroke[] };
   dress: {
     decor?: RoomDecor;
     me: string;
@@ -295,6 +298,7 @@ export interface HideSeekCommand {
 }
 
 export interface RoomView {
+  windowDrawing?: WindowDrawing | null;
   hideSeek?: HideSeek | null;
   decor?: RoomDecor;
   cat: Cat;
