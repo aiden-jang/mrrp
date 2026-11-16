@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  affectionPose,
   bodyOffset,
   brushTravel,
   catTouchBounds,
   comfortMoment,
   peekRise,
+  paintRaisedPaw,
   recordBrush,
   touchResponse,
 } from "./catComfort.js";
@@ -21,6 +23,43 @@ const rest = {
 };
 
 describe("pleasure without a needs meter", () => {
+  it("raises a paw from resting poses and preserves movement and box peeks", () => {
+    const affection = { kind: "ask" as const, at: 1, until: 20_000 };
+    for (const pose of ["sit", "loaf", "perk", "stand", "flop", "play"] as Pose[]) {
+      expect(affectionPose(pose, affection, 100)).toBe("sit");
+      expect(affectionPose(pose, affection, 20_001)).toBe(pose);
+    }
+    for (const pose of ["walk", "peek", "pounce", "stretch"] as Pose[])
+      expect(affectionPose(pose, affection, 100)).toBe(pose);
+  });
+
+  it("paints the raised paw in her colors and above the box rim", () => {
+    const palette = { w: "#402010", f: "#987654", b: "#ffeedd", p: "#e79ba3" };
+    for (const inBox of [false, true]) {
+      const cells: { y: number; color: string }[] = [];
+      paintRaisedPaw((_x, y, _w, _h, color) => cells.push({ y, color }), 50, 67, palette, inBox);
+      expect(cells.length).toBeGreaterThan(0);
+      expect(cells.every((cell) => Object.values(palette).includes(cell.color))).toBe(true);
+      expect(cells.find((cell) => cell.color === palette.b)!.y).toBe(inBox ? 54.5 : 59.5);
+    }
+  });
+  it("makes a single nuzzle lean and settle, with a still reduced-motion expression", () => {
+    const affection = { kind: "nuzzle" as const, at: 1, until: 3600 };
+    const options = { ...rest, affection };
+    const start = comfortMoment({ ...options, time: 2000 });
+    const middle = comfortMoment({ ...options, time: 2800 });
+    const end = comfortMoment({ ...options, time: 3600 });
+    expect(start.lean).toBe(0);
+    expect(middle.lean).toBe(2);
+    expect(middle.lift).toBe(1);
+    expect(end.lean).toBe(0);
+    expect(end.softEyes).toBe(false);
+    const reduced = comfortMoment({ ...options, time: 2800, reduced: true });
+    expect(reduced.lean).toBe(0);
+    expect(reduced.lift).toBe(0);
+    expect(reduced.softEyes).toBe(true);
+    expect(comfortMoment({ ...options, time: 2800, busy: true }).softEyes).toBe(false);
+  });
   it.each(Object.keys(POSES) as Pose[])("keeps touch landmarks on the %s face", (pose) => {
     const bounds = catTouchBounds(pose, 40, 50);
     expect(bounds.noseX).toBeGreaterThan(bounds.x0);

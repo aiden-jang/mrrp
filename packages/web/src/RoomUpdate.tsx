@@ -32,6 +32,7 @@ export function RoomUpdate({
     !actions.giftWords.trim() &&
     !actions.gifting &&
     !actions.pendingMood &&
+    !actions.affectionPending &&
     !postcard.postcardHref &&
     !postcard.imageStatus &&
     !day.dirty &&

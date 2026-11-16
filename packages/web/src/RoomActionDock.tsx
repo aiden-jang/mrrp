@@ -3,6 +3,7 @@ import d from "./RoomActionDock.module.css";
 import type { Action, RoomView } from "./types.js";
 import { ACTIONS, CAT_ACTS } from "./types.js";
 import type { useRoomActions } from "./useRoomActions.js";
+import { CatAffectionControls } from "./CatAffectionControls.js";
 
 export function RoomActionDock({
   view,
@@ -101,6 +102,7 @@ export function RoomActionDock({
           })
         )}
       </div>
+      <CatAffectionControls view={view} actions={actions} />
       {strokes !== null && !view.youAreHer && (
         <p className={s.hint} aria-live="polite">
           Brush her: drag across {view.cat.name}, back and forth, or focus the scene and press Enter.

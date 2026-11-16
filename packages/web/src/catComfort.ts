@@ -1,4 +1,39 @@
 import { POSES, type Pose } from "./sprites.js";
+import { NUZZLE_MS } from "./types.js";
+import type { AffectionPlayback } from "./affection.js";
+export type { AffectionPlayback } from "./affection.js";
+
+export function affectionPose(
+  pose: Pose,
+  affection: AffectionPlayback | null | undefined,
+  time: number,
+): Pose {
+  return affection?.kind === "ask" &&
+    affection.until > time &&
+    ["sit", "loaf", "perk", "stand", "flop", "play"].includes(pose)
+    ? "sit"
+    : pose;
+}
+
+export function paintRaisedPaw(
+  paint: (x: number, y: number, width: number, height: number, color: string) => void,
+  x: number,
+  y: number,
+  palette: { w: string; f: string; b: string; p: string },
+  inBox = false,
+) {
+  if (!inBox) paint(x + 0.5, y - 2.5, 3, 1.5, palette.f);
+  y -= inBox ? 5 : 0;
+  paint(x + 3, y - 5, 3, 3, palette.w);
+  paint(x + 3.5, y - 4.5, 2, 2, palette.f);
+  paint(x + 5, y - 8, 3, 4.5, palette.w);
+  paint(x + 4.5, y - 7.5, 4, 3.5, palette.w);
+  paint(x + 5, y - 7.5, 3, 3.5, palette.f);
+  paint(x + 5, y - 7.5, 3, 1.5, palette.b);
+  paint(x + 5.5, y - 5.5, 1.5, 1, palette.p);
+  paint(x + 5.5, y - 7, 0.5, 0.5, palette.p);
+  paint(x + 7, y - 7, 0.5, 0.5, palette.p);
+}
 
 interface Point {
   x: number;
@@ -64,6 +99,7 @@ export function comfortMoment({
   busy,
   reduced,
   touch,
+  affection,
 }: {
   time: number;
   brushAt: BrushMoment;
@@ -73,18 +109,27 @@ export function comfortMoment({
   busy: boolean;
   reduced: boolean;
   touch?: { side: number; chin: number } | null;
+  affection?: AffectionPlayback | null;
 }) {
   const age = time - brushAt.started;
   const released = time - brushAt.last;
   const brush = age < 0 || released > 1800 ? 0 : Math.min(1, age / 180, (1800 - released) / 850);
   const content = busy ? 0 : Math.max(brush, petDepth);
+  const nuzzling = !busy && affection?.kind === "nuzzle" && affection.until > time;
+  const progress = nuzzling ? 1 - Math.min(1, (affection.until - time) / NUZZLE_MS) : 0;
+  const nuzzle = Math.sin(Math.PI * progress);
   return {
-    lift: reduced || busy ? 0 : Math.round(content * (touch ? 0.5 + touch.chin : 1) * 2) / 2,
+    asking: !busy && affection?.kind === "ask" && affection.until > time,
+    lift: reduced || busy ? 0 : Math.round((content * (touch ? 0.5 + touch.chin : 1) + nuzzle) * 2) / 2,
     lean:
       reduced || busy
         ? 0
-        : Math.round((touch ? touch.side * petDepth * 1.5 : Math.sign(side) * brush) * 2) / 2,
-    softEyes: content > 0.35 || (!busy && stayDepth > 0.45),
+        : Math.round(
+            ((touch ? touch.side * petDepth * 1.5 : Math.sign(side) * brush) +
+              nuzzle * (Math.sign(side) || 1) * 2) *
+              2,
+          ) / 2,
+    softEyes: nuzzling || content > 0.35 || (!busy && stayDepth > 0.45),
     tailEase: busy ? 1 : 1 - Math.max(content, stayDepth * 0.8) * 0.7,
   };
 }

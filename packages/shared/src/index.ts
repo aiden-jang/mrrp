@@ -34,9 +34,20 @@ export const ACTIONS = [
   { id: "photo", label: "Take her photo", past: "took a photo of you", mine: "took her photo" },
 ] as const satisfies readonly { id: Action; label: string; past: string; mine: string }[];
 
-export type CatAct = "shelf" | "box" | "gift";
+export type AffectionAction = "ask-pets" | "cancel-pets" | "nuzzle";
+export type CatAct = "shelf" | "box" | "gift" | AffectionAction;
 
-export type LogAction = Action | CatAct | "leaveout" | "boxout";
+export type LogAction = Action | Exclude<CatAct, AffectionAction> | "leaveout" | "boxout";
+
+export interface Affection {
+  kind: "ask" | "nuzzle";
+  at: number;
+  remainingMs: number;
+}
+
+export const PET_REQUEST_MS = 20_000;
+export const NUZZLE_MS = 1600;
+export const HOLD_RENEW_MS = 10_000;
 
 export const CAT_ACTS = [
   {
@@ -241,6 +252,7 @@ export interface RoomView {
   gift: Gift | null;
   boxOut: boolean;
   heldByThem: boolean;
+  affection: Affection | null;
   sittingWith: boolean;
   sittingWithYou: boolean;
   settled: boolean;

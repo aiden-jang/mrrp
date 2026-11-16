@@ -19,6 +19,7 @@ function dock(override: Partial<RoomView> = {}) {
     waitAtDoor: vi.fn(),
     settleIn: vi.fn(),
     catAct: vi.fn(),
+    catAffection: vi.fn(),
   } as unknown as ReturnType<typeof useRoomActions>;
   const ui = () => <RoomActionDock view={view} actions={actions} did={null} />;
   const rendered = render(ui());
@@ -30,6 +31,26 @@ function dock(override: Partial<RoomView> = {}) {
     },
   };
 }
+
+it("lets her request pets and cancel, then offers nuzzling during contact", () => {
+  const { actions, update } = dock({ youAreHer: true, bothHereNow: true });
+  fireEvent.click(screen.getByRole("button", { name: "Ask for pets" }));
+  expect(actions.catAffection).toHaveBeenLastCalledWith("ask-pets");
+  actions.affection = { kind: "ask", at: 1, until: 20_000 };
+  update();
+  fireEvent.click(screen.getByRole("button", { name: "Never mind" }));
+  expect(actions.catAffection).toHaveBeenLastCalledWith("cancel-pets");
+  actions.affection = null;
+  update({ heldByThem: true });
+  fireEvent.click(screen.getByRole("button", { name: "Nuzzle" }));
+  expect(actions.catAffection).toHaveBeenLastCalledWith("nuzzle");
+});
+
+it("explains why she cannot ask when the companion is away", () => {
+  dock({ youAreHer: true, bothHereNow: false });
+  expect((screen.getByRole("button", { name: "Ask for pets" }) as HTMLButtonElement).disabled).toBe(true);
+  expect(screen.getByText("You can ask when you’re both here.")).toBeTruthy();
+});
 
 it("requires confirmation before a photo takes down their drawing", () => {
   const { actions, update } = dock({ doodle: { cells: "1".repeat(135), mine: true, at: 1 } });

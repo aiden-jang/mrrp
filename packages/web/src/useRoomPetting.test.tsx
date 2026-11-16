@@ -40,6 +40,22 @@ it("keeps pointer contact active after a button pet ends", async () => {
   expect(doHold).toHaveBeenLastCalledWith("room", false);
 });
 
+it("renews continuous pointer contact and stops renewing after release", async () => {
+  const { result } = renderHook(() => useRoomPetting("room"));
+  await act(async () => result.current.hold(true));
+  await act(async () => vi.advanceTimersByTime(10_000));
+  await act(async () => vi.advanceTimersByTime(10_000));
+  expect(vi.mocked(doHold).mock.calls).toEqual([
+    ["room", true],
+    ["room", true],
+    ["room", true],
+  ]);
+  await act(async () => result.current.hold(false));
+  await act(async () => vi.advanceTimersByTime(10_000));
+  expect(doHold).toHaveBeenCalledTimes(4);
+  expect(doHold).toHaveBeenLastCalledWith("room", false);
+});
+
 it("sends release after a delayed press, even after unmount", async () => {
   let finish!: () => void;
   vi.mocked(doHold).mockReturnValueOnce(

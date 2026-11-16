@@ -22,6 +22,7 @@ import { buzz, play, type Cue } from "./sound.js";
 import type { Action, CatAct, Gift, Mood, RoomView, Treat } from "./types.js";
 import { ACTIONS } from "./types.js";
 import { useRoomPetting } from "./useRoomPetting.js";
+import { useRoomAffection } from "./useRoomAffection.js";
 
 const ACTION_SOUND: Record<Action, Cue> = {
   pet: "purr",
@@ -35,6 +36,7 @@ const STROKES_NEEDED = 5;
 
 export function useRoomActions({
   id,
+  view,
   setView,
   onError,
   onDid,
@@ -43,6 +45,7 @@ export function useRoomActions({
   setShelfAt,
 }: {
   id: string;
+  view?: RoomView | null;
   setView: Dispatch<SetStateAction<RoomView | null>>;
   onError: (message: string | null) => void;
   onDid: (message: string | null) => void;
@@ -51,6 +54,7 @@ export function useRoomActions({
   setShelfAt: Dispatch<SetStateAction<number | null>>;
 }) {
   const { petAt, hold, pet } = useRoomPetting(id);
+  const affection = useRoomAffection({ id, view, load, onError });
   const alive = useRef(false);
   const queuedMood = useRef<Mood | null>(null);
   const telling = useRef(false);
@@ -286,6 +290,7 @@ export function useRoomActions({
   };
 
   return {
+    ...affection,
     tidy,
     bedding,
     pickBlanket,

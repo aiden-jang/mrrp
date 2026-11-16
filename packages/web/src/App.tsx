@@ -92,13 +92,13 @@ function RoomPage({ id }: { id: string }) {
   const notes = useRoomNotes(id, load);
   const editing = setup || notes.open;
   const { nudge, setNudge, shelfAt, setShelfAt, arriving, stage } = useRoomFeedback(view, setup, draft?.name);
-  const [did, setDid] = useState<string | null>(null);
+  const [did, onDid] = useState<string | null>(null);
   useEffect(() => {
     if (did !== "saved") return;
-    const timer = setTimeout(() => setDid(null), 2600);
+    const timer = setTimeout(() => onDid(null), 2600);
     return () => clearTimeout(timer);
   }, [did]);
-  const actions = useRoomActions({ id, setView, onError: setErr, onDid: setDid, load, setNudge, setShelfAt });
+  const actions = useRoomActions({ id, view, setView, onError: setErr, onDid, load, setNudge, setShelfAt });
   const { tidy, touchWindowLight, mugFell, petAt, strokes, sharePoke, stroke, act } = actions;
 
   const history = useRoomHistory(id, view, setView, setErr);
@@ -241,6 +241,7 @@ function RoomPage({ id }: { id: string }) {
                 onHold={actions.hold}
                 onTouch={sharePoke}
                 heldByThem={view.heldByThem}
+                affection={actions.affection}
                 sitting={view.sittingWith || view.sittingWithYou}
                 settled={view.settled}
                 waiting={view.waitingAtDoor}
@@ -308,7 +309,7 @@ function RoomPage({ id }: { id: string }) {
                 cat={cat}
                 panelRef={setupPanel}
                 onSaved={() => {
-                  setDid("saved");
+                  onDid("saved");
                 }}
               />
             )}
@@ -317,7 +318,7 @@ function RoomPage({ id }: { id: string }) {
                 notes={notes}
                 view={view}
                 panelRef={notesPanel}
-                onSaved={() => setDid("saved")}
+                onSaved={() => onDid("saved")}
               />
             )}
             {arrivalCard && arrivalCard.length > 0 && view.them && (

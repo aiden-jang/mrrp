@@ -19,7 +19,7 @@ app.use("/api/*", privateResponses);
 const DOODLE_RE = /^[0-4]{135}$/;
 const VALID: Action[] = ACTIONS.map((a) => a.id);
 // Gifts carry her words through their own endpoint, never the wordless act route.
-const VALID_CAT_ACTS: CatAct[] = ["shelf", "box"];
+const VALID_CAT_ACTS: CatAct[] = ["shelf", "box", "ask-pets", "cancel-pets", "nuzzle"];
 const VALID_GIFTS: Gift[] = GIFTS.map((g) => g.id);
 const VALID_TREATS: Treat[] = TREATS.map((t) => t.id);
 // Unknown touch targets must be rejected, not become new props.

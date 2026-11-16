@@ -239,3 +239,8 @@ The cat's round eyes and tucked paws lead the cute character pass. Brushing lean
 then settles; company softens the face. Notes have a folded paper edge, the action dock has a soft
 pressed surface, and postcards keep a small pixel border mark. Sage curtains and quilted fabric
 carry the room's material palette. [ART.md](ART.md) records the authored models and visual review limits.
+
+Cat-initiated affection uses one contextual control below her action dock. She can ask for pets,
+cancel her request, or nuzzle during contact. Requests expire quietly without a countdown.
+The companion answers through the existing pet action. Reduced motion keeps the raised paw
+and content expression while holding the nuzzle still.

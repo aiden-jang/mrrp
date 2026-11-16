@@ -3,6 +3,16 @@
   padding-top: 14px;
   border-top: 1px solid var(--line);
 }
+.affection {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 12px;
+}
+.affection p {
+  margin: 0;
+}
 .actions {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

@@ -247,6 +247,7 @@ export function Cat({
   onHold,
   onTouch,
   heldByThem = false,
+  affection = null,
   sitting = false,
   settled = false,
   waiting = false,
@@ -301,6 +302,7 @@ export function Cat({
   onPet?: (fromTouch?: boolean) => void;
   onHold?: (on: boolean) => void;
   heldByThem?: boolean;
+  affection?: catComfort.AffectionPlayback | null;
   sitting?: boolean;
   decor?: RoomDecor;
   settled?: boolean;
@@ -491,6 +493,8 @@ export function Cat({
   onHoldRef.current = onHold;
   const heldRef = useRef(heldByThem);
   heldRef.current = heldByThem;
+  const affectionRef = useRef(affection);
+  affectionRef.current = affection;
   const sittingRef = useRef(sitting);
   sittingRef.current = sitting;
   const settledRef = useRef(settled);
@@ -2171,7 +2175,7 @@ export function Cat({
         play("bell");
       }
       wasWalking.current = walking;
-      const pose: Pose =
+      let pose: Pose =
         boxPlaying || peeking
           ? "peek"
           : stretching
@@ -2202,6 +2206,7 @@ export function Cat({
                           : sittingRef.current && !walking
                             ? "loaf"
                             : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
+      pose = catComfort.affectionPose(pose, affectionRef.current, t);
       const sp = POSES[pose]!;
       const comfort = catComfort.comfortMoment({
         time: t,
@@ -2212,6 +2217,7 @@ export function Cat({
         busy: walking || pouncing || boxPlaying || peeking,
         reduced: reduce,
         touch: petting.current ? catComfort.touchResponse(catBox.current, ptr) : null,
+        affection: affectionRef.current,
       });
       kx += comfort.lean;
       const y =
@@ -2230,15 +2236,7 @@ export function Cat({
         });
       catBox.current = catComfort.catTouchBounds(pose, kx, y);
 
-      const poolHalf = (26 * poolScale) / 2;
-      const litSpan =
-        sc.lightPhase === "night"
-          ? 0
-          : Math.max(
-              0,
-              Math.min(kx + sp.ox + sp.w, beamX + poolHalf) - Math.max(kx + sp.ox, beamX - poolHalf),
-            );
-      const warmth = (litSpan / sp.w) * sc.sun * 0.24;
+      const warmth = sceneArt.catWarmth(sc, kx, sp, beamX, poolScale);
       const sunlit = (c: string) => (warmth > 0.01 ? mixHex(c, sc.beamWarm, warmth) : c);
 
       const pal = catPalette(L, awake || booped, sunlit);
@@ -2348,6 +2346,7 @@ export function Cat({
       }
 
       blit(sp, kx, y, pal);
+      if (comfort.asking && pose === "sit") catComfort.paintRaisedPaw(rect, kx, y, pal, inBox);
 
       if (bothCalledRef.current) {
         const c = COLLAR[pose];

@@ -1,4 +1,15 @@
 import { mixHex, type Scene } from "./hours.js";
+import type { Sprite } from "./sprites.js";
+
+export function catWarmth(scene: Scene, x: number, sprite: Sprite, beam: number, scale: number) {
+  if (scene.lightPhase === "night") return 0;
+  const half = (26 * scale) / 2;
+  const span = Math.max(
+    0,
+    Math.min(x + sprite.ox + sprite.w, beam + half) - Math.max(x + sprite.ox, beam - half),
+  );
+  return (span / sprite.w) * scene.sun * 0.24;
+}
 
 type Paint = (x: number, y: number, width: number, height: number, color: string) => void;
 const INK = "#4a3520";

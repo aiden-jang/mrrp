@@ -1,3 +1,4 @@
+import * as affection from "./affection.js";
 import {
   HER_DAY,
   readHerDay,
@@ -9,7 +10,7 @@ import {
 } from "./seatAccess.js";
 import { moodDeadline, sweepMoods, type StoredMood } from "./moodRetention.js";
 import { isSeatToken } from "./seatToken.js";
-import { exportActivity, recentActivity } from "./activity.js";
+import { actionArrivals, catArrivals, exportActivity, recentActivity } from "./activity.js";
 import { DurableObject } from "cloudflare:workers";
 import type {
   Action,
@@ -67,8 +68,6 @@ const LINES_KEPT = 120;
 const LOG_KEEP = 40;
 const LEFT_KEEP = 20;
 const HERE_NOW_MS = 3 * 60_000;
-/* A hold is seconds. Anything older is a tab that died without its socket saying so. */
-const HELD_LAPSE_MS = 30_000;
 const SITTING = "sitting";
 const SETTLED = "settled";
 const WAITING = "waiting";
@@ -133,10 +132,7 @@ interface Blanket {
   stripe: boolean;
 }
 
-interface Held {
-  who: string;
-  at: number;
-}
+type Held = affection.Hold;
 
 interface Poke {
   who: string;
@@ -210,6 +206,12 @@ export class Room extends DurableObject<Env> {
       }
     }
 
+    if (
+      action === "pet" &&
+      (await this.ctx.storage.get<affection.StoredAffection>("affection"))?.kind === "ask"
+    ) {
+      await this.ctx.storage.delete("affection");
+    }
     if (action === "brush" || action === "sit") {
       const clock = (await this.ctx.storage.get<Clock>("clock")) ?? DEFAULT_CLOCK;
       const key = action === "brush" ? "brushedDay" : "satWithDay";
@@ -244,6 +246,17 @@ export class Room extends DurableObject<Env> {
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (!people[me]) return this.build(me, people);
     if (this.roles(people).her !== me) return this.build(me, people);
+
+    if (affection.isAffectionAction(act)) {
+      if (act === "ask-pets" && !this.bothHere(people)) return this.build(me, people);
+      const held = await this.ctx.storage.get<Held>("held");
+      const next = affection.nextAffection(act, held, this.roles(people).him, me, Date.now());
+      if (next === null) await this.ctx.storage.delete("affection");
+      else if (next) await this.ctx.storage.put("affection", next);
+      people[me].lastSeen = Date.now();
+      await this.ctx.storage.put("people", people);
+      return this.build(me, people);
+    }
 
     if (act === "shelf") await this.ctx.storage.put("shelfDown", true);
     if (act === "box") {
@@ -343,8 +356,10 @@ export class Room extends DurableObject<Env> {
     if (!people[me]) return this.build(me, people);
     if (this.roles(people).him !== me) return this.build(me, people);
 
+    const contact = affection.holdRecord(await this.ctx.storage.get<Held>("held"), me, Date.now());
+    if (!on || !contact.renewed) await this.ctx.storage.delete("affection");
     if (on) {
-      await this.ctx.storage.put<Held>("held", { who: me, at: Date.now() });
+      await this.ctx.storage.put<Held>("held", contact.held);
       if (this.hereNow(people, this.roles(people).her ?? "")) await this.noteFirst("held");
     } else await this.ctx.storage.delete("held");
     people[me].lastSeen = Date.now();
@@ -780,6 +795,7 @@ export class Room extends DurableObject<Env> {
     }
     // He closed the tab mid-hold, or mid-sit. Without this she watches a hand that is not there until it
     // lapses, or sits with somebody who has gone.
+    if (me) await this.ctx.storage.delete("affection");
     const held = await this.ctx.storage.get<Held>("held");
     if (me && held?.who === me) await this.ctx.storage.delete("held");
     const sitting = await this.ctx.storage.get<Held>(SITTING);
@@ -866,7 +882,7 @@ export class Room extends DurableObject<Env> {
       const moods = (await txn.get<Record<string, StoredMood>>("moods")) ?? {};
       const log = (await txn.get<Visit[]>("log")) ?? [];
       const light = await txn.get<WindowLight>("windowLight");
-      const keys = [HER_DAY, "recoveryHer"];
+      const keys = [HER_DAY, "recoveryHer", "affection"];
       if (light?.from === her) keys.push("windowLight");
       if (leaving) {
         const at = Date.now();
@@ -1239,6 +1255,7 @@ export class Room extends DurableObject<Env> {
     const theyWereTold = undoLeaveUntil && him ? (people[him]?.name ?? null) : null;
     const leftOut = await this.ctx.storage.get<LeftOut>("forHer");
     const held = seated ? await this.ctx.storage.get<Held>("held") : null;
+    const gesture = seated ? await this.ctx.storage.get<affection.StoredAffection>("affection") : undefined;
     const sitting = seated ? ((await this.ctx.storage.get<Held>(SITTING)) ?? null) : null;
     const sittingNow = !!sitting && Date.now() - sitting.at < SITTING_LAPSE_MS;
     const settled = sittingNow ? ((await this.ctx.storage.get<Held>(SETTLED)) ?? null) : null;
@@ -1257,31 +1274,8 @@ export class Room extends DurableObject<Env> {
 
     const arrivals: Arrival[] = [];
     if (since !== undefined && seated) {
-      if (youAreHer && him) {
-        arrivals.push(
-          ...log
-            .filter((visit) => visit.who === him && visit.at > since)
-            .slice(0, 4)
-            .map((visit) => ({ kind: "action" as const, at: visit.at, action: visit.action })),
-        );
-      } else if (her) {
-        const lines = await this.lines();
-        if (catTold && catTold.at > since) arrivals.push({ kind: "mood", ...catTold });
-        const said = lines.filter((x) => x.at > since).slice(0, 6);
-        for (const l of said) {
-          arrivals.push({ kind: "line", at: l.at, text: l.text, gift: l.gift, note: l.about });
-        }
-        // A gift she sent words with is already named by the line carrying them. Both would put "Bean left
-        // you a moth" and "Bean left you something" on the same card, for one moth.
-        const spokenFor = new Set(said.filter((l) => l.gift).map((l) => l.at));
-        arrivals.push(
-          ...log
-            .filter((visit) => visit.who === her && visit.at > since)
-            .filter((visit) => !(visit.action === "gift" && spokenFor.has(visit.at)))
-            .slice(0, 4)
-            .map((visit) => ({ kind: "action" as const, at: visit.at, action: visit.action })),
-        );
-      }
+      if (youAreHer && him) arrivals.push(...actionArrivals(log, him, since));
+      else if (her) arrivals.push(...catArrivals(log, await this.lines(), catTold, her, since));
       const hung = await this.ctx.storage.get<Doodle>("doodle");
       if (hung && hung.by !== me && hung.at > since) {
         arrivals.push({ kind: "drawn", at: hung.at, cells: hung.cells });
@@ -1362,7 +1356,8 @@ export class Room extends DurableObject<Env> {
       recoveryCode: seated ? await this.recoveryCode(youAreHer ? "her" : "him") : null,
       seat: seated ? me : null,
       linked: seated ? (people[me]?.account ?? null) !== null : false,
-      heldByThem: !!held && held.who === otherId && Date.now() - held.at < HELD_LAPSE_MS,
+      affection: affection.affectionFor(gesture, held, him, her, Date.now()),
+      heldByThem: !!held && held.who === otherId && Date.now() - held.at < affection.HELD_LAPSE_MS,
       sittingWith: sittingNow && sitting.who === me,
       sittingWithYou: sittingNow && sitting.who === otherId,
       settled: !!settled,

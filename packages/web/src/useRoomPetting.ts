@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { doHold } from "./api.js";
+import { HOLD_RENEW_MS } from "./types.js";
 
 export const PET_TAP_MS = 1800;
 
@@ -39,6 +40,12 @@ export function useRoomPetting(id: string) {
     }, PET_TAP_MS);
   };
   useEffect(() => {
+    const renewal = setInterval(() => {
+      const state = contact.current;
+      if (!state.pointer || state.sending) return;
+      state.sent = false;
+      void sync();
+    }, HOLD_RENEW_MS);
     const stop = () => {
       clearTimeout(timer.current);
       contact.current.pointer = contact.current.tap = false;
@@ -55,6 +62,7 @@ export function useRoomPetting(id: string) {
     window.addEventListener("offline", interrupt);
     document.addEventListener("visibilitychange", hidden);
     return () => {
+      clearInterval(renewal);
       stop();
       window.removeEventListener("blur", interrupt);
       window.removeEventListener("offline", interrupt);
