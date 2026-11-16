@@ -3,6 +3,7 @@ import { BLANKET_KEYS, BLANKETS, type BlanketKey } from "./blanket.js";
 import { MoodFace } from "./faces.js";
 import { fadeNote, listOf } from "./fades.js";
 import { FrameSheet } from "./FrameSheet.js";
+import { GiftExchange } from "./GiftExchange.js";
 import { TheirRecent, whenish } from "./RoomArrival.js";
 import { MoodResponse } from "./RoomChrome.js";
 import { moodTint } from "./roomTheme.js";
@@ -136,6 +137,7 @@ export function CatRoom({
 
       <section className={s.actionSection} aria-label="Leave him something" id="cat-gift" tabIndex={-1}>
         <h2 className={s.actionHeading}>Leave him something</h2>
+        <GiftExchange view={view} pending={false} onKeep={actions.keepGift} />
         <input
           value={giftWords}
           maxLength={LINE_MAX}

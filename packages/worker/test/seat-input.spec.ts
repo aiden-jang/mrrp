@@ -41,6 +41,7 @@ it("rejects null JSON at every public room mutation boundary", async () => {
     "boxout",
     "leaveout",
     "gift",
+    "keepgift",
     "tell",
     "say",
     "link",

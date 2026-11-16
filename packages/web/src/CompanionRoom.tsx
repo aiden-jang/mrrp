@@ -2,6 +2,7 @@ import type { RefObject } from "react";
 import s from "./App.module.css";
 import { fadeNote, listOf } from "./fades.js";
 import { FrameSheet } from "./FrameSheet.js";
+import { GiftExchange } from "./GiftExchange.js";
 import { TheirRecent, whenish } from "./RoomArrival.js";
 import type { RoomView, Visit } from "./types.js";
 import { MOODS, TREATS } from "./types.js";
@@ -99,6 +100,13 @@ export function CompanionRoom({
 
         <TheirRecent subject="She" items={theirLive} />
       </section>
+
+      <GiftExchange
+        view={view}
+        pending={actions.keepingGift}
+        onKeep={actions.keepGift}
+        error={actions.keepGiftError}
+      />
 
       <section className={s.actionSection} aria-label="Leave something out">
         <h2 className={s.actionHeading}>Leave something out</h2>

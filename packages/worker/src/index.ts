@@ -1,3 +1,4 @@
+import { giftRoutes } from "./giftRoutes.js";
 import { seatRoutes } from "./seatRoutes.js";
 import { isSeatToken, ROOM_RE } from "./seatToken.js";
 import { accountOf } from "./accountOf.js";
@@ -5,8 +6,8 @@ import { handleAnalytics } from "../../../analytics/worker.js";
 import { roomSetupRoutes } from "./roomSetupRoutes.js";
 import { Hono, type Context, type Next } from "hono";
 import { resolveSession } from "@aidenjang/auth-client";
-import type { Action, CatAct, Gift, Mood, Treat, Untrusted } from "./types.js";
-import { ACTIONS, CAT_GESTURE_ACTIONS, GIFTS, TREATS } from "./types.js";
+import type { Action, CatAct, Mood, Treat, Untrusted } from "./types.js";
+import { ACTIONS, CAT_GESTURE_ACTIONS, TREATS } from "./types.js";
 import type { Tally, TallyKey } from "./remembers.js";
 import type { Env } from "./env.js";
 import { ROOM_GONE } from "./room.js";
@@ -20,7 +21,6 @@ const DOODLE_RE = /^[0-4]{135}$/;
 const VALID: Action[] = ACTIONS.map((a) => a.id);
 // Gifts carry her words through their own endpoint, never the wordless act route.
 const VALID_CAT_ACTS: CatAct[] = ["shelf", "box", ...CAT_GESTURE_ACTIONS];
-const VALID_GIFTS: Gift[] = GIFTS.map((g) => g.id);
 const VALID_TREATS: Treat[] = TREATS.map((t) => t.id);
 // Unknown touch targets must be rejected, not become new props.
 const VALID_POKES = ["window", "frame", "shelf", "door", "plant", "bed", "box", "floor"];
@@ -202,16 +202,6 @@ app.post("/api/room/:id/leaveout", async (c) => {
   return c.json(await room(c.env, id).leaveOut(body.me, body.treat as Treat));
 });
 
-app.post("/api/room/:id/gift", async (c) => {
-  const id = c.req.param("id");
-  const body = (await c.req.json().catch(() => null)) as Untrusted<"gift"> | null;
-  if (!ROOM_RE.test(id) || !isSeatToken(body?.me) || !VALID_GIFTS.includes(body.gift as Gift)) {
-    return c.json({ error: "bad request" }, 400);
-  }
-  const words = typeof body.text === "string" ? body.text : "";
-  return c.json(await room(c.env, id).leaveGift(body.me, body.gift as Gift, words));
-});
-
 app.post("/api/room/:id/tell", async (c) => {
   const id = c.req.param("id");
   const body = (await c.req.json().catch(() => null)) as Untrusted<"tell"> | null;
@@ -320,6 +310,7 @@ app.post("/api/room/:id/ourday", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "not yours to set" }, 403);
 });
 
+app.route("/", giftRoutes);
 app.route("/", roomSetupRoutes);
 app.route("/", seatRoutes);
 

@@ -119,6 +119,8 @@ export async function replaceSeat(ctx: DurableObjectState, from: string, to: str
     }
     for (const [key, field] of [
       ["windowLight", "from"],
+      ["giftTag", "from"],
+      ["giftKept", "from"],
       ["held", "who"],
       ["sitting", "who"],
       ["settled", "who"],

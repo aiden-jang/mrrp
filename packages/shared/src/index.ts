@@ -184,6 +184,7 @@ export interface Bodies {
   };
   found: { me: string; key: string };
   gift: { me: string; gift: Gift; text?: string };
+  keepgift: { me: string; giftId: string };
   heract: { me: string; act: CatAct };
   hold: { me: string; on: boolean };
   leave: { me: string };
@@ -286,6 +287,8 @@ export interface RoomView {
   monthsOld: number;
   shelfDown: boolean;
   gift: Gift | null;
+  giftId?: string | null;
+  keptGift?: { gift: Gift; at: number } | null;
   boxOut: boolean;
   heldByThem: boolean;
   affection: Affection | null;

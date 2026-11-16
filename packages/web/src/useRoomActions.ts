@@ -6,6 +6,7 @@ import {
   doCatAct,
   doDraw,
   doLeaveGift,
+  doKeepGift,
   doLeaveOut,
   doPoke,
   doSettle,
@@ -142,6 +143,8 @@ export function useRoomActions({
   const [giftWords, setGiftWords] = useState("");
   const giftPending = useRef(false);
   const [gifting, setGifting] = useState(false);
+  const [keepingGift, setKeepingGift] = useState(false);
+  const [keepGiftError, setKeepGiftError] = useState<string | null>(null);
   const [strokes, setStrokes] = useState<number | null>(null);
   // Armed once he has been told the photo takes her drawing down.
   const [photoOver, setPhotoOver] = useState(false);
@@ -264,6 +267,24 @@ export function useRoomActions({
     }
   };
 
+  const keepGift = async (giftId: string) => {
+    if (giftPending.current) return;
+    giftPending.current = true;
+    setKeepingGift(true);
+    setKeepGiftError(null);
+    try {
+      const kept = await doKeepGift(id, giftId);
+      if (!alive.current) return;
+      await load();
+      if (!kept && alive.current) setKeepGiftError("That gift changed. Check what’s here now.");
+    } catch {
+      if (alive.current) setKeepGiftError("Couldn’t keep that. Try again.");
+    } finally {
+      giftPending.current = false;
+      if (alive.current) setKeepingGift(false);
+    }
+  };
+
   const [pendingMood, setPendingMood] = useState<Mood | null>(null);
   const tell = async (m: Mood) => {
     queuedMood.current = m;
@@ -304,6 +325,9 @@ export function useRoomActions({
     hangUp,
     giftWords,
     gifting,
+    keepingGift,
+    keepGiftError,
+    keepGift,
     setGiftWords,
     strokes,
     setStrokes,

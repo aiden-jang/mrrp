@@ -71,6 +71,10 @@ are generated and downloaded first; a prepared file can then be shared from a fr
 Failed link sharing keeps selectable text visible. Replies and gift messages preserve drafts
 on failure, and pending sends cannot be submitted repeatedly.
 
+Gifts stay until the companion explicitly keeps one. Each placement has an ID, so keeping an older
+gift cannot collect its replacement. The Durable Object checks the seat and placement in a transaction;
+the stored receipt drives both live confirmation and return-visit feedback. Attached words stay in history.
+
 ## Canvas
 
 `Cat.tsx` is a single canvas engine with a stable draw loop. Refs deliver current props without

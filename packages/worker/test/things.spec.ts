@@ -261,13 +261,16 @@ describe("what she leaves him", () => {
     expect((await view("strangerstranger")).gift).toBeNull();
   });
 
-  it("is gone the moment he touches anything", async () => {
+  it("stays until he chooses to keep it", async () => {
     await seat();
     away(9);
     await view(HER);
     expect((await view(HIM)).gift).not.toBeNull();
 
     await post("act", { me: HIM, action: "pet" });
+    const gift = await view(HIM);
+    expect(gift.gift).not.toBeNull();
+    await post("keepgift", { me: HIM, giftId: gift.giftId });
     expect((await view(HIM)).gift).toBeNull();
   });
 
@@ -426,14 +429,14 @@ describe("putting the mug back", () => {
 });
 
 describe("the thing she left, and what happens to it", () => {
-  it("tells her he took it, once", async () => {
+  it("tells her he kept it, once", async () => {
     await seat();
     away(72);
     await view(HER);
     expect((await view(HIM)).gift).not.toBeNull();
 
     await tick();
-    await post("act", { me: HIM, action: "pet" });
+    await post("keepgift", { me: HIM, giftId: (await view(HIM)).giftId });
     const hers = await view(HER);
     const kept = hers.arrivals.find((arrival) => arrival.kind === "kept");
     expect(kept).toBeTruthy();

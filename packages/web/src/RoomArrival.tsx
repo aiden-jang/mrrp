@@ -184,7 +184,7 @@ export function ArrivalCard({
                 </>
               ) : item.kind === "kept" ? (
                 <>
-                  <b>{name}</b> took the {GIFTS.find((g) => g.id === item.gift)?.name ?? "thing"} you left.
+                  <b>{name}</b> kept the {GIFTS.find((g) => g.id === item.gift)?.name ?? "thing"} you left.
                 </>
               ) : item.kind === "first" ? (
                 <>{FIRSTS[item.what] ?? "something happened here for the first time."}</>

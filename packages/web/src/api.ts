@@ -185,6 +185,13 @@ export async function doAct(id: string, action: Action): Promise<RoomView> {
   return r.json() as Promise<RoomView>;
 }
 
+export async function doKeepGift(id: string, giftId: string): Promise<boolean> {
+  const response = await send(`/api/room/${id}/keepgift`, { me: myToken(id), giftId });
+  if (response.status === 409) return false;
+  if (!response.ok) throw new Error("Couldn’t keep that. Try again.");
+  return true;
+}
+
 export async function doTell(id: string, mood: Mood): Promise<RoomView> {
   const r = await send(`/api/room/${id}/tell`, { me: myToken(id), mood });
   if (!r.ok) throw new Error("Couldn't reach her just now.");

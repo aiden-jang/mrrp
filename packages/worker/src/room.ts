@@ -1,3 +1,4 @@
+import * as gifts from "./gifts.js";
 import * as affection from "./affection.js";
 import {
   HER_DAY,
@@ -167,7 +168,7 @@ export class Room extends DurableObject<Env> {
     const { him: h, her: hr } = this.roles(people);
     if (hr && me === hr && h && now - (people[h]?.lastSeen ?? 0) > GIFT_AFTER_MS) {
       if (!(await this.ctx.storage.get<string>("gift"))) {
-        await this.ctx.storage.put("gift", GIFTS[Math.floor(Math.random() * GIFTS.length)]!.id);
+        await gifts.placeGift(this.ctx.storage, GIFTS[Math.floor(Math.random() * GIFTS.length)]!.id, hr);
       }
     }
 
@@ -192,7 +193,6 @@ export class Room extends DurableObject<Env> {
   async act(me: string, action: Action): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
-    if (!people[me]) return this.build(me, people);
     if (this.roles(people).him !== me) return this.build(me, people);
 
     if (action === "photo") {
@@ -219,12 +219,6 @@ export class Room extends DurableObject<Env> {
       // one she is most likely to have missed.
       await this.ctx.storage.put<Mark>(key, { day: localDayNumber(Date.now(), clock.tz), at: Date.now() });
     }
-
-    const onFloor = await this.ctx.storage.get<Gift>("gift");
-    if (onFloor) {
-      await this.ctx.storage.put("giftKept", { gift: onFloor, at: Date.now() });
-    }
-    await this.ctx.storage.delete("gift");
 
     const previous = (await this.ctx.storage.get<Visit[]>("log")) ?? [];
 
@@ -423,12 +417,10 @@ export class Room extends DurableObject<Env> {
   async leaveGift(me: string, gift: Gift, text = ""): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
-    if (!people[me]) return this.build(me, people);
     if (this.roles(people).her !== me) return this.build(me, people);
 
-    await this.ctx.storage.put("gift", gift);
-    // One stamp for both. His card drops the generic gift arrival when a line carries the same gift at
-    // the same moment, and two `Date.now()` calls either side of an await can land apart.
+    await gifts.placeGift(this.ctx.storage, gift, me);
+    // Matching stamps let his arrival card combine the gift with her words.
     const now = Date.now();
     const said = text.trim().slice(0, LINE_MAX);
     if (said) await this.keepLine({ text: said, at: now, gift });
@@ -440,6 +432,15 @@ export class Room extends DurableObject<Env> {
     people[me].lastSeen = now;
     await this.ctx.storage.put("people", people);
     return this.build(me, people);
+  }
+
+  async keepGift(me: string, id: string): Promise<boolean> {
+    await this.guard();
+    return this.ctx.storage.transaction(async (txn) => {
+      if (await txn.get(TOMBSTONE)) throw new RoomGone();
+      const { him, her } = this.roles((await txn.get<Record<string, Person>>("people")) ?? {});
+      return me === him && gifts.acceptGift(txn, id, her);
+    });
   }
 
   async putBack(me: string): Promise<false | "tidy" | "again"> {
@@ -906,7 +907,7 @@ export class Room extends DurableObject<Env> {
         });
         const left = (await txn.get<string[]>("left")) ?? [];
         await txn.put("left", [her, ...left.filter((token) => token !== her)].slice(0, LEFT_KEEP));
-        keys.push(HER_LINES, "herLine", "blanket", "gift");
+        keys.push(HER_LINES, "herLine", "blanket", "gift", "giftTag");
         if (doodle?.by === her) keys.push("doodle");
       } else await txn.put("handover", her);
       delete people[her];
@@ -955,7 +956,7 @@ export class Room extends DurableObject<Env> {
       if (kept.lines?.length) await txn.put(HER_LINES, kept.lines);
       if (kept.doodle) await txn.put("doodle", kept.doodle);
       if (kept.blanket) await txn.put("blanket", kept.blanket);
-      if (kept.gift) await txn.put("gift", kept.gift);
+      if (kept.gift) await gifts.placeGift(txn, kept.gift, me);
       if (kept.recovery) await txn.put("recoveryHer", kept.recovery);
       if (kept.light) await txn.put("windowLight", kept.light);
       if ((await txn.get<string>("handover")) === me) await txn.delete("handover");
@@ -1290,10 +1291,8 @@ export class Room extends DurableObject<Env> {
           arrivals.push({ kind: "found", at: found.at, what: found.mutual ? found.key : null });
         }
       }
-      if (youAreHer) {
-        const kept = await this.ctx.storage.get<{ gift: Gift; at: number }>("giftKept");
-        if (kept && kept.at > since) arrivals.push({ kind: "kept", at: kept.at, gift: kept.gift });
-      }
+      const kept = await this.ctx.storage.get<gifts.KeptGift>("giftKept");
+      arrivals.push(...gifts.giftArrivals(kept, youAreHer ? her : null, since));
       if (youAreHer && leftOut) {
         arrivals.push({ kind: "brought", at: leftOut.at, treat: leftOut.treat });
       }
@@ -1339,7 +1338,7 @@ export class Room extends DurableObject<Env> {
       ourDay: (youAreHer ? herDay : hisDay) ?? null,
       framed: (await this.ctx.storage.get<boolean>("framed")) ?? false,
       shelfDown: (await this.ctx.storage.get<boolean>("shelfDown")) ?? false,
-      gift: seated ? ((await this.ctx.storage.get<Gift>("gift")) ?? null) : null,
+      ...gifts.giftView(await this.ctx.storage.get(["gift", "giftTag", "giftKept"]), seated, her),
       forHer: seated ? (leftOut?.treat ?? null) : null,
       blanket: (await this.ctx.storage.get<Blanket>("blanket")) ?? null,
       expectAt: learnedHour((await this.ctx.storage.get<Homing>("homing")) ?? null, clock.homeHour),
