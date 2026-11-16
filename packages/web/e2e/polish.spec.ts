@@ -108,3 +108,52 @@ test("an invitation keeps the consent button and the whole scene in a short land
     )
     .toBe(true);
 });
+
+test("occupied rooms give the scene space while keeping both seats' controls reachable", async ({
+  page,
+  browser,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await page.getByLabel("Your name", { exact: true }).fill("River");
+  await page.getByLabel("Your name", { exact: true }).press("Enter");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("room");
+  const guest = await browser.newContext({ serviceWorkers: "block", reducedMotion: "reduce" });
+  try {
+    const her = await guest.newPage();
+    await her.goto(page.url());
+    await her.getByRole("button", { name: "Go in", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Pet her", exact: true })).toBeVisible();
+    for (const [surface, name] of [
+      [page, "Keep her company"],
+      [her, "Be a cat about it"],
+    ] as const) {
+      for (const [width, height] of [
+        [1440, 1000],
+        [390, 844],
+        [640, 360],
+      ] as const) {
+        await surface.setViewportSize({ width, height });
+        const canvas = surface.locator("canvas").first();
+        await expect
+          .poll(async () => {
+            const box = await canvas.boundingBox();
+            return (
+              box !== null && box.width <= width && (width === 1440 ? box.height > 320 : box.height < height)
+            );
+          })
+          .toBe(true);
+        const dock = surface.getByRole("region", { name, exact: true });
+        const scene = (await canvas.boundingBox())!;
+        expect((await dock.boundingBox())!.y).toBeGreaterThanOrEqual(scene.y + scene.height);
+        for (const action of await dock.locator("button, a").all()) {
+          expect((await action.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+        }
+        await noOverflow(surface);
+      }
+    }
+  } finally {
+    await guest.close();
+  }
+});

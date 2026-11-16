@@ -271,7 +271,7 @@
 }
 
 .roomCard {
-  max-width: 960px;
+  max-width: 1080px;
 }
 
 .roomGrid,
@@ -289,7 +289,7 @@
 .actionColumn {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 22px;
+  gap: 24px;
   scroll-margin-block: 18px;
 }
 
@@ -350,12 +350,18 @@
   align-items: baseline;
   flex-wrap: wrap;
   gap: 0 10px;
-  padding-block-start: 6px;
+  padding-block-start: 10px;
 }
 
 @media (max-width: 859px) {
   .actionColumn {
     grid-template-columns: minmax(0, 1fr);
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+  .roomGrid[data-editing] .actionColumn {
+    padding-top: 0;
+    border-top: 0;
   }
   .sceneCaption {
     align-items: center;
@@ -372,11 +378,19 @@
 
 @media (min-width: 860px) {
   .roomGrid {
-    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
-    gap: 24px;
+    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+    gap: 28px;
+  }
+  .actionColumn {
+    padding-inline-start: 22px;
+    border-inline-start: 1px solid var(--line);
   }
   .roomGrid[data-editing] {
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  }
+  .roomGrid[data-editing] .actionColumn {
+    padding-inline-start: 0;
+    border-inline-start: 0;
   }
 
   .invitation {
@@ -385,7 +399,8 @@
 }
 
 .doing {
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1.55;
   color: var(--soft);
   text-align: left;
   margin: 5px 0 0;
@@ -595,7 +610,7 @@
 .moodRow {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 9px;
+  gap: 8px;
   margin-bottom: 16px;
 }
 
@@ -673,8 +688,8 @@
 
 .quiet {
   font: inherit;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--soft);
   background: none;
   border: none;
@@ -691,10 +706,10 @@
   position: relative;
   animation: arrive 0.42s var(--ease-bounce) both;
   margin: 14px 0 2px;
-  padding: 15px 16px;
-  border-radius: 12px;
+  padding: 18px 20px;
+  border-radius: var(--radius-panel);
   background: var(--panel);
-  border: 0;
+  border: 1px solid var(--line);
 }
 
 .noteFrom {
@@ -705,7 +720,7 @@
 }
 
 .noteText {
-  font-size: 17.5px;
+  font-size: 18px;
   line-height: 1.55;
   margin: 0;
 }
@@ -1342,9 +1357,10 @@ details[open] > .recoverySummary::before {
 }
 .moodChoice[aria-pressed="true"] {
   box-shadow: inset 0 0 0 2px var(--ink);
+  font-weight: 700;
 }
 .moodResponse {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--soft);
   margin: 10px 0 0;
   min-height: 36px;

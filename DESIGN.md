@@ -144,21 +144,23 @@ naturally. Mobile landing display type uses `clamp(34px, 9vw, 48px)`.
 
 ## Layout
 
-The main room and landing container stops at 960px. Page gutters grow with the viewport;
-sections use a small spacing vocabulary rather than nested cards.
+The occupied room container stops at 1080px; the landing stays at 960px. Page gutters grow with
+the viewport. Sections use a small spacing vocabulary rather than nested cards.
 
 The landing shows the scene first on desktop, with introduction and form below in two columns.
 At 760px and below, introduction and form precede the scene. Invitations put action before scene
 in source order and use adjacent columns from 860px.
 
 An occupied room leads with its scene and caption, then a four-action dock. Role sections use
-one adjacent column from 860px and follow the scene below it. Setup and waiting use the
+a narrower adjacent column from 860px, separated by a quiet rule, and follow the scene below it. Setup and waiting use the
 same scene/editor layout from that breakpoint. Notes status and its edit action stay together. Room & account is reachable
 from the header and opens the existing details section.
 
 The scene keeps the original 100 by 80 interaction world inside a viewport that can widen to
-160 logical units. Occupied rooms cap scene height at 320 CSS pixels from 440px wide; setup and waiting retain
-the taller scene, capped at 480px on wide displays. `roomGeometry.ts` and
+160 logical units. Occupied rooms can use up to 480 CSS pixels when the scene has at least 600px of width and the
+window is at least 800px tall. Narrower or shorter occupied layouts retain the 320px cap from 440px
+wide; phone fitting and the height reserved for controls remain intact. Setup and waiting retain
+their existing fitting, capped at 480px on wide displays. `roomGeometry.ts` and
 `roomPainter.ts` fit the camera and align half-cell art to whole device pixels; a short landscape
 window can use the coarse grid. Preserve this fitting rather than stretching a screenshot.
 
@@ -193,7 +195,9 @@ round form; they are not a replacement shape for ordinary buttons.
 - **Header utilities:** the wordmark, sound control and Room & account share a quiet ruled header.
   The tagline yields space on phones before actions do.
 - **Action dock:** four role-specific actions below the scene, with inline line icons and text.
-  Phones use a two-by-two grid with inline icons and text. Long labels wrap inside their column.
+  Phones use a two-by-two grid with inline icons and text. The main action is filled; secondary
+  actions stay transparent with visible borders, and selection adds an inset outline. Long labels
+  wrap inside their column. Notes receive more reading space; secondary tools stay visually quiet.
 - **Focus and motion:** keyboard focus uses an ink outline with an offset. Brief hover, press and
   arrival feedback supports the scene. Reduced motion collapses durations without exposing hidden
   content or removing access to actions.
@@ -217,3 +221,14 @@ round form; they are not a replacement shape for ordinary buttons.
 The voice is warm, nonchalant and dry. “A room for two. One of you is the cat.” states the premise.
 Supporting observations may be funny; errors, recovery, deletion and sharing outcomes stay literal.
 The cat is addressed as “you” on her side. See the [copy plan](docs/copy-plan.md).
+
+The UI refinement preserves the cat artwork, palette calculations and interaction-world coordinates.
+Room fitting remains aligned to whole device pixels and keeps the controls’ height reserve.
+The updated geometry is covered numerically across pixel ratios and short windows. A deliberate
+return to the smaller wide-room fitting was rejected by the regression check, then restored.
+
+During this UI pass, builds, frontend tests, type checking, lint, formatting and repository checks
+passed. The browser journey for both seats could not start its local runtime because port binding
+was denied; visual review and fresh screenshots remain unverified. Full verification stopped at
+the audit because registry DNS failed. The available Node runtime was outside the declared range,
+so complete validation still needs a supported runtime with network and local-server access.

@@ -5,12 +5,25 @@ describe("the finer room grid", () => {
   it.each([1, 1.5, 2, 3])("fits the compact room beside its controls at ratio %s", (ratio) => {
     for (const width of [480, 560, 700, 960]) {
       const fit = fitRoom(width, 900, ratio, 210, true)!;
-      expect(fit.height / fit.ratio).toBeLessThanOrEqual(320);
+      expect(fit.height / fit.ratio).toBeLessThanOrEqual(width >= 600 ? 480 : 320);
+      if (width >= 600) expect(fit.height / fit.ratio).toBeGreaterThan(320);
+      expect(fit.height / fit.ratio + 210).toBeLessThanOrEqual(900);
       expect(fit.width / fit.ratio).toBeLessThanOrEqual(width);
       expect(fit.scale % 2).toBe(0);
       expect(fit.viewport).toBeGreaterThanOrEqual(100);
     }
     expect(fitRoom(390, 844, ratio, 210, true)).toEqual(fitRoom(390, 844, ratio, 210));
+  });
+
+  it.each([1, 1.5, 2, 3])("leaves the controls room in shorter occupied windows at ratio %s", (ratio) => {
+    for (const width of [640, 960]) {
+      for (const height of [320, 480, 700]) {
+        const fit = fitRoom(width, height, ratio, 210, true)!;
+        expect(fit.height / fit.ratio).toBeLessThanOrEqual(320);
+        expect(fit.height / fit.ratio + 210).toBeLessThanOrEqual(height);
+        expect(fit.width / fit.ratio).toBeLessThanOrEqual(width);
+      }
+    }
   });
 
   it.each([1, 1.5, 2, 3])("keeps half-cell details on whole device pixels at ratio %s", (ratio) => {

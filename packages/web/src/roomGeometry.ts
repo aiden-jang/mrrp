@@ -15,10 +15,16 @@ export function propBounds(key: string, x: number, y: number, width: number, hei
 
 export function fitRoom(width: number, height: number, ratio: number, reserve: number, compact = false) {
   const d = Math.min(3, ratio || 1);
-  const cap = Math.min(
-    height > 0 ? Math.min(height * 0.78, height - reserve) : width,
-    compact && width >= 440 ? 320 : width >= 700 ? 480 : Infinity,
-  );
+  const roomHeight = compact
+    ? width >= 600 && height >= 800
+      ? 480
+      : width >= 440
+        ? 320
+        : Infinity
+    : width >= 700
+      ? 480
+      : Infinity;
+  const cap = Math.min(height > 0 ? Math.min(height * 0.78, height - reserve) : width, roomHeight);
   const available = Math.min(width > 0 ? width : Infinity, cap);
   if (!Number.isFinite(available) || available < 80) return null;
   // Short windows need the coarse grid to keep the entrance action visible.
