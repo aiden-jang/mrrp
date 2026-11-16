@@ -10,7 +10,7 @@ import { RoomNotesPanel } from "./RoomNotesPanel.js";
 import { RoomUpdate } from "./RoomUpdate.js";
 import { CompanionRoom } from "./CompanionRoom.js";
 import { foundKeys, noticed } from "./discoveries.js";
-import { DOOR_X, HER_SPOT, sceneFor } from "./hours.js";
+import { HER_SPOT, roomScene } from "./hours.js";
 import { liveOnly } from "./recent.js";
 import { RoomAnnotations } from "./RoomAnnotations.js";
 import { RoomActionDock } from "./RoomActionDock.js";
@@ -154,12 +154,8 @@ function RoomPage({ id }: { id: string }) {
     );
   }
 
-  const herSpot = view.personality ? HER_SPOT : null;
   const mood = actions.pendingMood ?? view.catMood;
-  const hourly = sceneFor(view.clock, Date.now(), mood, view.bothHereNow, herSpot, view.sky, view.expectAt);
-
-  // Keep the caption aligned with the cat when she waits at the door.
-  const scene = view.waitingAtDoor ? { ...hourly, catX: DOOR_X, atDoor: true } : hourly;
+  const scene = roomScene(view, mood, Date.now());
 
   const chrome = chromeFor(scene);
   const nightChrome = isNightChrome(scene.sun);
@@ -202,6 +198,7 @@ function RoomPage({ id }: { id: string }) {
               <Cat
                 compact={!setup && !view.waitingForThem && (iAmHim || view.youAreHer)}
                 collectionKey={id}
+                hideSeek={view.hideSeek}
                 label={`${previewLook.name} is ${scene.doing}.`}
                 look={previewLook}
                 decor={setup && draft ? draft.decor : view.decor}
@@ -215,7 +212,7 @@ function RoomPage({ id }: { id: string }) {
                 doodle={view.doodle?.cells ?? null}
                 blanket={view.blanket}
                 sky={view.sky}
-                spot={herSpot}
+                spot={view.personality ? HER_SPOT : null}
                 doorOpenAt={doorway.openAt}
                 watchDoorAt={doorway.watchAt}
                 staying={staying && (iAmHim || view.youAreHer)}

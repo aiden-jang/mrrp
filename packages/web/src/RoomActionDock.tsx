@@ -1,3 +1,4 @@
+import { HideSeekControls } from "./HideSeekControls.js";
 import s from "./App.module.css";
 import d from "./RoomActionDock.module.css";
 import type { Action, RoomView } from "./types.js";
@@ -19,7 +20,7 @@ export function RoomActionDock({
     actions;
   return (
     <section className={d.dock} aria-label={view.youAreHer ? "Be a cat about it" : "Keep her company"}>
-      <div className={d.actions}>
+      <fieldset className={d.actions} disabled={!!view.hideSeek || actions.hideSeekPending}>
         {view.youAreHer ? (
           <>
             <button
@@ -102,10 +103,11 @@ export function RoomActionDock({
             );
           })
         )}
-      </div>
+      </fieldset>
+      <HideSeekControls view={view} actions={actions} />
       <CatAffectionControls view={view} actions={actions} />
       <CatReactionControls view={view} actions={actions} />
-      {strokes !== null && !view.youAreHer && (
+      {strokes !== null && !view.youAreHer && !view.hideSeek && (
         <p className={s.hint} aria-live="polite">
           Brush her: drag across {view.cat.name}, back and forth, or focus the scene and press Enter.
         </p>

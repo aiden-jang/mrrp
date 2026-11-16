@@ -1,8 +1,11 @@
+import * as company from "./companyView.js";
+import * as hideSeek from "./hideSeek.js";
 import * as keepsakes from "./keepsakes.js";
 import * as gifts from "./gifts.js";
 import * as affection from "./affection.js";
 import {
   HER_DAY,
+  seatNames,
   readHerDay,
   replaceSeat,
   touchSeat,
@@ -24,6 +27,7 @@ import {
 import { DurableObject } from "cloudflare:workers";
 import type {
   Action,
+  HideSeekCommand,
   CatAct,
   Arrival,
   Cat,
@@ -81,8 +85,6 @@ const HERE_NOW_MS = 3 * 60_000;
 const SITTING = "sitting";
 const SETTLED = "settled";
 const WAITING = "waiting";
-const WAITING_LAPSE_MS = 90 * 60_000;
-const SITTING_LAPSE_MS = 10 * 60_000;
 const POKE_LIVE_MS = 4_000;
 const REACH_MS = 3_000;
 const DEFAULT_CAT: Cat = {
@@ -200,11 +202,17 @@ export class Room extends DurableObject<Env> {
     return seatRoles(people);
   }
 
+  async seek(me: string, command: HideSeekCommand): Promise<boolean> {
+    await this.guard();
+    return hideSeek.play(this.ctx.storage, me, command);
+  }
+
   async act(me: string, action: Action): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (this.roles(people).him !== me) return this.build(me, people);
 
+    if (await this.ctx.storage.get("hideSeek")) return this.build(me, people);
     if (action === "photo") {
       await this.ctx.storage.put("framed", true);
       // The frame holds one thing and a drawing beats a photo, so the photo takes it down. Record
@@ -251,6 +259,7 @@ export class Room extends DurableObject<Env> {
     const { him, her } = this.roles(people);
     if (her !== me) return this.build(me, people);
 
+    if (await this.ctx.storage.get("hideSeek")) return this.build(me, people);
     if (affection.isGestureAction(act)) {
       if (act === "ask-pets" && !this.bothHere(people)) return this.build(me, people);
       const held = await this.ctx.storage.get<Held>("held");
@@ -313,6 +322,8 @@ export class Room extends DurableObject<Env> {
     if (!people[me]) return this.build(me, people);
     if (this.roles(people).him !== me) return this.build(me, people);
 
+    if (await this.ctx.storage.get("hideSeek")) return this.build(me, people);
+
     if (on) {
       await this.ctx.storage.put<Held>(SITTING, { who: me, at: Date.now() });
       return this.act(me, "sit");
@@ -330,8 +341,9 @@ export class Room extends DurableObject<Env> {
     if (!people[me]) return this.build(me, people);
     if (this.roles(people).her !== me) return this.build(me, people);
 
+    if (await this.ctx.storage.get("hideSeek")) return this.build(me, people);
     const sitting = await this.ctx.storage.get<Held>(SITTING);
-    const sat = !!sitting && Date.now() - sitting.at < SITTING_LAPSE_MS;
+    const sat = !!sitting && Date.now() - sitting.at < company.SITTING_LAPSE_MS;
     if (on && sat) {
       await this.ctx.storage.put<Held>(SETTLED, { who: me, at: Date.now() });
       await this.noteFirst("settled");
@@ -348,6 +360,8 @@ export class Room extends DurableObject<Env> {
     if (!people[me]) return this.build(me, people);
     if (this.roles(people).her !== me) return this.build(me, people);
 
+    if (await this.ctx.storage.get("hideSeek")) return this.build(me, people);
+
     if (on) await this.ctx.storage.put<Held>(WAITING, { who: me, at: Date.now() });
     else await this.ctx.storage.delete(WAITING);
     people[me].lastSeen = Date.now();
@@ -361,6 +375,7 @@ export class Room extends DurableObject<Env> {
     if (!people[me]) return this.build(me, people);
     if (this.roles(people).him !== me) return this.build(me, people);
 
+    if (on && (await this.ctx.storage.get("hideSeek"))) return this.build(me, people);
     const contact = affection.holdRecord(await this.ctx.storage.get<Held>("held"), me, Date.now());
     if (!on || !contact.renewed) await this.ctx.storage.delete("affection");
     if (on) {
@@ -878,7 +893,7 @@ export class Room extends DurableObject<Env> {
       const moods = (await txn.get<Record<string, StoredMood>>("moods")) ?? {};
       const log = (await txn.get<Visit[]>("log")) ?? [];
       const light = await txn.get<WindowLight>("windowLight");
-      const keys = [HER_DAY, "recoveryHer", "affection"];
+      const keys = [HER_DAY, "recoveryHer", "affection", "hideSeek"];
       if (light?.from === her) keys.push("windowLight");
       if (leaving) {
         const at = Date.now();
@@ -1235,20 +1250,12 @@ export class Room extends DurableObject<Env> {
     const waitingForThem = !her;
     const kept = waitingForThem && me === him ? await this.ctx.storage.get<LeftSide>(LEFT_SIDE) : null;
     if (kept?.mood && (kept.mood.expiresAt ?? 0) <= Date.now()) await this.scheduleNext();
-    // She is the cat, so her seat goes by the name he gave her. She is never asked for one, and the
-    // placeholder on her record is not a name anybody chose.
-    const nameOf = (token: string | null): string | null =>
-      token && token === her ? cat.name : token ? (people[token]?.name ?? null) : null;
-
     const theyLeft = kept && Date.now() < kept.dropsAt ? { name: cat.name, until: kept.dropsAt } : null;
     const theyWereTold = undoLeaveUntil && him ? (people[him]?.name ?? null) : null;
     const leftOut = await this.ctx.storage.get<LeftOut>("forHer");
-    const held = seated ? await this.ctx.storage.get<Held>("held") : null;
-    const gesture = seated ? await this.ctx.storage.get<affection.StoredAffection>("affection") : undefined;
-    const sitting = seated ? ((await this.ctx.storage.get<Held>(SITTING)) ?? null) : null;
-    const sittingNow = !!sitting && Date.now() - sitting.at < SITTING_LAPSE_MS;
-    const settled = sittingNow ? ((await this.ctx.storage.get<Held>(SETTLED)) ?? null) : null;
-    const waiting = seated ? ((await this.ctx.storage.get<Held>(WAITING)) ?? null) : null;
+    const contact = seated
+      ? await this.ctx.storage.get<company.StoredContact>(["held", "affection", SITTING, SETTLED, WAITING])
+      : new Map<string, company.StoredContact>();
     const today = localDayNumber(Date.now(), clock.tz);
     // When she last opened the room, from before this request touched it. On her own read her `lastSeen`
     // is already now, so it has to come from `since`.
@@ -1301,18 +1308,16 @@ export class Room extends DurableObject<Env> {
 
     return {
       cat,
+      hideSeek: await hideSeek.view(this.ctx.storage, me, him, her),
       decor: await this.ctx.storage.get<RoomDecor>("decor"),
       clock,
-      youAreHer,
       youLeft,
       undoLeaveUntil,
       theyLeft,
       theyWereTold,
       catMood: catTold?.mood ?? null,
       catMoodAt: catTold?.at ?? null,
-      you: nameOf(me),
-      them: nameOf(otherId),
-      themLastAt: them?.lastSeen ?? null,
+      ...seatNames(people, me, cat.name),
       themHereNow: !!otherId && this.hereNow(people, otherId),
       bothHereNow: (me === him || me === her) && this.bothHere(people),
       herLine: seated ? ((await this.lines())[0] ?? null) : null,
@@ -1341,13 +1346,7 @@ export class Room extends DurableObject<Env> {
       recoveryCode: seated ? await this.recoveryCode(youAreHer ? "her" : "him") : null,
       seat: seated ? me : null,
       linked: seated ? (people[me]?.account ?? null) !== null : false,
-      affection: affection.affectionFor(gesture, held, him, her, Date.now()),
-      reaction: affection.reactionFor(gesture, her, Date.now()),
-      heldByThem: !!held && held.who === otherId && Date.now() - held.at < affection.HELD_LAPSE_MS,
-      sittingWith: sittingNow && sitting.who === me,
-      sittingWithYou: sittingNow && sitting.who === otherId,
-      settled: !!settled,
-      waitingAtDoor: !!waiting && Date.now() - waiting.at < WAITING_LAPSE_MS,
+      ...company.view(contact, me, him, her, Date.now()),
       // Theirs only. Your own tap already moved your room; sent back it plays the wobble twice.
       pokedByThem:
         poke && poke.who === otherId && Date.now() - poke.at < POKE_LIVE_MS

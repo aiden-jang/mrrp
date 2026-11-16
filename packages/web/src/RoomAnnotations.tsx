@@ -74,7 +74,7 @@ export function RoomAnnotations({
               {line}
             </p>
           ))}
-      {!setup && nudge === 0 && (iAmHim || view.youAreHer) && (
+      {!setup && !view.hideSeek && nudge === 0 && (iAmHim || view.youAreHer) && (
         <p className={s.hint}>{iAmHim ? `Hold on ${view.cat.name} to pet her` : "Tell him how you are"}</p>
       )}
     </>

@@ -23,6 +23,7 @@ import { buzz, play, type Cue } from "./sound.js";
 import type { Action, CatAct, Gift, Mood, RoomView, Treat } from "./types.js";
 import { ACTIONS } from "./types.js";
 import { useRoomPetting } from "./useRoomPetting.js";
+import { useHideSeek } from "./useHideSeek.js";
 import { useRoomAffection } from "./useRoomAffection.js";
 
 const ACTION_SOUND: Record<Action, Cue> = {
@@ -55,6 +56,8 @@ export function useRoomActions({
   setShelfAt: Dispatch<SetStateAction<number | null>>;
 }) {
   const { petAt, hold, pet } = useRoomPetting(id);
+  const hideSeek = useHideSeek(id, view, load);
+  const { searchProp } = hideSeek;
   const affection = useRoomAffection({ id, view, load, onError });
   const alive = useRef(false);
   const queuedMood = useRef<Mood | null>(null);
@@ -152,12 +155,13 @@ export function useRoomActions({
   const lastPoke = useRef<Record<string, number>>({});
   const sharePoke = useCallback(
     (what: string) => {
+      if (view?.hideSeek) return searchProp(what);
       const now = Date.now();
       if (now - (lastPoke.current[what] ?? 0) < 1000) return;
       lastPoke.current[what] = now;
       doPoke(id, what);
     },
-    [id],
+    [id, view?.hideSeek, searchProp],
   );
 
   const stroke = () => {
@@ -312,6 +316,7 @@ export function useRoomActions({
 
   return {
     ...affection,
+    ...hideSeek,
     tidy,
     bedding,
     pickBlanket,

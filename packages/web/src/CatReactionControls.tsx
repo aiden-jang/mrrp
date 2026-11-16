@@ -11,6 +11,7 @@ export function CatReactionControls({
   actions: ReturnType<typeof useRoomActions>;
 }) {
   const current = CAT_REACTIONS.find((reaction) => reaction.id === actions.reaction?.kind);
+  if (view.hideSeek || actions.hideSeekPending) return null;
   if (!view.youAreHer)
     return current ? (
       <p className={s.hint} role="status">

@@ -1,4 +1,5 @@
 import { replyRoutes } from "./replyRoutes.js";
+import { touchRoutes } from "./touchRoutes.js";
 import { giftRoutes } from "./giftRoutes.js";
 import { seatRoutes } from "./seatRoutes.js";
 import { isSeatToken, ROOM_RE } from "./seatToken.js";
@@ -23,8 +24,6 @@ const VALID: Action[] = ACTIONS.map((a) => a.id);
 // Gifts carry her words through their own endpoint, never the wordless act route.
 const VALID_CAT_ACTS: CatAct[] = ["shelf", "box", ...CAT_GESTURE_ACTIONS];
 const VALID_TREATS: Treat[] = TREATS.map((t) => t.id);
-// Unknown touch targets must be rejected, not become new props.
-const VALID_POKES = ["window", "frame", "shelf", "door", "plant", "bed", "box", "floor"];
 const TALLY_KEYS: TallyKey[] = ["pet", "brush", "sit", "photo", "leaveout"];
 const VALID_MOODS: Mood[] = ["good", "tired", "stressed", "sad", "lonely", "bored", "feral", "done", "horny"];
 
@@ -130,15 +129,6 @@ app.post("/api/room/:id/heract", async (c) => {
     return c.json({ error: "bad request" }, 400);
   }
   return c.json(await room(c.env, id).herAct(body.me, body.act as CatAct));
-});
-
-app.post("/api/room/:id/poke", async (c) => {
-  const id = c.req.param("id");
-  const body = (await c.req.json().catch(() => null)) as Untrusted<"poke"> | null;
-  if (!ROOM_RE.test(id) || !isSeatToken(body?.me) || !VALID_POKES.includes(body.what ?? "")) {
-    return c.json({ error: "bad request" }, 400);
-  }
-  return c.json(await room(c.env, id).poke(body.me, body.what!));
 });
 
 app.post("/api/room/:id/wait", async (c) => {
@@ -300,6 +290,7 @@ app.post("/api/room/:id/ourday", async (c) => {
 
 app.route("/", replyRoutes);
 app.route("/", giftRoutes);
+app.route("/", touchRoutes);
 app.route("/", roomSetupRoutes);
 app.route("/", seatRoutes);
 

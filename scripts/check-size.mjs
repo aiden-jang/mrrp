@@ -13,10 +13,10 @@ const MAX_STATE = 12;
  * back into, which is how the file got here.
  */
 const ALREADY_OVER = {
-  "packages/web/src/Cat.tsx": { lines: 2944 },
-  "packages/worker/src/room.ts": { lines: 1374 },
+  "packages/web/src/Cat.tsx": { lines: 2933 },
+  "packages/worker/src/room.ts": { lines: 1373 },
   "packages/web/src/sprites.ts": { lines: 619 },
-  "packages/worker/src/index.ts": { lines: 414 },
+  "packages/worker/src/index.ts": { lines: 405 },
 };
 
 // The gate scripts are in here too. A check that does not cover its own source stops being checked.

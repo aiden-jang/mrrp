@@ -12,6 +12,7 @@ export function CatAffectionControls({
 }) {
   const asking = actions.affection?.kind === "ask";
   const nuzzling = actions.affection?.kind === "nuzzle";
+  if (view.hideSeek || actions.hideSeekPending) return null;
   if (!view.youAreHer)
     return actions.affection ? (
       <p className={s.hint} role="status">

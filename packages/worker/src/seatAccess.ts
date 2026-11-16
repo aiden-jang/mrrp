@@ -132,6 +132,8 @@ export async function replaceSeat(ctx: DurableObjectState, from: string, to: str
       ["poke", "who"],
       ["doodle", "by"],
       ["undrawn", "by"],
+      ["hideSeek", "hider"],
+      ["hideSeek", "seeker"],
     ] as const) {
       const value = await storage.get<Record<string, unknown>>(key);
       if (value?.[field] === from) await storage.put(key, { ...value, [field]: to });
@@ -149,4 +151,18 @@ export async function replaceSeat(ctx: DurableObjectState, from: string, to: str
     }
   }
   return moved;
+}
+
+export function seatNames(people: Record<string, SeatPerson>, me: string, catName: string) {
+  const { him, her } = seatRoles(people);
+  const other = me === her ? him : me === him ? her : null;
+  // Her seat uses the name chosen for the cat, not its placeholder record.
+  const name = (token: string | null) =>
+    token === her && her ? catName : token ? (people[token]?.name ?? null) : null;
+  return {
+    youAreHer: !!her && me === her,
+    you: name(me),
+    them: name(other),
+    themLastAt: other ? people[other]!.lastSeen : null,
+  };
 }

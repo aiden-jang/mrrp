@@ -245,3 +245,16 @@ export function dayApart(clock: Clock, at = Date.now()): "ahead" | "behind" | nu
   if (theirs === yours) return null;
   return theirs > yours ? "ahead" : "behind";
 }
+
+export function roomScene(view: RoomView, mood: Mood | null, now: number) {
+  const scene = sceneFor(
+    view.clock,
+    now,
+    mood,
+    view.bothHereNow,
+    view.personality ? HER_SPOT : null,
+    view.sky,
+    view.expectAt,
+  );
+  return view.waitingAtDoor ? { ...scene, catX: DOOR_X, atDoor: true } : scene;
+}

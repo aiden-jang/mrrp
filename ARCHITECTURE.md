@@ -49,6 +49,11 @@ validates each command and sends a remaining duration, so browser clock differen
 One transient slot prevents gestures from stacking. Public snapshots keep reactions separate from
 affection so older clients do not describe a reaction as a nuzzle.
 
+`useHideSeek.ts` owns confirmed hide-and-seek commands and retry feedback. The Worker keeps the
+chosen spot private until a correct search. Round IDs reject delayed commands, and seat-filtered
+snapshots survive reloads without giving the seeker the answer. `roomTargets.ts` shares furniture
+hit areas; `hideSeekArt.ts` draws the ears and found pose.
+
 Mood writes run in order and keep only the latest queued choice. That choice stays visible
 while earlier live snapshots arrive. Setup and drawing controls pause during saves; the private
 date draft can keep changing, but its saved feedback belongs only to the submitted version.

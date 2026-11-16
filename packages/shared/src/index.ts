@@ -187,6 +187,7 @@ export interface Bodies {
   keepgift: { me: string; giftId: string };
   heract: { me: string; act: CatAct };
   hold: { me: string; on: boolean };
+  seek: { me: string; command: HideSeekCommand };
   leave: { me: string };
   leaveout: { me: string; treat: Treat };
   link: { me: string; on: boolean };
@@ -275,7 +276,26 @@ export interface RoomDecor {
   mug: "cloud" | "rose" | "ink";
 }
 
+export const HIDE_SPOTS = [
+  { id: "curtain", prop: "window", place: "behind the curtain" },
+  { id: "cushion", prop: "bed", place: "behind the cushion" },
+  { id: "cabinet", prop: "shelf", place: "behind the cabinet" },
+] as const;
+export type HideSpot = (typeof HIDE_SPOTS)[number]["id"];
+export interface HideSeek {
+  id: string;
+  phase: "hiding" | "found";
+  checked: HideSpot[];
+  spot?: HideSpot;
+}
+export interface HideSeekCommand {
+  kind: "hide" | "search" | "end";
+  round: string | null;
+  spot?: HideSpot;
+}
+
 export interface RoomView {
+  hideSeek?: HideSeek | null;
   decor?: RoomDecor;
   cat: Cat;
   clock: Clock;

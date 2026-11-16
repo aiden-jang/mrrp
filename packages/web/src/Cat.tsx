@@ -1,3 +1,5 @@
+import { PROPS, PROP_LABELS, roomTargetAt } from "./roomTargets.js";
+import { paintHidePeek, hideSeekLabel } from "./hideSeekArt.js";
 import { DEFAULT_DECOR, decorateScene, mugColors, ROOM_ART, rugColors, rugPattern } from "./roomDecor.js";
 import { useEffect, useRef } from "react";
 import { useCanvasCapture } from "./useCanvasCapture.js";
@@ -172,27 +174,6 @@ const WATCH_DOOR_MS = 2200;
 const MUG_FLOOR_X = 30,
   MUG_FLOOR_Y = FLOOR + 14;
 
-const PROP_LABELS: Record<string, string> = {
-  window: "the window",
-  frame: "the picture on the wall",
-  shelf: "the shelf",
-  door: "the door",
-  plant: "the plant",
-  // Both seats read this list, and one of them is the cat, so it cannot be "her bed".
-  bed: "the bed",
-  box: "the box",
-};
-
-const PROPS = [
-  { key: "window", sp: WINDOW, x: WIN_X, y: 4 },
-  { key: "frame", sp: FRAME, x: 16, y: 12 },
-  { key: "shelf", sp: SHELF, x: 80, y: FLOOR - 24 },
-  { key: "door", sp: DOOR, x: 6, y: FLOOR - 16 },
-  { key: "plant", sp: PLANT, x: 87, y: FLOOR - 13 },
-  { key: "bed", sp: BED, x: 24 - 11, y: FLOOR + 22 },
-  { key: "box", sp: BOX_BACK, x: BOX_X, y: BOX_Y },
-] as const;
-
 const INK = "#4a3520";
 const PINK = "#e79ba3";
 const WHITE = "#fffdf6";
@@ -263,6 +244,7 @@ export function Cat({
   dreamContext,
   onDream,
   collectionKey,
+  hideSeek = null,
 }: {
   label: string;
   look: CatLook;
@@ -320,11 +302,14 @@ export function Cat({
   dreamContext?: DreamContext;
   onDream?: (dream: Dream) => void;
   collectionKey?: string;
+  hideSeek?: RoomView["hideSeek"];
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const capture = useCanvasCapture(ref, onCapture);
   const captureRef = useRef(capture);
   captureRef.current = capture;
+  const hideSeekRef = useRef(hideSeek);
+  hideSeekRef.current = hideSeek;
   const lookRef = useRef(look);
   const clockRef = useRef(clock);
   const moodRef = useRef(mood);
@@ -764,6 +749,11 @@ export function Cat({
       cv.focus({ preventScroll: true });
       const { x, y } = gridAt(e);
       const intended = propIntent.current;
+      if (hideSeekRef.current) {
+        if (roleRef.current === "him" && hideSeekRef.current.phase === "hiding")
+          onTouchRef.current?.(intended ?? roomTargetAt(x, y)?.key ?? "floor");
+        return;
+      }
       ptr.x = x;
       ptr.y = y;
       ptr.in = true;
@@ -876,13 +866,7 @@ export function Cat({
       }
       // Match `boxHere`: boxes he leaves out must also be tappable.
       const boxIsHere = boxOutRef.current || boxRef.current || performance.now() < secretBoxUntil.current;
-      const hit = PROPS.map((q) => ({ ...q, ...geometry.propBounds(q.key, q.x, q.y, q.sp.w, q.sp.h) }))
-        .reverse()
-        .find(
-          (q) =>
-            (q.key !== "box" || boxIsHere) &&
-            (intended ? q.key === intended : x >= q.x && x < q.x + q.w && y >= q.y && y < q.y + q.h),
-        );
+      const hit = roomTargetAt(x, y, boxIsHere, intended);
       let rainStarted = false;
       if (hit?.key === "window") {
         const now = performance.now();
@@ -1094,6 +1078,7 @@ export function Cat({
       if (pointer === (e.pointerId ?? 0)) onLeave();
     };
     const onKey = (e: KeyboardEvent) => {
+      if (hideSeekRef.current) return;
       if (e.key === "Enter" && roleRef.current === "him") {
         e.preventDefault();
         if (brushingRef.current) {
@@ -2035,10 +2020,13 @@ export function Cat({
                                 : followingLight
                                   ? warmSeat(sc.catX * GW)
                                   : sc.catX * GW;
-      wantX = catComfort.gestureTarget(boundCatTarget(wantX), catX.current, gesture);
+      wantX = hideSeekRef.current
+        ? 50
+        : catComfort.gestureTarget(boundCatTarget(wantX), catX.current, gesture);
       if (catX.current === null) catX.current = firstEverRef.current ? 19 : wantX;
       catX.current = moveCat(catX.current, wantX, elapsed, catnipping || zooming || mouseChasing);
-      let kx = Math.round(catX.current);
+      // Keep the camera independent of the private spot; the normal cat stays outside the scene.
+      let kx = hideSeekRef.current ? -1000 : Math.round(catX.current);
 
       const m = reduce ? null : mothAt(t, beamX);
       const mothVisit = Math.floor(t / MOTH_CYCLE_MS);
@@ -2235,7 +2223,7 @@ export function Cat({
           gesture,
           inBox,
         });
-      catBox.current = catComfort.catTouchBounds(pose, kx, y);
+      catBox.current = hideSeekRef.current ? null : catComfort.catTouchBounds(pose, kx, y);
 
       const warmth = sceneArt.catWarmth(sc, kx, sp, beamX, poolScale);
       const sunlit = (c: string) => (warmth > 0.01 ? mixHex(c, sc.beamWarm, warmth) : c);
@@ -2795,7 +2783,7 @@ export function Cat({
         }
       }
 
-      if ((birding || t < speakUntil.current) && !reduce) {
+      if (!hideSeekRef.current && (birding || t < speakUntil.current) && !reduce) {
         const BW = 21,
           BH = 8;
         const bx = Math.max(1, Math.min(GW - BW - 1, kx + 4));
@@ -2910,6 +2898,7 @@ export function Cat({
         }
       }
 
+      paintHidePeek(rect, hideSeekRef.current, lookRef.current);
       captureRef.current.painted();
       raf = requestAnimationFrame(frame);
     };
@@ -2929,8 +2918,8 @@ export function Cat({
       ref={ref}
       role="img"
       tabIndex={0}
-      aria-keyshortcuts={role === "him" ? "Enter" : undefined}
-      aria-label={`${label} The room has quiet interactive details.`}
+      aria-keyshortcuts={role === "him" && !hideSeek ? "Enter" : undefined}
+      aria-label={`${hideSeekLabel(hideSeek, role) ?? label} The room has quiet interactive details.`}
       style={{
         display: "block",
         borderRadius: 12,

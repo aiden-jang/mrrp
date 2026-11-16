@@ -43,7 +43,17 @@
   border-color: var(--honey);
   box-shadow: inset 0 0 0 1px var(--honey);
 }
+.seekError {
+  margin: 12px 0 0;
+  color: var(--error);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
 .actions {
+  border: 0;
+  padding: 0;
+  min-width: 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;

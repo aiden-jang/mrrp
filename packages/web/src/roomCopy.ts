@@ -1,13 +1,19 @@
+import { hideSeekLabel } from "./hideSeekArt.js";
 import type { Scene } from "./hours.js";
 import type { RoomView } from "./types.js";
 
 export function roomCaption(
-  view: Pick<RoomView, "youAreHer" | "waitingAtDoor" | "settled" | "sittingWith" | "sittingWithYou" | "box">,
+  view: Pick<
+    RoomView,
+    "hideSeek" | "youAreHer" | "waitingAtDoor" | "settled" | "sittingWith" | "sittingWithYou" | "box"
+  >,
   scene: Pick<Scene, "doing" | "doingHers">,
   name: string,
   setup: boolean,
 ): string {
   if (setup) return "A few small adjustments. The cat has opinions.";
+  const hiding = hideSeekLabel(view.hideSeek, view.youAreHer ? "her" : "him");
+  if (hiding) return hiding;
   if (view.waitingAtDoor)
     return view.youAreHer
       ? "You are by the door. Company would be good."
