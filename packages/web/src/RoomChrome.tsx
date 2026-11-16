@@ -51,12 +51,12 @@ export function Invitation({ children, onEnter }: { children: ReactNode; onEnter
         <div className={s.invitationCopy}>
           <h1 className={s.roomName}>You’re the cat.</h1>
           <p className={s.lede}>
-            Somebody made you a room. Come in, tap how you feel, and let them keep you company.
+            Somebody made you a room. You’re the cat. Come in and make yourself comfortable.
           </p>
           <button className={`${s.btn} ${s.btnGo}`} onClick={onEnter}>
             Go in
           </button>
-          <p className={s.small}>No account. No daily attendance. Naps encouraged.</p>
+          <p className={s.small}>No account needed. No attendance taken.</p>
         </div>
         <div className={s.stage}>{children}</div>
       </div>
@@ -65,20 +65,20 @@ export function Invitation({ children, onEnter }: { children: ReactNode; onEnter
 }
 
 const replies: Record<Mood, string> = {
-  good: "Excellent. Suspicious, but excellent.",
-  tired: "Low battery. No explanation required.",
-  stressed: "No extra tasks in here.",
-  sad: "A softer corner of the room, then.",
-  lonely: "There’s room beside you.",
-  bored: "An extremely ambitious nap awaits.",
-  feral: "The shelf has been warned.",
-  done: "That’ll do for today.",
-  horny: "Subtle. Almost.",
+  good: "Good. We can work with good.",
+  tired: "A fairly reasonable time to do nothing.",
+  stressed: "Nothing else to handle in here.",
+  sad: "Some quiet company, then.",
+  lonely: "You can have some company.",
+  bored: "The shelf is available for questioning.",
+  feral: "A difficult afternoon for the furniture.",
+  done: "That is enough for today.",
+  horny: "A change of scenery, then.",
 };
 export function MoodResponse({ mood }: { mood: Mood | null }) {
   return (
     <p className={s.moodResponse} role="status">
-      {mood ? replies[mood] : "A mood is enough. No essay required."}
+      {mood ? replies[mood] : "How are you feeling? A word will do."}
     </p>
   );
 }

@@ -13,7 +13,9 @@ function timesOut(): void {
 describe("a request that gives up", () => {
   it("tells the room screen to keep trying", async () => {
     timesOut();
-    await expect(fetchRoom("abc123")).rejects.toThrow("Can't reach the room. Still trying.");
+    await expect(fetchRoom("abc123")).rejects.toThrow(
+      "Couldn’t reach the room. Check your connection and try again.",
+    );
   });
 
   it("does not look like a deleted room", async () => {

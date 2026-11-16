@@ -38,7 +38,7 @@ it("finishes the exact same replacement after a lost reply and a page reload", a
   const api = await import("./api.js");
   const fetch = vi.fn().mockRejectedValueOnce(new TypeError("lost reply"));
   vi.stubGlobal("fetch", fetch);
-  await expect(api.doRotate("abc123")).rejects.toThrow("Try it again");
+  await expect(api.doRotate("abc123")).rejects.toThrow("try again");
   const first = JSON.parse(fetch.mock.calls[0]![1].body as string);
   expect(api.myToken("abc123")).toBe(first.next);
   vi.resetModules();

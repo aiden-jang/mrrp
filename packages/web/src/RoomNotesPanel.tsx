@@ -37,7 +37,7 @@ export function RoomNotesPanel({
       <div className={editor.heading}>
         <div>
           <h2 className={editor.title}>Notes for {view.cat.name}</h2>
-          <p className={s.small}>One a day. The last one stays.</p>
+          <p className={s.small}>A new note each day. The last one stays until you add more.</p>
         </div>
         <button
           type="button"
@@ -58,7 +58,7 @@ export function RoomNotesPanel({
             <div className={editor.noteDayRow}>
               <label htmlFor={`room-note-${index}`}>Day {index + 1}</label>
               {view.noteDay && index < view.noteDay && (
-                <span className={s.small}>Shared with {view.cat.name}</span>
+                <span className={s.small}>Reached note {index + 1}</span>
               )}
             </div>
             <textarea

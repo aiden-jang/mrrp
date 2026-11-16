@@ -52,7 +52,7 @@ export function useSeatAccount(id: string, reload: () => Promise<void>, wantsLin
           window.location.href = loginUrl(AUTH_URL, window.location.href);
           return;
         }
-        setLinkError(e instanceof Error ? e.message : "Couldn't do that.");
+        setLinkError(e instanceof Error ? e.message : "Couldn’t save that change. Try again.");
       } finally {
         setLinking(false);
       }

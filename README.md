@@ -1,10 +1,10 @@
 # mrrp
 
-A tiny room for two. One of you is the cat.
+A room for two. One of you is the cat.
 
 [Open mrrp](https://mrrp.aidenjang.com) · [Architecture](ARCHITECTURE.md) · [Contributing](CONTRIBUTING.md)
 
-![The mrrp landing page](docs/screenshots/landing-desktop.png)
+[Copy plan](docs/copy-plan.md): voice, role-aware captions and the supplied note sequence.
 
 Make a room, send someone the link, and look after their very small alter ego. You name her,
 choose her look and leave notes. They get to be the cat: answer back, draw something for the
@@ -96,3 +96,5 @@ and are declared with their actual desktop and phone sizes in the web manifest.
 Only disposable local room data belongs in these public assets.
 
 MIT licensed. See [LICENSE](LICENSE).
+
+The existing install screenshots predate the copy refresh and need fresh captures of the running app.

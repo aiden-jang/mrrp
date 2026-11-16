@@ -73,7 +73,7 @@ async function send<K extends keyof Bodies>(
       body: JSON.stringify(body),
     });
   } catch {
-    throw new Error("That didn't reach the room. Try it again.");
+    throw new Error("Couldn’t confirm that change. Check your connection and try again.");
   }
 }
 
@@ -81,9 +81,9 @@ export async function doLink(id: string, on: boolean): Promise<void> {
   const r = await send(`/api/room/${id}/link`, { me: myToken(id), on });
   if (r.status === 401) throw new Error("Sign in first.");
   // Not "sign in first": she may well be signed in, and we could not reach the service to ask.
-  if (r.status === 503) throw new Error("Sign-in is having a moment. Try again in a bit.");
+  if (r.status === 503) throw new Error("Couldn’t check sign-in. Try again in a moment.");
   if (r.status === 409) throw new Error("That account already has a seat in this room.");
-  if (!r.ok) throw new Error("Couldn't do that.");
+  if (!r.ok) throw new Error("Couldn’t save that change. Try again.");
 }
 
 export const lastRoom = {
@@ -171,7 +171,7 @@ export async function fetchRoom(id: string, name?: string | null): Promise<RoomV
   try {
     r = await timed(`/api/room/${id}?${q}`);
   } catch {
-    throw new Error("Can't reach the room. Still trying.");
+    throw new Error("Couldn’t reach the room. Check your connection and try again.");
   }
   if (r.status === 410)
     throw new GoneError((await roomDeletion(id))?.undoUntil ?? (await goneFrom(r)).undoUntil);
@@ -201,12 +201,12 @@ export async function doRelease(id: string): Promise<void> {
   if (!r.ok) throw new Error("Couldn't free her seat.");
 }
 
-// His. Typing the cat's name beats a confirm dialog: the room is both of their years, and a dialog is
-// one mis-tap from gone.
+// The companion confirms with their own name; the cat’s name identifies the other seat.
 export async function doDelete(id: string, name: string): Promise<number> {
   const r = await send(`/api/room/${id}/delete`, { me: myToken(id), name });
   if (r.status === 410) throw await goneFrom(r);
-  if (r.status === 403) throw new Error("That is not her name.");
+  if (r.status === 403)
+    throw new Error("Couldn’t confirm deletion. Use the companion seat and enter your own name.");
   if (!r.ok) throw new Error("Couldn't delete the room.");
   return ((await r.json()) as { undoUntil: number }).undoUntil;
 }
@@ -285,7 +285,7 @@ export async function doDraw(id: string, cells: string): Promise<RoomView> {
 
 export async function doCatAct(id: string, act: CatAct): Promise<RoomView> {
   const r = await send(`/api/room/${id}/heract`, { me: myToken(id), act });
-  if (!r.ok) throw new Error("Couldn't do that.");
+  if (!r.ok) throw new Error("Couldn’t save that change. Try again.");
   return r.json() as Promise<RoomView>;
 }
 
@@ -300,13 +300,13 @@ export function doHold(id: string, on: boolean): void {
 
 export async function doSit(id: string, on: boolean): Promise<RoomView> {
   const r = await send(`/api/room/${id}/sit`, { me: myToken(id), on });
-  if (!r.ok) throw new Error("Couldn't do that.");
+  if (!r.ok) throw new Error("Couldn’t save that change. Try again.");
   return r.json() as Promise<RoomView>;
 }
 
 export async function doSettle(id: string, on: boolean): Promise<RoomView> {
   const r = await send(`/api/room/${id}/settle`, { me: myToken(id), on });
-  if (!r.ok) throw new Error("Couldn't do that.");
+  if (!r.ok) throw new Error("Couldn’t save that change. Try again.");
   return r.json() as Promise<RoomView>;
 }
 
@@ -319,7 +319,7 @@ export async function doUnsay(id: string, at: number): Promise<RoomView> {
 
 export async function doWait(id: string, on: boolean): Promise<RoomView> {
   const r = await send(`/api/room/${id}/wait`, { me: myToken(id), on });
-  if (!r.ok) throw new Error("Couldn't do that.");
+  if (!r.ok) throw new Error("Couldn’t save that change. Try again.");
   return r.json() as Promise<RoomView>;
 }
 
@@ -345,7 +345,7 @@ export async function saveRoomNotes(id: string, notes: string[]): Promise<void> 
 
 export async function fetchSaid(id: string): Promise<SaidSoFar> {
   const r = await timed(`/api/room/${id}/said?me=${encodeURIComponent(myToken(id))}`);
-  if (!r.ok) throw new Error("Couldn't get that.");
+  if (!r.ok) throw new Error("Couldn’t load your notes and replies. Try again.");
   return (await r.json()) as SaidSoFar;
 }
 

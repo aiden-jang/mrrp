@@ -46,7 +46,7 @@ describe("a room that has been deleted", () => {
     const html = gone(null);
     expect(text(html)).toContain("this room is gone");
     expect(html).not.toContain("Put the room back");
-    expect(text(html)).toContain("There is nothing left in here to get back");
+    expect(text(html)).toContain("They can’t be restored");
   });
 
   it("gives the one who deleted it the date it stops being possible", () => {
@@ -102,7 +102,7 @@ describe("a room she has left", () => {
   it("offers both doors while her side is still kept", () => {
     const html = left({ undoUntil: APRIL_2, seatFree: true });
     expect(html).toContain("Put my side back");
-    expect(html).toContain("No, start fresh instead");
+    expect(html).toContain("Start fresh instead");
   });
 });
 

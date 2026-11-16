@@ -213,3 +213,7 @@ round form; they are not a replacement shape for ordinary buttons.
 - **Don't** stretch pixels or move furniture without moving its interaction geometry.
 - **Don't** turn every room section into a raised card.
 - **Don't** make moods or time away create neglect, decay or attendance pressure.
+
+The voice is warm, nonchalant and dry. “A room for two. One of you is the cat.” states the premise.
+Supporting observations may be funny; errors, recovery, deletion and sharing outcomes stay literal.
+The cat is addressed as “you” on her side. See the [copy plan](docs/copy-plan.md).

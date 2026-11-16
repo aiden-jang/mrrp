@@ -24,12 +24,12 @@ export function Welcome({
       <div className={w.layout}>
         <section className={w.copy}>
           <h1 className={w.title}>
-            A little room.
+            A room for two.
             <br />
-            For your person.
+            One of you is the cat.
           </h1>
           <p className={w.intro}>
-            Make a room and send the link to one person. They become the cat. You get to look after her.
+            Make a room for someone you like. Send them the link. They’re the cat; you keep them company.
           </p>
         </section>
         <form
@@ -72,23 +72,23 @@ export function Welcome({
         </form>
         <figure className={w.preview} aria-label="Room preview">
           <div className={w.scene}>{children}</div>
-          <figcaption className={w.caption}>A place to do very little. Together.</figcaption>
+          <figcaption className={w.caption}>Very little to do. Good company for it.</figcaption>
         </figure>
       </div>
       <ol className={w.steps} aria-label="How Mrrp works">
         <li>
           <div>
-            Make a room.<small>You set the scene.</small>
+            Make a room.<small>You handle the furnishings.</small>
           </div>
         </li>
         <li>
           <div>
-            Invite your person.<small>They tap how they feel.</small>
+            Invite your person.<small>They get to be the cat.</small>
           </div>
         </li>
         <li>
           <div>
-            Just be here.<small>A note. A little company. A nap.</small>
+            Settle in.<small>A note. Some company. Probably a nap.</small>
           </div>
         </li>
       </ol>

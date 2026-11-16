@@ -1,3 +1,4 @@
+import { roomCaption } from "./roomCopy.js";
 import s from "./App.module.css";
 import { dayApart, type Scene } from "./hours.js";
 import { moonLine } from "./moon.js";
@@ -35,25 +36,7 @@ export function RoomAnnotations({
   return (
     <>
       <div className={s.sceneCaption}>
-        <p className={s.doing}>
-          {setup
-            ? "A few small adjustments."
-            : view.waitingAtDoor
-              ? view.youAreHer
-                ? "You are by the door, waiting for him."
-                : `${name} is by the door, waiting for you.`
-              : view.settled
-                ? view.youAreHer
-                  ? "You are settled against him, not moving for anybody."
-                  : `${name} has settled against you.`
-                : view.sittingWith || view.sittingWithYou
-                  ? view.youAreHer
-                    ? "You are curled up while he sits with you."
-                    : `${name} is curled up beside you.`
-                  : view.youAreHer
-                    ? `You are ${scene.doingHers ?? scene.doing}.`
-                    : `${name} is ${scene.doing}.`}
-        </p>
+        <p className={s.doing}>{roomCaption(view, scene, name, setup)}</p>
         {postcard.captureRoom && !setup && (
           <div className={s.postcardActions}>
             <button

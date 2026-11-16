@@ -49,7 +49,7 @@ export function PostcardPreview({
       </div>
       {imageStatus === "saved" || imageStatus === "shared" ? (
         <p role="status" className={s.small}>
-          {imageStatus === "saved" ? "Download started." : "Postcard shared."}
+          {imageStatus === "saved" ? "Download started." : "Share sheet closed."}
         </p>
       ) : null}
     </section>

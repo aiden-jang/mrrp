@@ -66,7 +66,7 @@ export function useSayBox(
       setOpen(false);
       setReplyTo(null);
     } catch (e) {
-      onError(e instanceof Error ? e.message : "Couldn't do that.");
+      onError(e instanceof Error ? e.message : "Couldn’t save that change. Try again.");
     } finally {
       pending.current = false;
       setSaving(false);

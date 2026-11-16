@@ -56,7 +56,8 @@ export function useRoomHistory(
       const history = await fetchSaid(id);
       if (alive.current && request === generation.current) setSaid(history);
     } catch (e) {
-      if (alive.current) onError(e instanceof Error ? e.message : "Couldn't get that.");
+      if (alive.current)
+        onError(e instanceof Error ? e.message : "Couldn’t load your notes and replies. Try again.");
     } finally {
       busy.current = false;
       if (alive.current) setLoading(false);

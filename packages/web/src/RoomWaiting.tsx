@@ -48,9 +48,9 @@ export function RoomWaiting({
           : shareResult === "failed"
             ? "Try sharing again"
             : shareResult === "shared"
-              ? "Sent."
+              ? "Share sheet closed."
               : shareResult === "copied"
-                ? "Copied. Go send it."
+                ? "Link copied."
                 : view.theyLeft
                   ? "Send the link to somebody else"
                   : "Send her the link"}

@@ -23,7 +23,7 @@ describe("the buttons on a deleted room", () => {
     const onHome = vi.fn();
     render(<GoneCard undoUntil={APRIL_2} undoing={false} err={null} onPutBack={onPutBack} onHome={onHome} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "No, I meant it" }));
+    fireEvent.click(screen.getByRole("button", { name: "Back to mrrp" }));
     expect(onHome).toHaveBeenCalledOnce();
     expect(onPutBack).not.toHaveBeenCalled();
   });
@@ -76,7 +76,7 @@ describe("the buttons on a room she has left", () => {
     const onStartFresh = vi.fn();
     render(leftCard({ undoUntil: APRIL_2, seatFree: true }, { onPutBack, onStartFresh }));
 
-    fireEvent.click(screen.getByRole("button", { name: "No, start fresh instead" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start fresh instead" }));
     expect(onStartFresh).toHaveBeenCalledOnce();
     expect(onPutBack).not.toHaveBeenCalled();
   });

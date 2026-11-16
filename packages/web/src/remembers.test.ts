@@ -157,7 +157,7 @@ describe("coming back", () => {
   });
 
   it("gets warmer with the gap rather than sharper", () => {
-    expect(awayLine(200 * DAY, "Bean")).toMatch(/like you never left/);
+    expect(awayLine(200 * DAY, "Bean")).toMatch(/familiar arrangement/);
   });
 
   it("gives each stretch its own line", () => {

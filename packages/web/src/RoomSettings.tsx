@@ -172,9 +172,9 @@ export function RoomSettings({
               : shareResult === "failed"
                 ? "Try sharing again"
                 : shareResult === "shared"
-                  ? "Sent."
+                  ? "Share sheet closed."
                   : shareResult === "copied"
-                    ? "Copied. Go send it."
+                    ? "Link copied."
                     : `Send ${view.them ?? "her"} the link again`}
           </button>
         )}
@@ -184,8 +184,8 @@ export function RoomSettings({
           (releasing ? (
             <div className={s.panel} style={{ marginTop: 14 }}>
               <p className={s.small} style={{ color: "var(--ink)" }}>
-                Free her seat so she can return on another browser. Whoever opens the room link next becomes
-                the cat, so send it directly to her afterwards. Her notes and reply stay here.
+                Free her seat so she can return on another browser. The next person who joins from the room
+                link becomes the cat, so send it directly to her afterwards. Her notes and reply stay here.
               </p>
               <div className={s.row} style={{ marginTop: 12 }}>
                 <button className={s.btn} disabled={freeing} onClick={() => setReleasing(false)}>
@@ -203,7 +203,7 @@ export function RoomSettings({
                       setReleasing(false);
                       await reload();
                     } catch (e) {
-                      onError(e instanceof Error ? e.message : "Couldn't do that.");
+                      onError(e instanceof Error ? e.message : "Couldn’t save that change. Try again.");
                     } finally {
                       releasePending.current = false;
                       setFreeing(false);

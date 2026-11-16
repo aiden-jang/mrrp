@@ -55,7 +55,7 @@ export function GoneCard({
           </p>
         )}
         <button className={s.quiet} onClick={onHome}>
-          No, I meant it
+          Back to mrrp
         </button>
       </div>
     );
@@ -65,8 +65,7 @@ export function GoneCard({
     <div className={`${s.card} ${s.doorNotice}`}>
       <h1 className={s.h1}>this room is gone</h1>
       <p className={s.small} style={{ marginTop: 12 }}>
-        It was deleted. The cat, the notes, the year of it, both sides. There is nothing left in here to get
-        back.
+        It was deleted. The room and its contents have been erased for both of you. They can’t be restored.
       </p>
       <button className={`${s.btn} ${s.btnGo}`} style={{ width: "100%", marginTop: 18 }} onClick={onHome}>
         Start a new one
@@ -137,7 +136,7 @@ export function LeftCard({
           style={undoUntil ? undefined : { width: "100%", marginTop: 18 }}
           onClick={onStartFresh}
         >
-          {undoUntil ? "No, start fresh instead" : "Take the seat again"}
+          {undoUntil ? "Start fresh instead" : "Take the seat again"}
         </button>
       )}
     </div>
@@ -180,14 +179,14 @@ export function SaidPanel({
    * Don't print his name on her side: it is a placeholder until he picks one. Don't say "wrote" on his:
    * this stops at the note she has been handed, and he may have written a hundred more.
    */
-  const wrote = youAreHer ? "what he's written you" : "what she has read so far";
+  const wrote = youAreHer ? "notes left for you" : "notes on her side of the room";
   const back = youAreHer ? "you said back" : `${them} said back`;
 
   return (
     <section
       ref={panelRef}
       className={`${s.panel} ${s.saidPanel}`}
-      aria-label="Everything the two of you have said"
+      aria-label="Your notes & replies"
       tabIndex={-1}
     >
       <div className={s.saidTop}>
@@ -227,15 +226,15 @@ export function SaidPanel({
       {said.total > said.notes.length ? (
         <p className={s.saidMore}>
           {youAreHer
-            ? `He wrote ${said.total} of these.`
-            : `${said.total} written. She is on day ${said.notes.length}.`}
+            ? `${said.total} notes in this room.`
+            : `${said.total} notes. Her current note is ${said.notes.length}.`}
         </p>
       ) : (
         <p className={s.saidEnd}>
           <PawMark />{" "}
           {youAreHer
-            ? `That is all of them.${said.total > 1 ? ` He wrote ${said.total}.` : ""}`
-            : `She has read all of them.${said.total > 1 ? ` All ${said.total}.` : ""}`}
+            ? `That is all of them.${said.total > 1 ? ` ${said.total} notes.` : ""}`
+            : `All notes have reached her side.${said.total > 1 ? ` All ${said.total}.` : ""}`}
         </p>
       )}
 

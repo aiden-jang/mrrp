@@ -15,9 +15,9 @@ describe("what she is doing", () => {
     expect(doing("01", 0)).toBe("asleep, and dreaming about something");
     expect(doing("01", 6)).toBe("awake before anyone, watching the window");
     expect(doing("01", 8)).toBe("in the first bit of sun");
-    expect(doing("01", 12)).toBe("loafing");
+    expect(doing("01", 12)).toBe("loafing, with no immediate plans");
     expect(doing("01", 14), "the afternoon nap").toBe("deeply asleep in the best spot in the room");
-    expect(doing("01", 19)).toBe("settled, now that everyone's in");
+    expect(doing("01", 19)).toBe("settled in for the evening");
     expect(doing("01", 22)).toBe("curled up for the night");
   });
 

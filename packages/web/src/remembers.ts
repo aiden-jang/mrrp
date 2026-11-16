@@ -5,13 +5,13 @@ import type { Milestone, Personality } from "./types.js";
 export function milestoneLine(milestone: Milestone, catName: string, youAreHer: boolean): string {
   if (milestone.kind === "ours") {
     return youAreHer
-      ? `${milestone.label}, today. he put it in the room so it would know.`
+      ? `${milestone.label}, today. a date worth keeping.`
       : `${milestone.label}, today. ${catName} has no idea what that means and is here for it anyway.`;
   }
   if (milestone.kind === "first-week")
     return youAreHer
-      ? `a week in here. you have stopped checking the door.`
-      : `${catName} has been here a week. she has stopped checking the door.`;
+      ? `a week in here. a respectable amount of sitting.`
+      : `a week of ${catName}. a respectable amount of sitting.`;
   if (milestone.kind === "first-month")
     return youAreHer
       ? `a month in here. you sleep in the sun like you own it.`
@@ -22,7 +22,7 @@ export function milestoneLine(milestone: Milestone, catName: string, youAreHer: 
       : `${catName} has been here a year today. same cat, same window.`;
   return youAreHer
     ? `${milestone.years} years in here today. the window is still yours.`
-    : `${milestone.years} years of ${catName} today. she has not once thanked either of you.`;
+    : `${milestone.years} years of ${catName} today. the window remains a good arrangement.`;
 }
 
 const TRAIT_LINES: Record<Personality["trait"], { his: string; hers: (them: string) => string }> = {
@@ -60,11 +60,11 @@ export const AWAY_FLOOR_MS = 8 * HOUR;
 
 export function awayLine(awayMs: number | null, catName: string): string | null {
   if (awayMs === null || awayMs < AWAY_FLOOR_MS) return null;
-  if (awayMs < DAY) return `${catName} looks up. she was not expecting you until later.`;
+  if (awayMs < DAY) return `${catName} looks up. good to have you here.`;
   if (awayMs < 4 * DAY) return `${catName} is already on her way over.`;
-  if (awayMs < 14 * DAY) return `${catName} takes a moment, and then decides it is definitely you.`;
-  if (awayMs < 60 * DAY) return `${catName} has been keeping your spot warm. she will deny this.`;
-  return `${catName} settles in like you never left, which is the whole trick of her.`;
+  if (awayMs < 14 * DAY) return `${catName} looks over, then makes room.`;
+  if (awayMs < 60 * DAY) return `${catName} stretches. the usual spot is available.`;
+  return `${catName} settles in beside you. a familiar arrangement.`;
 }
 
 /* That she has worked out when you actually get in. Told to him alone, because it is about him. */

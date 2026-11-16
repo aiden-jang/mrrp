@@ -51,7 +51,7 @@ for (const width of [390, 1440]) {
         } else await route.continue();
       });
       await page.getByRole("button", { name: "Replace my key", exact: true }).click();
-      await expect(page.getByRole("alert")).toContainText("Try it again");
+      await expect(page.getByRole("alert")).toContainText("try again");
       const next = await token(page, first.id);
       expect(next).not.toBe(original);
       await page.reload();

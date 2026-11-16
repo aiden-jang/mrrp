@@ -16,9 +16,11 @@ const CARD = {
 export function keepsakeCaption({ catName, together, youAreHer }: KeepsakeDetails): string {
   if (together)
     return youAreHer
-      ? "for a little while, you were both here."
-      : `for a little while, you were both here with ${catName}.`;
-  return youAreHer ? "A little moment in your room." : `A little moment in ${catName}’s room.`;
+      ? "Both here. Very little accomplished."
+      : `Both here with ${catName}. Very little accomplished.`;
+  return youAreHer
+    ? "Your room. A fairly good place to be."
+    : `${catName}’s room. A fairly good place to be.`;
 }
 
 export function keepsakeDate(date = new Date()): string {

@@ -23,30 +23,30 @@ export interface DreamContext {
 const FROM_FOUND: Partial<Record<DiscoveryKey, { scene: DreamScene; line: string }>> = {
   mouse: { scene: "mouse", line: "the mouse, and it gets away." },
   music: { scene: "moth", line: "something small and winged, going round a light." },
-  piano: { scene: "piano", line: "paws moving. somewhere in there, a piano." },
+  piano: { scene: "piano", line: "paws on the piano. a loose interpretation of music." },
   constellation: { scene: "stars", line: "stars, from the inside this time." },
-  box: { scene: "box", line: "a box. of course it is a box." },
+  box: { scene: "box", line: "a box. excellent facilities." },
   catnip: { scene: "fish", line: "whatever this one is, it is going well." },
 };
 
 const FROM_ACTION: Partial<Record<Action | "leaveout", { scene: DreamScene; line: string }>> = {
   brush: { scene: "brush", line: "being brushed, somewhere behind shut eyes." },
-  leaveout: { scene: "fish", line: "food. this is not a surprise." },
+  leaveout: { scene: "fish", line: "food. a coherent plot." },
   photo: { scene: "sun", line: "a bright square of light, and somebody holding still." },
 };
 
 const FROM_TRAIT: Partial<Record<Trait, { scene: DreamScene; line: string }>> = {
   petted: { scene: "sun", line: "a warm patch, and a hand that keeps going." },
   brushed: { scene: "brush", line: "being brushed, somewhere behind shut eyes." },
-  fed: { scene: "fish", line: "food. this is not a surprise." },
-  accompanied: { scene: "sun", line: "somebody sat nearby. that is the whole dream." },
+  fed: { scene: "fish", line: "food. a coherent plot." },
+  accompanied: { scene: "sun", line: "some company. not much of a plot. quite nice, though." },
   photographed: { scene: "sun", line: "a bright square of light, and somebody holding still." },
 };
 
 const PLAIN: { scene: DreamScene; line: string }[] = [
   { scene: "fish", line: "a fish, probably. it usually is." },
   { scene: "sun", line: "a warm patch of floor that keeps moving." },
-  { scene: "moth", line: "something small, nearly caught." },
+  { scene: "moth", line: "a moth. still technically winning." },
 ];
 
 // Never dream about a secret this reader has not found. Naming the piano tells them there is a piano.
@@ -57,7 +57,7 @@ export function dreamOf(context: DreamContext, seed: number): Dream {
   for (const key of Object.keys(FROM_FOUND) as DiscoveryKey[]) {
     if (found.has(key)) candidates.push(FROM_FOUND[key]!);
   }
-  if (context.hasBox) candidates.push({ scene: "box", line: "a box. of course it is a box." });
+  if (context.hasBox) candidates.push({ scene: "box", line: "a box. excellent facilities." });
   for (const action of context.recent) {
     const from = FROM_ACTION[action];
     if (from) candidates.push(from);

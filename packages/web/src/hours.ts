@@ -107,12 +107,12 @@ function doingAt(
       ? "asleep on the cool boards, out of the sun"
       : "deeply asleep in the best spot in the room";
   }
-  if (hour < 13) return "loafing";
+  if (hour < 13) return "loafing, with no immediate plans";
   if (hour < homeHour) {
     if (grey) return "in the usual spot, with no sun to follow";
     return summer ? "lying just beside the sunbeam" : "moving with the sunbeam, one patch at a time";
   }
-  if (hour < 21) return "settled, now that everyone's in";
+  if (hour < 21) return "settled in for the evening";
   return sleepy > 0.6 ? "curled up for the night" : "doing one last lap of the room";
 }
 

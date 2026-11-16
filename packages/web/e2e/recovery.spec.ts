@@ -46,7 +46,7 @@ test("offline connection and action feedback stay separately readable", async ({
     await context.setOffline(true);
     await page.getByRole("button", { name: "Pet her", exact: true }).click();
     const connection = page.getByRole("status").filter({ hasText: "You’re offline" });
-    const action = page.getByText("That didn't reach her. Try it again.", { exact: true });
+    const action = page.getByText("That didn't reach her. try again.", { exact: true });
     await expect(connection).toBeVisible();
     await expect(action).toBeVisible();
     for (const width of [320, 1440]) {

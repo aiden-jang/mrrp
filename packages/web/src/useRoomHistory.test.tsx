@@ -48,5 +48,5 @@ it("cannot reopen a closed history panel when taking back a line finishes late",
   fireEvent.click(screen.getByRole("button", { name: "take it back" }));
   fireEvent.click(screen.getByRole("button", { name: "Close" }));
   await act(async () => finish(view));
-  expect(screen.queryByRole("region", { name: "Everything the two of you have said" })).toBeNull();
+  expect(screen.queryByRole("region", { name: "Your notes & replies" })).toBeNull();
 });

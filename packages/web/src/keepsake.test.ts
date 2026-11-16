@@ -4,12 +4,14 @@ import { keepsakeCaption, keepsakeDate, keepsakeImageBounds } from "./keepsake.j
 describe("keepsake copy", () => {
   it("remembers rare time together instead of reducing it to the cat pose", () => {
     expect(keepsakeCaption({ catName: "Mochi", together: true })).toBe(
-      "for a little while, you were both here with Mochi.",
+      "Both here with Mochi. Very little accomplished.",
     );
   });
 
   it("describes the captured room without guessing the animation pose", () => {
-    expect(keepsakeCaption({ catName: "Bean", together: false })).toBe("A little moment in Bean’s room.");
+    expect(keepsakeCaption({ catName: "Bean", together: false })).toBe(
+      "Bean’s room. A fairly good place to be.",
+    );
   });
 
   it("formats the day as keepsake copy rather than a timestamp", () => {
@@ -23,8 +25,8 @@ describe("the postcard she keeps", () => {
   it("does not caption her own picture with her name in the third person", () => {
     // This is the one thing in the app designed to leave the app, so it is the one most likely to
     // be seen by somebody who has no idea she is the cat.
-    expect(keepsakeCaption({ ...base, youAreHer: true })).toBe("A little moment in your room.");
-    expect(keepsakeCaption(base)).toBe("A little moment in Bean’s room.");
+    expect(keepsakeCaption({ ...base, youAreHer: true })).toBe("Your room. A fairly good place to be.");
+    expect(keepsakeCaption(base)).toBe("Bean’s room. A fairly good place to be.");
   });
 
   it("does not tell her she was here with herself", () => {

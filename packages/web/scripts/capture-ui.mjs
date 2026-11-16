@@ -276,7 +276,7 @@ try {
       await capture(her, "reply", width, errors);
       await her.getByRole("button", { name: "Never mind", exact: true }).click();
       await her.getByRole("button", { name: "Everything he's written you", exact: true }).click();
-      await her.getByRole("region", { name: "Everything the two of you have said" }).waitFor();
+      await her.getByRole("region", { name: "Your notes & replies" }).waitFor();
       await capture(her, "history", width, errors);
       await her.getByRole("button", { name: "Close", exact: true }).click();
       await her.getByRole("button", { name: /Draw something for the frame/ }).click();

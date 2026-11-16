@@ -52,7 +52,7 @@ export function CompanionRoom({
             </>
           ) : (
             <>
-              <b>{view.them}</b> hasn't said how she is yet today.
+              <b>{view.them}</b> hasn’t shared a mood today.
             </>
           )}
         </p>
@@ -74,12 +74,14 @@ export function CompanionRoom({
 
         <div className={s.note}>
           <h2 className={s.noteFrom}>Her notes</h2>
-          {view.noteDay && !view.sheHasReadAll && <p className={s.small}>She’s on note {view.noteDay}.</p>}
+          {view.noteDay && !view.sheHasReadAll && (
+            <p className={s.small}>Her current note is {view.noteDay}.</p>
+          )}
           {view.sheHasReadAll && (
             <p className={s.small}>
               {view.notesInAll === 1
-                ? "She has read your note."
-                : `She has read all ${view.notesInAll} of them.`}{" "}
+                ? "Your note is available to her."
+                : `All ${view.notesInAll} notes have reached her side.`}{" "}
               You can leave more whenever you like.
             </p>
           )}
@@ -140,7 +142,7 @@ export function CompanionRoom({
           disabled={history.loading}
           onClick={() => void history.open()}
         >
-          Everything the two of you have said
+          Your notes & replies
         </button>
         {history.panel}
 

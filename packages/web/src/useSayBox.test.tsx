@@ -11,7 +11,7 @@ afterEach(() => {
 });
 
 it("explains a failed reply and keeps the words available for retry", async () => {
-  vi.mocked(doSay).mockRejectedValueOnce(new Error("That didn't reach the room. Try it again."));
+  vi.mocked(doSay).mockRejectedValueOnce(new Error("That didn't reach the room. try again."));
   const onError = vi.fn();
   const hook = renderHook(() => useSayBox("abc123", vi.fn(), vi.fn(), onError));
   act(() => {
@@ -19,7 +19,7 @@ it("explains a failed reply and keeps the words available for retry", async () =
     hook.result.current.setText("still here 🌱");
   });
   await act(() => hook.result.current.say());
-  expect(onError).toHaveBeenCalledWith("That didn't reach the room. Try it again.");
+  expect(onError).toHaveBeenCalledWith("That didn't reach the room. try again.");
   expect(hook.result.current.open).toBe(true);
   expect(hook.result.current.text).toBe("still here 🌱");
 });

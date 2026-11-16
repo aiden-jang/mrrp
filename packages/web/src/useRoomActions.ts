@@ -176,7 +176,7 @@ export function useRoomActions({
     try {
       setView(await doWait(id, on));
     } catch (e) {
-      onError(e instanceof Error ? e.message : "Couldn't do that.");
+      onError(e instanceof Error ? e.message : "Couldn’t save that change. Try again.");
     }
   };
 
@@ -186,7 +186,7 @@ export function useRoomActions({
     try {
       setView(await doSettle(id, on));
     } catch (e) {
-      onError(e instanceof Error ? e.message : "Couldn't do that.");
+      onError(e instanceof Error ? e.message : "Couldn’t save that change. Try again.");
     }
   };
 
@@ -196,7 +196,7 @@ export function useRoomActions({
     try {
       setView(await doSit(id, on));
     } catch (e) {
-      onError(e instanceof Error ? e.message : "Couldn't do that.");
+      onError(e instanceof Error ? e.message : "Couldn’t save that change. Try again.");
     }
   };
 
@@ -230,7 +230,7 @@ export function useRoomActions({
     try {
       setView(await doCatAct(id, act));
     } catch (e) {
-      onError(e instanceof Error ? e.message : "Couldn't do that.");
+      onError(e instanceof Error ? e.message : "Couldn’t save that change. Try again.");
     }
   };
 

@@ -43,7 +43,7 @@ function ArrivalMark({ kind }: { kind: string }) {
 
 export const FOUND_ANNOUNCEMENTS: Record<string, string> = {
   constellation: "the stars in the window have all come out.",
-  roomTour: "the whole room is awake at once.",
+  roomTour: "a few corners of the room are showing off.",
   piano: "the floorboards are playing notes.",
   bubbles: "bubbles are drifting through the room.",
   aurora: "lights are moving across the window.",
@@ -51,10 +51,10 @@ export const FOUND_ANNOUNCEMENTS: Record<string, string> = {
   reached: "you both went for the same thing at the same time.",
   summon: "she has come over.",
   herName: "she knows her own name.",
-  box: "a box has turned up.",
+  box: "a box has arrived. rather a lot of potential.",
   yarn: "there is yarn on the floor now.",
   treat: "she has found a treat.",
-  catnip: "the catnip has arrived.",
+  catnip: "the catnip has arrived. plans may change.",
   music: "music is playing.",
   mouse: "a mouse just ran along the wall.",
   belly: "she has rolled all the way over.",
@@ -92,7 +92,7 @@ const FOUND_NAMES_AS_HER: Record<string, string> = {
   mrrp: "what you do when he says your word",
   summon: "that you come when called",
   herName: "that you know your own name",
-  belly: "that you will roll over for the two of you",
+  belly: "the belly situation",
 };
 
 const FOUND_NAMES: Record<string, string> = {
@@ -110,7 +110,7 @@ const FOUND_NAMES: Record<string, string> = {
   catnip: "the catnip",
   music: "the music",
   mouse: "the mouse",
-  belly: "that she will roll over for the two of you",
+  belly: "the belly situation",
 };
 
 const FIRSTS: Record<string, string> = {
@@ -136,9 +136,9 @@ export function ArrivalCard({
     <section className={s.arrival} aria-label="Things the room kept for you">
       <div className={s.arrivalTop}>
         <div>
-          <p className={s.arrivalTitle}>the room kept this for you</p>
+          <p className={s.arrivalTitle}>a few things from the room</p>
           <p className={s.small} style={{ marginTop: 2 }}>
-            It waited here until you looked in.
+            Here when you want a look.
           </p>
         </div>
         <button type="button" onClick={onClose} className={s.arrivalClose} aria-label="Put away arrival card">

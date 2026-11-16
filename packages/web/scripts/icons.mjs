@@ -51,7 +51,7 @@ writeFileSync(
     {
       name: "mrrp",
       short_name: "mrrp",
-      description: "A tiny room for two. One of you is the cat.",
+      description: "A room for two. One of you is the cat.",
       start_url: ".",
       scope: "/",
       display: "standalone",

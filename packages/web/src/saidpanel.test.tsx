@@ -33,12 +33,12 @@ describe("looking back at what they have said", () => {
   });
 
   it("says whose words these are, from each seat", () => {
-    expect(text(room, true)).toContain("what he's written you");
+    expect(text(room, true)).toContain("notes left for you");
     // His name is a placeholder until he picks one, so her side never prints it.
     expect(text(room, true)).not.toContain("Bean has written");
     expect(text(room, true)).toContain("you said back");
     // Not "what you wrote her": this stops where she has got to, and he may have written far more.
-    expect(text(room, false)).toContain("what she has read so far");
+    expect(text(room, false)).toContain("notes on her side of the room");
     expect(text(room, false)).not.toContain("what you wrote her");
     expect(text(room, false)).toContain("Bean said back");
   });
@@ -58,15 +58,15 @@ describe("looking back at what they have said", () => {
 
   it("tells her how many he wrote, once there are more than she has had", () => {
     const early = { total: 100, notes: [room.notes[0]!], lines: [] };
-    expect(text(early, true)).toContain("He wrote 100 of these.");
-    expect(text(early, false)).toContain("100 written. She is on day 1.");
+    expect(text(early, true)).toContain("100 notes in this room.");
+    expect(text(early, false)).toContain("100 notes. Her current note is 1.");
   });
 
   it("marks the end once she has had all of them, instead of going quiet", () => {
     const done = { total: room.notes.length, notes: room.notes, lines: [] };
-    expect(text(done, true)).toContain("That is all of them. He wrote 2.");
+    expect(text(done, true)).toContain("That is all of them. 2 notes.");
     expect(text(done, true)).not.toContain("of these");
-    expect(text(done, false)).toContain("She has read all of them. All 2.");
+    expect(text(done, false)).toContain("All notes have reached her side. All 2.");
   });
 
   it("does not say he wrote one, when one is all he wrote", () => {
