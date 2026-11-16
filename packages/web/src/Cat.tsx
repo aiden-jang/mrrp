@@ -6,6 +6,7 @@ import * as sceneArt from "./roomShell.js";
 import { roomPainter, type RasterView } from "./roomPainter.js";
 import { roomArt } from "./roomArt.js";
 import * as catComfort from "./catComfort.js";
+import { boundCatTarget, moveCat } from "./catMovement.js";
 import { catPalette, paintCatEyes } from "./catArt.js";
 import * as geometry from "./roomGeometry.js";
 import type { Cat as CatLook, Clock, Gift, Mood, RoomDecor } from "./types.js";
@@ -78,8 +79,6 @@ const GW = 100,
   FLOOR = 48;
 const VW = 80;
 const BRUSH_RUN = 10;
-const CAT_REACH_LEFT = Math.max(...Object.values(POSES).map((p) => -p.ox));
-const CAT_REACH_RIGHT = Math.max(...Object.values(POSES).map((p) => p.ox + p.w));
 const WIN_X = 60,
   WIN_CX = WIN_X + 8;
 const WINDOW_CENTER_X = geometry.project("window", WIN_CX, 4).x;
@@ -2036,10 +2035,9 @@ export function Cat({
                                 : followingLight
                                   ? warmSeat(sc.catX * GW)
                                   : sc.catX * GW;
-      const bounded = (x: number) => Math.max(CAT_REACH_LEFT, Math.min(GW - CAT_REACH_RIGHT, x));
-      wantX = catComfort.gestureTarget(bounded(wantX), catX.current, gesture);
+      wantX = catComfort.gestureTarget(boundCatTarget(wantX), catX.current, gesture);
       if (catX.current === null) catX.current = firstEverRef.current ? 19 : wantX;
-      catX.current += (wantX - catX.current) * (catnipping || zooming || mouseChasing ? 0.4 : 0.05);
+      catX.current = moveCat(catX.current, wantX, elapsed, catnipping || zooming || mouseChasing);
       let kx = Math.round(catX.current);
 
       const m = reduce ? null : mothAt(t, beamX);
@@ -2167,9 +2165,9 @@ export function Cat({
         posed;
       const stretchCycle = t % 40_000;
       const stretching =
-        !reduce && awake && sc.play < 0.5 && !inBox && Math.abs(wantX - kx) < 2 && stretchCycle < 1400;
+        !reduce && awake && sc.play < 0.5 && !inBox && catX.current === wantX && stretchCycle < 1400;
       const pouncing = mouseChasing || laserPlaying || swiping;
-      const walking = Math.abs(wantX - kx) > 3 && !zooming && !catnipping && !pouncing;
+      const walking = catX.current !== wantX && !zooming && !catnipping && !pouncing;
 
       if (bothCalledRef.current && walking && !wasWalking.current && !reduce && t > belled.current) {
         belled.current = t + 2600;

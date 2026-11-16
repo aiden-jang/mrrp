@@ -31,8 +31,6 @@ const LOOK: CatLook = {
 
 export interface Room {
   frame: (at: number) => void;
-  // Run frames from `from` to `to`. She eases 5% of the way toward where she wants to be each frame, so
-  // ask for enough of them.
   run: (from: number, to: number, step?: number) => void;
   /* Change a prop mid-run, which is how anything happens to a room that is already open. */
   set: (next: Partial<Parameters<typeof Cat>[0]>) => void;
