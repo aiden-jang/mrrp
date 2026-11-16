@@ -1,3 +1,4 @@
+import { ReplyDrawing } from "./ReplyDrawing.js";
 import { NoteLetter } from "./NoteLetter.js";
 import s from "./App.module.css";
 import { BLANKET_KEYS, BLANKETS, type BlanketKey } from "./blanket.js";
@@ -72,6 +73,10 @@ export function CatRoom({
 
         {sayBox.open ? (
           <SayBox
+            drawing={sayBox.drawing}
+            drawingOpen={sayBox.drawingOpen}
+            onDrawing={sayBox.setDrawing}
+            onDrawingOpen={sayBox.setDrawingOpen}
             value={sayBox.text}
             max={LINE_MAX}
             answering={sayBox.replyTo !== null && view.note ? view.note.text : null}
@@ -90,6 +95,7 @@ export function CatRoom({
           <button className={s.yourLine} onClick={() => sayBox.start(null)}>
             <span className={s.yourLineLabel}>the last thing you said to him</span>
             <span className={s.yourLineText}>{view.herLine.text}</span>
+            <ReplyDrawing cells={view.herLine.drawing} />
           </button>
         ) : (
           <button className={s.quiet} onClick={() => sayBox.start(null)}>

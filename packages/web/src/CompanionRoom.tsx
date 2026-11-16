@@ -1,3 +1,4 @@
+import { ReplyDrawing } from "./ReplyDrawing.js";
 import type { RefObject } from "react";
 import s from "./App.module.css";
 import { fadeNote, listOf } from "./fades.js";
@@ -62,6 +63,7 @@ export function CompanionRoom({
           <div className={s.note}>
             <p className={s.noteFrom}>{view.them} left you this</p>
             <p className={s.noteText}>{view.herLine.text}</p>
+            <ReplyDrawing cells={view.herLine.drawing} />
             <p className={s.noteDay}>{whenish(view.herLine.at)}</p>
           </div>
         )}

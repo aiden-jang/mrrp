@@ -10,6 +10,8 @@ export function useSayBox(
   onSaid: () => void,
   onError: (message: string) => void,
 ) {
+  const [drawing, setDrawing] = useState<string | null>(null);
+  const [drawingOpen, setDrawingOpen] = useState(false);
   const [text, setText] = useState("");
   const [open, setOpen] = useState(false);
   const [replyTo, setReplyTo] = useState<number | null>(null);
@@ -27,6 +29,7 @@ export function useSayBox(
 
   const start = (day: number | null) => {
     setText("");
+    setDrawing(null);
     setReplyTo(day);
     setOpen(true);
   };
@@ -38,11 +41,11 @@ export function useSayBox(
   };
 
   const say = async () => {
-    if (pending.current) return;
+    if (pending.current || drawingOpen) return;
     pending.current = true;
     setSaving(true);
     try {
-      applyView(await doSay(id, text, replyTo ?? undefined));
+      applyView(await doSay(id, text, replyTo ?? undefined, drawing ?? undefined));
       play("settle");
       onSaid();
       setOpen(false);
@@ -73,5 +76,21 @@ export function useSayBox(
     }
   };
 
-  return { text, setText, open, replyTo, saving, clearing, boxRef, start, neverMind, say, clearTap };
+  return {
+    drawing,
+    setDrawing,
+    drawingOpen,
+    setDrawingOpen,
+    text,
+    setText,
+    open,
+    replyTo,
+    saving,
+    clearing,
+    boxRef,
+    start,
+    neverMind,
+    say,
+    clearTap,
+  };
 }

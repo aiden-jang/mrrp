@@ -196,7 +196,7 @@ export interface Bodies {
   recover: { me: string; code: string };
   rotate: { me: string; next: string };
   release: { me: string };
-  say: { me: string; text: string; aboutDay?: number };
+  say: { me: string; text: string; aboutDay?: number; drawing?: string };
   setup: { me: string; cat: Cat; decor: RoomDecor; clock: Clock; notes?: string[] };
   shelf: { me: string };
   settle: { me: string; on: boolean };
@@ -210,6 +210,7 @@ export interface Bodies {
 }
 
 export interface Told2 {
+  drawing?: string;
   text: string;
   at: number;
   gift?: Gift;
@@ -225,7 +226,7 @@ export interface Told {
 export type Arrival =
   | { kind: "action"; at: number; action: LogAction }
   | { kind: "mood"; at: number; mood: Mood }
-  | { kind: "line"; at: number; text: string; gift?: Gift; note?: string }
+  | { kind: "line"; at: number; text: string; gift?: Gift; note?: string; drawing?: string }
   | { kind: "drawn"; at: number; cells: string }
   | { kind: "undrawn"; at: number }
   | { kind: "found"; at: number; what: DiscoveryKey | null }
@@ -250,9 +251,9 @@ export interface Personality {
 }
 
 export interface SaidSoFar {
-  notes: { day: number; text: string; answers: { text: string; at: number }[] }[];
+  notes: { day: number; text: string; answers: { text: string; at: number; drawing?: string }[] }[];
   total: number;
-  lines: { text: string; at: number; gift?: Gift; about?: string }[];
+  lines: { text: string; at: number; gift?: Gift; about?: string; drawing?: string }[];
 }
 
 export interface RoomDecor {

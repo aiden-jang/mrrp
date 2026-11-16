@@ -11,7 +11,14 @@ import {
 } from "./seatAccess.js";
 import { moodDeadline, sweepMoods, type StoredMood } from "./moodRetention.js";
 import { isSeatToken } from "./seatToken.js";
-import { actionArrivals, catArrivals, exportActivity, firstArrivals, recentActivity } from "./activity.js";
+import {
+  actionArrivals,
+  catArrivals,
+  exportActivity,
+  firstArrivals,
+  recentActivity,
+  replyHistory,
+} from "./activity.js";
 import { DurableObject } from "cloudflare:workers";
 import type {
   Action,
@@ -618,29 +625,7 @@ export class Room extends DurableObject<Env> {
     const read = Math.min((await this.ctx.storage.get<number>("noteIdx")) ?? 0, all.length - 1);
     const lines = await this.lines();
 
-    // Only if the note still says what it said when she answered. Otherwise he has rewritten it, and her
-    // words would end up attached to a sentence she never read.
-    const home = (line: Told2) =>
-      line.aboutDay !== undefined && all[line.aboutDay] === line.about ? line.aboutDay : null;
-
-    const answers = new Map<number, Told2[]>();
-    for (const line of lines) {
-      const day = home(line);
-      if (day === null) continue;
-      answers.set(day, [...(answers.get(day) ?? []), line]);
-    }
-
-    return {
-      total: all.length,
-      notes: all.slice(0, read + 1).map((text, i) => ({
-        day: i + 1,
-        text,
-        answers: (answers.get(i) ?? []).map((a) => ({ text: a.text, at: a.at })),
-      })),
-      lines: lines
-        .filter((line) => home(line) === null)
-        .map((line) => ({ text: line.text, at: line.at, gift: line.gift, about: line.about })),
-    };
+    return replyHistory(all, lines, read);
   }
 
   private async notes(): Promise<string[]> {
@@ -1076,7 +1061,7 @@ export class Room extends DurableObject<Env> {
     return this.build(me, people);
   }
 
-  async say(me: string, text: string, aboutDay?: number): Promise<RoomView> {
+  async say(me: string, text: string, aboutDay?: number, drawing?: string): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
     if (!people[me]) return this.build(me, people);
@@ -1089,8 +1074,11 @@ export class Room extends DurableObject<Env> {
     // Keep what the note said, not just where it sat. He can rewrite his notes whenever he likes.
     const about = day === undefined ? undefined : (await this.notes())[day];
 
+    if (drawing !== undefined && !/^[0-4]{135}$/.test(drawing)) return this.build(me, people);
     const trimmed = text.trim().slice(0, LINE_MAX);
-    if (trimmed) await this.keepLine({ text: trimmed, at: Date.now(), aboutDay: day, about });
+    if (!trimmed && drawing !== undefined && !/[1-4]/.test(drawing)) return this.build(me, people);
+    if (trimmed || (drawing && /[1-4]/.test(drawing)))
+      await this.keepLine({ text: trimmed, at: Date.now(), aboutDay: day, about, drawing });
     else {
       await this.ctx.storage.delete(HER_LINES);
       await this.ctx.storage.delete("herLine");

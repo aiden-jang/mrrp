@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import s from "./App.module.css";
 import d from "./FrameSheet.module.css";
 import {
@@ -18,12 +18,15 @@ export function FrameSheet({
   saving,
   onSave,
   onEditingChange,
+  purpose = "frame",
 }: {
+  purpose?: "frame" | "reply";
   current: { cells: string; mine: boolean } | null;
   saving: boolean;
   onSave: (cells: string) => Promise<boolean>;
   onEditingChange?: (open: boolean) => void;
 }) {
+  const helpId = useId();
   const [open, setOpen] = useState(false);
   const [sheet, setSheet] = useState(BLANK);
   const [ink, setInk] = useState(1);
@@ -63,6 +66,7 @@ export function FrameSheet({
     return (
       <button
         ref={trigger}
+        disabled={saving}
         className={current ? s.sheetPeek : s.quiet}
         onClick={() => {
           sheetRef.current = current?.cells ?? BLANK;
@@ -76,9 +80,13 @@ export function FrameSheet({
       >
         {current ? (
           <>
-            <span className={s.sheetPeekLabel}>{current.mine ? "you put this up" : "on the wall"}</span>
+            <span className={s.sheetPeekLabel}>
+              {purpose === "reply" ? "your drawing" : current.mine ? "you put this up" : "on the wall"}
+            </span>
             <Sheet cells={current.cells} />
           </>
+        ) : purpose === "reply" ? (
+          "Draw a reply"
         ) : (
           "Draw something for the frame"
         )}
@@ -109,8 +117,8 @@ export function FrameSheet({
         }
       }}
     >
-      <p className={s.panelTitle}>for the frame</p>
-      <p id="drawing-help" className={s.small} style={{ marginBottom: 10 }}>
+      <p className={s.panelTitle}>{purpose === "reply" ? "for this reply" : "for the frame"}</p>
+      <p id={helpId} className={s.small} style={{ marginBottom: 10 }}>
         Pick an ink and draw.{" "}
         <span className={s.keyboardHint}>Arrow keys move; Space paints. Escape closes.</span>
       </p>
@@ -145,7 +153,7 @@ export function FrameSheet({
         className={s.sheetGrid}
         role="group"
         aria-label={`Drawing, ${DOODLE_W} by ${DOODLE_H}`}
-        aria-describedby="drawing-help"
+        aria-describedby={helpId}
         style={{ gridTemplateColumns: `repeat(${DOODLE_W}, 1fr)` }}
       >
         {Array.from({ length: DOODLE_CELLS }, (_, i) => {
@@ -225,7 +233,13 @@ export function FrameSheet({
             if (await onSave(sheet)) setOpen(false);
           }}
         >
-          {saving ? "Hanging…" : isBlank(sheet) && current ? "Take it down" : "Hang it up"}
+          {purpose === "reply"
+            ? "Attach drawing"
+            : saving
+              ? "Hanging…"
+              : isBlank(sheet) && current
+                ? "Take it down"
+                : "Hang it up"}
         </button>
       </div>
     </div>

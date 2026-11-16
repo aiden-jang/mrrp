@@ -1,0 +1,9 @@
+.drawing {
+  display: block;
+  width: min(100%, 225px);
+  margin-block: 12px;
+}
+.drawing > span {
+  width: 100%;
+  box-sizing: border-box;
+}

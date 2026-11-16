@@ -1,3 +1,4 @@
+import { ReplyDrawing } from "./ReplyDrawing.js";
 import type { ReactNode } from "react";
 import s from "./App.module.css";
 import { Sheet } from "./FrameSheet.js";
@@ -202,7 +203,10 @@ export function ArrivalCard({
                   <b>{name}</b> answered you.
                   <span className={s.answerPair}>
                     <span className={s.answerMine}>“{item.note}”</span>
-                    <span className={s.answerHers}>“{item.text}”</span>
+                    <span className={s.answerHers}>
+                      {item.text && <>“{item.text}”</>}
+                      <ReplyDrawing cells={item.drawing} />
+                    </span>
                   </span>
                 </>
               ) : item.gift ? (
@@ -212,7 +216,8 @@ export function ArrivalCard({
                 </>
               ) : (
                 <>
-                  <b>{name}</b> left: “{item.text}”
+                  <b>{name}</b> left: {item.text && <>“{item.text}”</>}
+                  <ReplyDrawing cells={item.drawing} />
                 </>
               )}
               <small className={s.arrivalWhen}>{whenish(item.at)}</small>

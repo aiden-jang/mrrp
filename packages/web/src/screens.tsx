@@ -1,3 +1,6 @@
+import { FrameSheet } from "./FrameSheet.js";
+import { ReplyDrawing } from "./ReplyDrawing.js";
+import { isBlank } from "./doodle.js";
 import type { SaidSoFar } from "./types.js";
 import { GIFTS } from "./types.js";
 import s from "./App.module.css";
@@ -206,7 +209,8 @@ export function SaidPanel({
             {note.answers.map((answer) => (
               <p key={answer.at} className={s.saidBack}>
                 <span className={s.saidWho}>{back}</span>
-                <span>&ldquo;{answer.text}&rdquo;</span>
+                {answer.text && <span>&ldquo;{answer.text}&rdquo;</span>}
+                <ReplyDrawing cells={answer.drawing} />
                 <small className={s.saidWhen}>{dayOf(answer.at)}</small>
                 {onUnsay && (
                   <button
@@ -252,7 +256,8 @@ export function SaidPanel({
                     with {GIFTS.find((g) => g.id === line.gift)?.label ?? "something"}
                   </span>
                 )}
-                <span>&ldquo;{line.text}&rdquo;</span>
+                {line.text && <span>&ldquo;{line.text}&rdquo;</span>}
+                <ReplyDrawing cells={line.drawing} />
                 {dayOf(line.at) !== dayOf(said.lines[i - 1]?.at ?? 0) && (
                   <small className={s.saidWhen}>{dayOf(line.at)}</small>
                 )}
@@ -288,7 +293,15 @@ export function SayBox({
   onNeverMind,
   onClearTap,
   boxRef,
+  drawing = null,
+  drawingOpen = false,
+  onDrawing,
+  onDrawingOpen,
 }: {
+  drawing?: string | null;
+  drawingOpen?: boolean;
+  onDrawing?: (cells: string | null) => void;
+  onDrawingOpen?: (open: boolean) => void;
   value: string;
   max: number;
   answering: string | null;
@@ -308,6 +321,23 @@ export function SayBox({
         <p className={s.answerMine} style={{ marginBottom: 6 }}>
           answering &ldquo;{answering}&rdquo;
         </p>
+      )}
+      {onDrawing && (
+        <FrameSheet
+          purpose="reply"
+          current={drawing ? { cells: drawing, mine: true } : null}
+          saving={saving}
+          onEditingChange={onDrawingOpen}
+          onSave={async (cells) => {
+            onDrawing(isBlank(cells) ? null : cells);
+            return true;
+          }}
+        />
+      )}
+      {drawing && !drawingOpen && (
+        <button className={s.quiet} disabled={saving} onClick={() => onDrawing?.(null)}>
+          Remove drawing
+        </button>
       )}
       <textarea
         autoFocus
@@ -329,7 +359,11 @@ export function SayBox({
         <button className={s.btn} onClick={onNeverMind} disabled={saving}>
           Never mind
         </button>
-        <button className={`${s.btn} ${s.btnGo}`} disabled={saving || value.trim() === ""} onClick={onSave}>
+        <button
+          className={`${s.btn} ${s.btnGo}`}
+          disabled={saving || drawingOpen || (value.trim() === "" && !drawing)}
+          onClick={onSave}
+        >
           {saving ? "Leaving it..." : "Leave it"}
         </button>
       </div>

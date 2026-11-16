@@ -1,3 +1,4 @@
+import { replyRoutes } from "./replyRoutes.js";
 import { giftRoutes } from "./giftRoutes.js";
 import { seatRoutes } from "./seatRoutes.js";
 import { isSeatToken, ROOM_RE } from "./seatToken.js";
@@ -211,19 +212,6 @@ app.post("/api/room/:id/tell", async (c) => {
   return c.json(await room(c.env, id).tell(body.me, body.mood as Mood));
 });
 
-app.post("/api/room/:id/say", async (c) => {
-  const id = c.req.param("id");
-  const body = (await c.req.json().catch(() => null)) as Untrusted<"say"> | null;
-  if (!ROOM_RE.test(id) || !isSeatToken(body?.me) || typeof body.text !== "string") {
-    return c.json({ error: "bad request" }, 400);
-  }
-  const day =
-    typeof body.aboutDay === "number" && Number.isInteger(body.aboutDay) && body.aboutDay >= 0
-      ? body.aboutDay
-      : undefined;
-  return c.json(await room(c.env, id).say(body.me, body.text, day));
-});
-
 app.post("/api/room/:id/link", async (c) => {
   const id = c.req.param("id");
   const body = ((await c.req.json().catch(() => null)) ?? {}) as Untrusted<"link">;
@@ -310,6 +298,7 @@ app.post("/api/room/:id/ourday", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "not yours to set" }, 403);
 });
 
+app.route("/", replyRoutes);
 app.route("/", giftRoutes);
 app.route("/", roomSetupRoutes);
 app.route("/", seatRoutes);

@@ -33,3 +33,20 @@ it("one pending reply cannot be sent twice in the same render", async () => {
   });
   expect(doSay).toHaveBeenCalledOnce();
 });
+
+it("keeps a drawing-only reply after failure and sends it again on retry", async () => {
+  const drawing = "1" + "0".repeat(134);
+  vi.mocked(doSay)
+    .mockRejectedValueOnce(new Error("offline"))
+    .mockResolvedValueOnce({} as never);
+  const hook = renderHook(() => useSayBox("abc123", vi.fn(), vi.fn(), vi.fn()));
+  act(() => {
+    hook.result.current.start(0);
+    hook.result.current.setDrawing(drawing);
+  });
+  await act(() => hook.result.current.say());
+  expect(hook.result.current.drawing).toBe(drawing);
+  expect(hook.result.current.open).toBe(true);
+  await act(() => hook.result.current.say());
+  expect(doSay).toHaveBeenLastCalledWith("abc123", "", 0, drawing);
+});

@@ -370,8 +370,13 @@ export async function doLeaveGift(id: string, gift: Gift, text = ""): Promise<Ro
   return r.json() as Promise<RoomView>;
 }
 
-export async function doSay(id: string, text: string, aboutDay?: number): Promise<RoomView> {
-  const r = await send(`/api/room/${id}/say`, { me: myToken(id), text, aboutDay });
+export async function doSay(
+  id: string,
+  text: string,
+  aboutDay?: number,
+  drawing?: string,
+): Promise<RoomView> {
+  const r = await send(`/api/room/${id}/say`, { me: myToken(id), text, aboutDay, drawing });
   if (!r.ok) throw new Error("Couldn't leave that.");
   return r.json() as Promise<RoomView>;
 }
