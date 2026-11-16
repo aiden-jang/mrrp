@@ -11,6 +11,7 @@ test("a long reply keeps its actions reachable on a short phone", async ({ page,
     const her = await guest.newPage();
     await her.goto(page.url());
     await her.getByRole("button", { name: "Go in", exact: true }).click();
+    await her.getByText("Open your note", { exact: true }).click();
     await her.getByRole("button", { name: /Say something back/ }).click();
     const input = her.getByLabel("Your answer", { exact: true });
     const message = "괜찮아 🌱\n".repeat(20).trim();

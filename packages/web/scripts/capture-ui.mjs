@@ -102,6 +102,12 @@ async function updates(page, width, errors) {
   await page.goto(base.href);
 }
 
+async function openNote(page) {
+  const fold = page.locator("summary").filter({ hasText: /Open your note|Fold your note/ });
+  await fold.waitFor();
+  if ((await fold.innerText()).includes("Open your note")) await fold.click();
+}
+
 async function settings(page, role, width, errors) {
   await page.locator("#room-account > summary").click();
   await capture(page, `${role}-settings`, width, errors);
@@ -171,6 +177,7 @@ async function endings(her, room, code, width, errors) {
   await her.getByRole("button", { name: "Put my side back", exact: true }).waitFor();
   await capture(her, "left-room", width, errors, false);
   await her.getByRole("button", { name: "Put my side back", exact: true }).click();
+  await openNote(her);
   await her.getByRole("button", { name: /Say something back/ }).waitFor();
   const visitor = await localContext(width);
   try {
@@ -265,6 +272,7 @@ try {
       await her.getByRole("button", { name: "Go in", exact: true }).waitFor();
       await capture(her, "invitation", width, errors);
       await her.getByRole("button", { name: "Go in", exact: true }).click();
+      await openNote(her);
       await her.getByRole("button", { name: /Say something back/ }).waitFor();
       await page.getByRole("button", { name: "Pet her", exact: true }).waitFor();
       await capture(page, "companion", width, errors);

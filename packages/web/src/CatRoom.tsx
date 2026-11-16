@@ -1,3 +1,4 @@
+import { NoteLetter } from "./NoteLetter.js";
 import s from "./App.module.css";
 import { BLANKET_KEYS, BLANKETS, type BlanketKey } from "./blanket.js";
 import { MoodFace } from "./faces.js";
@@ -66,21 +67,7 @@ export function CatRoom({
       </section>
       <section className={s.actionSection} aria-label="Notes and replies">
         {view.note && (
-          <div className={s.note}>
-            <p className={s.noteFrom}>
-              {view.note.final ? `${view.them} left this out for you` : `${view.them} left you something`}
-            </p>
-            <p className={s.noteText}>{view.note.text}</p>
-            {!view.note.final && <p className={s.noteDay}>day {view.note.day}</p>}
-            {!sayBox.open && (
-              <button
-                className={`${s.btn} ${s.btnGo} ${s.noteReply}`}
-                onClick={() => sayBox.start(view.note!.day - 1)}
-              >
-                Say something back
-              </button>
-            )}
-          </div>
+          <NoteLetter note={view.note} from={view.them} replying={sayBox.open} onReply={sayBox.start} />
         )}
 
         {sayBox.open ? (

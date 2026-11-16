@@ -31,6 +31,7 @@ for (const width of [390, 1440]) {
       const her = await guest.newPage();
       await her.goto(first.url);
       await her.getByRole("button", { name: "Go in", exact: true }).click();
+      await her.getByText("Open your note", { exact: true }).click();
       await expect(her.getByRole("button", { name: /Say something back/ })).toBeVisible();
       const herKey = await token(her, first.id);
       await page.goto(first.url, { waitUntil: "domcontentloaded" });

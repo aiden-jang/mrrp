@@ -44,6 +44,7 @@ test("room updates wait for notes, appearance, drawing, date, reply and gift dra
     await expect(reload).toBeVisible();
     const catReload = cat.getByRole("button", { name: "Reload app", exact: true });
     await expect(catReload).toBeVisible();
+    await cat.getByText("Open your note", { exact: true }).click();
     await cat.getByRole("button", { name: /Say something back/ }).click();
     await cat.getByLabel("Your answer", { exact: true }).fill("Keep my reply.");
     await expect(catReload).toHaveCount(0);

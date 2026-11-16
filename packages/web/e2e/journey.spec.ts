@@ -60,6 +60,7 @@ test("he makes a room, she goes in, and each gets their own half", async ({ page
   await her.getByRole("button", { name: "Go in" }).click();
 
   await expect(her.getByRole("heading", { level: 1 })).toContainText("room");
+  await her.getByText("Open your note", { exact: true }).click();
   // Hers, and not his: she answers and draws, she does not write herself notes.
   await expect(her.getByRole("button", { name: /Say something back/ })).toBeVisible();
   await expect(her.getByRole("button", { name: /Draw something for the frame/ })).toBeVisible();
