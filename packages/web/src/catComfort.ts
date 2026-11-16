@@ -1,18 +1,62 @@
 import { POSES, type Pose } from "./sprites.js";
 import { NUZZLE_MS } from "./types.js";
-import type { AffectionPlayback } from "./affection.js";
-export type { AffectionPlayback } from "./affection.js";
+import type { CatGesturePlayback } from "./affection.js";
+export type { CatGesturePlayback } from "./affection.js";
+import * as reactions from "./catReactions.js";
+export { activeGesture, gestureTarget, isReaction, gestureEyes } from "./catReactions.js";
 
-export function affectionPose(
+export function gesturePose(
   pose: Pose,
-  affection: AffectionPlayback | null | undefined,
+  affection: CatGesturePlayback | null | undefined,
   time: number,
+  inBox = false,
+  reduced = false,
 ): Pose {
+  if (reactions.isReaction(affection) && affection.until > time)
+    return reactions.reactionPose(pose, affection, time, inBox, reduced);
   return affection?.kind === "ask" &&
     affection.until > time &&
     ["sit", "loaf", "perk", "stand", "flop", "play"].includes(pose)
     ? "sit"
     : pose;
+}
+
+export function paintGesture(
+  paint: Parameters<typeof paintRaisedPaw>[0],
+  pose: Pose,
+  x: number,
+  y: number,
+  palette: { w: string; f: string; b: string; p: string },
+  gesture: CatGesturePlayback | null,
+  time: number,
+  reduced: boolean,
+  inBox: boolean,
+) {
+  if (gesture?.kind === "ask" && pose === "sit") paintRaisedPaw(paint, x, y, palette, inBox);
+  reactions.paintReaction(paint, pose, x, y, palette, gesture, time, reduced);
+}
+
+export function tailAnchor(pose: Pose, x: number, y: number) {
+  return {
+    x:
+      pose === "stand"
+        ? x - 12
+        : pose === "loaf"
+          ? x + 8
+          : pose === "stretch"
+            ? x + 14
+            : pose === "pounce"
+              ? x + 9
+              : x + 5,
+    y: pose === "loaf" ? y - 4 : pose === "perk" ? y - 9 : y - 6,
+    flip: pose === "stand",
+  };
+}
+
+export function tailWag(time: number, play: number, near: number, ease: number, reduced: boolean) {
+  return reduced || ease === 0
+    ? 0
+    : Math.round(Math.sin(time / (620 - play * 380)) * (1 + play * 2 + near) * ease);
 }
 
 export function paintRaisedPaw(
@@ -109,20 +153,24 @@ export function comfortMoment({
   busy: boolean;
   reduced: boolean;
   touch?: { side: number; chin: number } | null;
-  affection?: AffectionPlayback | null;
+  affection?: CatGesturePlayback | null;
 }) {
   const age = time - brushAt.started;
   const released = time - brushAt.last;
   const brush = age < 0 || released > 1800 ? 0 : Math.min(1, age / 180, (1800 - released) / 850);
-  const content = busy ? 0 : Math.max(brush, petDepth);
+  const reacting = reactions.isReaction(affection) && affection.until > time;
+  const content = busy || reacting ? 0 : Math.max(brush, petDepth);
   const nuzzling = !busy && affection?.kind === "nuzzle" && affection.until > time;
   const progress = nuzzling ? 1 - Math.min(1, (affection.until - time) / NUZZLE_MS) : 0;
   const nuzzle = Math.sin(Math.PI * progress);
   return {
     asking: !busy && affection?.kind === "ask" && affection.until > time,
-    lift: reduced || busy ? 0 : Math.round((content * (touch ? 0.5 + touch.chin : 1) + nuzzle) * 2) / 2,
+    lift:
+      reduced || busy || reacting
+        ? 0
+        : Math.round((content * (touch ? 0.5 + touch.chin : 1) + nuzzle) * 2) / 2,
     lean:
-      reduced || busy
+      reduced || busy || reacting
         ? 0
         : Math.round(
             ((touch ? touch.side * petDepth * 1.5 : Math.sign(side) * brush) +
@@ -130,7 +178,7 @@ export function comfortMoment({
               2,
           ) / 2,
     softEyes: nuzzling || content > 0.35 || (!busy && stayDepth > 0.45),
-    tailEase: busy ? 1 : 1 - Math.max(content, stayDepth * 0.8) * 0.7,
+    tailEase: reacting ? 0 : busy ? 1 : 1 - Math.max(content, stayDepth * 0.8) * 0.7,
   };
 }
 
@@ -158,9 +206,13 @@ export function bodyOffset(
     boxPlaying: boolean;
     peeking: boolean;
     peekUntil: number;
+    gesture?: CatGesturePlayback | null;
+    inBox?: boolean;
   },
 ) {
   const { reduced, loaf, settled, bounce, dancing, play, boxPlaying, peeking, peekUntil } = state;
+  const reaction = reactions.reactionOffset(state.gesture, time, reduced, state.inBox ?? false);
+  if (reaction !== null) return reaction;
   const breath =
     reduced || !loaf ? 0 : Math.round(Math.sin(time / (settled ? 1900 : 1100)) * (settled ? 1.6 : 1));
   const hop = reduced

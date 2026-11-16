@@ -1,21 +1,21 @@
-import type { Affection } from "./types.js";
+import type { Affection, CatReaction } from "./types.js";
 
-export interface AffectionPlayback {
-  kind: Affection["kind"];
+export interface CatGesturePlayback {
+  kind: Affection["kind"] | CatReaction["kind"];
   at: number;
   until: number;
 }
 
-export interface AffectionTrack {
+export interface CatGestureTrack {
   seenAt: number;
-  current: AffectionPlayback | null;
+  current: CatGesturePlayback | null;
 }
 
-export function receiveAffection(
-  track: AffectionTrack,
-  next: Affection | null | undefined,
+export function receiveGesture(
+  track: CatGestureTrack,
+  next: Affection | CatReaction | null | undefined,
   now: number,
-): AffectionTrack {
+): CatGestureTrack {
   if (!next) return track.current ? { ...track, current: null } : track;
   if (next.at < track.seenAt || (next.at === track.seenAt && !track.current)) return track;
   const until = now + next.remainingMs;

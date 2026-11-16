@@ -1,4 +1,10 @@
-import type { Arrival, Told, Told2, Visit } from "@mrrp/shared";
+import type { Arrival, FirstKey, Told, Told2, Visit } from "@mrrp/shared";
+
+export function firstArrivals(firsts: Record<string, number>, since: number): Arrival[] {
+  return Object.entries(firsts).flatMap(([what, at]) =>
+    at > since ? [{ kind: "first", at, what: what as FirstKey }] : [],
+  );
+}
 
 export function actionArrivals(
   log: Visit[],

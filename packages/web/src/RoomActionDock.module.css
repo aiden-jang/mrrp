@@ -13,6 +13,36 @@
 .affection p {
   margin: 0;
 }
+.reactions {
+  margin-top: 8px;
+}
+.reactions summary {
+  width: fit-content;
+  min-height: 44px;
+  padding-block: 10px;
+  box-sizing: border-box;
+  color: var(--soft);
+  cursor: pointer;
+}
+.reactions summary:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+.reactions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.reactions button[aria-disabled="true"] {
+  color: var(--soft);
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
+.reactions button[aria-pressed="true"] {
+  border-color: var(--honey);
+  box-shadow: inset 0 0 0 1px var(--honey);
+}
 .actions {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

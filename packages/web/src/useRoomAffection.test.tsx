@@ -41,6 +41,28 @@ it("expires on the local clock without waiting for another snapshot", () => {
   expect(result.current.affection).toBeNull();
 });
 
+it("expires a reaction locally and keeps it separate from affection", () => {
+  const view = { reaction: { kind: "flop", at: 1, remainingMs: 3600 }, affection: null } as RoomView;
+  const { result } = renderHook(() =>
+    useRoomAffection({ id: "room", view, load: vi.fn(), onError: vi.fn() }),
+  );
+  expect(result.current.reaction?.kind).toBe("flop");
+  expect(result.current.affection).toBeNull();
+  act(() => vi.advanceTimersByTime(3600));
+  expect(result.current.reaction).toBeNull();
+  expect(result.current.affection).toBeNull();
+});
+
+it("does not invent a reaction after a failed send", async () => {
+  vi.mocked(doCatAct).mockRejectedValue(new Error("offline"));
+  const { result, onError } = setup(null);
+  await act(() => result.current.catGesture("flop"));
+  expect(result.current.reaction).toBeNull();
+  expect(result.current.affection).toBeNull();
+  expect(result.current.reactionPending).toBeNull();
+  expect(onError).toHaveBeenLastCalledWith("Couldn’t share that. Try again.");
+});
+
 it("does not extend or replay a request when an old snapshot arrives", () => {
   const { result, rerender } = setup();
   act(() => vi.advanceTimersByTime(10_000));
@@ -63,8 +85,8 @@ it("coalesces repeated commands and refreshes after a confirmed save", async () 
   );
   const { result, load } = setup(null);
   act(() => {
-    void result.current.catAffection("ask-pets");
-    void result.current.catAffection("ask-pets");
+    void result.current.catGesture("ask-pets");
+    void result.current.catGesture("ask-pets");
   });
   expect(doCatAct).toHaveBeenCalledExactlyOnceWith("room", "ask-pets");
   expect(result.current.affectionPending).toBe(true);
@@ -77,7 +99,7 @@ it("coalesces repeated commands and refreshes after a confirmed save", async () 
 it("keeps a request available after a failed cancellation", async () => {
   vi.mocked(doCatAct).mockRejectedValue(new Error("offline"));
   const { result, onError, load } = setup();
-  await act(() => result.current.catAffection("cancel-pets"));
+  await act(() => result.current.catGesture("cancel-pets"));
   expect(result.current.affection?.kind).toBe("ask");
   expect(result.current.affectionPending).toBe(false);
   expect(onError).toHaveBeenLastCalledWith("Couldn’t share that. Try again.");
@@ -93,7 +115,7 @@ it("ignores completion after leaving the room", async () => {
   );
   const { result, unmount, load } = setup(null);
   act(() => {
-    void result.current.catAffection("ask-pets");
+    void result.current.catGesture("ask-pets");
   });
   unmount();
   await act(async () => finish({} as RoomView));

@@ -44,8 +44,10 @@ empty editable list, and a failed drawing save must keep the draft open.
 `useRoomPetting.ts` owns pointer and button contact, interruption cleanup and ordered hold writes.
 The canvas keeps local touch feedback in its draw loop.
 
-`useRoomAffection.ts` owns cat-initiated affection requests and their local expiry. The server
+`useRoomAffection.ts` owns cat-initiated affection, reactions and their local expiry. The server
 validates each command and sends a remaining duration, so browser clock differences do not extend it.
+One transient slot prevents gestures from stacking. Public snapshots keep reactions separate from
+affection so older clients do not describe a reaction as a nuzzle.
 
 Mood writes run in order and keep only the latest queued choice. That choice stays visible
 while earlier live snapshots arrive. Setup and drawing controls pause during saves; the private

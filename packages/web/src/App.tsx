@@ -241,7 +241,7 @@ function RoomPage({ id }: { id: string }) {
                 onHold={actions.hold}
                 onTouch={sharePoke}
                 heldByThem={view.heldByThem}
-                affection={actions.affection}
+                affection={actions.reaction ?? actions.affection}
                 sitting={view.sittingWith || view.sittingWithYou}
                 settled={view.settled}
                 waiting={view.waitingAtDoor}

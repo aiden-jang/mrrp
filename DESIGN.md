@@ -244,3 +244,9 @@ Cat-initiated affection uses one contextual control below her action dock. She c
 cancel her request, or nuzzle during contact. Requests expire quietly without a countdown.
 The companion answers through the existing pet action. Reduced motion keeps the raised paw
 and content expression while holding the nuzzle still.
+
+The secondary React group offers Dramatic flop, Hide your face and Look innocent. Each is
+a brief choice by the cat's person and leaves her mood and written replies alone. Reactions
+wait during petting and hold their position in the room. She waits for one reaction to finish
+before choosing another.
+Reduced motion shows the settled pose, covered face or larger pupils without the transition.

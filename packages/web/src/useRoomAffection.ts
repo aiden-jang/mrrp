@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { doCatAct } from "./api.js";
-import { receiveAffection, type AffectionTrack } from "./affection.js";
-import type { AffectionAction, RoomView } from "./types.js";
+import { receiveGesture, type CatGestureTrack } from "./affection.js";
+import { isCatReaction, type CatGestureAction, type RoomView } from "./types.js";
 
 export function useRoomAffection({
   id,
@@ -14,11 +14,11 @@ export function useRoomAffection({
   load: () => Promise<void>;
   onError: (message: string | null) => void;
 }) {
-  const track = useRef<AffectionTrack>({ seenAt: -Infinity, current: null });
-  track.current = receiveAffection(track.current, view?.affection, performance.now());
+  const track = useRef<CatGestureTrack>({ seenAt: -Infinity, current: null });
+  track.current = receiveGesture(track.current, view?.reaction ?? view?.affection, performance.now());
   const current = track.current.current;
   const [, refresh] = useState(0);
-  const [affectionPending, setPending] = useState(false);
+  const [pendingAction, setPending] = useState<CatGestureAction | null>(null);
   const pending = useRef(false);
   const alive = useRef(false);
   useEffect(() => {
@@ -32,10 +32,10 @@ export function useRoomAffection({
     const timer = setTimeout(() => refresh((n) => n + 1), Math.ceil(current.until - performance.now()));
     return () => clearTimeout(timer);
   }, [current]);
-  const catAffection = async (act: AffectionAction) => {
+  const catGesture = async (act: CatGestureAction) => {
     if (pending.current) return;
     pending.current = true;
-    setPending(true);
+    setPending(act);
     onError(null);
     try {
       await doCatAct(id, act);
@@ -44,12 +44,15 @@ export function useRoomAffection({
       if (alive.current) onError("Couldn’t share that. Try again.");
     } finally {
       pending.current = false;
-      if (alive.current) setPending(false);
+      if (alive.current) setPending(null);
     }
   };
+  const active = current && current.until > performance.now() ? current : null;
   return {
-    affection: current && current.until > performance.now() ? current : null,
-    affectionPending,
-    catAffection,
+    affection: active && !isCatReaction(active.kind) ? active : null,
+    reaction: active && isCatReaction(active.kind) ? active : null,
+    affectionPending: pendingAction !== null,
+    reactionPending: isCatReaction(pendingAction) ? pendingAction : null,
+    catGesture,
   };
 }

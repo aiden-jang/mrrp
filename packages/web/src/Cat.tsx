@@ -302,7 +302,7 @@ export function Cat({
   onPet?: (fromTouch?: boolean) => void;
   onHold?: (on: boolean) => void;
   heldByThem?: boolean;
-  affection?: catComfort.AffectionPlayback | null;
+  affection?: catComfort.CatGesturePlayback | null;
   sitting?: boolean;
   decor?: RoomDecor;
   settled?: boolean;
@@ -1341,6 +1341,7 @@ export function Cat({
 
       const tripAge = t - tripFrom.current;
       const trip = shelfTrip(tripAge, lastTripAge.current);
+      const gesture = catComfort.activeGesture(affectionRef.current, t, trip.going);
       lastTripAge.current = tripAge;
       if (trip.tips) {
         lookAt.current = { x: MUG_FLOOR_X + 4, until: t + 2200 };
@@ -2036,7 +2037,7 @@ export function Cat({
                                   ? warmSeat(sc.catX * GW)
                                   : sc.catX * GW;
       const bounded = (x: number) => Math.max(CAT_REACH_LEFT, Math.min(GW - CAT_REACH_RIGHT, x));
-      wantX = bounded(wantX);
+      wantX = catComfort.gestureTarget(bounded(wantX), catX.current, gesture);
       if (catX.current === null) catX.current = firstEverRef.current ? 19 : wantX;
       catX.current += (wantX - catX.current) * (catnipping || zooming || mouseChasing ? 0.4 : 0.05);
       let kx = Math.round(catX.current);
@@ -2064,7 +2065,7 @@ export function Cat({
         }
       }
       steps.current = steps.current.filter((p) => t - p.at < STEP_FADE_MS);
-      const settledInBed = sc.inBed || (nesting && Math.abs(kx - 24) < 8);
+      const settledInBed = !inBox && (sc.inBed || (nesting && Math.abs(kx - 24) < 8));
       const ky = FLOOR + 19 + (settledInBed ? 6 : 0);
 
       const want = ptr.in ? Math.max(0, 1 - Math.hypot(ptr.x - kx, ptr.y - (ky - 8)) / 44) : 0;
@@ -2206,7 +2207,7 @@ export function Cat({
                           : sittingRef.current && !walking
                             ? "loaf"
                             : (sc.pose ?? (sc.atDoor ? "stand" : posed ? "sit" : "loaf"));
-      pose = catComfort.affectionPose(pose, affectionRef.current, t);
+      pose = catComfort.gesturePose(pose, gesture, t, inBox, reduce);
       const sp = POSES[pose]!;
       const comfort = catComfort.comfortMoment({
         time: t,
@@ -2217,7 +2218,7 @@ export function Cat({
         busy: walking || pouncing || boxPlaying || peeking,
         reduced: reduce,
         touch: petting.current ? catComfort.touchResponse(catBox.current, ptr) : null,
-        affection: affectionRef.current,
+        affection: gesture,
       });
       kx += comfort.lean;
       const y =
@@ -2233,13 +2234,15 @@ export function Cat({
           boxPlaying,
           peeking,
           peekUntil: boxPeekUntil.current,
+          gesture,
+          inBox,
         });
       catBox.current = catComfort.catTouchBounds(pose, kx, y);
 
       const warmth = sceneArt.catWarmth(sc, kx, sp, beamX, poolScale);
       const sunlit = (c: string) => (warmth > 0.01 ? mixHex(c, sc.beamWarm, warmth) : c);
 
-      const pal = catPalette(L, awake || booped, sunlit);
+      const pal = catPalette(L, catComfort.gestureEyes(gesture, awake || booped), sunlit);
 
       if (pianoPlaying) {
         const nextNote = pianoGame.current.history.length;
@@ -2323,13 +2326,9 @@ export function Cat({
       rect(shadowX + 3 + Math.round(cast * 0.5), ky + 2, sp.w - 6, 1, mixHex(sc.floorNear, INK, 0.2));
       rect(shadowX + 6 + cast, ky + 3, sp.w - 12, 1, mixHex(sc.floorNear, INK, 0.12));
 
-      const wag = reduce
-        ? 0
-        : Math.round(Math.sin(t / (620 - sc.play * 380)) * (1 + sc.play * 2 + n) * comfort.tailEase);
-      const tailX =
-        pose === "loaf" ? kx + 8 : pose === "stretch" ? kx + 14 : pose === "pounce" ? kx + 9 : kx + 5;
-      const tailY = pose === "loaf" ? y - 4 : pose === "perk" ? y - 9 : y - 6;
-      if (pose !== "peek") blit(TAIL, pose === "stand" ? kx - 12 : tailX, tailY + wag, pal, pose === "stand");
+      const wag = catComfort.tailWag(t, sc.play, n, comfort.tailEase, reduce);
+      const tail = catComfort.tailAnchor(pose, kx, y);
+      if (pose !== "peek") blit(TAIL, tail.x, tail.y + wag, pal, tail.flip);
       if (raining && atTheGlass && awake) wetPaws.current = t + WET_PAWS_MS;
       if (walking && t < wetPaws.current && t > nextPrint.current) {
         nextPrint.current = t + 380;
@@ -2346,7 +2345,6 @@ export function Cat({
       }
 
       blit(sp, kx, y, pal);
-      if (comfort.asking && pose === "sit") catComfort.paintRaisedPaw(rect, kx, y, pal, inBox);
 
       if (bothCalledRef.current) {
         const c = COLLAR[pose];
@@ -2408,7 +2406,7 @@ export function Cat({
         px(kx + sp.ox + ex, y + sp.oy + EAR.y, INK);
       }
 
-      const grooming = t - groom.current.at < GROOM_MS;
+      const grooming = !catComfort.isReaction(gesture) && t - groom.current.at < GROOM_MS;
       const at = mouseVisiting
         ? mouseMoment!.x
         : looking
@@ -2420,11 +2418,13 @@ export function Cat({
               : null;
       const gaze = pose === "stand" || at === null ? 0 : Math.sign(at - kx) * (Math.abs(at - kx) > 4 ? 1 : 0);
       paintCatEyes(rect, pose, kx, y, pal, {
-        awake: booped || (awake && !comfort.softEyes),
+        awake: catComfort.gestureEyes(gesture, booped || (awake && !comfort.softEyes)),
+        innocent: gesture?.kind === "innocent",
         crossed: booped,
         wink: !reduce && awake && expression.wink && !forced && !walking && !grooming,
         gaze,
       });
+      catComfort.paintGesture(rect, pose, kx, y, pal, gesture, t, reduce, inBox);
       if (grooming && awake) {
         const faceX = kx + sp.ox;
         // `perk` has its face a row lower than every other pose. Assuming otherwise puts the yawn on her nose.
@@ -2440,7 +2440,7 @@ export function Cat({
         yawn.current.at = t;
         yawn.current.next = t + 42000 + Math.random() * 48000;
       }
-      const yawning = t - yawn.current.at < YAWN_MS;
+      const yawning = !catComfort.isReaction(gesture) && t - yawn.current.at < YAWN_MS;
       if (yawning && awake) {
         const faceX = kx + sp.ox;
         const jawY = y + sp.oy + YAWN.y + faceShift(pose);

@@ -10,7 +10,7 @@ import {
 } from "./seatAccess.js";
 import { moodDeadline, sweepMoods, type StoredMood } from "./moodRetention.js";
 import { isSeatToken } from "./seatToken.js";
-import { actionArrivals, catArrivals, exportActivity, recentActivity } from "./activity.js";
+import { actionArrivals, catArrivals, exportActivity, firstArrivals, recentActivity } from "./activity.js";
 import { DurableObject } from "cloudflare:workers";
 import type {
   Action,
@@ -208,7 +208,7 @@ export class Room extends DurableObject<Env> {
 
     if (
       action === "pet" &&
-      (await this.ctx.storage.get<affection.StoredAffection>("affection"))?.kind === "ask"
+      affection.clearsOnPet(await this.ctx.storage.get<affection.StoredAffection>("affection"))
     ) {
       await this.ctx.storage.delete("affection");
     }
@@ -244,13 +244,14 @@ export class Room extends DurableObject<Env> {
   async herAct(me: string, act: CatAct): Promise<RoomView> {
     await this.guard();
     const people = (await this.ctx.storage.get<Record<string, Person>>("people")) ?? {};
-    if (!people[me]) return this.build(me, people);
-    if (this.roles(people).her !== me) return this.build(me, people);
+    const { him, her } = this.roles(people);
+    if (her !== me) return this.build(me, people);
 
-    if (affection.isAffectionAction(act)) {
+    if (affection.isGestureAction(act)) {
       if (act === "ask-pets" && !this.bothHere(people)) return this.build(me, people);
       const held = await this.ctx.storage.get<Held>("held");
-      const next = affection.nextAffection(act, held, this.roles(people).him, me, Date.now());
+      const current = await this.ctx.storage.get<affection.StoredAffection>("affection");
+      const next = affection.nextGesture(act, held, him, me, Date.now(), current);
       if (next === null) await this.ctx.storage.delete("affection");
       else if (next) await this.ctx.storage.put("affection", next);
       people[me].lastSeen = Date.now();
@@ -1301,9 +1302,7 @@ export class Room extends DurableObject<Env> {
         if (took && took.at > since) arrivals.push({ kind: "took", at: took.at, treat: took.treat });
       }
       const firsts = (await this.ctx.storage.get<Record<string, number>>("firsts")) ?? {};
-      for (const [what, at] of Object.entries(firsts)) {
-        if (at > since) arrivals.push({ kind: "first", at, what: what as FirstKey });
-      }
+      arrivals.push(...firstArrivals(firsts, since));
       arrivals.sort((a, b) => b.at - a.at);
     }
 
@@ -1357,6 +1356,7 @@ export class Room extends DurableObject<Env> {
       seat: seated ? me : null,
       linked: seated ? (people[me]?.account ?? null) !== null : false,
       affection: affection.affectionFor(gesture, held, him, her, Date.now()),
+      reaction: affection.reactionFor(gesture, her, Date.now()),
       heldByThem: !!held && held.who === otherId && Date.now() - held.at < affection.HELD_LAPSE_MS,
       sittingWith: sittingNow && sitting.who === me,
       sittingWithYou: sittingNow && sitting.who === otherId,

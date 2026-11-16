@@ -14,7 +14,7 @@ const closed = ["......", "......", "......", ".wwww.", "w....w", "......"];
 
 function portrait(
   pose: Pose,
-  expression: { awake: boolean; wink: boolean; gaze: number; crossed?: boolean } = {
+  expression: { awake: boolean; wink: boolean; gaze: number; crossed?: boolean; innocent?: boolean } = {
     awake: true,
     wink: false,
     gaze: 0,
@@ -53,6 +53,17 @@ function portrait(
 }
 
 describe("the round-eye design", () => {
+  it.each(names)("keeps color and highlights around the larger innocent pupils in %s", (pose) => {
+    const ordinary = portrait(pose);
+    const innocent = portrait(pose, { awake: true, wink: true, gaze: 1, innocent: true });
+    const dark = (rows: string[]) => rows.join("").split("w").length - 1;
+    expect(dark(innocent.left)).toBeGreaterThan(dark(ordinary.left));
+    expect(dark(innocent.right)).toBeGreaterThan(dark(ordinary.right));
+    for (const eye of [innocent.left, innocent.right]) {
+      expect(eye.join("")).toContain("e");
+      expect(eye.join("")).toContain("h");
+    }
+  });
   it.each(names)("looks inward for a %s nose boop and keeps the eye highlights", (pose) => {
     const boop = portrait(pose, { awake: true, wink: false, gaze: 0, crossed: true });
     expect(boop.left).toEqual(portrait(pose, { awake: true, wink: false, gaze: 1 }).left);

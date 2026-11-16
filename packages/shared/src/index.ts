@@ -35,9 +35,38 @@ export const ACTIONS = [
 ] as const satisfies readonly { id: Action; label: string; past: string; mine: string }[];
 
 export type AffectionAction = "ask-pets" | "cancel-pets" | "nuzzle";
-export type CatAct = "shelf" | "box" | "gift" | AffectionAction;
+export type ReactionAction = "flop" | "hide-face" | "innocent";
+export type CatGestureAction = AffectionAction | ReactionAction;
+export type CatAct = "shelf" | "box" | "gift" | CatGestureAction;
 
-export type LogAction = Action | Exclude<CatAct, AffectionAction> | "leaveout" | "boxout";
+export type LogAction = Action | Exclude<CatAct, CatGestureAction> | "leaveout" | "boxout";
+
+export const CAT_REACTIONS = [
+  { id: "flop", label: "Dramatic flop", mine: "You flopped dramatically.", theirs: "flops dramatically." },
+  {
+    id: "hide-face",
+    label: "Hide your face",
+    mine: "You hide your face in your paws.",
+    theirs: "hides her face in her paws.",
+  },
+  {
+    id: "innocent",
+    label: "Look innocent",
+    mine: "You look completely innocent.",
+    theirs: "looks completely innocent.",
+  },
+] as const satisfies readonly { id: ReactionAction; label: string; mine: string; theirs: string }[];
+
+export const CAT_GESTURE_ACTIONS: readonly CatGestureAction[] = [
+  "ask-pets",
+  "cancel-pets",
+  "nuzzle",
+  ...CAT_REACTIONS.map((reaction) => reaction.id),
+];
+
+export function isCatReaction(value: unknown): value is ReactionAction {
+  return CAT_REACTIONS.some((reaction) => reaction.id === value);
+}
 
 export interface Affection {
   kind: "ask" | "nuzzle";
@@ -45,9 +74,16 @@ export interface Affection {
   remainingMs: number;
 }
 
+export interface CatReaction {
+  kind: ReactionAction;
+  at: number;
+  remainingMs: number;
+}
+
 export const PET_REQUEST_MS = 20_000;
 export const NUZZLE_MS = 1600;
 export const HOLD_RENEW_MS = 10_000;
+export const CAT_REACTION_MS = 3600;
 
 export const CAT_ACTS = [
   {
@@ -253,6 +289,7 @@ export interface RoomView {
   boxOut: boolean;
   heldByThem: boolean;
   affection: Affection | null;
+  reaction: CatReaction | null;
   sittingWith: boolean;
   sittingWithYou: boolean;
   settled: boolean;

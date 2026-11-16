@@ -25,12 +25,17 @@ export function CatAffectionControls({
         type="button"
         className={s.btn}
         aria-pressed={asking ? true : undefined}
-        disabled={actions.affectionPending || nuzzling || (!asking && !view.heldByThem && !view.bothHereNow)}
+        disabled={
+          actions.affectionPending ||
+          !!actions.reaction ||
+          nuzzling ||
+          (!asking && !view.heldByThem && !view.bothHereNow)
+        }
         onClick={() =>
-          void actions.catAffection(asking ? "cancel-pets" : view.heldByThem ? "nuzzle" : "ask-pets")
+          void actions.catGesture(asking ? "cancel-pets" : view.heldByThem ? "nuzzle" : "ask-pets")
         }
       >
-        {actions.affectionPending
+        {actions.affectionPending && !actions.reactionPending
           ? "Sharing…"
           : asking
             ? "Never mind"

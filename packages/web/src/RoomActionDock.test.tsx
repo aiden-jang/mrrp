@@ -19,7 +19,7 @@ function dock(override: Partial<RoomView> = {}) {
     waitAtDoor: vi.fn(),
     settleIn: vi.fn(),
     catAct: vi.fn(),
-    catAffection: vi.fn(),
+    catGesture: vi.fn(),
   } as unknown as ReturnType<typeof useRoomActions>;
   const ui = () => <RoomActionDock view={view} actions={actions} did={null} />;
   const rendered = render(ui());
@@ -35,21 +35,44 @@ function dock(override: Partial<RoomView> = {}) {
 it("lets her request pets and cancel, then offers nuzzling during contact", () => {
   const { actions, update } = dock({ youAreHer: true, bothHereNow: true });
   fireEvent.click(screen.getByRole("button", { name: "Ask for pets" }));
-  expect(actions.catAffection).toHaveBeenLastCalledWith("ask-pets");
+  expect(actions.catGesture).toHaveBeenLastCalledWith("ask-pets");
   actions.affection = { kind: "ask", at: 1, until: 20_000 };
   update();
   fireEvent.click(screen.getByRole("button", { name: "Never mind" }));
-  expect(actions.catAffection).toHaveBeenLastCalledWith("cancel-pets");
+  expect(actions.catGesture).toHaveBeenLastCalledWith("cancel-pets");
   actions.affection = null;
   update({ heldByThem: true });
   fireEvent.click(screen.getByRole("button", { name: "Nuzzle" }));
-  expect(actions.catAffection).toHaveBeenLastCalledWith("nuzzle");
+  expect(actions.catGesture).toHaveBeenLastCalledWith("nuzzle");
 });
 
 it("explains why she cannot ask when the companion is away", () => {
   dock({ youAreHer: true, bothHereNow: false });
   expect((screen.getByRole("button", { name: "Ask for pets" }) as HTMLButtonElement).disabled).toBe(true);
   expect(screen.getByText("You can ask when you’re both here.")).toBeTruthy();
+});
+
+it("keeps reactions in a secondary group and sends only her selected reaction", () => {
+  const { actions, update } = dock({ youAreHer: true, bothHereNow: true });
+  fireEvent.click(screen.getByText("React", { exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: "Hide your face" }));
+  expect(actions.catGesture).toHaveBeenLastCalledWith("hide-face");
+  actions.reaction = { kind: "hide-face", at: 1, until: 3600 };
+  update();
+  for (const name of ["Dramatic flop", "Hide your face", "Look innocent"]) {
+    expect(screen.getByRole("button", { name }).getAttribute("aria-disabled")).toBe("true");
+  }
+  expect((screen.getByRole("button", { name: "Ask for pets" }) as HTMLButtonElement).disabled).toBe(true);
+  vi.mocked(actions.catGesture).mockClear();
+  fireEvent.click(screen.getByRole("button", { name: "Look innocent" }));
+  expect(actions.catGesture).not.toHaveBeenCalled();
+});
+
+it("explains why reactions wait during petting", () => {
+  dock({ youAreHer: true, heldByThem: true });
+  fireEvent.click(screen.getByText("React", { exact: true }));
+  expect(screen.getByRole("button", { name: "Dramatic flop" }).getAttribute("aria-disabled")).toBe("true");
+  expect(screen.getByText("You can react once he lets go.")).toBeTruthy();
 });
 
 it("requires confirmation before a photo takes down their drawing", () => {

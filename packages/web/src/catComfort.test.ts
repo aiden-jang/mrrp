@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  affectionPose,
+  gesturePose,
   bodyOffset,
   brushTravel,
   catTouchBounds,
@@ -26,11 +26,11 @@ describe("pleasure without a needs meter", () => {
   it("raises a paw from resting poses and preserves movement and box peeks", () => {
     const affection = { kind: "ask" as const, at: 1, until: 20_000 };
     for (const pose of ["sit", "loaf", "perk", "stand", "flop", "play"] as Pose[]) {
-      expect(affectionPose(pose, affection, 100)).toBe("sit");
-      expect(affectionPose(pose, affection, 20_001)).toBe(pose);
+      expect(gesturePose(pose, affection, 100)).toBe("sit");
+      expect(gesturePose(pose, affection, 20_001)).toBe(pose);
     }
     for (const pose of ["walk", "peek", "pounce", "stretch"] as Pose[])
-      expect(affectionPose(pose, affection, 100)).toBe(pose);
+      expect(gesturePose(pose, affection, 100)).toBe(pose);
   });
 
   it("paints the raised paw in her colors and above the box rim", () => {
